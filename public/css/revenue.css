@@ -1,0 +1,1126 @@
+/*
+ * revenue.css - Enhanced version
+ * CSS untuk halaman Revenue Dashboard Account Manager
+ */
+
+/* === LAYOUT UTAMA === */
+.main-content {
+    padding: 0 30px;
+    margin-left: 70px; /* Sesuaikan dengan lebar sidebar */
+    width: calc(100% - 70px);
+}
+
+/* === HEADER SECTION === */
+.header-dashboard {
+    background: linear-gradient(135deg, #0e223e, #1e3c72 50%, #2a5298);
+    z-index: 1030;
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 100%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.header-title {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.header-subtitle {
+    font-size: 1rem;
+}
+
+/* === CARD SECTION === */
+.dashboard-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+    position: relative;
+    z-index: 1;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #ea1d25;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* === FORM STYLES === */
+.form-section {
+    margin-top: 0;
+    padding: 20px;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -10px;
+    margin-bottom: 0;
+}
+
+.form-group {
+    padding: 0 10px;
+    margin-bottom: 12px; /* Reduced from 15px */
+    width: 100%;
+}
+
+.form-col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+.form-col-4 {
+    flex: 0 0 33.33%;
+    max-width: 33.33%;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 6px; /* Slightly increased */
+    font-weight: 500;
+    color: #ea1d25;
+    font-size: 0.9rem;
+}
+
+/* Bold version for the important labels */
+.form-label strong {
+    font-weight: 600;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    height: 38px; /* Slightly increased height */
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+    height: 38px; /* Match form-control height */
+}
+
+.input-group-text {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem 0 0 0.25rem;
+    height: 38px; /* Match form-control height */
+}
+
+.input-group > .form-control {
+    position: relative;
+    flex: 1 1 auto;
+    width: 1%;
+    margin-bottom: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.input-date {
+    cursor: pointer;
+}
+
+.add-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.5rem;
+    color: #ea1d25;
+    font-size: 0.875rem;
+    text-decoration: none;
+}
+
+.add-link:hover {
+    text-decoration: underline;
+}
+
+.add-link i {
+    margin-right: 0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Memperbaiki form-row space setelah form-group */
+.form-row + .form-row {
+    margin-top: 0;
+}
+
+/* === MONTH PICKER - FIXED & OPTIMIZED === */
+.month-picker-container {
+    position: relative; /* This is crucial for absolute positioning of the picker */
+    width: 100%;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Make sure dropdown arrow is properly positioned */
+.input-group .cursor-pointer {
+    cursor: pointer;
+}
+
+/* Fixed month picker styling with proper z-index */
+#global_month_picker {
+    position: absolute;
+    top: 100px; /* Position right below the input */
+    left: 0;   /* Align with the left edge of the container */
+    z-index: 9999; /* High z-index to stay on top */
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+    border: none;
+    overflow: hidden;
+    width: 120%;
+    display: none;
+}
+
+/* Ensure the month picker is visible when active */
+#global_month_picker.show,
+#global_month_picker.active {
+    display: block !important;
+}
+
+/* Animation for month picker appearance */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Month picker header with gradient */
+.month-picker-header {
+    background: linear-gradient(135deg, #ea1d25, #2a5298);
+    color: white;
+    padding: 20px;
+    border: none;
+}
+
+/* Year selector with proper spacing */
+.year-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+}
+
+.year-selector button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s;
+}
+
+.year-selector button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Year input with improved styling */
+.year-input-container {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.year-input-container input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+}
+
+.year-input-container input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Month grid with proper spacing */
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 15px;
+    padding: 20px;
+    background-color: #fff;
+}
+
+.month-item {
+    padding: 12px 0;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    border: 1px solid #f0f0f0;
+}
+
+.month-item:hover {
+    background-color: #e8f4ff;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    border-color: #d9edff;
+}
+
+.month-item.selected,
+.month-item.active {
+    background: linear-gradient(135deg, #ea1d25, #2a5298);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(28, 41, 85, 0.3);
+    transform: translateY(-2px);
+    border-color: transparent;
+}
+
+/* Month picker footer with action buttons */
+.month-picker-footer {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #eaeaea;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.month-picker-footer button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.25s;
+    font-size: 0.9rem;
+}
+
+.month-picker-footer .cancel {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.month-picker-footer .cancel:hover {
+    background-color: #dee2e6;
+    transform: translateY(-1px);
+}
+
+.month-picker-footer .apply {
+    background-color: #ea1d25;
+    color: white;
+}
+
+.month-picker-footer .apply:hover {
+    background-color: #151f3d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure form groups with month picker containers have proper spacing */
+.form-group.form-col-4 div.month-picker-container {
+    margin-bottom: 0 !important;
+    height: 38px !important;
+}
+
+/* === WELCOME SECTION === */
+.welcome-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+}
+
+.welcome-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #ea1d25;
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* === BUTTONS === */
+.btn {
+    display: inline-block;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #ea1d25;
+    border-color: #ea1d25;
+}
+
+.btn-primary:hover {
+    background-color: #151f3d;
+    border-color: #151f3d;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-primary {
+    color: #ea1d25;
+    border-color: #ea1d25;
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    color: #fff;
+    background-color: #ea1d25;
+    border-color: #ea1d25;
+}
+
+.btn-light {
+    background-color: #f8f9fa;
+    border-color: #f8f9fa;
+    color: #212529;
+}
+
+.btn-light:hover {
+    background-color: #e2e6ea;
+    border-color: #dae0e5;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+/* Export/Import Buttons */
+.btn-export, .btn-import {
+    background-color: #ea1d25;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-export:hover, .btn-import:hover {
+    background-color: #151f3d;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Save */
+.btn-save {
+    background-color: #ea1d25;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-save:hover {
+    background-color: #151f3d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(28, 41, 85, 0.2);
+}
+
+.btn-save i {
+    margin-right: 8px;
+}
+
+/* === TABLE STYLES === */
+.table-container {
+    margin-top: 20px;
+}
+
+.table-modern {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: #212529;
+    border-collapse: collapse;
+}
+
+.table-modern th,
+.table-modern td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-modern thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-modern tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.table-modern tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* === STATUS BADGES === */
+.status-badge {
+    display: inline-block;
+    padding: 0.35em 0.7em;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.bg-success-soft {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+}
+
+.bg-warning-soft {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+}
+
+.bg-danger-soft {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+}
+
+/* Badge components */
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}
+
+.bg-primary {
+    background-color: #ea1d25 !important;
+}
+
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+/* === SEARCH & FILTER AREA === */
+.search-filter-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.search-box {
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.search-input {
+    display: flex;
+}
+
+.search-box .input-group {
+    height: 38px;
+}
+
+.search-box .form-control {
+    height: 38px;
+}
+
+.filter-dropdown {
+    margin-left: 10px;
+}
+
+/* === FILTER AREA === */
+#filterArea {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+/* Animasi untuk toggle filter */
+#filterArea.show {
+    display: block !important;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === SEARCH RESULTS CONTAINER === */
+.search-results-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 400px;
+    max-width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    z-index: 1000;
+    margin-top: 5px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.search-results-content {
+    padding: 10px;
+}
+
+.search-summary {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.search-item {
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: 1px solid #f0f0f0;
+}
+
+.search-item:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.search-item .item-title {
+    font-weight: 500;
+    font-size: 14px;
+    color: #212529;
+    margin-bottom: 4px;
+}
+
+.search-item .item-subtitle {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.search-items-full {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.search-description {
+    background-color: #f8f9fa;
+    border-left: 3px solid #007bff;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    color: #495057;
+}
+
+.search-description strong {
+    color: #212529;
+}
+
+.empty-search {
+    padding: 30px 20px;
+    text-align: center;
+    color: #6c757d;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.empty-search i {
+    font-size: 32px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+    display: block;
+}
+
+.empty-search p {
+    margin: 0;
+    font-size: 15px;
+}
+
+.search-term-highlight {
+    padding: 1px 4px;
+    background-color: rgba(255, 230, 0, 0.2);
+    border-radius: 2px;
+    font-weight: 500;
+}
+
+.search-loading {
+    text-align: center;
+    padding: 20px;
+}
+
+.search-loading i {
+    font-size: 24px;
+    color: #ea1d25;
+}
+
+/* === PAGINATION === */
+.pagination-container {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-item {
+    margin: 0;
+}
+
+.pagination-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    min-width: 38px;
+    padding: 0 12px;
+    background-color: white;
+    color: #495057;
+    font-weight: 500;
+    text-decoration: none;
+    border: 1px solid #e9ecef;
+    margin-left: -1px;
+    transition: all 0.2s;
+}
+
+.pagination-link:hover {
+    background-color: #f8f9fa;
+    z-index: 1;
+}
+
+.pagination-link.active {
+    background-color: #ea1d25;
+    color: white;
+    border-color: #ea1d25;
+    z-index: 2;
+}
+
+.pagination-info {
+    margin-top: 10px;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* First page and last page */
+.pagination-item:first-child .pagination-link {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.pagination-item:last-child .pagination-link {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* === TAB STYLES === */
+.tab-menu-container {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 0;
+}
+
+.tabs {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tab-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.tab-item:hover {
+    color: #ea1d25;
+}
+
+.tab-item.active {
+    border-bottom: 3px solid #ea1d25;
+    color: #fff;
+    background-color: #ea1d25;
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* === AUTOSUGGEST DROPDOWN === */
+.suggestions-container {
+    position: absolute;
+    z-index: 1060;
+    background-color: white;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.suggestions-container.show {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f7ff;
+}
+
+/* === ACTION BUTTONS === */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #495057;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 5px;
+}
+
+.edit-btn {
+    color: #2196F3;
+}
+
+.edit-btn:hover {
+    background-color: rgba(33, 150, 243, 0.1);
+    transform: translateY(-1px);
+}
+
+.delete-btn {
+    color: #DC3545;
+}
+
+.delete-btn:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    transform: translateY(-1px);
+}
+
+/* === PROFILE PIC === */
+.am-profile-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e9ecef;
+}
+
+/* === DROPDOWN FIXES === */
+.dropdown-menu {
+    margin-top: 0.5rem;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.375rem;
+    z-index: 1060; /* Increased z-index */
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: #ea1d25;
+}
+
+/* === EMPTY STATE === */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.empty-state-icon {
+    font-size: 3.5rem;
+    color: #dee2e6;
+    margin-bottom: 15px;
+    opacity: 0.7;
+}
+
+.empty-state-text {
+    color: #6c757d;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+/* === SNACKBAR NOTIFICATION === */
+#snackbar {
+    visibility: hidden;
+    min-width: 280px;
+    margin-left: -140px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1080; /* Highest z-index */
+    left: 50%;
+    bottom: 30px;
+    font-size: 16px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#snackbar i {
+    margin-right: 10px;
+}
+
+#snackbar.success {
+    background-color: #4CAF50;
+}
+
+#snackbar.error {
+    background-color: #f44336;
+}
+
+#snackbar.info {
+    background-color: #2196F3;
+}
+
+#snackbar.show {
+    visibility: visible;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 0; opacity: 0;}
+}
+
+/* === CUSTOM SCROLLABLE SELECT === */
+.select-container {
+    position: relative;
+    width: 100%;
+}
+
+.custom-scroll {
+    max-height: 200px;
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+}
+
+.custom-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Memastikan dropdown tahun tidak terpotong */
+.select-container .form-control option {
+    padding: 8px 12px;
+}
+
+/* === RESPONSIVE ADJUSTMENTS === */
+@media (max-width: 992px) {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 15px;
+    }
+
+    .header-dashboard {
+        padding: 20px;
+    }
+
+    .header-title {
+        font-size: 1.8rem;
+    }
+
+    .form-col-6, .form-col-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-filter-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-box {
+        max-width: none;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .card-title {
+        margin-bottom: 10px;
+    }
+
+    .tab-item {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+
+    .search-results-container {
+        width: 100%;
+    }
+}

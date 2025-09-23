@@ -1,0 +1,1150 @@
+:root {
+    /* Telkom Brand Colors - Refined */
+    --telkom-red: #ea1d25;
+    --telkom-red-light: #f04851;
+    --telkom-red-dark: #c41e24;
+    --telkom-red-subtle: rgba(234, 29, 37, 0.08);
+    --telkom-red-soft: rgba(234, 29, 37, 0.04);
+    --telkom-red-ultra-soft: rgba(234, 29, 37, 0.02);
+    
+    /* Enhanced Neutral Palette */
+    --white: #ffffff;
+    --gray-25: #fdfdfd;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    
+    /* Soft Backgrounds - Made Transparent */
+    --background-primary: transparent;
+    --background-card: transparent;
+    --background-card-hover: rgba(255, 255, 255, 0.5);
+    
+    /* Status Colors - Muted */
+    --success: #059669;
+    --success-light: rgba(5, 150, 105, 0.1);
+    --warning: #d97706;
+    --warning-light: rgba(217, 119, 6, 0.1);
+    --error: #dc2626;
+    --error-light: rgba(220, 38, 38, 0.1);
+    
+    /* Subtle Shadows */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 12px 24px -6px rgba(0, 0, 0, 0.08), 0 6px 12px -4px rgba(0, 0, 0, 0.05);
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+    --shadow-card-hover: 0 4px 16px -2px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
+    
+    /* Subtle Gradients */
+    --gradient-red-soft: linear-gradient(135deg, rgba(234, 29, 37, 0.9) 0%, rgba(196, 30, 36, 0.95) 100%);
+    --gradient-background: transparent;
+    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+    
+    /* Border Radius */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    
+    /* Smooth Transitions */
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --rank-gold:   #F5C542;  /* 1 */
+    --rank-silver: #9FA6B2;  /* 2 */
+    --rank-bronze: #C07A2B;  /* 3 */
+}
+
+/* taruh di stylesheet global yang dipakai semua halaman */
+.navbar,
+.navbar.bg-light { background: #fff !important; }
+
+/* CSS untuk konten utama */
+.main-content {
+    padding: 0 20px;
+    margin-left: 65px;
+    width: calc(100% - 65px);
+    background: transparent;
+    min-height: 100vh;
+}
+
+/* Header leaderboard - More Subtle */
+.header-leaderboard {
+    background: var(--white);
+    color: var(--gray-800);
+    padding: 30px;
+    border-radius: var(--radius-xl);
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 100%;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.header-leaderboard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--telkom-red), #f04851, var(--telkom-red));
+}
+
+.header-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    color: var(--gray-800);
+}
+
+.header-title i {
+    color: var(--telkom-red);
+    margin-right: 16px;
+}
+
+.header-subtitle {
+    font-size: 1rem;
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+/* Modern Date & Period Filter */
+.date-period-container {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    position: relative;
+    z-index: 100;
+}
+
+.date-filter-container {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+/* Flatpickr calendar positioning */
+.flatpickr-calendar {
+    margin-top: 5px !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-radius: var(--radius-xl) !important;
+    border: 1px solid var(--gray-200) !important;
+    background: var(--white) !important;
+    z-index: 99999 !important;
+}
+
+.flatpickr-calendar.open {
+    z-index: 99999 !important;
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--white);
+    color: var(--gray-700);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-xs);
+    transition: var(--transition);
+    width: 100%;
+    text-align: left;
+    outline: none;
+}
+
+.date-filter:hover {
+    border-color: var(--telkom-red);
+    box-shadow: 0 0 0 3px var(--telkom-red-soft);
+    transform: translateY(-1px);
+}
+
+.date-filter i {
+    margin-right: 10px;
+    color: var(--telkom-red);
+}
+
+.date-filter i.fa-chevron-down {
+    margin-left: auto;
+    margin-right: 0;
+    transition: var(--transition);
+    color: var(--gray-400);
+}
+
+/* Modern Period Tabs - Subtle */
+.period-tabs {
+    display: flex;
+    background: rgba(249, 250, 251, 0.8);
+    border-radius: var(--radius-xl);
+    padding: 4px;
+    gap: 2px;
+    border: 1px solid var(--gray-200);
+}
+
+.period-tab {
+    flex: 1;
+    padding: 12px 16px;
+    text-align: center;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: var(--transition);
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+}
+
+.period-tab.active {
+    background: var(--white) !important;
+    color: var(--telkom-red) !important;
+    box-shadow: var(--shadow-sm);
+    font-weight: 600;
+}
+
+.period-tab.active i {
+    color: var(--telkom-red) !important;
+}
+
+.period-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--gray-700);
+}
+
+.period-display {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--gray-500);
+}
+
+.period-display strong {
+    color: var(--telkom-red);
+    font-weight: 600;
+}
+
+/* Filter info section - Subtle */
+.filter-info {
+    background: var(--telkom-red-ultra-soft);
+    border: 1px solid var(--telkom-red-subtle);
+    border-radius: var(--radius-xl);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--shadow-xs);
+    position: relative;
+    z-index: 5;
+}
+
+.filter-info-icon {
+    color: var(--telkom-red);
+    font-size: 18px;
+    margin-right: 12px;
+}
+
+.filter-info-text {
+    flex-grow: 1;
+    font-size: 14px;
+    color: var(--gray-700);
+    font-weight: 500;
+}
+
+.filter-info-reset {
+    margin-left: 15px;
+}
+
+.reset-btn {
+    background: var(--white);
+    color: var(--telkom-red);
+    border: 1px solid var(--telkom-red-subtle);
+    border-radius: var(--radius-md);
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.reset-btn:hover {
+    background: var(--telkom-red-soft);
+    border-color: var(--telkom-red);
+    transform: translateY(-1px);
+}
+
+.reset-btn i {
+    margin-right: 6px;
+}
+
+/* Enhanced Search and Filter Area - MAJOR IMPROVEMENTS */
+.search-filter-container {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(260px, 1fr)) !important;
+    gap: 16px;
+    margin-bottom: 25px;
+    width: 100%;
+    background: linear-gradient(135deg, var(--white) 0%, rgba(249, 250, 251, 0.95) 100%);
+    padding: 24px;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    position: relative;
+    z-index: 50;
+}
+
+.search-filter-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--telkom-red), #f04851, var(--telkom-red));
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+.search-box {
+    display: flex;
+    align-items: stretch;
+}
+
+.search-input {
+    width: 100%;
+    display: flex;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 2px solid var(--gray-300);
+    transition: var(--transition);
+}
+
+.search-input:focus-within {
+    border-color: var(--telkom-red);
+    box-shadow: 0 0 0 3px var(--telkom-red-soft);
+}
+
+.search-input input {
+    border: none;
+    padding: 14px 18px;
+    font-size: 14px;
+    flex-grow: 1;
+    transition: var(--transition);
+    background: var(--white);
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.search-input input:focus {
+    outline: none;
+}
+
+.search-input input::placeholder {
+    color: var(--gray-500);
+}
+
+.search-input button {
+    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%);
+    color: var(--white);
+    border: none;
+    padding: 14px 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    min-width: 80px;
+}
+
+.search-input button:hover {
+    background: linear-gradient(135deg, var(--telkom-red-dark) 0%, #b01e24 100%);
+    transform: scale(1.02);
+}
+
+.search-input,
+.bootstrap-select > .dropdown-toggle{
+  height: 48px !important;
+}
+
+.filter-area {
+    display: contents !important;
+    align-items: stretch;
+    justify-content: flex-end;
+    position: relative;
+}
+
+/* Enhanced Filter Cards Layout */
+.filter-selects {
+    display: contents !important;
+    grid-template-columns: repeat(4, minmax(260px, 1fr));
+    gap: 16px;
+    width: 100%;
+    align-items: stretch;
+}
+
+.filter-group {
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: stretch;
+}
+
+/* Enhanced Filter Card Styling */
+.filter-group::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, var(--telkom-red-ultra-soft), transparent, var(--telkom-red-ultra-soft));
+    border-radius: var(--radius-lg);
+    opacity: 0;
+    transition: var(--transition);
+    z-index: -1;
+}
+
+.filter-group:hover::before {
+    opacity: 1;
+}
+
+/* Revolutionary Bootstrap Select Styling */
+.bootstrap-select {
+    position: relative !important;
+    z-index: 1050 !important;
+    width: 100% !important;
+}
+
+/* Complete Bootstrap Select Override */
+.bootstrap-select > .dropdown-toggle,
+.bootstrap-select .dropdown-toggle,
+.bootstrap-select button.btn,
+.bootstrap-select .btn {
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    
+    /* Custom modern styling */
+    height: 48px !important;
+    width: 100% !important;
+    background: linear-gradient(135deg, var(--white) 0%, rgba(249, 250, 251, 0.9) 100%) !important;
+    color: var(--gray-700) !important;
+    border: 2px solid var(--gray-300) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 12px 45px 12px 16px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    font-family: inherit !important;
+    cursor: pointer !important;
+    justify-content: flex-start !important;
+    transition: var(--transition) !important;
+    box-shadow: var(--shadow-xs) !important;
+    position: relative !important;
+    text-align: left !important;
+    line-height: 1.4 !important;
+}
+
+.bootstrap-select > .dropdown-toggle:hover,
+.bootstrap-select .dropdown-toggle:hover,
+.bootstrap-select button.btn:hover,
+.bootstrap-select .btn:hover,
+.bootstrap-select > .dropdown-toggle:focus,
+.bootstrap-select .dropdown-toggle:focus,
+.bootstrap-select button.btn:focus,
+.bootstrap-select .btn:focus {
+    border-color: var(--telkom-red) !important;
+    background: var(--white) !important;
+    box-shadow: 0 0 0 3px var(--telkom-red-soft), var(--shadow-sm) !important;
+    outline: none !important;
+    color: var(--gray-700) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Biarkan wrapper select memenuhi kolom */
+.filter-group .bootstrap-select {
+  width: 100% !important;
+  flex: 1 1 100%;
+  min-width: 260px !important;       
+}
+
+.bootstrap-select > .dropdown-toggle{
+  position:relative !important;
+  display:block !important;
+  height:48px !important;
+  width:100% !important;
+  padding:0 48px 0 16px !important;   /* ruang untuk caret */
+  border:2px solid var(--gray-300) !important;
+  border-radius:var(--radius-lg) !important;
+  background:#fff !important;
+  box-shadow:var(--shadow-xs) !important;
+  text-align:left !important;
+  line-height:1.2 !important;
+}
+
+.bootstrap-select .dropdown-toggle .filter-option{
+  position:absolute !important;
+  top:50% !important;
+  left:16px !important;
+  right:48px !important;
+  transform:translateY(-50%) !important;
+  margin:0 !important;
+  pointer-events:none;
+}
+
+.bootstrap-select .filter-option-inner,
+.bootstrap-select .filter-option-inner-inner{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  color:var(--gray-700) !important;
+}
+
+/* Placeholder State Enhancement */
+.bootstrap-select.bs-placeholder .filter-option,
+.bootstrap-select.bs-placeholder .filter-option-inner,
+.bootstrap-select.bs-placeholder .filter-option-inner-inner {
+    color: var(--gray-500) !important;
+    font-style: italic !important;
+}
+
+.bootstrap-select > .dropdown-toggle {
+  /* jangan pakai all: unset di sini */
+  display: block !important;
+  position: relative !important;
+  height: 48px !important;
+  width: 100% !important;
+
+  background: linear-gradient(135deg, var(--white) 0%, rgba(249, 250, 251, 0.9) 100%) !important;
+  color: var(--gray-700) !important;
+  border: 2px solid var(--gray-300) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-xs) !important;
+
+  /* biarkan vertical centering dikerjakan oleh .filter-option (absolute) */
+  padding: 0 48px 0 16px !important;  /* ruang kanan untuk caret */
+  line-height: 1.2 !important;
+  text-align: left !important;
+}
+
+.bootstrap-select .dropdown-toggle::after{
+  content:"" !important;
+  position:absolute !important;
+  right:16px !important; top:50% !important;
+  transform:translateY(-50%) !important;
+  border-left:.35em solid transparent !important;
+  border-right:.35em solid transparent !important;
+  border-top:.35em solid var(--gray-600) !important;
+  pointer-events:none !important;
+}
+
+/* Hide default caret */
+.bootstrap-select .caret {
+    display: none !important;
+}
+
+/* Enhanced Dropdown Menu */
+.bootstrap-select .dropdown-menu {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    z-index: 9999 !important;
+    display: none !important;
+    float: left !important;
+    min-width: 100% !important;
+    padding: 8px 0 !important;
+    margin: 4px 0 0 !important;
+    list-style: none !important;
+    font-size: 14px !important;
+    text-align: left !important;
+    background: linear-gradient(135deg, var(--white) 0%, rgba(249, 250, 251, 0.95) 100%) !important;
+    border: 1px solid var(--gray-200) !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: var(--shadow-xl) !important;
+    background-clip: padding-box !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.bootstrap-select .dropdown-menu.show,
+.bootstrap-select.show .dropdown-menu,
+.bootstrap-select.open .dropdown-menu {
+    display: block !important;
+    z-index: 9999 !important;
+}
+
+/* Enhanced Dropdown Items */
+.bootstrap-select .dropdown-menu > li {
+    position: relative !important;
+}
+
+.bootstrap-select .dropdown-menu > li > a {
+    display: block !important;
+    padding: 10px 18px !important;
+    clear: both !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    color: var(--gray-700) !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: var(--radius-md) !important;
+    margin: 2px 8px !important;
+    transition: var(--transition) !important;
+}
+
+.bootstrap-select .dropdown-menu > li > a:hover,
+.bootstrap-select .dropdown-menu > li > a:focus {
+    color: var(--telkom-red) !important;
+    background: linear-gradient(135deg, var(--telkom-red-soft) 0%, var(--telkom-red-ultra-soft) 100%) !important;
+    text-decoration: none !important;
+    outline: none !important;
+    transform: translateX(3px) !important;
+}
+
+.bootstrap-select .dropdown-menu > .active > a,
+.bootstrap-select .dropdown-menu > .selected > a {
+    color: var(--white) !important;
+    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%) !important;
+    outline: none !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.bootstrap-select .dropdown-menu > .active > a:hover,
+.bootstrap-select .dropdown-menu > .active > a:focus,
+.bootstrap-select .dropdown-menu > .selected > a:hover,
+.bootstrap-select .dropdown-menu > .selected > a:focus {
+    color: var(--white) !important;
+    background: linear-gradient(135deg, var(--telkom-red-dark) 0%, #b01e24 100%) !important;
+    transform: translateX(3px) !important;
+}
+
+/* Enhanced Search Box */
+.bootstrap-select .bs-searchbox .form-control {
+    margin: 8px 0 4px 0 !important; 
+    width: 100% !important;
+    float: none !important;
+    border: 2px solid var(--gray-300) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--white) !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition: var(--transition) !important;
+    box-shadow: var(--shadow-xs) !important;
+}
+
+.bootstrap-select .bs-searchbox .form-control:focus {
+    border-color: var(--telkom-red) !important;
+    box-shadow: 0 0 0 3px var(--telkom-red-soft) !important;
+    outline: none !important;
+}
+
+/* Enhanced AM Cards - Clean & Professional */
+.am-card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 16px;
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+    transition: var(--transition-slow);
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+
+.am-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--telkom-red), #f04851);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.am-card:hover {
+    background: var(--white);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--telkom-red-subtle);
+    z-index: 2;
+}
+
+.am-card:hover::before {
+    opacity: 1;
+}
+
+.am-card-body {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.am-rank {
+    font-size: 1.6rem;
+    font-weight: 700;
+    min-width: 50px;
+    text-align: center;
+    padding: 8px;
+    border-radius: var(--radius-lg);
+    background: var(--gray-100);
+    transition: var(--transition);
+    color: var(--gray-600);
+}
+
+.am-card:hover .am-rank {
+    background: var(--telkom-red-soft);
+    color: var(--telkom-red);
+}
+
+.am-profile-pic{
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gray-200);
+}
+
+.am-card:hover .am-profile-pic {
+    border-color: var(--telkom-red-subtle);
+    transform: scale(1.02);
+}
+
+.am-info {
+    flex: 1;
+}
+
+.am-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--gray-800);
+    transition: var(--transition);
+}
+
+.am-card:hover .am-name {
+    color: var(--telkom-red);
+}
+
+.am-detail {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.am-detail i {
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+.am-category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+}
+
+.am-category-badge.enterprise {
+    background: var(--telkom-red-soft);
+    color: var(--telkom-red);
+    border: 1px solid var(--telkom-red-subtle);
+}
+
+.am-category-badge.government {
+    background: var(--warning-light);
+    color: var(--warning);
+    border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.am-category-badge.multi {
+    background: var(--success-light);
+    color: var(--success);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.am-stats {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
+    min-width: 400px;
+}
+
+.am-card:hover .am-name,
+.am-card:hover .revenue-value {
+  color: var(--gray-800) !important;   
+}
+
+.am-avatar{
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  display: inline-block;
+}
+
+.rank-crown{
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  font-size: 30px;
+  line-height: 1;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  z-index: 1;
+}
+
+.rank-crown i{
+  -webkit-text-stroke: 1px rgba(0,0,0,.08);
+  text-shadow: 0 1px 2px rgba(0,0,0,.15);
+}
+
+.rank-1 i{ color: var(--rank-gold); }
+.rank-2 i{ color: var(--rank-silver); }
+.rank-3 i{ color: var(--rank-bronze); }
+
+/* angka di kotak rank kiri */
+.am-rank.text-gold   { color: var(--rank-gold)   !important; }
+.am-rank.text-silver { color: var(--rank-silver) !important; }
+.am-rank.text-bronze { color: var(--rank-bronze) !important; }
+
+/* kalau sebelumnya saat hover berubah merah, kunci agar tetap */
+.am-card:hover .am-rank.text-gold   { color: var(--rank-gold)   !important; }
+.am-card:hover .am-rank.text-silver { color: var(--rank-silver) !important; }
+.am-card:hover .am-rank.text-bronze { color: var(--rank-bronze) !important; }
+
+/* Pastikan tidak ada angka kecil atau latar lain */
+.rank-crown::after,
+.rank-number{ display:none !important; }
+
+/* (opsional) munculkan angka kecil di sudut mahkota */
+.rank-crown::after{
+  content: attr(data-rank);
+  position:absolute;
+  right:-6px;
+  bottom:-6px;
+  width:18px; height:18px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  font-size:11px; font-weight:700;
+  color: var(--gray-700);
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* Angka rank biasa (untuk selain top 3) */
+.rank-number{
+  position:absolute;
+  right:-6px; bottom:-6px;
+  width:20px; height:20px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  font-size:12px; font-weight:700;
+  color: var(--gray-700);
+  display:flex; align-items:center; justify-content:center;
+}
+
+.revenue-stat, .achievement-stat {
+    text-align: right;
+    padding: 12px 16px;
+    border-radius: var(--radius-lg);
+    background: rgba(249, 250, 251, 0.7);
+    transition: var(--transition);
+    border: 1px solid var(--gray-200);
+}
+
+.am-card:hover .revenue-stat,
+.am-card:hover .achievement-stat {
+    background: var(--white);
+    border-color: var(--telkom-red-subtle);
+}
+
+.revenue-label, .achievement-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.revenue-value, .achievement-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+}
+
+.am-card:hover .revenue-value {
+    color: var(--telkom-red);
+}
+
+.achievement-icon {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.achievement-icon i {
+    font-size: 14px;
+}
+
+/* Warna ranking - Subtle */
+.text-gold {
+    color: #d4af37 !important;
+    background: linear-gradient(135deg, #fef9e7, #fef3c7) !important;
+}
+.text-silver {
+    color: #8c9297 !important;
+    background: linear-gradient(135deg, var(--gray-100), var(--gray-200)) !important;
+}
+.text-bronze {
+    color: #b8860b !important;
+    background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+}
+
+/* Filter Options Inner */
+.filter-option-inner {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.filter-option-inner-inner {
+    color: var(--gray-700) !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    position: relative;
+    z-index: 1;
+}
+
+.empty-state i {
+    font-size: 3.5rem;
+    color: var(--gray-300);
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: var(--gray-600);
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+}
+
+/* Pagination Styles */
+.per-page-selection {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    margin-top: 10px;
+    margin-left: 950px;
+    margin-right: 35px;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--gray-600);
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
+.per-page-select {
+    padding: 6px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    background-color: var(--white);
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 60px;
+    max-width: 70px;
+    text-align: center;
+    transition: var(--transition);
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.per-page-select:focus {
+    outline: none;
+    border-color: var(--telkom-red);
+    box-shadow: 0 0 0 3px var(--telkom-red-soft);
+}
+
+.per-page-select:hover {
+    border-color: var(--telkom-red);
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pagination-info {
+    text-align: center;
+    font-size: 14px;
+    color: var(--gray-500);
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+/* Force Proper Rendering - Additional Fixes */
+body {
+    position: relative;
+}
+
+.bootstrap-select .dropdown-menu {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .filter-selects {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+}
+
+@media (max-width: 1200px) {
+    
+    .filter-selects {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .filter-group {
+        min-width: 160px;
+    }
+}
+
+@media (max-width: 992px) {
+    .search-filter-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .filter-selects {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 0 15px;
+    }
+
+    .search-filter-container {
+        padding: 20px;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .search-box {
+        flex: none;
+        width: 100%;
+    }
+
+    .filter-area {
+        width: 100%;
+    }
+
+    .filter-selects {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .am-card-body {
+        flex-direction: column;
+        text-align: center;
+        gap: 16px;
+    }
+
+    .am-stats {
+        width: 100%;
+        justify-content: space-around;
+        min-width: 0;
+    }
+
+    .period-tabs {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .period-tab {
+        padding: 12px;
+    }
+
+    .per-page-selection {
+        margin-left: 0;
+        margin-right: 0;
+        justify-content: center;
+    }
+}

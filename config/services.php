@@ -40,4 +40,15 @@ return [
         'key' => env('VITE_SUPABASE_ANON_KEY'),
     ],
 
+    'recaptcha' => [
+        'v3' => [
+            'site' => env('RECAPTCHA_V3_SITE_KEY'),
+            'secret' => env('RECAPTCHA_V3_SECRET_KEY'),
+            'threshold' => (float) env('RECAPTCHA_V3_THRESHOLD', 0.5),
+        ],
+        // 'v2' => [
+        //     'site' => env('RECAPTCHA_V2_SITEKEY'),
+        //     'secret' => env('RECAPTCHA_V2_SECRET'),
+        // ],
+    ],
 ];

@@ -29,6 +29,10 @@
         50%, 100% { opacity: 0; }
       }
     </style>
+
+    <!-- Google ReCAPTCHA Script -->
+    <!-- <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script> -->
+    <!-- <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.v3.site') }}"></script> -->
 </head>
 <body class="font-sans text-gray-900 antialiased">
   <!-- Fullscreen blurred background image -->
@@ -47,10 +51,10 @@
           To access the dashboard please log in with your credentials.
         </p>
 
-        {{-- <a href="{{url('register')}}"
+        <!-- <a href="{{url('register')}}"
            class="inline-block mt-8 w-32 text-center text-white rounded-md bg-red-600/90 hover:bg-red-600 px-4 py-2 font-medium shadow-lg">
           SIGN UP
-        </a> --}}
+        </a> -->
       </div>
     </section>
 
@@ -64,7 +68,7 @@
 
         <h2 class="text-center text-xl font-bold mb-5">Dashboard Monitoring RLEGS</h2>
 
-        {{-- success flash --}}
+        <!-- success flash -->
         @if (session('success'))
           <div class="mb-4 bg-green-50 border-l-4 border-green-500 p-4 rounded shadow">
             <div class="flex">
@@ -82,7 +86,7 @@
 
         <x-auth-session-status class="mb-4" :status="session('status')" />
 
-        <form method="POST" action="{{ route('login') }}">
+        <form method="POST" action="{{ route('login') }}" data-recaptcha-action="login">
           @csrf
 
           <!-- Email -->
@@ -132,6 +136,14 @@
             </a>
           </div>
 
+          <!-- ReCAPTCHA -->
+      <!--
+          <div class="flex items-center justify-center mt-6 g-recaptcha" data-sitekey="{{ config('services.recaptcha.v3.site') }}" data-action="login">
+          </div>
+      -->
+
+          <x-recaptcha-v3 />
+
           <!-- Footer: sign up + submit -->
           <div class="flex items-center justify-between mt-6">
             <div>
@@ -144,13 +156,72 @@
               Masuk
             </button>
           </div>
+          <!-- <input type="hidden" name="recaptcha_token" id="recaptcha_token"></input> -->
         </form>
       </div>
     </section>
   </div>
 
+  <!-- CAPTCHA Failure Modal -->
+  <div id="captchaModal" class="fixed inset-0 z-50 hidden">
+    <!-- backdrop -->
+    <div class="absolute inset-0 bg-black/50" aria-hidden="true"></div>
+
+    <!-- modal panel -->
+    <div class="relative mx-auto mt-24 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <h2 class="text-lg font-semibold text-gray-900">ReCAPTCHA Verification Failed</h2>
+      <p class="mt-2 text-sm text-gray-600" id="captchaModalMessage">
+        Captcha verification failed. Please try again.
+      </p>
+
+      <div class="mt-6 flex justify-end gap-2">
+        <button type="button"
+                class="rounded-md border px-4 py-2 text-sm"
+                onclick="document.getElementById('captchaModal').classList.add('hidden')">
+          Close
+        </button>
+        <button type="button"
+                class="rounded-md bg-red-600 px-4 py-2 text-sm text-white"
+                onclick="location.reload()">
+          Try again
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
+      // captcha
+      // if (typeof grecaptcha === 'undefined') {
+      //     console.error('reCAPTCHA script failed to load');
+      //     return;
+      // }
+
+      // function getToken(action) {
+      //     return grecaptcha.execute('{{ config('services.recaptcha.v3.site') }}', { action });
+      // }
+
+      // grecaptcha.ready(function() {
+      //   grecaptcha.execute('{{ config('services.recaptcha.v3.site') }}', {action: 'login'})
+      //     .then(function(token) {
+      //       const input = document.getElementById('recaptcha_token');
+      //       if (input) input.value = token;
+      //     });
+      // });
+
+      // cacptcha check
+      const forms = document.querySelectorAll('form[data-recaptcha-action]');
+      forms.forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+              if (typeof grecaptcha === 'undefined') {
+                  e.preventDefault();
+                  document.getElementById('captchaModalMessage').textContent =
+                      'Captcha script failed to load. Please disable blockers and try again.';
+                  document.getElementById('captchaModal').classList.remove('hidden');
+              }
+          });
+      });
+
       // Typing animation for Welcome Back!
       const text = 'Welcome Back!';
       const typingText = document.getElementById('typing-text');
@@ -200,5 +271,21 @@
       });
     });
   </script>
+
+  @if ($errors->has('recaptcha_token'))
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('captchaModal');
+    // Optional: show server error text inside the modal
+    const msg = @json($errors->first('recaptcha_token'));
+    const msgEl = document.getElementById('captchaModalMessage');
+    if (msgEl && typeof msg === 'string' && msg.trim().length) {
+      msgEl.textContent = msg;
+    }
+    modal.classList.remove('hidden');
+  });
+  </script>
+  @endif
+
 </body>
 </html>

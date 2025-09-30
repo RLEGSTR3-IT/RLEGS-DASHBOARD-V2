@@ -4,16 +4,14 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Overview\DashboardController;
-// TODO: Import AM and Witel Dashboard Controllers when ready
-// use App\Http\Controllers\Overview\AmDashboardController;
-// use App\Http\Controllers\Overview\WitelDashboardController;
+use App\Http\Controllers\Overview\AmDashboardController;
+use App\Http\Controllers\Overview\WitelDashboardController;
 
 // Laravel Core
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 
 // Models
@@ -56,7 +54,7 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
 // ===== AUTHENTICATED ROUTES =====
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // ===== MAIN DASHBOARD (CONDITIONAL RENDERING) =====
+    // ===== SINGLE DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ===== DASHBOARD API ROUTES =====
@@ -65,14 +63,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('tab-data', [DashboardController::class, 'getTabData'])->name('tab-data');
         Route::get('export', [DashboardController::class, 'export'])->name('export');
 
-        // Additional endpoints (add as needed)
+        // Additional endpoints
         Route::get('chart-data', [DashboardController::class, 'getChartData'])->name('chart-data');
         Route::get('revenue-table', [DashboardController::class, 'getRevenueTable'])->name('revenue-table');
         Route::get('summary', [DashboardController::class, 'getSummary'])->name('summary');
         Route::get('insights', [DashboardController::class, 'getPerformanceInsights'])->name('insights');
+
+        // AM specific endpoints
+        Route::get('am-performance', [DashboardController::class, 'getAmPerformance'])->name('am-performance');
+        Route::get('am-customers', [DashboardController::class, 'getAmCustomers'])->name('am-customers');
+        Route::get('am-export', [DashboardController::class, 'exportAm'])->name('am-export');
     });
 
-    // ===== API ROUTES =====
+    // ===== GENERAL API ROUTES =====
     Route::prefix('api')->name('api.')->group(function () {
 
         Route::get('divisi', function() {
@@ -172,7 +175,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'name' => $user->name,
                 'role' => $user->role,
                 'permissions' => [
-                    'can_export' => in_array($user->role, ['admin', 'witel_support']),
+                    'can_export' => in_array($user->role, ['admin', 'witel_support', 'account_manager']),
                     'can_view_all_data' => $user->role === 'admin',
                     'can_view_witel_data' => in_array($user->role, ['admin', 'witel_support']),
                     'can_view_am_data' => in_array($user->role, ['admin', 'account_manager'])
@@ -198,7 +201,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('segment.show')
         ->where('id', '[0-9]+');
 
-    // ===== LEGACY EXPORT =====
+    // ===== LEGACY EXPORT COMPATIBILITY =====
     Route::get('export', function() {
         return redirect()->route('dashboard.export', request()->all());
     })->name('export');
@@ -209,20 +212,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/', [ProfileController::class, 'update'])->name('update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
-
-    // ===== FUTURE ROLE-BASED ROUTES =====
-
-    // TODO: Uncomment when AmDashboardController is ready
-    // Route::prefix('am-dashboard')->name('am.')->middleware('role:account_manager')->group(function () {
-    //     Route::get('/', [AmDashboardController::class, 'index'])->name('dashboard');
-    //     Route::get('export', [AmDashboardController::class, 'export'])->name('export');
-    // });
-
-    // TODO: Uncomment when WitelDashboardController is ready
-    // Route::prefix('witel-dashboard')->name('witel.')->middleware('role:witel_support')->group(function () {
-    //     Route::get('/', [WitelDashboardController::class, 'index'])->name('dashboard');
-    //     Route::get('export', [WitelDashboardController::class, 'export'])->name('export');
-    // });
 });
 
 // ===== UTILITY ROUTES =====
@@ -250,11 +239,56 @@ Route::get('health-check', function () {
     }
 })->name('health-check');
 
+// ===== DEBUG ROUTES (DEVELOPMENT ONLY) =====
+if (app()->environment('local')) {
+    Route::get('debug/routes', function() {
+        $routes = collect(Route::getRoutes())->map(function($route) {
+            return [
+                'method' => implode('|', $route->methods()),
+                'uri' => $route->uri(),
+                'name' => $route->getName(),
+                'action' => $route->getActionName()
+            ];
+        });
+
+        return response()->json([
+            'total_routes' => $routes->count(),
+            'routes' => $routes->sortBy('uri')->values()
+        ]);
+    })->name('debug.routes');
+
+    Route::get('debug/user', function() {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role
+            ],
+            'dashboard_route' => route('dashboard'),
+            'role_specific_view' => $user->role
+        ]);
+    })->name('debug.user');
+}
+
 // ===== FALLBACK =====
 Route::fallback(function () {
     if (request()->wantsJson()) {
-        return response()->json(['error' => 'Route not found'], 404);
+        return response()->json([
+            'error' => 'Route not found',
+            'available_routes' => [
+                'dashboard' => route('dashboard'),
+                'health_check' => route('health-check')
+            ]
+        ], 404);
     }
+
     return view('errors.404');
 });
 

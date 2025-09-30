@@ -2,364 +2,143 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Illuminate\Support\Collection;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
-/**
- * Unified Admin Dashboard Export
- * Menggabungkan semua export data dashboard admin dalam 1 file dengan multiple sheets
- */
 class AdminDashboardExport implements WithMultipleSheets
 {
-    protected $data;
+    protected $exportData;
     protected $dateRange;
     protected $filters;
 
-    public function __construct($data, $dateRange, $filters)
+    public function __construct($exportData, $dateRange, $filters)
     {
-        $this->data = $data;
+        $this->exportData = $exportData;
         $this->dateRange = $dateRange;
         $this->filters = $filters;
     }
 
-    /**
-     * Create all sheets untuk comprehensive export
-     */
     public function sheets(): array
     {
         $sheets = [];
 
-        // Sheet 1: Summary Overview
-        $sheets[] = new SummaryOverviewSheet($this->data['summary'], $this->dateRange, $this->filters);
+        // Sheet 1: Summary/Overview
+        $sheets[] = new SummarySheet($this->exportData['summary'], $this->dateRange, $this->filters);
 
-        // Sheet 2: Revenue Table
-        $sheets[] = new RevenueTableSheet($this->data['revenue_table'], $this->dateRange, $this->filters);
+        // Sheet 2: Account Managers Performance
+        if (isset($this->exportData['performance']['account_managers']) &&
+            $this->exportData['performance']['account_managers']->isNotEmpty()) {
+            $sheets[] = new AccountManagerSheet($this->exportData['performance']['account_managers']);
+        }
 
-        // Sheet 3-6: Performance Data (sesuai 4 tabs dashboard)
-        $sheets[] = new AccountManagerPerformanceSheet($this->data['performance']['account_managers'], $this->dateRange, $this->filters);
-        $sheets[] = new WitelPerformanceSheet($this->data['performance']['witels'], $this->dateRange, $this->filters);
-        $sheets[] = new SegmentPerformanceSheet($this->data['performance']['segments'], $this->dateRange, $this->filters);
-        $sheets[] = new CorporateCustomerPerformanceSheet($this->data['performance']['corporate_customers'], $this->dateRange, $this->filters);
+        // Sheet 3: Witels Performance
+        if (isset($this->exportData['performance']['witels']) &&
+            $this->exportData['performance']['witels']->isNotEmpty()) {
+            $sheets[] = new WitelSheet($this->exportData['performance']['witels']);
+        }
+
+        // Sheet 4: Segments Performance
+        if (isset($this->exportData['performance']['segments']) &&
+            $this->exportData['performance']['segments']->isNotEmpty()) {
+            $sheets[] = new SegmentSheet($this->exportData['performance']['segments']);
+        }
+
+        // Sheet 5: Corporate Customers Performance
+        if (isset($this->exportData['performance']['corporate_customers']) &&
+            $this->exportData['performance']['corporate_customers']->isNotEmpty()) {
+            $sheets[] = new CorporateCustomerSheet($this->exportData['performance']['corporate_customers']);
+        }
+
+        // Sheet 6: Revenue Table (Detail)
+        if (isset($this->exportData['revenue_table']) &&
+            $this->exportData['revenue_table']->isNotEmpty()) {
+            $sheets[] = new RevenueTableSheet($this->exportData['revenue_table']);
+        }
 
         return $sheets;
     }
 }
 
-/**
- * Sheet 1: Summary Overview
- */
-class SummaryOverviewSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+class SummarySheet implements FromCollection, WithTitle, WithHeadings, WithStyles, WithColumnWidths, WithEvents
 {
-    protected $data;
+    protected $summaryData;
     protected $dateRange;
     protected $filters;
 
-    public function __construct($data, $dateRange, $filters)
+    public function __construct($summaryData, $dateRange, $filters)
     {
-        $this->data = $data;
+        $this->summaryData = $summaryData;
         $this->dateRange = $dateRange;
         $this->filters = $filters;
     }
 
     public function collection()
     {
-        // Create summary rows
-        return collect([
-            (object) [
-                'metric' => 'Total Revenue',
-                'value' => $this->data['total_revenue'] ?? 0,
-                'format' => 'currency'
-            ],
-            (object) [
-                'metric' => 'Total Target',
-                'value' => $this->data['total_target'] ?? 0,
-                'format' => 'currency'
-            ],
-            (object) [
-                'metric' => 'Achievement Rate',
-                'value' => $this->data['achievement_rate'] ?? 0,
-                'format' => 'percentage'
-            ],
-            (object) [
-                'metric' => 'Period Type',
-                'value' => $this->filters['period_type'],
-                'format' => 'text'
-            ],
-            (object) [
-                'metric' => 'Period Range',
-                'value' => $this->dateRange['start']->format('d M Y') . ' - ' . $this->dateRange['end']->format('d M Y'),
-                'format' => 'text'
-            ],
-            (object) [
-                'metric' => 'Export Date',
-                'value' => Carbon::now()->format('d M Y H:i:s'),
-                'format' => 'text'
-            ]
-        ]);
+        $data = [];
+
+        // Export Info
+        $data[] = ['RLEGS Dashboard Export Summary', '', '', ''];
+        $data[] = ['Generated:', now()->format('d/m/Y H:i:s'), '', ''];
+        $data[] = ['Period:', $this->formatPeriod(), '', ''];
+        $data[] = ['Filter Divisi:', $this->getFilterDivisi(), '', ''];
+        $data[] = ['Filter Revenue Source:', $this->filters['revenue_source'] ?? 'All', '', ''];
+        $data[] = ['Filter Tipe Revenue:', $this->filters['tipe_revenue'] ?? 'All', '', ''];
+        $data[] = ['', '', '', ''];
+
+        // Summary Statistics
+        $data[] = ['RINGKASAN PERFORMA', '', '', ''];
+        $data[] = ['Metric', 'Value', 'Target', 'Achievement (%)'];
+
+        $totalRevenue = $this->summaryData['total_revenue'] ?? 0;
+        $totalTarget = $this->summaryData['total_target'] ?? 0;
+        $achievementRate = $totalTarget > 0 ? ($totalRevenue / $totalTarget) * 100 : 0;
+
+        $data[] = [
+            'Total Revenue',
+            $this->formatCurrency($totalRevenue),
+            $this->formatCurrency($totalTarget),
+            round($achievementRate, 2) . '%'
+        ];
+
+        $data[] = ['', '', '', ''];
+        $data[] = ['CATATAN:', '', '', ''];
+        $data[] = ['- Data berdasarkan periode ' . $this->formatPeriod(), '', '', ''];
+        $data[] = ['- Achievement rate dihitung dari Real Revenue vs Target Revenue', '', '', ''];
+        $data[] = ['- Mata uang dalam Rupiah (Rp)', '', '', ''];
+
+        return collect($data);
+    }
+
+    public function title(): string
+    {
+        return 'Summary';
     }
 
     public function headings(): array
     {
-        return [
-            'Metric',
-            'Value',
-            'Status/Category'
-        ];
-    }
-
-    public function map($row): array
-    {
-        $status = '';
-
-        switch ($row->metric) {
-            case 'Achievement Rate':
-                $achievement = floatval($row->value);
-                if ($achievement >= 100) {
-                    $status = 'Excellent (≥100%)';
-                } elseif ($achievement >= 80) {
-                    $status = 'Good (80-99%)';
-                } else {
-                    $status = 'Needs Improvement (<80%)';
-                }
-                $value = $achievement . '%';
-                break;
-
-            case 'Total Revenue':
-            case 'Total Target':
-                $value = 'Rp ' . number_format($row->value, 0, ',', '.');
-                $status = $row->value >= 1000000000 ? 'High Value' : ($row->value >= 100000000 ? 'Medium Value' : 'Low Value');
-                break;
-
-            default:
-                $value = $row->value;
-                $status = '-';
-                break;
-        }
-
-        return [
-            $row->metric,
-            $value,
-            $status
-        ];
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        return [
-            1 => [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '1976D2']
-                ]
-            ],
-            'A:C' => [
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-            ]
-        ];
+        return []; // Headers are included in the data
     }
 
     public function columnWidths(): array
     {
         return [
             'A' => 25,
-            'B' => 30,
-            'C' => 25
-        ];
-    }
-
-    public function title(): string
-    {
-        return 'Summary Overview';
-    }
-}
-
-/**
- * Sheet 2: Revenue Table
- */
-class RevenueTableSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
-{
-    protected $data;
-    protected $dateRange;
-    protected $filters;
-
-    public function __construct($data, $dateRange, $filters)
-    {
-        $this->data = collect($data);
-        $this->dateRange = $dateRange;
-        $this->filters = $filters;
-    }
-
-    public function collection()
-    {
-        return $this->data;
-    }
-
-    public function headings(): array
-    {
-        return [
-            'Bulan',
-            'Target Revenue (Rp)',
-            'Realisasi Revenue (Rp)',
-            'Achievement (%)',
-            'Status Achievement',
-            'Gap (Rp)',
-            'Month Name'
-        ];
-    }
-
-    public function map($row): array
-    {
-        $achievement = $row['achievement'] ?? 0;
-        $target = $row['target'] ?? 0;
-        $realisasi = $row['realisasi'] ?? 0;
-        $gap = $realisasi - $target;
-
-        $status = '';
-        if ($achievement >= 100) {
-            $status = 'Excellent (≥100%)';
-        } elseif ($achievement >= 80) {
-            $status = 'Good (80-99%)';
-        } else {
-            $status = 'Needs Improvement (<80%)';
-        }
-
-        return [
-            $row['bulan'] ?? '',
-            $target,
-            $realisasi,
-            $achievement,
-            $status,
-            $gap,
-            date('F Y', mktime(0, 0, 0, $row['bulan'] ?? 1, 1, date('Y')))
-        ];
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        return [
-            1 => [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '2E7D32']
-                ]
-            ],
-            'B:C' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'D' => [
-                'numberFormat' => ['formatCode' => '0.00"%"']
-            ],
-            'F' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'A:G' => [
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-            ]
-        ];
-    }
-
-    public function columnWidths(): array
-    {
-        return [
-            'A' => 10,
             'B' => 20,
             'C' => 20,
             'D' => 15,
-            'E' => 25,
-            'F' => 20,
-            'G' => 15
-        ];
-    }
-
-    public function title(): string
-    {
-        return 'Revenue Table';
-    }
-}
-
-/**
- * Sheet 3: Account Manager Performance
- */
-class AccountManagerPerformanceSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
-{
-    protected $data;
-    protected $dateRange;
-    protected $filters;
-
-    public function __construct($data, $dateRange, $filters)
-    {
-        $this->data = collect($data);
-        $this->dateRange = $dateRange;
-        $this->filters = $filters;
-    }
-
-    public function collection()
-    {
-        return $this->data;
-    }
-
-    public function headings(): array
-    {
-        return [
-            'Ranking',
-            'Nama Account Manager',
-            'NIK',
-            'Witel',
-            'Divisi',
-            'Total Revenue (Rp)',
-            'Total Target (Rp)',
-            'Achievement (%)',
-            'Status',
-            'Category',
-            'Gap (Rp)'
-        ];
-    }
-
-    public function map($row): array
-    {
-        static $ranking = 0;
-        $ranking++;
-
-        $achievementRate = $row->achievement_rate ?? 0;
-        $totalRevenue = $row->total_revenue ?? 0;
-        $totalTarget = $row->total_target ?? 0;
-        $gap = $totalRevenue - $totalTarget;
-
-        $status = $this->getAchievementStatus($achievementRate);
-        $category = $this->getRevenueCategory($totalRevenue);
-
-        // Get divisi names
-        $divisiNames = 'Unknown';
-        if (isset($row->divisis) && $row->divisis->count() > 0) {
-            $divisiNames = $row->divisis->pluck('nama')->implode(', ');
-        } elseif (isset($row->divisi_list)) {
-            $divisiNames = $row->divisi_list;
-        }
-
-        return [
-            $ranking,
-            $row->nama ?? '',
-            $row->nik ?? '',
-            isset($row->witel) ? $row->witel->nama : 'Unknown',
-            $divisiNames,
-            $totalRevenue,
-            $totalTarget,
-            round($achievementRate, 2),
-            $status,
-            $category,
-            $gap
         ];
     }
 
@@ -367,33 +146,96 @@ class AccountManagerPerformanceSheet implements FromCollection, WithHeadings, Wi
     {
         return [
             1 => [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '1976D2']
-                ]
+                'font' => ['bold' => true, 'size' => 14],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '4472C4']],
+                'font' => ['color' => ['rgb' => 'FFFFFF']],
             ],
-            'F:G' => [
-                'numberFormat' => ['formatCode' => '#,##0']
+            9 => [
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'D9E1F2']],
             ],
-            'H' => [
-                'numberFormat' => ['formatCode' => '0.00"%"']
+            10 => [
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'F2F2F2']],
             ],
-            'K' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'A:K' => [
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-            ]
         ];
     }
 
-    public function columnWidths(): array
+    public function registerEvents(): array
     {
         return [
-            'A' => 10, 'B' => 25, 'C' => 15, 'D' => 20, 'E' => 30,
-            'F' => 20, 'G' => 20, 'H' => 15, 'I' => 20, 'J' => 15, 'K' => 20
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+
+                // Merge cells for title
+                $sheet->mergeCells('A1:D1');
+
+                // Set alignment
+                $sheet->getStyle('A1:D1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('B2:B6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+                // Add borders to summary table
+                $sheet->getStyle('A9:D11')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+            },
         ];
+    }
+
+    private function formatPeriod()
+    {
+        if (!$this->dateRange || !isset($this->dateRange['start']) || !isset($this->dateRange['end'])) {
+            return 'N/A';
+        }
+
+        $start = Carbon::parse($this->dateRange['start']);
+        $end = Carbon::parse($this->dateRange['end']);
+
+        return $start->format('d/m/Y') . ' - ' . $end->format('d/m/Y');
+    }
+
+    private function getFilterDivisi()
+    {
+        $divisiId = $this->filters['divisi_id'] ?? null;
+        if (!$divisiId || $divisiId === 'all') {
+            return 'Semua Divisi';
+        }
+        return "Divisi ID: {$divisiId}";
+    }
+
+    private function formatCurrency($amount)
+    {
+        return 'Rp ' . number_format($amount, 0, ',', '.');
+    }
+}
+
+class AccountManagerSheet implements FromCollection, WithTitle, WithHeadings, WithStyles, ShouldAutoSize
+{
+    protected $data;
+
+    public function __construct(Collection $data)
+    {
+        $this->data = $data;
+    }
+
+    public function collection()
+    {
+        return $this->data->map(function ($am, $index) {
+            return [
+                'rank' => $index + 1,
+                'nama' => $am->nama ?? 'N/A',
+                'witel' => $am->witel->nama ?? 'N/A',
+                'divisi_list' => $am->divisi_list ?? 'N/A',
+                'total_revenue' => $am->total_revenue ?? 0,
+                'total_target' => $am->total_target ?? 0,
+                'achievement_rate' => round($am->achievement_rate ?? 0, 2),
+                'status' => $this->getStatusText($am->achievement_rate ?? 0),
+            ];
+        });
     }
 
     public function title(): string
@@ -401,83 +243,81 @@ class AccountManagerPerformanceSheet implements FromCollection, WithHeadings, Wi
         return 'Account Managers';
     }
 
-    private function getAchievementStatus($achievement)
+    public function headings(): array
     {
-        if ($achievement >= 100) return 'Excellent';
-        if ($achievement >= 80) return 'Good';
-        return 'Needs Improvement';
+        return [
+            'Rank',
+            'Nama AM',
+            'Witel',
+            'Divisi',
+            'Total Revenue (Rp)',
+            'Total Target (Rp)',
+            'Achievement (%)',
+            'Status Performance'
+        ];
     }
 
-    private function getRevenueCategory($revenue)
+    public function styles(Worksheet $sheet)
     {
-        if ($revenue >= 1000000000) return 'High Value (≥1B)';
-        if ($revenue >= 500000000) return 'Medium High (500M-1B)';
-        if ($revenue >= 100000000) return 'Medium (100M-500M)';
-        if ($revenue > 0) return 'Low (<100M)';
-        return 'No Revenue';
+        return [
+            1 => [
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'D9E1F2']],
+            ],
+        ];
+    }
+
+    private function getStatusText($achievementRate)
+    {
+        if ($achievementRate >= 100) {
+            return 'Excellent (≥100%)';
+        } elseif ($achievementRate >= 80) {
+            return 'Good (80-99%)';
+        } else {
+            return 'Poor (<80%)';
+        }
     }
 }
 
-/**
- * Sheet 4: Witel Performance
- */
-class WitelPerformanceSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+class WitelSheet implements FromCollection, WithTitle, WithHeadings, WithStyles, ShouldAutoSize
 {
     protected $data;
-    protected $dateRange;
-    protected $filters;
 
-    public function __construct($data, $dateRange, $filters)
+    public function __construct(Collection $data)
     {
-        $this->data = collect($data);
-        $this->dateRange = $dateRange;
-        $this->filters = $filters;
+        $this->data = $data;
     }
 
     public function collection()
     {
-        return $this->data;
+        return $this->data->map(function ($witel, $index) {
+            return [
+                'rank' => $index + 1,
+                'nama' => $witel->nama ?? 'N/A',
+                'total_customers' => $witel->total_customers ?? 0,
+                'total_revenue' => $witel->total_revenue ?? 0,
+                'total_target' => $witel->total_target ?? 0,
+                'achievement_rate' => round($witel->achievement_rate ?? 0, 2),
+                'status' => $this->getStatusText($witel->achievement_rate ?? 0),
+            ];
+        });
+    }
+
+    public function title(): string
+    {
+        return 'Witels Performance';
     }
 
     public function headings(): array
     {
         return [
-            'Ranking',
+            'Rank',
             'Nama Witel',
-            'Kode Witel',
             'Total Customers',
-            'Total Account Managers',
             'Total Revenue (Rp)',
             'Total Target (Rp)',
             'Achievement (%)',
-            'Status',
-            'Gap (Rp)'
-        ];
-    }
-
-    public function map($row): array
-    {
-        static $ranking = 0;
-        $ranking++;
-
-        $achievementRate = $row->achievement_rate ?? 0;
-        $totalRevenue = $row->total_revenue ?? 0;
-        $totalTarget = $row->total_target ?? 0;
-        $gap = $totalRevenue - $totalTarget;
-
-        $status = $this->getAchievementStatus($achievementRate);
-
-        return [
-            $ranking,
-            $row->nama ?? '',
-            $row->kode ?? '',
-            $row->total_customers ?? 0,
-            $row->total_account_managers ?? 0,
-            $totalRevenue,
-            $totalTarget,
-            round($achievementRate, 2),
-            $status,
-            $gap
+            'Status Performance'
         ];
     }
 
@@ -485,108 +325,65 @@ class WitelPerformanceSheet implements FromCollection, WithHeadings, WithMapping
     {
         return [
             1 => [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '388E3C']
-                ]
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'D9E1F2']],
             ],
-            'F:G' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'H' => [
-                'numberFormat' => ['formatCode' => '0.00"%"']
-            ],
-            'J' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'A:J' => [
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-            ]
         ];
     }
 
-    public function columnWidths(): array
+    private function getStatusText($achievementRate)
     {
-        return [
-            'A' => 10, 'B' => 25, 'C' => 15, 'D' => 15, 'E' => 20,
-            'F' => 20, 'G' => 20, 'H' => 15, 'I' => 20, 'J' => 20
-        ];
-    }
-
-    public function title(): string
-    {
-        return 'Witels';
-    }
-
-    private function getAchievementStatus($achievement)
-    {
-        if ($achievement >= 100) return 'Excellent';
-        if ($achievement >= 80) return 'Good';
-        return 'Needs Improvement';
+        if ($achievementRate >= 100) {
+            return 'Excellent (≥100%)';
+        } elseif ($achievementRate >= 80) {
+            return 'Good (80-99%)';
+        } else {
+            return 'Poor (<80%)';
+        }
     }
 }
 
-/**
- * Sheet 5: Segment Performance
- */
-class SegmentPerformanceSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+class SegmentSheet implements FromCollection, WithTitle, WithHeadings, WithStyles, ShouldAutoSize
 {
     protected $data;
-    protected $dateRange;
-    protected $filters;
 
-    public function __construct($data, $dateRange, $filters)
+    public function __construct(Collection $data)
     {
-        $this->data = collect($data);
-        $this->dateRange = $dateRange;
-        $this->filters = $filters;
+        $this->data = $data;
     }
 
     public function collection()
     {
-        return $this->data;
+        return $this->data->map(function ($segment, $index) {
+            return [
+                'rank' => $index + 1,
+                'segment_name' => $segment->lsegment_ho ?? $segment->nama ?? 'N/A',
+                'divisi' => $segment->divisi_nama ?? ($segment->divisi->nama ?? 'N/A'),
+                'total_customers' => $segment->total_customers ?? 0,
+                'total_revenue' => $segment->total_revenue ?? 0,
+                'total_target' => $segment->total_target ?? 0,
+                'achievement_rate' => round($segment->achievement_rate ?? 0, 2),
+                'status' => $this->getStatusText($segment->achievement_rate ?? 0),
+            ];
+        });
+    }
+
+    public function title(): string
+    {
+        return 'Segments Performance';
     }
 
     public function headings(): array
     {
         return [
-            'Ranking',
-            'Nama Segment',
-            'Kode Segment',
+            'Rank',
+            'Segment Name',
             'Divisi',
             'Total Customers',
             'Total Revenue (Rp)',
             'Total Target (Rp)',
             'Achievement (%)',
-            'Status',
-            'Gap (Rp)'
-        ];
-    }
-
-    public function map($row): array
-    {
-        static $ranking = 0;
-        $ranking++;
-
-        $achievementRate = $row->achievement_rate ?? 0;
-        $totalRevenue = $row->total_revenue ?? 0;
-        $totalTarget = $row->total_target ?? 0;
-        $gap = $totalRevenue - $totalTarget;
-
-        $status = $this->getAchievementStatus($achievementRate);
-
-        return [
-            $ranking,
-            $row->lsegment_ho ?? '',
-            $row->ssegment_ho ?? '',
-            isset($row->divisi) ? $row->divisi->nama : 'Unknown',
-            $row->total_customers ?? 0,
-            $totalRevenue,
-            $totalTarget,
-            round($achievementRate, 2),
-            $status,
-            $gap
+            'Status Performance'
         ];
     }
 
@@ -594,147 +391,48 @@ class SegmentPerformanceSheet implements FromCollection, WithHeadings, WithMappi
     {
         return [
             1 => [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'F57C00']
-                ]
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'D9E1F2']],
             ],
-            'F:G' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'H' => [
-                'numberFormat' => ['formatCode' => '0.00"%"']
-            ],
-            'J' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'A:J' => [
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-            ]
         ];
     }
 
-    public function columnWidths(): array
+    private function getStatusText($achievementRate)
     {
-        return [
-            'A' => 10, 'B' => 30, 'C' => 15, 'D' => 20, 'E' => 15,
-            'F' => 20, 'G' => 20, 'H' => 15, 'I' => 20, 'J' => 20
-        ];
-    }
-
-    public function title(): string
-    {
-        return 'Segments';
-    }
-
-    private function getAchievementStatus($achievement)
-    {
-        if ($achievement >= 100) return 'Excellent';
-        if ($achievement >= 80) return 'Good';
-        return 'Needs Improvement';
+        if ($achievementRate >= 100) {
+            return 'Excellent (≥100%)';
+        } elseif ($achievementRate >= 80) {
+            return 'Good (80-99%)';
+        } else {
+            return 'Poor (<80%)';
+        }
     }
 }
 
-/**
- * Sheet 6: Corporate Customer Performance
- */
-class CorporateCustomerPerformanceSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+class CorporateCustomerSheet implements FromCollection, WithTitle, WithHeadings, WithStyles, ShouldAutoSize
 {
     protected $data;
-    protected $dateRange;
-    protected $filters;
 
-    public function __construct($data, $dateRange, $filters)
+    public function __construct(Collection $data)
     {
-        $this->data = collect($data);
-        $this->dateRange = $dateRange;
-        $this->filters = $filters;
+        $this->data = $data;
     }
 
     public function collection()
     {
-        return $this->data;
-    }
-
-    public function headings(): array
-    {
-        return [
-            'Ranking',
-            'Nama Corporate Customer',
-            'NIPNAS',
-            'Divisi',
-            'Segment',
-            'Account Manager',
-            'Total Revenue (Rp)',
-            'Total Target (Rp)',
-            'Achievement (%)',
-            'Status',
-            'Category',
-            'Gap (Rp)'
-        ];
-    }
-
-    public function map($row): array
-    {
-        static $ranking = 0;
-        $ranking++;
-
-        $achievementRate = $row->achievement_rate ?? 0;
-        $totalRevenue = $row->total_revenue ?? 0;
-        $totalTarget = $row->total_target ?? 0;
-        $gap = $totalRevenue - $totalTarget;
-
-        $status = $this->getAchievementStatus($achievementRate);
-        $category = $this->getRevenueCategory($totalRevenue);
-
-        return [
-            $ranking,
-            $row->nama ?? '',
-            $row->nipnas ?? '',
-            $row->divisi_nama ?? 'Unknown',
-            $row->segment_nama ?? 'Unknown',
-            $row->account_manager_nama ?? 'Unknown',
-            $totalRevenue,
-            $totalTarget,
-            round($achievementRate, 2),
-            $status,
-            $category,
-            $gap
-        ];
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        return [
-            1 => [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '7B1FA2']
-                ]
-            ],
-            'G:H' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'I' => [
-                'numberFormat' => ['formatCode' => '0.00"%"']
-            ],
-            'L' => [
-                'numberFormat' => ['formatCode' => '#,##0']
-            ],
-            'A:L' => [
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-            ]
-        ];
-    }
-
-    public function columnWidths(): array
-    {
-        return [
-            'A' => 10, 'B' => 30, 'C' => 15, 'D' => 20, 'E' => 25, 'F' => 25,
-            'G' => 20, 'H' => 20, 'I' => 15, 'J' => 20, 'K' => 20, 'L' => 20
-        ];
+        return $this->data->map(function ($customer, $index) {
+            return [
+                'rank' => $index + 1,
+                'nama' => $customer->nama ?? 'N/A',
+                'nipnas' => $customer->nipnas ?? 'N/A',
+                'divisi' => $customer->divisi_nama ?? 'N/A',
+                'segment' => $customer->segment_nama ?? 'N/A',
+                'total_revenue' => $customer->total_revenue ?? 0,
+                'total_target' => $customer->total_target ?? 0,
+                'achievement_rate' => round($customer->achievement_rate ?? 0, 2),
+                'status' => $this->getStatusText($customer->achievement_rate ?? 0),
+            ];
+        });
     }
 
     public function title(): string
@@ -742,19 +440,146 @@ class CorporateCustomerPerformanceSheet implements FromCollection, WithHeadings,
         return 'Corporate Customers';
     }
 
-    private function getAchievementStatus($achievement)
+    public function headings(): array
     {
-        if ($achievement >= 100) return 'Excellent';
-        if ($achievement >= 80) return 'Good';
-        return 'Needs Improvement';
+        return [
+            'Rank',
+            'Nama Customer',
+            'NIPNAS',
+            'Divisi',
+            'Segment',
+            'Total Revenue (Rp)',
+            'Total Target (Rp)',
+            'Achievement (%)',
+            'Status Performance'
+        ];
     }
 
-    private function getRevenueCategory($revenue)
+    public function styles(Worksheet $sheet)
     {
-        if ($revenue >= 1000000000) return 'High Value (≥1B)';
-        if ($revenue >= 500000000) return 'Medium High (500M-1B)';
-        if ($revenue >= 100000000) return 'Medium (100M-500M)';
-        if ($revenue > 0) return 'Low (<100M)';
-        return 'No Revenue';
+        return [
+            1 => [
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'D9E1F2']],
+            ],
+        ];
+    }
+
+    private function getStatusText($achievementRate)
+    {
+        if ($achievementRate >= 100) {
+            return 'Excellent (≥100%)';
+        } elseif ($achievementRate >= 80) {
+            return 'Good (80-99%)';
+        } else {
+            return 'Poor (<80%)';
+        }
+    }
+}
+
+class RevenueTableSheet implements FromCollection, WithTitle, WithHeadings, WithStyles, ShouldAutoSize
+{
+    protected $data;
+
+    public function __construct(Collection $data)
+    {
+        $this->data = $data;
+    }
+
+    public function collection()
+    {
+        return $this->data->map(function ($row) {
+            return [
+                'bulan_tahun' => $this->formatMonthYear($row['bulan'] ?? null, $row['tahun'] ?? null),
+                'divisi' => $row['divisi_nama'] ?? 'N/A',
+                'witel_ho' => $row['witel_ho_nama'] ?? 'N/A',
+                'witel_bill' => $row['witel_bill_nama'] ?? 'N/A',
+                'segment' => $row['segment_nama'] ?? 'N/A',
+                'customer' => $row['customer_nama'] ?? 'N/A',
+                'nipnas' => $row['nipnas'] ?? 'N/A',
+                'revenue_source' => $row['revenue_source'] ?? 'N/A',
+                'tipe_revenue' => $row['tipe_revenue'] ?? 'N/A',
+                'real_revenue' => $row['real_revenue'] ?? 0,
+                'target_revenue' => $row['target_revenue'] ?? 0,
+                'achievement' => $this->calculateAchievement($row['real_revenue'] ?? 0, $row['target_revenue'] ?? 0),
+            ];
+        });
+    }
+
+    public function title(): string
+    {
+        return 'Revenue Detail';
+    }
+
+    public function headings(): array
+    {
+        return [
+            'Bulan-Tahun',
+            'Divisi',
+            'Witel HO',
+            'Witel BILL',
+            'Segment',
+            'Customer',
+            'NIPNAS',
+            'Revenue Source',
+            'Tipe Revenue',
+            'Real Revenue (Rp)',
+            'Target Revenue (Rp)',
+            'Achievement (%)'
+        ];
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            1 => [
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'D9E1F2']],
+            ],
+        ];
+    }
+
+    /**
+     * FIXED: Format month and year properly - handles both integer and string inputs
+     */
+    private function formatMonthYear($bulan, $tahun)
+    {
+        // Handle null values
+        if (!$bulan || !$tahun) {
+            return 'N/A';
+        }
+
+        // Convert to integers if they're strings
+        $bulanInt = is_numeric($bulan) ? (int)$bulan : null;
+        $tahunInt = is_numeric($tahun) ? (int)$tahun : null;
+
+        // Validate month range
+        if ($bulanInt < 1 || $bulanInt > 12 || !$tahunInt) {
+            return 'N/A';
+        }
+
+        try {
+            // Use Carbon for safe date formatting
+            $date = Carbon::create($tahunInt, $bulanInt, 1);
+            return $date->format('F Y'); // e.g., "January 2024"
+        } catch (\Exception $e) {
+            // Fallback to manual formatting if Carbon fails
+            $months = [
+                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+            ];
+
+            return ($months[$bulanInt] ?? 'Unknown') . ' ' . $tahunInt;
+        }
+    }
+
+    private function calculateAchievement($realRevenue, $targetRevenue)
+    {
+        if (!$targetRevenue || $targetRevenue == 0) {
+            return 0;
+        }
+
+        return round(($realRevenue / $targetRevenue) * 100, 2);
     }
 }

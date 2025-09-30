@@ -65,7 +65,7 @@
 
         <h2 class="text-center text-xl font-bold mb-5">Dashboard Monitoring RLEGS</h2>
 
-        <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data" data-recaptcha-action="register">
           @csrf
 
           <!-- Role Selection Dropdown -->
@@ -98,7 +98,6 @@
               @enderror
             </div>
 
-            <!-- Account Manager NIK  TODO: Compare function to compare NIK of selected AM with NIK input (done in backend) -->
             <div class="mb-4">
               <label for="nik" class="block font-medium text-sm text-gray-700 mb-1">NIK Account Manager</label>
               <div class="relative">
@@ -231,6 +230,9 @@
             @enderror
           </div>
 
+          <!-- TODO: add a captcha before submission -->
+          <x-recaptcha-v3 />
+
           <!-- Footer: login link + submit -->
           <div class="flex items-center justify-between mt-6">
             <div>
@@ -245,11 +247,50 @@
           </div>
         </form>
       </div>
+
+      <!-- CAPTCHA Failure Modal -->
+      <div id="captchaModal" class="fixed inset-0 z-50 hidden">
+        <!-- backdrop -->
+        <div class="absolute inset-0 bg-black/50" aria-hidden="true"></div>
+
+        <!-- modal panel -->
+        <div class="relative mx-auto mt-24 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <h2 class="text-lg font-semibold text-gray-900">ReCAPTCHA Verification Failed</h2>
+          <p class="mt-2 text-sm text-gray-600" id="captchaModalMessage">
+            Captcha verification failed. Please try again.
+          </p>
+
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button"
+                    class="rounded-md border px-4 py-2 text-sm"
+                    onclick="document.getElementById('captchaModal').classList.add('hidden')">
+              Close
+            </button>
+            <button type="button"
+                    class="rounded-md bg-red-600 px-4 py-2 text-sm text-white"
+                    onclick="location.reload()">
+              Try again
+            </button>
+          </div>
+        </div>
     </section>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      // cacptcha check
+      const forms = document.querySelectorAll('form[data-recaptcha-action]');
+      forms.forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+              if (typeof grecaptcha === 'undefined') {
+                  e.preventDefault();
+                  document.getElementById('captchaModalMessage').textContent =
+                      'Captcha script failed to load. Please disable blockers and try again.';
+                  document.getElementById('captchaModal').classList.remove('hidden');
+              }
+          });
+      });
+
       // typing animation
       const text = 'Welcome Back!';
       const typingText = document.getElementById('typing-text');
@@ -408,5 +449,21 @@
       roleSelect.dispatchEvent(new Event('change'));
     });
   </script>
+
+  @if ($errors->has('recaptcha_token'))
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('captchaModal');
+    // Optional: show server error text inside the modal
+    const msg = @json($errors->first('recaptcha_token'));
+    const msgEl = document.getElementById('captchaModalMessage');
+    if (msgEl && typeof msg === 'string' && msg.trim().length) {
+      msgEl.textContent = msg;
+    }
+    modal.classList.remove('hidden');
+  });
+  </script>
+  @endif
+
 </body>
 </html>

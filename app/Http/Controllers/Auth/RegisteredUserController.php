@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Rules\RecaptchaV3;
 use Exception;
 
 use App\Http\Requests\Auth\LoginRequest;
@@ -76,7 +77,8 @@ class RegisteredUserController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
                 'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
-                'role' => ['required', 'string', 'in:admin,account_manager,witel']
+                'role' => ['required', 'string', 'in:admin,account_manager,witel'],
+                'recaptcha_token'  => ['required', new RecaptchaV3('register', config('services.recaptcha.v3.threshold'))],
             ];
 
             // Validasi khusus berdasarkan role
@@ -125,7 +127,8 @@ class RegisteredUserController extends Controller
             // Validasi khusus untuk kode admin
             if ($request->role === 'admin') {
                 $validator->after(function ($validator) use ($request) {
-                    if ($request->admin_code !== '123456') {
+                    $hash = config('auth.admin_code_hash');
+                    if (!Hash::check($request->admin_code, $hash)) {
                         $validator->errors()->add('admin_code', 'Kode admin tidak valid.');
                     }
                 });
@@ -214,16 +217,16 @@ class RegisteredUserController extends Controller
 
             $user = User::create($userData);
 
+            // automatically verify admin email upon creation
+            if ($request->role === 'admin') {
+                $user->markEmailAsVerified();
+            }
+
             Log::info('User created successfully', [
                 'user_id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email
             ]);
-
-            // TODO: Submit userData as Form format(?) and then authenticate using LoginRequest->authenticate()(?)
-            // NOTE: Experimental feature
-            //$loginForm = new LoginRequest(['POST'], [$userData['email'], $userData['password']]);
-            //$loginForm->authenticate();
 
             event(new Registered($user));
 
@@ -257,6 +260,8 @@ class RegisteredUserController extends Controller
             $accountManagers = AccountManager::where('nama', 'LIKE', "%{$search}%")
                 ->limit(10)
                 ->get(['id', 'nama']);
+
+            // TODO: Fetch users table to see if account manager id has a user record, if so append a disclaimer saying this AM already has an account
 
             return response()->json($accountManagers);
         } catch (Exception $e) {

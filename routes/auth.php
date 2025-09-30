@@ -22,6 +22,7 @@ Route::middleware('guest')->group(function () {
         ->name('search.account-managers');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
+        ->middleware('throttle:8,1')
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
@@ -61,4 +62,3 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });
-

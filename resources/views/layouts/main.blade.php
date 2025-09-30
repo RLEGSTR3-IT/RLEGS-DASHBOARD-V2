@@ -38,12 +38,12 @@
             </div>
             <ul class="sidebar-nav">
                 <li class="sidebar-item">
-                    <a href="" class="sidebar-link">
+                    <a href="{{ route('dashboard') }}" class="sidebar-link">
                         <i class="lni lni-dashboard-square-1"></i><span>Overview Data</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="" class="sidebar-link">
+                    <a href="{{ route('revenue.index') }}" class="sidebar-link">
                         <i class="lni lni-file-pencil"></i><span>Data Revenue</span>
                     </a>
                 </li>
@@ -53,7 +53,7 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="" class="sidebar-link">
+                    <a href="{{ route('leaderboard') }}" class="sidebar-link">
                         <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
                     </a>
                 </li>
@@ -625,5 +625,6 @@
     </script>
 
     @yield('scripts')
+    @stack('scripts')
 </body>
 </html>

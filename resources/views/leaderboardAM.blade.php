@@ -105,7 +105,6 @@
     </div>
     @endif
 
-
     <!-- Search & Filter Area -->
     <div class="search-filter-container">
         <div class="search-box">

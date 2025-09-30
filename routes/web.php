@@ -293,3 +293,11 @@ Route::fallback(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// ===== SIDEBAR ROUTES =====
+Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
+Route::view('/revenue', 'revenueData')->name('revenue.index');
+Route::view('/treg3', 'treg3.index')->name('dashboard.treg3');
+Route::view('/witel-perform', 'performansi.witel')->name('witel.perform');
+Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
+Route::view('/profile', 'profile.edit')->name('profile.edit');

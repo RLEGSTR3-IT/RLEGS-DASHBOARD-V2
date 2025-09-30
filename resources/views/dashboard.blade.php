@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Admin Dashboard RLEGS V2')
+@section('title', 'Dashboard RLEGS')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/overview.css') }}">

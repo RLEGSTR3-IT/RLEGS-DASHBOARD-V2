@@ -6,28 +6,36 @@
     --telkom-red-subtle: rgba(234, 29, 37, 0.08);
     --telkom-red-soft: rgba(234, 29, 37, 0.04);
 
-    /* Division Brand Colors */
-    --dgs-primary: #bf8f00;
+    /* ===== Division Brand Colors (FOLLOW PALETTE) ===== */
+    /* Base colors from palette */
+    --dgs: #bf8f00;
+    --dps: #0070c0;
+    --dss: #203764;
+    --des: #0d5adb;
+
+    /* Use palette bases for primaries + derived helpers */
+    --dgs-primary: var(--dgs);
     --dgs-subtle: rgba(191, 143, 0, 0.12);
-    --dgs-soft: rgba(191, 143, 0, 0.06);
+    --dgs-soft:   rgba(191, 143, 0, 0.06);
 
-    --dps-primary: #0070c0;
+    --dps-primary: var(--dps);
+    /* keep helper tints close to the brand hue */
     --dps-light: #3d8dd6;
-    --dps-dark: #005a9e;
+    --dps-dark:  #005a9e;
     --dps-subtle: rgba(0, 112, 192, 0.12);
-    --dps-soft: rgba(0, 112, 192, 0.06);
+    --dps-soft:   rgba(0, 112, 192, 0.06);
 
-    --dss-primary: #203764;
+    --dss-primary: var(--dss);
     --dss-light: #3d507a;
-    --dss-dark: #182949;
+    --dss-dark:  #182949;
     --dss-subtle: rgba(32, 55, 100, 0.12);
-    --dss-soft: rgba(32, 55, 100, 0.06);
+    --dss-soft:   rgba(32, 55, 100, 0.06);
 
-    --des-primary: #0d5adb;
+    --des-primary: var(--des);
     --des-light: #3d7aed;
-    --des-dark: #0a4bb8;
+    --des-dark:  #0a4bb8;
     --des-subtle: rgba(13, 90, 219, 0.12);
-    --des-soft: rgba(13, 90, 219, 0.06);
+    --des-soft:   rgba(13, 90, 219, 0.06);
 
     /* Corporate Colors */
     --dark-azure: #08355f;
@@ -113,6 +121,7 @@
     --space-16: 4rem;
     --space-20: 5rem;
 }
+
 
 /* ===== BASE STYLES ===== */
 * {
@@ -269,65 +278,121 @@ body {
     margin-bottom: var(--space-6);
 }
 
-/* ===== COMPACT SEARCH BAR ===== */
-.searchbar {
-    position: relative;
-    display: flex;
-    align-items: center;
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    padding: 4px 6px;
-    gap: 4px;
-    transition: var(--transition);
-    max-width: 350px;
-    margin: 0;
-    box-shadow: var(--shadow-xs);
-    min-height: 42px;
+/* ===== COMPACT SEARCH BAR (refined, smaller height) ===== */
+.searchbar{
+  /* kontrol tinggi dari sini */
+  --sb-h: 36px;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 360px;
+
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 4px;                 /* ringkas */
+  box-shadow: var(--shadow-xs);
+  transition: var(--transition);
+  margin: 0;
+  overflow: hidden;             /* satukan ring fokus */
 }
 
-.searchbar:focus-within {
-    border-color: var(--telkom-red);
-    box-shadow: 0 0 0 3px var(--telkom-red-soft), var(--shadow-sm);
-    background: var(--white);
-    transform: translateY(-1px);
+.searchbar:hover{
+  border-color: var(--gray-300);
+  box-shadow: var(--shadow-sm);
 }
 
-.search-input {
-    border: none;
-    outline: none;
-    background: transparent;
-    flex: 1;
-    padding: 8px 12px;
-    font-size: 0.875rem;
-    color: var(--gray-800);
-    font-weight: 500;
+.searchbar:focus-within{
+  border-color: var(--telkom-red);
+  box-shadow: 0 0 0 3px var(--telkom-red-soft), var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
-.search-input::placeholder {
-    color: var(--gray-500);
-    font-size: 0.875rem;
+/* input */
+.search-input{
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  outline: 0 !important;
+  background: transparent;
+
+  height: var(--sb-h);
+  line-height: var(--sb-h);
+  padding: 0 10px;
+
+  flex: 1 1 auto;
+  min-width: 0;
+
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--gray-800);
 }
 
-.search-btn {
-    border: none;
-    background: var(--gradient-red);
-    color: var(--white);
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.875rem;
-    box-shadow: var(--shadow-xs);
+/* hilangkan ikon default di WebKit */
+.search-input::-webkit-search-decoration,
+.search-input::-webkit-search-cancel-button{
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-.search-btn:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-sm);
+/* placeholder */
+.search-input::placeholder{
+  color: var(--gray-500);
+  font-size: .9rem;
+  font-weight: 400;
+}
+
+/* tombol */
+.search-btn{
+  position: relative;
+  border: 0;
+  outline: 0;
+  cursor: pointer;
+
+  width: calc(var(--sb-h) - 2px);   /* proporsional */
+  height: calc(var(--sb-h) - 2px);
+  border-radius: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--gradient-red);
+  color: #fff;
+  font-size: .9rem;
+  box-shadow: var(--shadow-xs);
+  transition: var(--transition);
+}
+
+/* divider tipis di kiri tombol */
+.search-btn::before{
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--gray-200);
+}
+
+.search-btn:hover{
+  transform: scale(1.03);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-btn:focus-visible{
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.9),
+    0 0 0 3px var(--telkom-red-soft),
+    var(--shadow-sm);
+}
+
+/* ukuran kecil */
+@media (max-width: 640px){
+  .searchbar{ --sb-h: 34px; max-width: 100%; padding: 3px; }
+  .search-input{ font-size: .875rem; }
 }
 
 /* Trigger: biar terasa “elevated” dan interaktif */
@@ -670,6 +735,404 @@ body {
     margin-top: var(--space-2);
     line-height: 1.5;
 }
+
+/* =======================================================
+   Segment Dropdown with Tabs (DPS / DSS / DGS)
+   Scope: .seg-select*
+   ======================================================= */
+
+/* Vars khusus komponen (fallback kalau token global tak ada) */
+.seg-select{
+  --seg-radius: var(--radius-2xl, 20px);
+  --seg-radius-md: var(--radius-lg, 12px);
+  --seg-radius-sm: var(--radius-md, 8px);
+  --seg-border: 1px solid var(--gray-200, #e5e7eb);
+  --seg-shadow: var(--shadow-dropdown, 0 20px 25px -5px rgba(0,0,0,.15), 0 10px 10px -5px rgba(0,0,0,.04));
+  --seg-shadow-xs: var(--shadow-xs, 0 1px 2px rgba(0,0,0,.06));
+  --seg-shadow-sm: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06));
+  --seg-bg: var(--white, #fff);
+  --seg-bg-soft: var(--gray-50, #f9fafb);
+  --seg-bg-muted: var(--gray-100, #f3f4f6);
+  --seg-fg: var(--gray-800, #1f2937);
+  --seg-fg-muted: var(--gray-600, #4b5563);
+  --seg-fg-dim: var(--gray-500, #6b7280);
+  --seg-accent: var(--telkom-red, #ea1d25);
+  --seg-accent-soft: var(--telkom-red-soft, rgba(234,29,37,.08));
+}
+
+/* Wrapper & trigger button (tampil seperti select) */
+.seg-select { position: relative; }
+
+.seg-select__btn{
+  width: 100%;
+  min-height: 42px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--seg-radius-md);
+  background: var(--seg-bg);
+  border: var(--seg-border);
+  box-shadow: var(--seg-shadow-xs);
+  color: var(--seg-fg);
+  font-weight: 500; font-size: .95rem;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.seg-select.has-value .seg-select__btn{ font-weight: 600; }
+.seg-select__btn #segBtnLabel{ font-weight: inherit; }
+
+.seg-select__btn:hover{ border-color: var(--gray-300, #d1d5db); box-shadow: var(--seg-shadow-sm); }
+.seg-select__btn:focus-visible{
+  outline: none;
+  border-color: var(--seg-accent);
+  box-shadow: 0 0 0 3px var(--seg-accent-soft), var(--seg-shadow-sm);
+  transform: translateY(-1px);
+}
+.seg-select__caret{ margin-left: 8px; font-size: 14px; color: var(--seg-fg-dim); }
+
+/* Dropdown panel */
+.seg-menu{
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--seg-bg);
+  border: var(--seg-border);
+  border-radius: var(--seg-radius);
+  box-shadow: var(--seg-shadow);
+  padding: 10px;
+  z-index: 40;
+  display: none;
+  overflow: hidden;
+}
+.seg-select.open .seg-menu{ display: block; }
+
+/* Tabs (header) */
+.seg-tabs{
+  display: flex; gap: 6px;
+  background: var(--seg-bg-muted);
+  border: var(--seg-border);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 10px;
+}
+.seg-tab{
+  flex: 1 1 0;
+  border: 0;
+  background: transparent;
+  color: var(--seg-fg-muted);
+  font-weight: 800;
+  font-size: .85rem;
+  padding: 8px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.seg-tab:hover{ background: var(--seg-bg); color: var(--seg-fg); }
+.seg-tab.active{
+  background: var(--seg-bg);
+  color: var(--seg-accent);
+  box-shadow: var(--seg-shadow-xs);
+  transform: translateY(-1px);
+}
+
+/* Panels container & scrollbar merah */
+.seg-panels{
+  border-radius: var(--seg-radius-md);
+  background: var(--seg-bg);
+  border: 1px solid var(--gray-100, #f3f4f6);
+  padding: 8px;
+  max-height: 280px;
+  overflow: auto;
+  scrollbar-color: var(--seg-accent) var(--seg-bg-muted);    /* Firefox */
+}
+.seg-panels::-webkit-scrollbar{ width: 10px; height: 10px; }
+.seg-panels::-webkit-scrollbar-thumb{
+  background: var(--seg-accent);
+  border-radius: 8px;
+  border: 2px solid var(--seg-bg-muted);
+}
+.seg-panels::-webkit-scrollbar-thumb:hover{ background: #c41e24; }
+.seg-panels::-webkit-scrollbar-track{ background: var(--seg-bg-muted); border-radius: 8px; }
+
+.seg-panel{ display: none; }
+.seg-panel.active{ display: block; }
+
+/* Option item (default 600) */
+.seg-option{
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--gray-200, #e5e7eb);
+  background: var(--seg-bg);
+  color: var(--seg-fg);
+  font-weight: 600;
+  font-size: .95rem;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin: 6px 4px;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, color .12s ease, transform .12s ease, box-shadow .12s ease;
+}
+.seg-option:hover{
+  background: var(--seg-bg-soft);
+  border-color: var(--gray-300, #d1d5db);
+  transform: translateY(-1px);
+  box-shadow: var(--seg-shadow-xs);
+}
+.seg-option[aria-selected="true"]{
+  background: var(--seg-accent-soft);
+  color: var(--seg-accent);
+  border-color: var(--seg-accent);
+}
+
+/* Opsi “Semua Segment” — tampil regular (tidak bold) */
+.seg-option.all{
+  background: var(--seg-bg-muted);
+  border: 2px dashed var(--seg-accent);
+  color: var(--seg-accent);
+  border-radius: 12px;
+
+  /* Kunci supaya BUKAN bold */
+  font-weight: 400 !important;
+  font-variation-settings: "wght" 400; /* efektif pada Inter & variable fonts */
+  font-synthesis-weight: none;
+}
+.seg-option.all:hover{
+  background: var(--seg-bg-muted);
+  border-color: var(--seg-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--seg-shadow-xs);
+}
+/* Saat terpilih pun tetap regular */
+.seg-option.all[aria-selected="true"]{
+  background: var(--seg-bg-muted);
+  color: var(--seg-accent);
+  border: 2px dashed var(--seg-accent);
+  font-weight: 400 !important;
+  font-variation-settings: "wght" 400;
+  font-synthesis-weight: none;
+}
+
+/* Focus helpers */
+.seg-option:focus-visible,
+.seg-tab:focus-visible{
+  outline: 2px solid var(--seg-accent);
+  outline-offset: 2px;
+}
+
+/* Responsif kecil */
+@media (max-width: 640px){
+  .seg-menu{ max-width: 96vw; }
+  .seg-option{ font-size: .9rem; }
+}
+
+#filter-segment.seg-native-hidden{
+  position: absolute !important; inset: 0 auto auto 0 !important;
+  width: 1px !important; height: 1px !important;
+  opacity: 0 !important; pointer-events: none !important;
+}
+
+
+/* =========================================================
+   Custom Dropdown — Witel & Divisi (container putih + shadow)
+   Target: filter-group 1 (Witel) & 2 (Divisi)
+   ========================================================= */
+
+/* 1) Sembunyikan select asli, tapi tetap bisa submit */
+.filters .filter-group:nth-of-type(1) .form-select,
+.filters .filter-group:nth-of-type(2) .form-select{
+  position: absolute !important;
+  inset: 0 auto auto 0 !important;
+  width: 1px !important; height: 1px !important;
+  opacity: 0 !important; pointer-events: none !important;
+}
+
+/* 2) Wrapper komponen custom */
+.cselect{ position: relative; }
+.cselect__btn{
+  width: 100%;
+  min-height: 44px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-xs);
+  font-size: .95rem; font-weight: 600; color: var(--gray-800);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease, color .15s ease;
+}
+.cselect__btn:hover{ border-color: var(--gray-300); box-shadow: var(--shadow-sm); }
+.cselect__btn:focus-visible{
+  outline: none; border-color: var(--telkom-red);
+  box-shadow: 0 0 0 3px var(--telkom-red-soft), var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.cselect__caret{
+  flex: none;
+  width: 18px; height: 18px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath d='M6 8l4 4 4-4' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/100%;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath d='M6 8l4 4 4-4' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/100%;
+  background: var(--gray-500);
+}
+.cselect.is-open .cselect__caret{ background: var(--telkom-red-dark); transform: rotate(180deg); }
+
+/* 3) Panel menu (container putih + shadow) */
+.cselect__menu{
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 16px;
+  box-shadow: var(--shadow-dropdown);
+  padding: 10px;
+  z-index: 60;
+  display: none;
+}
+.cselect.is-open .cselect__menu{ display: block; }
+
+/* 4) Daftar opsi */
+.cselect__list{
+  max-height: 280px; overflow: auto;
+  padding: 6px; margin: 0;
+}
+.cselect__option{
+  list-style: none;
+  display:flex; align-items:center;
+  padding: 10px 12px;
+  margin: 6px 4px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--gray-800); font-weight: 600; font-size: .95rem;
+  cursor: pointer; user-select:none;
+  transition: background .12s ease, border-color .12s ease, transform .12s ease, box-shadow .12s ease, color .12s ease;
+}
+.cselect__option:hover{
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
+}
+.cselect__option[aria-selected="true"]{
+  background: var(--telkom-red-subtle);
+  border-color: var(--telkom-red);
+  color: var(--telkom-red-dark);
+}
+
+/* 5) Opsi pertama sebagai "Semua …" → gaya beda */
+.cselect__option.is-all{
+  background: var(--gray-100);
+  border-style: dashed;
+}
+.cselect__option.is-all:hover{
+  background: #fff;
+  border-color: var(--gray-300);
+}
+
+/* 6) State disabled */
+.cselect.is-disabled .cselect__btn{
+  background: var(--gray-50);
+  color: var(--gray-500);
+  border-color: var(--gray-200);
+  cursor: not-allowed;
+  box-shadow:none;
+}
+.cselect.is-disabled .cselect__menu{ display:none !important; }
+
+/* 7) Responsif kecil */
+@media (max-width:640px){
+  .cselect__btn{ min-height: 40px; padding: 8px 12px; font-size: .875rem; border-radius: 10px; }
+  .cselect__menu{ border-radius: 14px; }
+  .cselect__option{ font-size: .9rem; padding: 9px 10px; }
+}
+
+/* 8) (Opsional) Hilangkan backdrop pseudo yg lama kalau ada */
+.filters .filter-group:nth-of-type(1)::before,
+.filters .filter-group:nth-of-type(1)::after,
+.filters .filter-group:nth-of-type(2)::before,
+.filters .filter-group:nth-of-type(2)::after{ display:none !important; content:none !important; }
+
+/* ===== CSELECT di dalam modal (imp-rev-cc) ===== */
+
+/* Sembunyikan select native di modal ketika sudah di-enhance */
+.visually-hidden-cselect{
+  position: absolute !important;
+  inset: 0 auto auto 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Nurunin label "Divisi" di modal Revenue CC beberapa piksel */
+#imp-rev-cc .filter-group > label{
+  display: block;      /* pastikan label block */
+  margin-top: 5px;     /* atur 2–6px sesuai selera */
+}
+
+/* (opsional) kalau masih kurang */
+#imp-rev-cc .filter-group > label.mt-8 {
+  margin-top: 8px;
+}
+
+/* Wrapper cselect dalam modal */
+#imp-rev-cc .cselect{
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  /* batasi lebar menu biar tidak “gedeee” */
+  --menu-max-width: 340px; /* ubah sesuai selera (320–360px) */
+}
+
+/* Tombol trigger: full lebar kolom agar rapi */
+#imp-rev-cc .cselect__btn{
+  min-height: 40px;
+  width: 65%;
+  margin-top: 10px;
+  font-size: .9375rem;
+  padding: 8px 12px;
+}
+
+/* Panel dropdown: ikut lebar tombol, tapi dibatasi max */
+#imp-rev-cc .cselect__menu{
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: auto;                /* hindari stretch tak terkendali */
+  width: 100%;                /* minimal selebar tombol */
+  max-width: var(--menu-max-width);  /* TIDAK lebih dari batas ini */
+  box-sizing: border-box;     /* padding & border tidak menambah lebar total */
+  margin: 0;
+  padding: 8px;               /* ringkas agar tidak terasa besar */
+  border-radius: 12px;
+  border: 1px solid var(--gray-200);
+  background: #fff;
+  box-shadow: var(--shadow-md);       /* shadow lebih sempit */
+  z-index: 2000;              /* di atas konten modal */
+  max-height: 230px;          /* cegah overlap ke bawah */
+  overflow: hidden;           /* scroll di dalam list */
+}
+
+/* List & opsi dibuat sedikit lebih rapat + scroll */
+#imp-rev-cc .cselect__list{
+  max-height: 200px;
+  overflow: auto;
+  padding: 4px;
+}
+
+#imp-rev-cc .cselect__option{
+  margin: 4px 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+/* Opsi pertama (Semua …) tetap dibedakan */
+#imp-rev-cc .cselect__option.is-all{
+  background: var(--gray-100);
+  border-style: dashed;
+}
+
+
 
 /* ===== SEGMENTATION BUTTONS ===== */
 .btn-segmentation {
@@ -1354,6 +1817,38 @@ body {
   }
 }
 
+/* ===== Filter actions buttons: keep text white on hover ===== */
+.filter-actions .btn-primary,
+.filter-actions .btn-primary:hover,
+.filter-actions .btn-primary:focus,
+.filter-actions .btn-primary:active{
+  color: #fff !important;               /* paksa teks/ikon tetap putih */
+}
+
+/* Ubah Reset agar tampil merah-putih konsisten seperti Apply */
+.filter-actions .btn-light{
+  background: var(--gradient-red);
+  color: #fff !important;
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+.filter-actions .btn-light:hover,
+.filter-actions .btn-light:focus,
+.filter-actions .btn-light:active{
+  background: var(--gradient-red);      /* jangan berubah tone */
+  color: #fff !important;               /* tetap putih saat hover/focus */
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+/* pastikan ikon mengikuti warna teks */
+.filter-actions .btn i{ color: inherit; }
+
+/* opsional: radius & transisi konsisten */
+.filter-actions .btn{
+  border-radius: var(--radius-2xl);
+  transition: var(--transition);
+}
 
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 1400px) {

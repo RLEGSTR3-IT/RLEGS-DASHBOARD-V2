@@ -330,118 +330,107 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-/* ===== ENHANCED DROPDOWN STYLING ===== */
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    position: relative;
+/* Trigger: biar terasa “elevated” dan interaktif */
+.filters .form-select{
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow-xs);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 
-.filter-group label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--gray-600);
-    margin-bottom: var(--space-2);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+.filters .form-select:hover{
+  border-color: var(--gray-300);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Enhanced form controls with better dropdown styling */
-.filters .form-select,
-.filters .form-control,
-.filters .datepicker-control {
-    width: 100%;
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    padding: 10px 14px;
-    color: var(--gray-800);
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: var(--transition);
-    min-height: 42px;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 12px center;
-    background-repeat: no-repeat;
-    background-size: 16px;
-    padding-right: 2.5rem;
-    box-shadow: var(--shadow-xs);
-    cursor: pointer;
+.filters .form-select:focus{
+  border-color: var(--telkom-red);
+  box-shadow: 0 0 0 3px var(--telkom-red-soft), var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
-.filters .form-select:focus,
-.filters .form-control:focus,
-.filters .datepicker-control:focus {
-    outline: none;
-    border-color: var(--telkom-red);
-    box-shadow: 0 0 0 3px var(--telkom-red-soft), var(--shadow-sm);
-    transform: translateY(-1px);
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ea1d25' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+/* ====== LIMITED styling utk isi dropdown (dukungan browser bervariasi) ====== */
+.filters .form-select option{
+  padding: 10px 12px;             /* sebagian besar Chromium/Firefox mau */
+  font-size: .9375rem;
 }
 
-.filters .form-select:hover,
-.filters .form-control:hover,
-.filters .datepicker-control:hover {
-    border-color: var(--gray-300);
-    box-shadow: var(--shadow-sm);
+/* highlight baris pada hover/terpilih – tidak konsisten di semua OS */
+.filters .form-select option:hover{
+  background: var(--telkom-red-subtle);
+  color: var(--gray-900);
+}
+.filters .form-select option:checked{
+  background: linear-gradient(var(--telkom-red-subtle), var(--telkom-red-subtle));
+  color: var(--gray-900);
 }
 
-/* Date picker special styling */
-.filters .datepicker-control {
-    cursor: pointer;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
+/* optgroup jika suatu saat dipakai */
+.filters .form-select optgroup{
+  font-weight: 700;
+  color: var(--gray-700);
+  padding: 6px 10px;
 }
 
-.filters .datepicker-control:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ea1d25'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
+/* ===== Custom Select (UI) ===== */
+.selectbox{
+  position: relative;
 }
 
-/* Filter actions */
-.filter-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
+.selectbox__btn{
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-xs);
+  font-weight: 500; font-size: .9rem; color: var(--gray-800);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.selectbox__btn:hover{ border-color: var(--gray-300); box-shadow: var(--shadow-sm); }
+.selectbox__btn:focus-visible{
+  outline: none; border-color: var(--telkom-red);
+  box-shadow: 0 0 0 3px var(--telkom-red-soft), var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.selectbox__caret{ margin-left: 8px; font-size: 14px; color: var(--gray-500); }
+
+/* Panel dropdown */
+.selectbox__menu{
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 14px;
+  box-shadow: var(--shadow-dropdown);
+  padding: 8px;
+  max-height: 280px; overflow: auto;
+  z-index: 30;
+  display: none;
+}
+.selectbox.open .selectbox__menu{ display: block; }
+
+/* Item */
+.selectbox__option{
+  display: flex; align-items: center;
+  padding: 10px 12px; border-radius: 10px;
+  color: var(--gray-800); font-size: .95rem; cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.selectbox__option:hover{ background: var(--gray-50); }
+.selectbox__option[aria-selected="true"]{
+  background: var(--telkom-red-subtle); color: var(--telkom-red-dark);
+  border: 1px solid var(--telkom-red-soft);
 }
 
-.filters .filter-actions .btn {
-    min-height: 42px;
-    border-radius: var(--radius-lg);
-    padding: 10px 16px;
-    font-weight: 600;
-    font-size: 0.875rem;
-    transition: var(--transition);
-    border: 1px solid transparent;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    white-space: nowrap;
-}
-
-.filters .filter-actions .btn-light {
-    background: var(--white);
-    border-color: var(--gray-200);
-    color: var(--gray-700);
-    box-shadow: var(--shadow-xs);
-}
-
-.filters .filter-actions .btn-light:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-300);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-}
-
-.filters .filter-actions .btn-primary {
-    background: var(--gradient-red);
-    color: var(--white);
-    border-color: var(--telkom-red);
-    box-shadow: var(--shadow-sm);
-}
-
-.filters .filter-actions .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+/* Hide select asli (tetap ada utk form & aksesibilitas) */
+.form-select.enhance{
+  position: absolute !important; inset: 0 auto auto 0 !important;
+  width: 1px !important; height: 1px !important;
+  opacity: 0 !important; pointer-events: none !important;
 }
 
 /* ===== PREMIUM DROPDOWN MENU ===== */
@@ -914,86 +903,100 @@ body {
     background: var(--error-light);
 }
 
-/* ===== PAGINATION ===== */
+/* beri sedikit jarak dari tabel agar bayangan/tombol tidak kepotong */
+.table-wrap { margin-bottom: 8px; }
+
+/* ===== PAGINATION (clean) ===== */
 .pagination-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-6) var(--space-8);
-    border-top: 1px solid var(--gray-200);
-    background: var(--gray-25);
-    gap: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;                /* was: var(--space-6) var(--space-8) */
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-25);
+  border-bottom-left-radius: var(--radius-2xl);
+  border-bottom-right-radius: var(--radius-2xl);
+  position: relative;                /* pastikan di atas elemen sebelumnya */
+  z-index: 1;
 }
 
 .pagination-bar .info {
-    color: var(--gray-600);
-    font-size: 1rem;
-    font-weight: 500;
+  color: var(--gray-600);
+  font-size: .95rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
+/* kumpulan halaman di tengah */
 .pages {
-    display: flex;
-    gap: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;                           /* was: var(--space-2) */
+  flex: 1;
+  justify-content: center;
 }
 
+/* tombol halaman: bulat, kecil, tanpa transform */
 .pager {
-    min-width: 40px;
-    height: 40px;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius-xl);
-    background: var(--white);
-    color: var(--gray-700);
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 500;
-    font-size: 1rem;
+  --size: 36px;                       /* was: 40px */
+  width: var(--size);
+  height: var(--size);
+  border: 1px solid var(--gray-300);
+  border-radius: 9999px;              /* bulat */
+  background: var(--white);
+  color: var(--gray-700);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: .95rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
+
+.pager i { font-size: 14px; }
 
 .pager:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-400);
-    transform: translateY(-1px);
+  background: var(--gray-50);
+  border-color: var(--gray-400);
 }
 
+/* aktif: tanpa shadow/transform (ini yang sering “ketutup”) */
 .pager.active {
-    background: var(--telkom-red);
-    color: var(--white);
-    border-color: var(--telkom-red);
-    box-shadow: var(--shadow-md);
+  background: var(--telkom-red);
+  color: #fff;
+  border-color: var(--telkom-red);
+  box-shadow: none;
 }
 
+/* disabled: cukup matikan interaksi + turunkan opacity */
 .pager.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+  opacity: .45;
+  pointer-events: none;
 }
 
-.pager.disabled:hover {
-    background: var(--white);
-    border-color: var(--gray-300);
-    transform: none;
-}
-
+/* bagian "Baris" di kanan */
 .perpage {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: 8px;                           /* was: var(--space-3) */
+  white-space: nowrap;
 }
 
 .perpage label {
-    color: var(--gray-600);
-    font-size: 1rem;
-    font-weight: 500;
+  color: var(--gray-600);
+  font-size: .95rem;
+  font-weight: 500;
 }
 
 .form-select.small {
-    padding: var(--space-3) var(--space-4);
-    height: 40px;
-    min-width: 80px;
-    font-size: 0.9375rem;
+  height: 36px;                       /* was: 40px */
+  min-width: 88px;                    /* was: 80px */
+  padding: 6px 10px;                  /* lebih rapat */
+  font-size: .95rem;
+  line-height: 1.2;
 }
 
 /* ===== IMPORT MODAL ===== */
@@ -1191,178 +1194,164 @@ body {
 .mb-0 { margin-bottom: 0; }
 .mb-2 { margin-bottom: var(--space-2); }
 
-/* ======== FLATPICKR MonthSelect — Telkom Clean (final) ======== */
-/* Kompatibel dgn 2 varian kelas: .flatpickr-monthSelect-* dan .monthSelect-* */
+/* ============================
+   Flatpickr MonthSelect — Popup Kompak & Selaras Input
+   ============================ */
 
-/* === Calendar container === */
+/* (Opsional) di wrapper input-mu, atur lebar popup spesifik
+   .datepicker-control { --fp-popup-width: 300px; }
+*/
 .flatpickr-calendar{
-  width:420px; max-width:96vw;
-  border:1px solid var(--gray-200)!important;
-  border-radius:var(--radius-2xl)!important;
-  box-shadow:var(--shadow-dropdown)!important;
+  /* Lebar popup — kecil & selaras input */
+  width: var(--fp-popup-width, 320px);
+  /* jaga responsif: jangan melebihi viewport kecil */
+  max-width: min(96vw, var(--fp-popup-width, 320px));
+
+  /* Radius + clipping header agar ikut melengkung */
+  border-radius: 18px !important;
+  overflow: hidden !important;
+
+  /* Tampilan umum */
   background:#fff;
-  /* penting: panel tahun bisa muncul di atas grid bulan */
-  overflow:visible!important;
+  border:1px solid var(--gray-200) !important;
+  box-shadow: var(--shadow-dropdown, 0 12px 32px rgba(0,0,0,.12)) !important;
+
+  /* Parameter grid (viewport konten di bawah header) */
+  --fp-grid-h: 232px;   /* tinggi area scroll konten */
+  --fp-gap: 8px;        /* jarak antar kartu */
+  --fp-vpad: 24px;      /* padding vertikal total (12+12) */
 }
 
-/* === Header merah (pakai grid 3 kolom) === */
+/* Header merah kompak */
 .flatpickr-months{
-  position:relative; z-index:3;
-  background:var(--gradient-red)!important;
-  padding:12px!important;
-  border-bottom:0!important; min-height:56px;
-}
-.flatpickr-months .flatpickr-month{
-  width:100%; height:auto!important;
-  display:grid; grid-template-columns:48px 1fr 48px; align-items:center;
+  background: var(--gradient-red, linear-gradient(90deg,#ea1d25,#ff4b52)) !important;
+  padding: 10px !important;
+  min-height: 52px !important;
+  border-bottom: 0 !important;
+  border-top-left-radius: inherit !important;
+  border-top-right-radius: inherit !important;
 }
 
-/* Panah kiri/kanan benar2 center (bukan absolute) */
-.flatpickr-prev-month,
-.flatpickr-next-month{
-  position:static!important; left:auto!important; right:auto!important; top:auto!important;
-  width:40px; height:40px; border-radius:12px;
-  display:flex; align-items:center; justify-content:center;
-  color:#fff!important; fill:#fff!important; transition:var(--transition);
-}
-.flatpickr-prev-month:hover,
-.flatpickr-next-month:hover{ background:rgba(255,255,255,.18); transform:translateY(-1px); }
-
-/* Judul current month area */
 .flatpickr-current-month{
-  color:#fff!important; font-weight:800!important; font-size:1.125rem!important;
-  text-align:center!important; position:relative;
-}
-/* Sembunyikan dropdown bulan bawaan */
-.flatpickr-current-month .flatpickr-monthDropdown-months{ display:none!important; }
-/* Sembunyikan input tahun bawaan (kita pakai tombol custom) */
-.numInputWrapper{ display:none!important; }
-
-/* === Grid 3×4 bulan: presisi & tidak mepet === */
-.flatpickr-calendar .flatpickr-monthSelect-months,
-.flatpickr-calendar .monthSelect-months{
-  position:relative; z-index:1;
-  display:grid!important;
-  grid-template-columns:repeat(3, minmax(0,1fr))!important;
-  gap:12px!important;
-  padding:16px!important;
-  margin:0!important;
-  box-sizing:border-box;
-  justify-items:stretch;              /* setiap kartu melebar proporsional */
+  color:#fff !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
 }
 
-/* Kartu bulan */
-.flatpickr-calendar .flatpickr-monthSelect-month,
-.flatpickr-calendar .monthSelect-month{
-  display:block!important;
-  width:100%!important;                /* kunci: isi kolom grid penuh */
-  height:56px!important; line-height:56px!important;
-  margin:0!important;
-  border-radius:16px!important; text-align:center!important;
-  font-weight:700!important; font-size:.95rem!important;
-  color:var(--gray-800)!important; background:var(--gray-50)!important;
-  border:1px solid var(--gray-200)!important; box-shadow:var(--shadow-xs)!important;
-  transition:var(--transition)!important; cursor:pointer!important; overflow:hidden!important;
-}
-.flatpickr-calendar .flatpickr-monthSelect-month:hover,
-.flatpickr-calendar .monthSelect-month:hover{
-  background:var(--gray-25)!important; border-color:var(--gray-300)!important; transform:translateY(-1px)!important;
-}
-.flatpickr-calendar .flatpickr-monthSelect-month.selected,
-.flatpickr-calendar .monthSelect-month.selected{
-  background:var(--telkom-red)!important; border-color:var(--telkom-red)!important; color:#fff!important;
-  box-shadow:var(--shadow-md)!important; transform:none!important;
-}
-.flatpickr-calendar .flatpickr-monthSelect-month:focus-visible,
-.flatpickr-calendar .monthSelect-month:focus-visible{
-  outline:2px solid var(--telkom-red)!important; outline-offset:2px!important;
+/* Sembunyikan kontrol bawaan yg tidak dipakai */
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month .numInputWrapper,
+.flatpickr-current-month .cur-year,
+.flatpickr-prev-month, .flatpickr-next-month{
+  display:none !important;
 }
 
-/* === Trigger input (field) === */
-.flatpickr-input.form-control, input.hasFlatpickr, .datepicker-control{
-  background:#fff; border:1px solid var(--gray-200); border-radius:12px;
-  min-height:42px; padding:10px 40px 10px 14px; font-weight:600; color:var(--gray-800);
-  background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3e%3cline x1='16' y1='2' x2='16' y2='6'/%3e%3cline x1='8' y1='2' x2='8' y2='6'/%3e%3cline x1='3' y1='10' x2='21' y2='10'/%3e%3c/svg%3e");
-  background-repeat:no-repeat; background-position:right 12px center; background-size:18px; box-shadow:var(--shadow-xs);
-}
-.flatpickr-input.form-control:focus, .datepicker-control:focus{
-  border-color:var(--telkom-red); box-shadow:0 0 0 3px var(--telkom-red-soft), var(--shadow-sm);
-}
+/* ===== GRID TAHUN — 3 kolom, tinggi viewport tetap, scrollable ===== */
+.fp-year-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fp-gap);
+  padding: 12px 12px;
+  background:#fff;
+  height: var(--fp-grid-h);
+  max-height: var(--fp-grid-h);
+  min-height: var(--fp-grid-h);
+  overflow-y:auto;
+  overflow-x:hidden;
+  scroll-behavior:smooth;
+  border-bottom:1px solid var(--gray-200);
 
-/* === Tombol & Panel Tahun Kustom (dari JS attachYearPanel) === */
-.fp-year-wrap{ position:relative; justify-self:center; }
-.fp-year-btn{
-  display:inline-flex; align-items:center; gap:8px;
-  background:rgba(255,255,255,.18); color:#fff;
-  border:1px solid rgba(255,255,255,.35); border-radius:12px;
-  padding:6px 12px; font-weight:800; cursor:pointer; user-select:none;
-  transition:all .2s ease; pointer-events:auto;  /* bisa diklik */
-}
-.fp-year-btn:hover{ background:rgba(255,255,255,.24); }
-.fp-year-btn i{ font-size:12px; opacity:.9; }
-
-/* Panel muncul di atas grid, scrollable, 2 kolom agar pendek */
-.fp-year-panel{
-  position:absolute; left:50%; transform:translateX(-50%);
-  top:48px; z-index:5;
-  width:240px; max-height:240px; padding:8px;
-  background:#fff; border:1px solid var(--gray-200); border-radius:14px;
-  box-shadow:var(--shadow-dropdown);
-  display:none; overflow:auto;
-}
-.fp-year-panel.open{
-  display:grid; grid-template-columns:repeat(2,1fr); gap:8px;
-}
-.fp-year-option{
-  display:flex; align-items:center; justify-content:center;
-  height:36px; border-radius:10px; margin:0;
-  font-weight:700; color:var(--gray-800);
-  background:var(--gray-50); border:1px solid var(--gray-200);
-  cursor:pointer; transition:all .15s ease;
-}
-.fp-year-option:hover{ background:var(--gray-25); border-color:var(--gray-300); }
-.fp-year-option.active{ background:var(--telkom-red); color:#fff; border-color:var(--telkom-red); }
-
-/* Scrollbar manis */
-.fp-year-panel::-webkit-scrollbar{ width:8px; }
-.fp-year-panel::-webkit-scrollbar-thumb{ background:var(--gray-300); border-radius:8px; }
-
-/* === Fix: hilangkan gap kanan pada MonthSelect === */
-.flatpickr-innerContainer{
-  display:block !important;      /* jangan flex; isi jadi penuh */
-  box-sizing:border-box !important;
-  padding:0 !important;
-  overflow:visible !important;   /* biar panel/tips tak terpotong */
+  /* tinggi baris = 3 baris (selaras bulan) */
+  grid-auto-rows: calc(
+    (var(--fp-grid-h) - var(--fp-vpad) - (2 * var(--fp-gap))) / 3
+  );
 }
 
-/* kolom konten utama di dalam innerContainer isi lebar penuh */
-.flatpickr-rContainer{
-  width:100% !important;
-  max-width:100% !important;
-  flex:1 1 100% !important;
+/* ===== GRID BULAN — identik dengan grid tahun ===== */
+.fp-month-grid{
+  display:grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: var(--fp-gap) !important;
+  padding: 12px 12px !important;
+  background:#fff !important;
+
+  height: var(--fp-grid-h) !important;
+  max-height: var(--fp-grid-h) !important;
+  min-height: var(--fp-grid-h) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  scroll-behavior:smooth !important;
+
+  grid-auto-rows: calc(
+    (var(--fp-grid-h) - var(--fp-vpad) - (2 * var(--fp-gap))) / 3
+  ) !important;
 }
 
-/* grid bulan jangan punya width tetap dari CSS plugin */
-.flatpickr-rContainer .flatpickr-monthSelect-months,
-.flatpickr-rContainer .monthSelect-months{
-  width:100% !important;
-  max-width:none !important;
-  margin:0 !important;
+/* ===== KARTU (tahun & bulan) — ukuran konsisten, klik enak ===== */
+.fp-year-option,
+.fp-month-option{
+  background:#fff !important;
+  border:1px solid var(--gray-200) !important;
+  border-radius: 12px !important;
+  height: 100% !important;     /* isi penuh baris → ukuran seragam */
+  min-height: 0 !important;
+  padding: 10px 8px !important;
+  font-size: .875rem !important;
+  font-weight: 600 !important;
+  color: var(--gray-700) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  transition: all .18s ease !important;
 }
 
-/* kalau ada komponen waktu yang kadang terbawa, sembunyikan saja */
-.flatpickr-time{ display:none !important; }
+.fp-year-option:hover, .fp-month-option:hover{
+  background: var(--gray-50, #f9fafb) !important;
+  border-color: var(--telkom-red, #ea1d25) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-sm, 0 6px 16px rgba(0,0,0,.08)) !important;
+}
 
-/* tambahan kecil: pastikan calendar tidak memotong konten kustom */
-.flatpickr-calendar{ overflow:visible !important; }
+.fp-year-option.active, .fp-month-option.selected{
+  background: var(--gradient-red, linear-gradient(90deg,#ea1d25,#ff4b52)) !important;
+  color:#fff !important;
+  border-color: var(--telkom-red, #ea1d25) !important;
+  box-shadow: var(--shadow-md, 0 10px 24px rgba(234,29,37,.25)) !important;
+}
 
-/* === Mobile tweaks === */
+/* Scrollbar ramping */
+.fp-year-grid::-webkit-scrollbar,
+.fp-month-grid::-webkit-scrollbar{ width:6px; }
+.fp-year-grid::-webkit-scrollbar-thumb,
+.fp-month-grid::-webkit-scrollbar-thumb{
+  background: var(--gray-300, #d1d5db); border-radius:4px;
+}
+.fp-year-grid::-webkit-scrollbar-track,
+.fp-month-grid::-webkit-scrollbar-track{
+  background: var(--gray-100, #f3f4f6); border-radius:4px;
+}
+
+/* Sembunyikan grid bawaan plugin MonthSelect */
+.flatpickr-monthSelect-months,
+.monthSelect-months{ display:none !important; }
+
+.datepicker-control { --fp-popup-width: 300px; } /* samakan dengan lebar input */
+
+
+/* ===== Responsif kecil ===== */
 @media (max-width:640px){
-  .flatpickr-calendar{ width:360px; }
-  .flatpickr-calendar .flatpickr-monthSelect-months,
-  .flatpickr-calendar .monthSelect-months{ gap:8px!important; padding:12px!important; }
-  .flatpickr-calendar .flatpickr-monthSelect-month,
-  .flatpickr-calendar .monthSelect-month{ height:52px!important; line-height:52px!important; }
+  .flatpickr-calendar{
+    width: var(--fp-popup-width, 300px);
+    max-width: min(96vw, var(--fp-popup-width, 300px));
+    --fp-grid-h: 220px;
+  }
+  .fp-year-option, .fp-month-option{
+    font-size:.85rem !important;
+    border-radius:10px !important;
+  }
 }
 
 

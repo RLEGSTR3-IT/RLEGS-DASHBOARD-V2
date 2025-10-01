@@ -280,10 +280,10 @@ class DashboardController extends Controller
 
             $results->push((object) [
                 'id' => $revenue->corporate_customer_id,
-                'nama' => $customer->nama ?? 'Unknown',
+                'nama' => $customer->nama ?? 'N/A',
                 'nipnas' => $customer->nipnas ?? 'Unknown',
-                'divisi_nama' => $divisi->nama ?? 'Unknown',
-                'segment_nama' => $segment->lsegment_ho ?? 'Unknown',
+                'divisi_nama' => $divisi->nama ?? 'N/A',
+                'segment_nama' => $segment->lsegment_ho ?? 'N/A',
                 'total_revenue' => floatval($revenue->total_revenue),
                 'total_target' => floatval($revenue->total_target),
                 'achievement_rate' => round($achievementRate, 2),
@@ -1043,7 +1043,7 @@ class DashboardController extends Controller
             $amController = new \App\Http\Controllers\Overview\AmDashboardController($this->revenueService);
 
             // Get AM's performance summary
-            $accountManager = AccountManager::where('user_id', $user->id)->first();
+            $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
             if (!$accountManager) {
                 return response()->json(['error' => 'Account Manager not found'], 404);
             }
@@ -1084,7 +1084,7 @@ class DashboardController extends Controller
         try {
             $amController = new \App\Http\Controllers\Overview\AmDashboardController($this->revenueService);
 
-            $accountManager = AccountManager::where('user_id', $user->id)->first();
+            $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
             if (!$accountManager) {
                 return response()->json(['error' => 'Account Manager not found'], 404);
             }
@@ -1138,7 +1138,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Detail Page Methods
+     * Detail Page Methods - FIXED
      */
     public function showAccountManager($id)
     {
@@ -1146,11 +1146,15 @@ class DashboardController extends Controller
             $accountManager = AccountManager::with(['witel', 'divisis'])
                 ->findOrFail($id);
 
-            // Check authorization
+            // FIXED: Authorization check tanpa user_id
             $user = Auth::user();
-            if ($user->role === 'account_manager' && $accountManager->user_id !== $user->id) {
-                abort(403, 'Unauthorized access to this Account Manager data');
+            if ($user->role === 'account_manager') {
+                // Cek apakah ini AM sendiri yang akses datanya
+                if ($user->account_manager_id !== $id) {
+                    abort(403, 'Unauthorized access to this Account Manager data');
+                }
             }
+            // Admin dan witel_support bisa akses semua AM data
 
             // Get performance data
             $currentYear = date('Y');
@@ -1158,7 +1162,8 @@ class DashboardController extends Controller
             $monthlyChart = $this->performanceService->getAMMonthlyChart($id, $currentYear);
             $customerPerformance = $this->performanceService->getAMCustomerPerformance($id, $currentYear);
 
-            return view('details.account-manager', compact(
+            // FIXED: View path sesuai file yang ada
+            return view('detailAM', compact(
                 'accountManager',
                 'performanceData',
                 'monthlyChart',
@@ -1169,7 +1174,8 @@ class DashboardController extends Controller
             Log::error('Account Manager detail page failed', [
                 'am_id' => $id,
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->route('dashboard')
@@ -1182,11 +1188,11 @@ class DashboardController extends Controller
         try {
             $witel = Witel::findOrFail($id);
 
-            // Check authorization
+            // FIXED: Authorization check tanpa user_id yang salah
             $user = Auth::user();
             if ($user->role === 'witel_support') {
-                $userWitel = AccountManager::where('user_id', $user->id)->first();
-                if (!$userWitel || $userWitel->witel_id !== $id) {
+                // Cek witel_id dari tabel users langsung
+                if ($user->witel_id !== $id) {
                     abort(403, 'Unauthorized access to this Witel data');
                 }
             }
@@ -1197,7 +1203,8 @@ class DashboardController extends Controller
             $topAMs = $this->revenueService->getTopAccountManagers($id, 20, $currentYear);
             $categoryDistribution = $this->rankingService->getCategoryDistribution($id, $currentYear);
 
-            return view('details.witel', compact(
+            // FIXED: View path sesuai file yang ada
+            return view('detailWitel', compact(
                 'witel',
                 'witelData',
                 'topAMs',
@@ -1208,7 +1215,8 @@ class DashboardController extends Controller
             Log::error('Witel detail page failed', [
                 'witel_id' => $id,
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->route('dashboard')
@@ -1219,9 +1227,10 @@ class DashboardController extends Controller
     public function showCorporateCustomer($id)
     {
         try {
-            $customer = CorporateCustomer::with(['segment', 'divisi'])->findOrFail($id);
+            // Query customer data
+            $customer = CorporateCustomer::findOrFail($id);
 
-            // Get customer revenue data
+            // Get customer revenue data with proper joins
             $currentYear = date('Y');
             $revenueData = CcRevenue::where('corporate_customer_id', $id)
                 ->where('tahun', $currentYear)
@@ -1242,21 +1251,51 @@ class DashboardController extends Controller
                 ->orderBy('bulan')
                 ->get();
 
-            return view('details.corporate-customer', compact(
-                'customer',
-                'revenueData',
-                'monthlyData'
-            ));
+            // Get divisi and segment from cc_revenues
+            $customerDetails = CcRevenue::where('corporate_customer_id', $id)
+                ->with(['divisi', 'segment'])
+                ->first();
+
+            $customer->divisi = $customerDetails->divisi ?? null;
+            $customer->segment = $customerDetails->segment ?? null;
+
+            // TEMPORARY: Return JSON response karena view belum dibuat
+            // Setelah view detailCorporateCustomer.blade.php dibuat, ganti dengan:
+            // return view('detailCorporateCustomer', compact('customer', 'revenueData', 'monthlyData'));
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data Corporate Customer berhasil dimuat',
+                'data' => [
+                    'customer' => [
+                        'id' => $customer->id,
+                        'nama' => $customer->nama,
+                        'nipnas' => $customer->nipnas,
+                        'divisi' => $customer->divisi->nama ?? 'N/A',
+                        'segment' => $customer->segment->lsegment_ho ?? 'N/A'
+                    ],
+                    'revenue' => [
+                        'total_revenue' => $revenueData->total_revenue ?? 0,
+                        'total_target' => $revenueData->total_target ?? 0,
+                        'achievement_rate' => $revenueData->total_target > 0
+                            ? round(($revenueData->total_revenue / $revenueData->total_target) * 100, 2)
+                            : 0
+                    ],
+                    'monthly_data' => $monthlyData
+                ],
+                'note' => 'View detailCorporateCustomer.blade.php belum dibuat. Ini adalah response JSON sementara.'
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Corporate Customer detail page failed', [
                 'customer_id' => $id,
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->route('dashboard')
-                ->with('error', 'Gagal memuat detail Corporate Customer');
+                ->with('error', 'Gagal memuat detail Corporate Customer: ' . $e->getMessage());
         }
     }
 
@@ -1289,21 +1328,51 @@ class DashboardController extends Controller
                 ->limit(10)
                 ->get();
 
-            return view('details.segment', compact(
-                'segment',
-                'segmentData',
-                'topCustomers'
-            ));
+            // TEMPORARY: Return JSON response karena view belum dibuat
+            // Setelah view detailSegment.blade.php dibuat, ganti dengan:
+            // return view('detailSegment', compact('segment', 'segmentData', 'topCustomers'));
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data Segment berhasil dimuat',
+                'data' => [
+                    'segment' => [
+                        'id' => $segment->id,
+                        'nama' => $segment->lsegment_ho,
+                        'divisi' => $segment->divisi->nama ?? 'N/A'
+                    ],
+                    'performance' => [
+                        'total_customers' => $segmentData->total_customers ?? 0,
+                        'total_revenue' => $segmentData->total_revenue ?? 0,
+                        'total_target' => $segmentData->total_target ?? 0,
+                        'achievement_rate' => $segmentData->total_target > 0
+                            ? round(($segmentData->total_revenue / $segmentData->total_target) * 100, 2)
+                            : 0
+                    ],
+                    'top_customers' => $topCustomers->map(function($item) {
+                        return [
+                            'customer_name' => $item->corporateCustomer->nama ?? 'N/A',
+                            'total_revenue' => $item->total_revenue,
+                            'total_target' => $item->total_target,
+                            'achievement' => $item->total_target > 0
+                                ? round(($item->total_revenue / $item->total_target) * 100, 2)
+                                : 0
+                        ];
+                    })
+                ],
+                'note' => 'View detailSegment.blade.php belum dibuat. Ini adalah response JSON sementara.'
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Segment detail page failed', [
                 'segment_id' => $id,
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->route('dashboard')
-                ->with('error', 'Gagal memuat detail Segment');
+                ->with('error', 'Gagal memuat detail Segment: ' . $e->getMessage());
         }
     }
 

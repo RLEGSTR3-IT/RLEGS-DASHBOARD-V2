@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Overview\DashboardController;
 use App\Http\Controllers\Overview\AmDashboardController;
@@ -33,10 +34,7 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-Route::get('/logout', function () {
-    Auth::logout();
-    return redirect('/');
-})->name('logout');
+Route::get('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 // ===== AUTH ROUTES =====
 Route::post('/reset-password', [NewPasswordController::class, 'store'])
@@ -78,15 +76,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ===== GENERAL API ROUTES =====
     Route::prefix('api')->name('api.')->group(function () {
 
-        Route::get('divisi', function() {
+        Route::get('divisi', function () {
             return response()->json(Divisi::select('id', 'nama', 'kode')->orderBy('nama')->get());
         })->name('divisi');
 
-        Route::get('witel', function() {
+        Route::get('witel', function () {
             return response()->json(Witel::select('id', 'nama', 'kode')->orderBy('nama')->get());
         })->name('witel');
 
-        Route::get('segments', function() {
+        Route::get('segments', function () {
             return response()->json(
                 Segment::with('divisi:id,nama')
                     ->select('id', 'lsegment_ho', 'ssegment_ho', 'divisi_id')
@@ -95,7 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
         })->name('segments');
 
-        Route::get('revenue-sources', function() {
+        Route::get('revenue-sources', function () {
             return response()->json([
                 'all' => 'Semua Source',
                 'HO' => 'HO Revenue',
@@ -103,7 +101,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('revenue-sources');
 
-        Route::get('tipe-revenues', function() {
+        Route::get('tipe-revenues', function () {
             return response()->json([
                 'all' => 'Semua Tipe',
                 'REGULER' => 'Revenue Reguler',
@@ -111,14 +109,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('tipe-revenues');
 
-        Route::get('period-types', function() {
+        Route::get('period-types', function () {
             return response()->json([
                 'YTD' => 'Year to Date',
                 'MTD' => 'Month to Date'
             ]);
         })->name('period-types');
 
-        Route::get('available-years', function() {
+        Route::get('available-years', function () {
             try {
                 $years = CcRevenue::distinct()
                     ->orderBy('tahun', 'desc')
@@ -151,7 +149,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             }
         })->name('available-years');
 
-        Route::get('health', function() {
+        Route::get('health', function () {
             try {
                 DB::connection()->getPdo();
                 $dbStatus = 'connected';
@@ -168,7 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('health');
 
-        Route::get('user-info', function() {
+        Route::get('user-info', function () {
             $user = Auth::user();
             return response()->json([
                 'id' => $user->id,
@@ -202,7 +200,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->where('id', '[0-9]+');
 
     // ===== LEGACY EXPORT COMPATIBILITY =====
-    Route::get('export', function() {
+    Route::get('export', function () {
         return redirect()->route('dashboard.export', request()->all());
     })->name('export');
 
@@ -241,8 +239,8 @@ Route::get('health-check', function () {
 
 // ===== DEBUG ROUTES (DEVELOPMENT ONLY) =====
 if (app()->environment('local')) {
-    Route::get('debug/routes', function() {
-        $routes = collect(Route::getRoutes())->map(function($route) {
+    Route::get('debug/routes', function () {
+        $routes = collect(Route::getRoutes())->map(function ($route) {
             return [
                 'method' => implode('|', $route->methods()),
                 'uri' => $route->uri(),
@@ -257,7 +255,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.routes');
 
-    Route::get('debug/user', function() {
+    Route::get('debug/user', function () {
         $user = Auth::user();
 
         if (!$user) {
@@ -292,7 +290,7 @@ Route::fallback(function () {
     return view('errors.404');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 // ===== SIDEBAR ROUTES =====
 Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
@@ -301,3 +299,4 @@ Route::view('/treg3', 'treg3.index')->name('dashboard.treg3');
 Route::view('/witel-perform', 'performansi.witel')->name('witel.perform');
 Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
 Route::view('/profile', 'profile.edit')->name('profile.edit');
+

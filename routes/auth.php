@@ -21,6 +21,10 @@ Route::middleware('guest')->group(function () {
     Route::get('search-account-managers', [RegisteredUserController::class, 'searchAccountManagers'])
         ->name('search.account-managers');
 
+    // TODO: Figure this out (get / post (?))
+    Route::get('/am/check-account-available', [RegisteredUserController::class, 'checkAccountAvailable'])
+        ->name('am.check-account-available');
+
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->middleware('throttle:8,1')
         ->name('login');

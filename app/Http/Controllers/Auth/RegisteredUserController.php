@@ -261,8 +261,6 @@ class RegisteredUserController extends Controller
                 ->limit(10)
                 ->get(['id', 'nama']);
 
-            // TODO: Fetch users table to see if account manager id has a user record, if so append a disclaimer saying this AM already has an account
-
             return response()->json($accountManagers);
         } catch (Exception $e) {
             Log::error('Error searching account managers', [
@@ -273,6 +271,32 @@ class RegisteredUserController extends Controller
             return response()->json([
                 'error' => 'Terjadi kesalahan saat mencari data Account Manager'
             ], 500);
+        }
+    }
+
+    // TODO: Fetch users table to see if account manager id has a user record, if so append a disclaimer saying this AM already has an account
+    public function checkAccountAvailable(Request $request)
+    {
+        try {
+            $selectedAm = (int) $request->query('account_manager_id');
+
+            if (!$selectedAm) {
+                return response()->json(['error' => 'account_manager_id_missing'], 422);
+            }
+
+            $userExists = User::where('account_manager_id', $selectedAm)->exists();
+
+            if ($userExists) {
+                return response()->json([
+                    'registered' => true,
+                    'message' => 'Nama ini telah terdaftar pada akun lain.',
+                ], 409);
+            }
+
+            return response()->json(['registered' => false], 200);
+        } catch (Exception $e) {
+            // NOTE: don't know about this
+            return back()->withErrors(['account_manager_id' => $e])->withInput();
         }
     }
 }

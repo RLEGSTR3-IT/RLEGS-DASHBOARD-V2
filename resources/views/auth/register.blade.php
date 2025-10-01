@@ -82,7 +82,7 @@
             @enderror
           </div>
 
-          <!-- Account Manager Fields -->
+          <!-- NOTE: Account Manager Fields -->
           <div id="account_manager_fields">
             <div class="mb-4">
               <label for="account_manager_search" class="block font-medium text-sm text-gray-700 mb-1">Nama Account Manager</label>
@@ -93,6 +93,7 @@
                      class="absolute z-10 w-full bg-white shadow-md rounded-lg mt-1 hidden"></div>
               </div>
               <input type="hidden" id="account_manager_id" name="account_manager_id" required>
+              <p class="text-red-500 text-xs mt-1 error-msg" id="error_am"></p>
               @error('account_manager_id')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
               @enderror
@@ -230,7 +231,6 @@
             @enderror
           </div>
 
-          <!-- TODO: add a captcha before submission -->
           <x-recaptcha-v3 />
 
           <!-- Footer: login link + submit -->
@@ -290,6 +290,8 @@
               }
           });
       });
+
+
 
       // typing animation
       const text = 'Welcome Back!';
@@ -419,16 +421,50 @@
               .then(r => r.json())
               .then(data => {
                 suggestionsContainer.innerHTML = '';
-                if (!data.length) { suggestionsContainer.innerHTML = '<div class="p-2 text-center text-gray-500">Tidak ditemukan</div>'; return; }
+                if (!data.length) {
+                    suggestionsContainer.innerHTML = '<div class="p-2 text-center text-gray-500">Tidak ditemukan</div>';
+                                return;
+                }
                 data.forEach(function (am) {
                   const div = document.createElement('div');
                   div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
                   div.textContent = `${am.nama}`;
-                  div.addEventListener('click', function () {
+                  div.addEventListener('click', async function () {
+                    // TODO: add account existing validation here maybe
                     searchInput.value = am.nama;
-                    idInput.value = am.id;
-                    suggestionsContainer.classList.add('hidden');
+                    div.classList.add('opacity-60', 'pointer-events-none');
+                    try {
+                        const res = await fetch(`/am/check-account-available?account_manager_id=${encodeURIComponent(am.id)}`, {
+                            headers: { 'Accept': 'application/json'}
+                        });
+
+                        if (res.status === 409) {
+                            const j = await res.json().catch(() => ({}));
+
+                            showInlineError(j.message || 'Nama ini telah terdaftar pada akun lain.');
+                            idInput.value = null;
+
+                            searchInput.focus();
+                            return;
+                        }
+
+                        if (!res.ok) {
+                            showInlineError('Gagal memeriksa ketersediaan akun. Silahkan coba lagi.');
+                            return;
+                        }
+
+                        clearInlineError();
+                        idInput.value = am.id;
+                        suggestionsContainer.classList.add('hidden');
+                    }
+                    catch (e) {
+                        showInlineError('Terjadi kesalahan jaringan.');
+                    }
+                    finally {
+                        div.classList.remove('opacity-60', 'pointer-events-none');
+                    }
                   });
+
                   suggestionsContainer.appendChild(div);
                 });
               })
@@ -443,6 +479,25 @@
             suggestionsContainer.classList.add('hidden');
           }
         });
+      }
+
+      // AM Account Exists
+      const errorContainer = document.getElementById('error_am');
+
+      function showInlineError(msg) {
+        if (!errorContainer) return;
+        errorContainer.textContent = msg || 'Terjadi kesalahan';
+        errorContainer.classList.add('visible');
+
+        // shake animation
+        errorContainer.style.animation = 'none';
+        requestAnimationFrame(() => { errorContainer.style.animation = 'shake .3s'; });
+      }
+
+      function clearInlineError() {
+        if (!errorContainer) return;
+        errorContainer.textContent = '';
+        errorContainer.classList.remove('visible');
       }
 
       // init default

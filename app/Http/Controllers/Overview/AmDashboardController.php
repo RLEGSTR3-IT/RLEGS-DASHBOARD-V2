@@ -132,7 +132,6 @@ class AmDashboardController extends Controller
                 'filterOptions',
                 'dateRange'
             ));
-
         } catch (\Exception $e) {
             Log::error('AM dashboard error', [
                 'user_id' => $user->id,
@@ -173,7 +172,6 @@ class AmDashboardController extends Controller
                 'filters' => $filters,
                 'timestamp' => now()
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM export failed', [
                 'user_id' => $user->id,
@@ -265,3 +263,4 @@ class AmDashboardController extends Controller
         ];
     }
 }
+

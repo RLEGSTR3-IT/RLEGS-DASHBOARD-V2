@@ -50,7 +50,7 @@
         </a>
       </li>
       <li class="sidebar-item">
-        <a href="{{ route('dashboard.treg3') }}" class="sidebar-link">
+        <a href="{{ route('witel.perform') }}" class="sidebar-link">
           <i class="lni lni-buildings-1"></i><span>CC & Witel</span>
         </a>
       </li>

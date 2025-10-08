@@ -48,7 +48,7 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="" class="sidebar-link">
+                    <a href="{{ route('witel.perform') }}" class="sidebar-link">
                         <i class="lni lni-buildings-1"></i><span>CC & Witel</span>
                     </a>
                 </li>
@@ -92,6 +92,7 @@
                             <li class="nav-item dropdown ms-1">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="avatar-container me-2">
+                                        <!-- FIX: check auth before this? cause using `user()?` is maybe not be the best practice? idk -->
                                         @if(Auth::user()->profile_image)
                                             <img src="{{ asset('storage/' . Auth::user()->profile_image) }}" alt="{{ Auth::user()->name }}">
                                         @else

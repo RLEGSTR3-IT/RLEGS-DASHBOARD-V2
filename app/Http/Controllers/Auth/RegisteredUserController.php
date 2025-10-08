@@ -90,6 +90,14 @@ class RegisteredUserController extends Controller
                     'admin_code' => ['required', 'string']
                 ];
             } elseif ($request->role === 'account_manager') {
+                // NOTE: maybe temp
+                if ($request->account_manager_id === null) {
+                    Log::warning('Registration failed: Selected AM already has an account');
+                    return back()->withErrors([
+                        'account_manager_id' => 'Nama ini telah terdaftar pada akun lain.'
+                    ])->withInput();
+                }
+
                 // Periksa apakah ada account manager di database
                 $accountManagersExist = AccountManager::count() > 0;
 
@@ -133,6 +141,7 @@ class RegisteredUserController extends Controller
                     }
                 });
             }
+
             // Validasi khusus untuk komparasi NIK AM
             elseif ($request->role === 'account_manager') {
                 $validator->after(function ($validator) use ($request) {

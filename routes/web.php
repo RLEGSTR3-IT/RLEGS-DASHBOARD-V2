@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WitelPerformController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -34,7 +35,8 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-Route::get('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+// NOTE: ??? wat dis
+Route::get('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('guest.logout');
 
 // ===== AUTH ROUTES =====
 Route::post('/reset-password', [NewPasswordController::class, 'store'])
@@ -54,6 +56,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ===== SINGLE DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // ===== SIDEBAR ROUTES =====
+    Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
+    Route::view('/revenue', 'revenueData')->name('revenue.index');
+    Route::view('/treg3', 'treg3.index')->name('dashboard.treg3');
+    Route::view('/witel-perform', 'witelPerform')->name('witel.perform');
+    Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
+    Route::view('/profile', 'profile.edit')->name('profile.edit');
 
     // ===== DASHBOARD API ROUTES =====
     Route::prefix('dashboard')->name('dashboard.')->group(function () {
@@ -199,6 +209,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('segment.show')
         ->where('id', '[0-9]+');
 
+    // ===== WITEL PERFORMANCE ROUTES =====
+    Route::post('/witel-perform/update-charts', [WitelPerformController::class, 'updateCharts'])->name('witel.update-charts');
+    Route::post('/witel-perform/filter-by-divisi', [WitelPerformController::class, 'filterByDivisi'])->name('witel.filter-by-divisi');
+    Route::post('/witel-perform/filter-by-witel', [WitelPerformController::class, 'filterByWitel'])->name('witel.filter-by-witel');
+    Route::post('/witel-perform/filter-by-regional', [WitelPerformController::class, 'filterByRegional'])->name('witel.filter-by-regional');
+
     // ===== LEGACY EXPORT COMPATIBILITY =====
     Route::get('export', function () {
         return redirect()->route('dashboard.export', request()->all());
@@ -293,10 +309,10 @@ Route::fallback(function () {
 require __DIR__ . '/auth.php';
 
 // ===== SIDEBAR ROUTES =====
-Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
-Route::view('/revenue', 'revenueData')->name('revenue.index');
-Route::view('/treg3', 'treg3.index')->name('dashboard.treg3');
-Route::view('/witel-perform', 'performansi.witel')->name('witel.perform');
-Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
-Route::view('/profile', 'profile.edit')->name('profile.edit');
-
+// NOTE: This was moved to the middleware
+// Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
+// Route::view('/revenue', 'revenueData')->name('revenue.index');
+// Route::view('/treg3', 'treg3.index')->name('dashboard.treg3');
+// Route::view('/witel-perform', 'witelPerform')->name('witel.perform');
+// Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
+// Route::view('/profile', 'profile.edit')->name('profile.edit');

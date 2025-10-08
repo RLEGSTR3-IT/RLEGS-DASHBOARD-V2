@@ -217,19 +217,19 @@
         }
 
         .achievement-percentage.success {
-            color: #22c55e; 
+            color: #22c55e;
         }
 
         .achievement-percentage.good {
-            color: #3b82f6; 
+            color: #3b82f6;
         }
 
         .achievement-percentage.warning {
-            color: #f59e0b; 
+            color: #f59e0b;
         }
 
         .achievement-percentage.danger {
-            color: #ef4444; 
+            color: #ef4444;
         }
 
         .division-indicator {
@@ -1208,8 +1208,8 @@
                     datasets.push({
                         label: 'Target Revenue',
                         data: targetData,
-                        backgroundColor: 'rgba(0, 82, 204, 0.2)',   
-                        borderColor: 'rgba(0, 82, 204, 1)',         
+                        backgroundColor: 'rgba(0, 82, 204, 0.2)',
+                        borderColor: 'rgba(0, 82, 204, 1)',
                         borderWidth: 2,
                         yAxisID: 'y'
                     });
@@ -1218,8 +1218,8 @@
                     datasets.push({
                         label: 'Real Revenue',
                         data: realData,
-                        backgroundColor: 'rgba(46, 204, 113, 0.6)', 
-                        borderColor: 'rgba(46, 204, 113, 1)',       
+                        backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
                         borderWidth: 2,
                         yAxisID: 'y'
                     });
@@ -1385,14 +1385,14 @@
                             hoverBackgroundColor = 'rgba(0, 41, 82, 1)';
                             break;
                         case 'DPS':
-                            backgroundColor = 'rgba(51, 153, 255, 0.9)';       
-                            borderColor = '#3399FF';                            
-                            hoverBackgroundColor = 'rgba(51, 153, 255, 1)';    
+                            backgroundColor = 'rgba(51, 153, 255, 0.9)';
+                            borderColor = '#3399FF';
+                            hoverBackgroundColor = 'rgba(51, 153, 255, 1)';
                             break;
                         case 'DGS':
-                        backgroundColor = 'rgba(255, 140, 0, 0.9)';    
-                        borderColor = '#FF8C00';                        
-                        hoverBackgroundColor = 'rgba(230, 120, 0, 1)';  
+                        backgroundColor = 'rgba(255, 140, 0, 0.9)';
+                        borderColor = '#FF8C00';
+                        hoverBackgroundColor = 'rgba(230, 120, 0, 1)';
                         break;
                         default:
                             backgroundColor = dataset.backgroundColor;

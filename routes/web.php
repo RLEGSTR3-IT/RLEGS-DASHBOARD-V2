@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Overview\DashboardController;
 use App\Http\Controllers\Overview\AmDashboardController;
 use App\Http\Controllers\Overview\WitelDashboardController;
+use App\Http\Controllers\Overview\CcDashboardController;
 
 // Laravel Core
 use Illuminate\Support\Facades\Route;
@@ -55,22 +56,18 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // ===== MAIN DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
-    // Handles admin, account_manager, witel_support roles
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ===== DASHBOARD API ROUTES =====
     Route::prefix('dashboard')->name('dashboard.')->group(function () {
-        // Core admin functionality
         Route::get('tab-data', [DashboardController::class, 'getTabData'])->name('tab-data');
         Route::get('export', [DashboardController::class, 'export'])->name('export');
-
-        // Additional endpoints
         Route::get('chart-data', [DashboardController::class, 'getChartData'])->name('chart-data');
         Route::get('revenue-table', [DashboardController::class, 'getRevenueTable'])->name('revenue-table');
         Route::get('summary', [DashboardController::class, 'getSummary'])->name('summary');
         Route::get('insights', [DashboardController::class, 'getPerformanceInsights'])->name('insights');
 
-        // AM specific endpoints (when AM is logged in at /dashboard)
+        // AM specific endpoints
         Route::get('am-performance', [DashboardController::class, 'getAmPerformance'])->name('am-performance');
         Route::get('am-customers', [DashboardController::class, 'getAmCustomers'])->name('am-customers');
         Route::get('am-export', [DashboardController::class, 'exportAm'])->name('am-export');
@@ -78,13 +75,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ===== ACCOUNT MANAGER ROUTES =====
     Route::prefix('account-manager')->name('account-manager.')->group(function () {
-        // Detail AM page - accessible from leaderboard or direct link
-        // URL: /account-manager/{id}
         Route::get('{id}', [AmDashboardController::class, 'show'])
             ->name('show')
             ->where('id', '[0-9]+');
 
-        // AJAX endpoints for AM detail page
         Route::get('{id}/tab-data', [AmDashboardController::class, 'getTabData'])
             ->name('tab-data')
             ->where('id', '[0-9]+');
@@ -113,7 +107,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('export')
             ->where('id', '[0-9]+');
 
-        // Additional AM endpoints
         Route::get('{id}/info', [AmDashboardController::class, 'getAmInfo'])
             ->name('info')
             ->where('id', '[0-9]+');
@@ -130,7 +123,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('top-customers')
             ->where('id', '[0-9]+');
 
-        // Debug endpoint (local only)
         if (app()->environment('local')) {
             Route::get('{id}/debug', [AmDashboardController::class, 'debug'])
                 ->name('debug')
@@ -138,28 +130,81 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
     });
 
-    // ===== DETAIL PAGES (OTHER ENTITIES) =====
+    // ===== CORPORATE CUSTOMER ROUTES =====
+    Route::prefix('corporate-customer')->name('corporate-customer.')->group(function () {
+        // Main detail page
+        Route::get('{id}', [CcDashboardController::class, 'show'])
+            ->name('show')
+            ->where('id', '[0-9]+');
+
+        // AJAX endpoints (placeholder untuk future features)
+        Route::get('{id}/tab-data', function($id) {
+            return response()->json([
+                'message' => 'CC tab data endpoint - coming soon',
+                'cc_id' => $id
+            ]);
+        })->name('tab-data')->where('id', '[0-9]+');
+
+        Route::get('{id}/card-data', function($id) {
+            return response()->json([
+                'message' => 'CC card data endpoint - coming soon',
+                'cc_id' => $id
+            ]);
+        })->name('card-data')->where('id', '[0-9]+');
+
+        Route::get('{id}/chart-data', function($id) {
+            return response()->json([
+                'message' => 'CC chart data endpoint - coming soon',
+                'cc_id' => $id
+            ]);
+        })->name('chart-data')->where('id', '[0-9]+');
+
+        Route::get('{id}/export', function($id) {
+            return response()->json([
+                'message' => 'CC export endpoint - coming soon',
+                'cc_id' => $id
+            ]);
+        })->name('export')->where('id', '[0-9]+');
+
+        Route::get('{id}/info', function($id) {
+            $customer = CorporateCustomer::findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $customer->id,
+                    'nama' => $customer->nama,
+                    'nipnas' => $customer->nipnas
+                ]
+            ]);
+        })->name('info')->where('id', '[0-9]+');
+    });
+
+    // ===== WITEL ROUTES =====
     Route::get('witel/{id}', [DashboardController::class, 'showWitel'])
         ->name('witel.show')
         ->where('id', '[0-9]+');
 
-    Route::get('corporate-customer/{id}', [DashboardController::class, 'showCorporateCustomer'])
-        ->name('corporate-customer.show')
-        ->where('id', '[0-9]+');
-
+    // ===== SEGMENT ROUTES =====
     Route::get('segment/{id}', [DashboardController::class, 'showSegment'])
         ->name('segment.show')
         ->where('id', '[0-9]+');
 
     // ===== GENERAL API ROUTES =====
     Route::prefix('api')->name('api.')->group(function () {
-
         Route::get('divisi', function() {
-            return response()->json(Divisi::select('id', 'nama', 'kode')->orderBy('nama')->get());
+            return response()->json(
+                Divisi::select('id', 'nama', 'kode')
+                    ->orderBy('nama')
+                    ->get()
+            );
         })->name('divisi');
 
         Route::get('witel', function() {
-            return response()->json(Witel::select('id', 'nama')->orderBy('nama')->get());
+            return response()->json(
+                Witel::select('id', 'nama')
+                    ->orderBy('nama')
+                    ->get()
+            );
         })->name('witel');
 
         Route::get('segments', function() {
@@ -358,14 +403,14 @@ if (app()->environment('local')) {
                 break;
             case 'account_manager':
                 $dashboardInfo = [
-                    'view' => 'detailAM.blade.php',
+                    'view' => 'am.detailAM.blade.php',
                     'controller' => 'AmDashboardController::index',
                     'account_manager_id' => $user->account_manager_id
                 ];
                 break;
             case 'witel_support':
                 $dashboardInfo = [
-                    'view' => 'detailWitel.blade.php (pending)',
+                    'view' => 'witel.detailWitel.blade.php',
                     'controller' => 'WitelDashboardController::index',
                     'witel_id' => $user->witel_id
                 ];
@@ -385,6 +430,30 @@ if (app()->environment('local')) {
             'dashboard_info' => $dashboardInfo
         ]);
     })->name('debug.user');
+
+    Route::get('debug/cc-routes', function() {
+        return response()->json([
+            'main_route' => 'GET /corporate-customer/{id}',
+            'description' => 'Corporate Customer detail page with revenue data and analysis',
+            'example_url' => url('/corporate-customer/1'),
+            'available_endpoints' => [
+                'detail' => '/corporate-customer/{id}',
+                'info' => '/corporate-customer/{id}/info',
+                'tab_data' => '/corporate-customer/{id}/tab-data (placeholder)',
+                'card_data' => '/corporate-customer/{id}/card-data (placeholder)',
+                'chart_data' => '/corporate-customer/{id}/chart-data (placeholder)',
+                'export' => '/corporate-customer/{id}/export (placeholder)'
+            ],
+            'filters_available' => [
+                'tahun' => 'Year filter',
+                'tipe_revenue' => 'Revenue type (REGULER/NGTMA)',
+                'revenue_source' => 'Revenue source (HO/BILL)',
+                'revenue_view_mode' => 'View mode (detail/agregat_bulan)',
+                'chart_tahun' => 'Chart year',
+                'chart_display' => 'Chart display mode (combination/revenue/achievement)'
+            ]
+        ]);
+    })->name('debug.cc-routes');
 
     Route::get('debug/am-routes', function() {
         return response()->json([
@@ -409,6 +478,42 @@ if (app()->environment('local')) {
             ]
         ]);
     })->name('debug.am-routes');
+
+    Route::get('debug/database', function() {
+        try {
+            $stats = [
+                'account_managers' => AccountManager::count(),
+                'corporate_customers' => CorporateCustomer::count(),
+                'cc_revenues' => CcRevenue::count(),
+                'am_revenues' => DB::table('am_revenues')->count(),
+                'divisi' => Divisi::count(),
+                'witel' => Witel::count(),
+                'segments' => Segment::count(),
+                'users' => DB::table('users')->count()
+            ];
+
+            $latestData = [
+                'latest_cc_revenue_year' => CcRevenue::max('tahun'),
+                'latest_cc_revenue_month' => CcRevenue::where('tahun', CcRevenue::max('tahun'))->max('bulan'),
+                'total_revenue_ytd' => CcRevenue::where('tahun', date('Y'))->sum('real_revenue'),
+                'total_target_ytd' => CcRevenue::where('tahun', date('Y'))->sum('target_revenue')
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'database_stats' => $stats,
+                'latest_data' => $latestData,
+                'achievement_ytd' => $latestData['total_target_ytd'] > 0
+                    ? round(($latestData['total_revenue_ytd'] / $latestData['total_target_ytd']) * 100, 2) . '%'
+                    : '0%'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    })->name('debug.database');
 }
 
 // ===== FALLBACK =====
@@ -426,4 +531,4 @@ Route::fallback(function () {
     return view('errors.404');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__.'/auth.php';g

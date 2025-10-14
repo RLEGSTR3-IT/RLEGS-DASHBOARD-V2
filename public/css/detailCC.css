@@ -953,3 +953,495 @@
     }
 
     .revenue-cards-group {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .revenue-summary-card {
+        padding: 24px 20px;
+    }
+
+    .revenue-card-value {
+        font-size: 1.75rem;
+    }
+
+    .tab-navigation {
+        flex-direction: column;
+    }
+
+    .tab-button {
+        padding: 14px 20px;
+    }
+
+    .tab-content-header {
+        padding: 20px;
+    }
+
+    .tab-content-title {
+        font-size: 1.125rem;
+    }
+
+    .view-mode-toggle {
+        width: 100%;
+    }
+
+    .view-mode-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+        padding: 12px 16px;
+        font-size: 0.8125rem;
+    }
+
+    .insight-summary-card {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .insight-header h4 {
+        font-size: 1rem;
+    }
+
+    .insight-body p {
+        font-size: 0.875rem;
+    }
+
+    .insight-metrics {
+        grid-template-columns: 1fr;
+        padding: 20px;
+        gap: 16px;
+    }
+
+    .metric-card {
+        padding: 20px;
+    }
+
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.125rem;
+    }
+
+    .metric-value {
+        font-size: 1.25rem;
+    }
+
+    .chart-container {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .chart-filters {
+        flex-direction: column;
+    }
+
+    .chart-canvas-container {
+        height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 12px 16px;
+    }
+
+    .profile-overview {
+        padding: 20px 16px;
+    }
+
+    .cc-avatar {
+        width: 64px;
+        height: 64px;
+    }
+
+    .cc-avatar i {
+        font-size: 2rem;
+    }
+
+    .profile-name {
+        font-size: 1.25rem;
+    }
+
+    .profile-meta {
+        font-size: 0.8125rem;
+    }
+
+    .category-badge {
+        padding: 8px 14px;
+        font-size: 0.6875rem;
+    }
+
+    .divisi-pill {
+        padding: 4px 10px;
+        font-size: 0.6875rem;
+    }
+
+    .revenue-summary-card {
+        padding: 20px 16px;
+    }
+
+    .revenue-card-value {
+        font-size: 1.5rem;
+    }
+
+    .revenue-card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .tab-button {
+        padding: 12px 16px;
+        font-size: 0.875rem;
+    }
+
+    .tab-content-header {
+        padding: 16px;
+    }
+
+    .filters-container {
+        gap: 8px;
+    }
+
+    .filter-group .selectpicker {
+        min-width: 120px;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+    }
+
+    .insight-summary-card {
+        margin: 16px;
+        padding: 16px;
+    }
+
+    .insight-header i {
+        font-size: 1.25rem;
+    }
+
+    .insight-header h4 {
+        font-size: 0.9375rem;
+    }
+
+    .insight-body p {
+        font-size: 0.8125rem;
+    }
+
+    .insight-metrics {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .metric-card {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .metric-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .metric-value {
+        font-size: 1.125rem;
+    }
+
+    .metric-label {
+        font-size: 0.6875rem;
+    }
+
+    .chart-container {
+        margin: 16px;
+        padding: 16px;
+    }
+
+    .chart-title {
+        font-size: 1rem;
+    }
+
+    .chart-canvas-container {
+        height: 250px;
+    }
+
+    .empty-state {
+        padding: 48px 20px;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+    }
+
+    .empty-text {
+        font-size: 0.875rem;
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .profile-overview,
+    .revenue-summary-card,
+    .content-wrapper,
+    .data-card,
+    .insight-summary-card,
+    .metric-card,
+    .chart-container {
+        border: 2px solid var(--gray-700);
+    }
+
+    .category-badge,
+    .divisi-pill,
+    .achievement-badge,
+    .source-badge,
+    .tipe-badge {
+        border: 2px solid currentColor;
+    }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 0;
+    }
+
+    .profile-overview,
+    .revenue-summary-card,
+    .content-wrapper,
+    .insight-summary-card,
+    .metric-card,
+    .chart-container {
+        box-shadow: none !important;
+        border: 1px solid var(--gray-400) !important;
+        break-inside: avoid;
+        margin-bottom: 16px;
+    }
+
+    .tab-navigation,
+    .filters-container,
+    .chart-filters {
+        display: none !important;
+    }
+
+    .tab-content {
+        display: block !important;
+    }
+
+    .profile-overview::before,
+    .revenue-summary-card::before {
+        display: none;
+    }
+
+    .cc-avatar {
+        background: var(--gray-200) !important;
+        color: var(--gray-700) !important;
+    }
+
+    .tab-content-header {
+        background: var(--white) !important;
+    }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.profile-overview,
+.revenue-summary-card,
+.content-wrapper {
+    animation: slideUp 0.4s ease-out;
+}
+
+.revenue-card-value,
+.metric-value {
+    animation: fadeIn 0.6s ease-out 0.2s both;
+}
+
+/* ===== LOADING STATES ===== */
+.skeleton {
+    background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-lg);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-row {
+    height: 60px;
+    margin-bottom: 12px;
+}
+
+/* ===== FOCUS STATES ===== */
+.view-mode-btn:focus,
+.tab-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--telkom-red-subtle);
+}
+
+.selectpicker:focus {
+    border-color: var(--telkom-red);
+    box-shadow: 0 0 0 3px var(--telkom-red-subtle);
+}
+
+/* ===== HOVER EFFECTS ===== */
+.data-table tbody tr:hover {
+    transform: translateX(2px);
+}
+
+.achievement-badge:hover,
+.source-badge:hover,
+.tipe-badge:hover,
+.month-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: var(--radius-md);
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: var(--telkom-red);
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+.profile-overview,
+.revenue-summary-card,
+.content-wrapper,
+.metric-card {
+    contain: layout style paint;
+    will-change: transform;
+}
+
+.data-table {
+    contain: layout;
+}
+
+/* ===== ENHANCED INTERACTIVITY ===== */
+.view-mode-btn:active,
+.tab-button:active {
+    transform: scale(0.98);
+}
+
+.category-badge:active,
+.divisi-pill:active {
+    transform: translateY(0) !important;
+}
+
+/* ===== CUSTOM SCROLLBAR FOR FILTERS ===== */
+.filters-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.filters-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.filters-container::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: var(--radius-md);
+}
+
+/* ===== TOOLTIP STYLES (if needed) ===== */
+.tooltip {
+    position: relative;
+}
+
+.tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: var(--gray-900);
+    color: var(--white);
+    font-size: 0.75rem;
+    border-radius: var(--radius-md);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition);
+    margin-bottom: 8px;
+}
+
+.tooltip:hover::before {
+    opacity: 1;
+}
+
+/* ===== LOADING SPINNER ===== */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--telkom-red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== END OF DETAILCC.CSS ===== */

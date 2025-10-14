@@ -62,11 +62,11 @@
                         <i class="lni lni-user-multiple-4"></i><span>Top LOP</span>
                     </a>
                 </li> --}}
-                <li class="sidebar-item">
+                {{-- <li class="sidebar-item">
                     <a href="" class="sidebar-link">
                         <i class="lni lni-cloud-upload"></i><span>File Management</span>
                     </a>
-                </li>
+                </li> --}}
             </ul>
             <div class="sidebar-footer">
                 <a href="{{ route('profile.edit') }}" class="sidebar-link">

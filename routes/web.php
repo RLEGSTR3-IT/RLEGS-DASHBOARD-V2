@@ -336,10 +336,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/witel-perform', function() {
         return view('performansi.witel');
     })->name('witel.perform');
-
-    Route::get('/profile/edit', function () {
-        return view('profile.edit');
-    })->name('profile.edit');
 });
 
 // ===== UTILITY ROUTES =====

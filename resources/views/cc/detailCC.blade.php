@@ -17,10 +17,8 @@
             </div>
         </div>
         <div class="profile-details">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="profile-name mb-0">{{ $profileData['nama'] }}</h2>
-
-                <!-- Category Badge -->
+            <div class="profile-header">
+                <h2 class="profile-name">{{ $profileData['nama'] }}</h2>
                 @php
                     $divisi = $profileData['divisi'];
                     $badgeClass = 'enterprise';
@@ -43,32 +41,43 @@
                         }
                     }
                 @endphp
-                <span class="category-badge {{ $badgeClass }}">
-                    <i class="fas {{ $badgeIcon }}"></i>
-                    {{ $divisi->nama ?? 'CORPORATE' }}
-                </span>
             </div>
-            <div class="profile-meta">
-                <div class="meta-item">
+
+            <!-- Profile Meta - FIXED: All Horizontal -->
+            <div class="profile-meta-grid">
+                <!-- NIPNAS -->
+                <div class="meta-item-inline">
                     <i class="fas fa-barcode"></i>
-                    <span>NIPNAS: {{ $profileData['nipnas'] }}</span>
+                    <span class="meta-label">NIPNAS:</span>
+                    <span class="meta-value">{{ $profileData['nipnas'] }}</span>
                 </div>
+
+                <!-- SEGMENT -->
                 @if($profileData['segment'])
-                <div class="meta-item">
+                <div class="meta-item-inline">
                     <i class="fas fa-tags"></i>
-                    <span>SEGMENT: {{ $profileData['segment']->lsegment_ho }}</span>
+                    <span class="meta-label">SEGMENT:</span>
+                    <span class="meta-value">{{ $profileData['segment']->lsegment_ho }}</span>
                 </div>
                 @endif
+
+                <!-- WITEL -->
+                @if($profileData['witel'])
+                <div class="meta-item-inline">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="meta-label">WITEL:</span>
+                    <span class="meta-value">{{ $profileData['witel']->nama }}</span>
+                </div>
+                @endif
+
+                <!-- DIVISI -->
                 @if($profileData['divisi'])
-                <div class="meta-item divisi-item">
+                <div class="meta-item-inline">
                     <i class="lni lni-network"></i>
-                    <span>DIVISI:</span>
-                    <div class="divisi-list">
-                        @php
-                            $divisiClass = strtolower($profileData['divisi']->kode);
-                        @endphp
-                        <span class="divisi-pill {{ $divisiClass }}">{{ $profileData['divisi']->nama }}</span>
-                    </div>
+                    <span class="meta-label">DIVISI:</span>
+                    <span class="divisi-pill {{ strtolower($profileData['divisi']->kode) }}">
+                        {{ $profileData['divisi']->nama }}
+                    </span>
                 </div>
                 @endif
             </div>
@@ -136,42 +145,54 @@
                     <i class="fas fa-chart-bar"></i> Data Revenue & Performance
                 </div>
 
-                <div class="filters-container">
+                <div class="filters-wrapper">
                     <!-- View Mode Toggle -->
                     <div class="view-mode-toggle">
                         <button type="button" class="view-mode-btn {{ $filters['revenue_view_mode'] == 'detail' ? 'active' : '' }}" data-mode="detail">
                             <i class="fas fa-list-ul"></i> Detail
                         </button>
                         <button type="button" class="view-mode-btn {{ $filters['revenue_view_mode'] == 'agregat_bulan' ? 'active' : '' }}" data-mode="agregat_bulan">
-                            <i class="fas fa-calendar"></i> Agregat Bulan
+                            <i class="fas fa-calendar"></i> Agregat
                         </button>
                     </div>
 
-                    <!-- Tipe Revenue Filter -->
-                    <div class="filter-group">
-                        <select id="tipeRevenueFilter" class="selectpicker" title="Tipe Revenue">
-                            <option value="all" {{ $filters['tipe_revenue'] == 'all' ? 'selected' : '' }}>Semua Tipe</option>
-                            <option value="REGULER" {{ $filters['tipe_revenue'] == 'REGULER' ? 'selected' : '' }}>REGULER</option>
-                            <option value="NGTMA" {{ $filters['tipe_revenue'] == 'NGTMA' ? 'selected' : '' }}>NGTMA</option>
-                        </select>
-                    </div>
+                    <!-- Filter Dropdowns Row -->
+                    <div class="filter-dropdowns-row">
+                        <!-- Granularity Filter -->
+                        <div class="filter-item">
+                            <select id="granularityFilter" class="selectpicker">
+                                <option value="divisi" {{ $filters['granularity'] == 'divisi' ? 'selected' : '' }}>Per Divisi</option>
+                                <option value="segment" {{ $filters['granularity'] == 'segment' ? 'selected' : '' }}>Per Segment</option>
+                                <option value="account_manager" {{ $filters['granularity'] == 'account_manager' ? 'selected' : '' }}>Per Account Manager</option>
+                            </select>
+                        </div>
 
-                    <!-- Revenue Source Filter -->
-                    <div class="filter-group">
-                        <select id="revenueSourceFilter" class="selectpicker" title="Revenue Source">
-                            <option value="all" {{ $filters['revenue_source'] == 'all' ? 'selected' : '' }}>Semua Source</option>
-                            <option value="HO" {{ $filters['revenue_source'] == 'HO' ? 'selected' : '' }}>HO</option>
-                            <option value="BILL" {{ $filters['revenue_source'] == 'BILL' ? 'selected' : '' }}>BILL</option>
-                        </select>
-                    </div>
+                        <!-- Tipe Revenue Filter -->
+                        <div class="filter-item">
+                            <select id="tipeRevenueFilter" class="selectpicker">
+                                <option value="all" {{ $filters['tipe_revenue'] == 'all' ? 'selected' : '' }}>Semua Tipe</option>
+                                <option value="REGULER" {{ $filters['tipe_revenue'] == 'REGULER' ? 'selected' : '' }}>REGULER</option>
+                                <option value="NGTMA" {{ $filters['tipe_revenue'] == 'NGTMA' ? 'selected' : '' }}>NGTMA</option>
+                            </select>
+                        </div>
 
-                    <!-- Year Filter -->
-                    <div class="filter-group year-selector">
-                        <select id="revenueYearFilter" class="selectpicker" title="Tahun">
-                            @foreach($filterOptions['available_years'] as $year)
-                                <option value="{{ $year }}" {{ $filters['tahun'] == $year ? 'selected' : '' }}>{{ $year }}</option>
-                            @endforeach
-                        </select>
+                        <!-- Revenue Source Filter -->
+                        <div class="filter-item">
+                            <select id="revenueSourceFilter" class="selectpicker">
+                                <option value="all" {{ $filters['revenue_source'] == 'all' ? 'selected' : '' }}>Semua Source</option>
+                                <option value="HO" {{ $filters['revenue_source'] == 'HO' ? 'selected' : '' }}>HO</option>
+                                <option value="BILL" {{ $filters['revenue_source'] == 'BILL' ? 'selected' : '' }}>BILL</option>
+                            </select>
+                        </div>
+
+                        <!-- Year Filter -->
+                        <div class="filter-item">
+                            <select id="revenueYearFilter" class="selectpicker">
+                                @foreach($filterOptions['available_years'] as $year)
+                                    <option value="{{ $year }}" {{ $filters['tahun'] == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -185,14 +206,34 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Bulan</th>
-                                    @if($filters['revenue_view_mode'] == 'detail')
-                                        <th>Divisi</th>
+
+                                    @if($filters['granularity'] == 'account_manager')
+                                        <th>Account Manager</th>
+                                        <th>NIK</th>
+                                        @if($filters['revenue_view_mode'] == 'detail')
+                                            <th>Divisi</th>
+                                            <th>Segment</th>
+                                            <th>Source</th>
+                                            <th>Tipe</th>
+                                        @endif
+                                    @elseif($filters['granularity'] == 'segment')
                                         <th>Segment</th>
-                                        <th>Revenue Source</th>
-                                        <th>Tipe Revenue</th>
+                                        @if($filters['revenue_view_mode'] == 'detail')
+                                            <th>Divisi</th>
+                                            <th>Source</th>
+                                            <th>Tipe</th>
+                                        @endif
+                                    @else
+                                        @if($filters['revenue_view_mode'] == 'detail')
+                                            <th>Divisi</th>
+                                            <th>Segment</th>
+                                            <th>Source</th>
+                                            <th>Tipe</th>
+                                        @endif
                                     @endif
-                                    <th>Target Revenue</th>
-                                    <th>Real Revenue</th>
+
+                                    <th>Target</th>
+                                    <th>Revenue</th>
                                     <th>Achievement</th>
                                 </tr>
                             </thead>
@@ -203,20 +244,56 @@
                                         <td>
                                             <span class="month-badge">{{ $revenue->bulan_name ?? 'N/A' }}</span>
                                         </td>
-                                        @if($filters['revenue_view_mode'] == 'detail')
-                                            <td class="revenue-divisi">{{ $revenue->divisi ?? 'N/A' }}</td>
-                                            <td class="revenue-segment">{{ $revenue->segment ?? 'N/A' }}</td>
-                                            <td>
-                                                <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
-                                                    {{ $revenue->revenue_source ?? 'N/A' }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
-                                                    {{ $revenue->tipe_revenue ?? 'N/A' }}
-                                                </span>
-                                            </td>
+
+                                        @if($filters['granularity'] == 'account_manager')
+                                            <td class="customer-name">{{ $revenue->account_manager ?? 'N/A' }}</td>
+                                            <td class="nipnas">{{ $revenue->nik ?? 'N/A' }}</td>
+                                            @if($filters['revenue_view_mode'] == 'detail')
+                                                <td>{{ $revenue->divisi ?? 'N/A' }}</td>
+                                                <td>{{ $revenue->segment ?? 'N/A' }}</td>
+                                                <td>
+                                                    <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
+                                                        {{ $revenue->revenue_source ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
+                                                        {{ $revenue->tipe_revenue ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                            @endif
+                                        @elseif($filters['granularity'] == 'segment')
+                                            <td>{{ $revenue->segment ?? 'N/A' }}</td>
+                                            @if($filters['revenue_view_mode'] == 'detail')
+                                                <td>{{ $revenue->divisi ?? 'N/A' }}</td>
+                                                <td>
+                                                    <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
+                                                        {{ $revenue->revenue_source ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
+                                                        {{ $revenue->tipe_revenue ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                            @endif
+                                        @else
+                                            @if($filters['revenue_view_mode'] == 'detail')
+                                                <td>{{ $revenue->divisi ?? 'N/A' }}</td>
+                                                <td>{{ $revenue->segment ?? 'N/A' }}</td>
+                                                <td>
+                                                    <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
+                                                        {{ $revenue->revenue_source ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
+                                                        {{ $revenue->tipe_revenue ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                            @endif
                                         @endif
+
                                         <td>Rp {{ number_format($revenue->total_target ?? $revenue->target ?? 0, 0, ',', '.') }}</td>
                                         <td>Rp {{ number_format($revenue->total_revenue ?? $revenue->revenue ?? 0, 0, ',', '.') }}</td>
                                         <td>
@@ -368,16 +445,16 @@
                     </h4>
 
                     <div class="chart-filters">
-                        <div class="filter-group">
-                            <select id="chartYearFilter" class="selectpicker" title="Tahun">
+                        <div class="filter-item">
+                            <select id="chartYearFilter" class="selectpicker">
                                 @foreach($filterOptions['available_years'] as $year)
                                     <option value="{{ $year }}" {{ $filters['chart_tahun'] == $year ? 'selected' : '' }}>{{ $year }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="filter-group">
-                            <select id="chartDisplayMode" class="selectpicker" title="Tampilan">
+                        <div class="filter-item">
+                            <select id="chartDisplayMode" class="selectpicker">
                                 <option value="combination" {{ $filters['chart_display'] == 'combination' ? 'selected' : '' }}>Kombinasi</option>
                                 <option value="revenue" {{ $filters['chart_display'] == 'revenue' ? 'selected' : '' }}>Revenue</option>
                                 <option value="achievement" {{ $filters['chart_display'] == 'achievement' ? 'selected' : '' }}>Achievement</option>
@@ -395,111 +472,81 @@
 </div>
 
 @section('scripts')
-<!-- Bootstrap Select -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/js/bootstrap-select.min.js"></script>
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 $(document).ready(function() {
-    // Initialize Bootstrap Select
     $('.selectpicker').selectpicker({
-        liveSearch: true,
-        liveSearchPlaceholder: 'Cari...',
+        liveSearch: false,
         size: 6,
         mobile: false
     });
 
-    // Tab Navigation
     $('.tab-button').on('click', function() {
         $('.tab-button').removeClass('active');
         $('.tab-content').removeClass('active');
-
         $(this).addClass('active');
         const tabId = $(this).data('tab');
         $('#' + tabId).addClass('active');
-
-        // Render chart when switching to analysis tab
         if (tabId === 'revenue-analysis') {
             setTimeout(renderRevenueChart, 100);
         }
     });
 
-    // View Mode Toggle
     $('.view-mode-btn').on('click', function() {
-        const mode = $(this).data('mode');
-        updateUrlParameter('revenue_view_mode', mode);
+        updateUrlParameter('revenue_view_mode', $(this).data('mode'));
     });
 
-    // Tipe Revenue Filter
+    $('#granularityFilter').on('changed.bs.select', function() {
+        updateUrlParameter('granularity', $(this).val());
+    });
+
     $('#tipeRevenueFilter').on('changed.bs.select', function() {
-        const tipeRevenue = $(this).val();
-        updateUrlParameter('tipe_revenue', tipeRevenue);
+        updateUrlParameter('tipe_revenue', $(this).val());
     });
 
-    // Revenue Source Filter
     $('#revenueSourceFilter').on('changed.bs.select', function() {
-        const revenueSource = $(this).val();
-        updateUrlParameter('revenue_source', revenueSource);
+        updateUrlParameter('revenue_source', $(this).val());
     });
 
-    // Revenue Year Filter
     $('#revenueYearFilter').on('changed.bs.select', function() {
-        const year = $(this).val();
-        updateUrlParameter('tahun', year);
+        updateUrlParameter('tahun', $(this).val());
     });
 
-    // Chart Year Filter
     $('#chartYearFilter').on('changed.bs.select', function() {
-        const year = $(this).val();
-        updateUrlParameter('chart_tahun', year);
+        updateUrlParameter('chart_tahun', $(this).val());
     });
 
-    // Chart Display Mode
     $('#chartDisplayMode').on('changed.bs.select', function() {
-        const mode = $(this).val();
-        updateUrlParameter('chart_display', mode);
+        updateUrlParameter('chart_display', $(this).val());
     });
 
-    // Helper function to update URL parameters
     function updateUrlParameter(key, value) {
         const url = new URL(window.location.href);
-
         if (value && value !== '' && value !== 'all') {
             url.searchParams.set(key, value);
         } else {
             url.searchParams.delete(key);
         }
-
         window.location.href = url.toString();
     }
 
-    // Render Revenue Chart
     function renderRevenueChart() {
         const ctx = document.getElementById('revenueChart');
-        if (!ctx) {
-            console.warn('Revenue chart canvas not found');
-            return;
-        }
+        if (!ctx) return;
 
-        // Destroy existing chart if exists
         try {
             const existingChart = Chart.getChart(ctx);
-            if (existingChart) {
-                existingChart.destroy();
-            }
-        } catch (e) {
-            console.warn('Error destroying existing chart:', e);
-        }
+            if (existingChart) existingChart.destroy();
+        } catch (e) {}
 
-        // Get chart data from backend
         const chartData = @json($revenueAnalysis['monthly_chart'] ?? null);
-
         if (!chartData || !chartData.labels || chartData.labels.length === 0) {
             $(ctx).parent().html(
                 '<div class="empty-state">' +
                 '<div class="empty-icon"><i class="fas fa-chart-bar"></i></div>' +
-                '<p class="empty-text">Tidak ada data revenue untuk ditampilkan</p>' +
+                '<p class="empty-text">Tidak ada data revenue</p>' +
                 '</div>'
             );
             return;
@@ -508,7 +555,6 @@ $(document).ready(function() {
         const displayMode = '{{ $filters["chart_display"] ?? "combination" }}';
         const datasets = [];
 
-        // Revenue datasets
         if (displayMode === 'combination' || displayMode === 'revenue') {
             datasets.push({
                 label: 'Real Revenue',
@@ -518,7 +564,6 @@ $(document).ready(function() {
                 borderWidth: 2,
                 yAxisID: 'y'
             });
-
             datasets.push({
                 label: 'Target Revenue',
                 data: chartData.datasets.target_revenue,
@@ -529,7 +574,6 @@ $(document).ready(function() {
             });
         }
 
-        // Achievement dataset
         if (displayMode === 'combination' || displayMode === 'achievement') {
             datasets.push({
                 label: 'Achievement (%)',
@@ -550,7 +594,6 @@ $(document).ready(function() {
             });
         }
 
-        // Configure scales
         const scales = {};
 
         if (displayMode === 'combination' || displayMode === 'revenue') {
@@ -561,10 +604,7 @@ $(document).ready(function() {
                 title: {
                     display: true,
                     text: 'Revenue (Rp)',
-                    font: {
-                        weight: 'bold',
-                        size: 12
-                    },
+                    font: { weight: 'bold', size: 12 },
                     color: '#4b5563'
                 },
                 ticks: {
@@ -580,9 +620,7 @@ $(document).ready(function() {
                     },
                     color: '#6b7280'
                 },
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
-                }
+                grid: { color: 'rgba(0, 0, 0, 0.05)' }
             };
         }
 
@@ -594,10 +632,7 @@ $(document).ready(function() {
                 title: {
                     display: true,
                     text: 'Achievement (%)',
-                    font: {
-                        weight: 'bold',
-                        size: 12
-                    },
+                    font: { weight: 'bold', size: 12 },
                     color: '#4b5563'
                 },
                 grid: {
@@ -613,7 +648,6 @@ $(document).ready(function() {
             };
         }
 
-        // Create chart
         try {
             new Chart(ctx, {
                 type: 'bar',
@@ -626,7 +660,7 @@ $(document).ready(function() {
                     maintainAspectRatio: false,
                     interaction: {
                         mode: 'index',
-                        intersect: false,
+                        intersect: false
                     },
                     scales: scales,
                     plugins: {
@@ -637,7 +671,8 @@ $(document).ready(function() {
                                 padding: 16,
                                 font: {
                                     size: 12,
-                                    weight: '600'
+                                    weight: '600',
+                                    family: 'Poppins'
                                 },
                                 color: '#374151'
                             }
@@ -646,10 +681,12 @@ $(document).ready(function() {
                             backgroundColor: 'rgba(17, 24, 39, 0.95)',
                             titleFont: {
                                 weight: 'bold',
-                                size: 13
+                                size: 13,
+                                family: 'Poppins'
                             },
                             bodyFont: {
-                                size: 12
+                                size: 12,
+                                family: 'Poppins'
                             },
                             padding: 12,
                             cornerRadius: 8,
@@ -657,7 +694,6 @@ $(document).ready(function() {
                             callbacks: {
                                 label: function(context) {
                                     let label = context.dataset.label || '';
-
                                     if (label) {
                                         label += ': ';
                                     }
@@ -676,7 +712,6 @@ $(document).ready(function() {
                                             label += 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
                                         }
                                     }
-
                                     return label;
                                 }
                             }

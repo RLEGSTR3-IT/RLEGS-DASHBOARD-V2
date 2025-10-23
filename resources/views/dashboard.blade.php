@@ -192,59 +192,37 @@
     </div>
 
     <!-- VISUALISASI -->
-    <div class="row mt-4">
-        <!-- CHART 1: Revenue Bulanan -->
-        <div class="col-md-6">
-            <div class="dashboard-card chart-card">
-                <div class="card-header">
-                    <div class="card-header-content">
-                        <h5 class="card-title">Perkembangan Revenue Bulanan</h5>
-                        <p class="text-muted mb-0">Total pendapatan RLEGS per bulan ({{ date('Y') }})</p>
-                    </div>
+    <div class="row mt-4 row-eq">   <!-- tambahkan row-eq -->
+        <!-- CHART 1 -->
+        <div class="col-md-6 d-flex">  <!-- d-flex -->
+            <div class="dashboard-card chart-card w-100 h-100"> <!-- h-100 -->
+            ...
+            <div class="card-body chart-body">                <!-- biarkan class ini -->
+                <div id="chart-revenue-monthly" class="chart-container">
+                {!! $monthlyChart ?? '' !!}
                 </div>
-                <div class="card-body chart-body">
-                    <div id="chart-revenue-monthly" class="chart-container chart-container--tall">
-                        @if(isset($monthlyChart) && !empty($monthlyChart))
-                            {!! $monthlyChart !!}
-                        @else
-                            <div class="empty-state-enhanced" style="margin:0;background:transparent;border:none">
-                                <i class="fas fa-chart-line"></i><h5>Chart Tidak Tersedia</h5><p>Data chart sedang dimuat atau tidak tersedia untuk periode ini</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
+            </div>
             </div>
         </div>
 
-        <!-- CHART 2: Distribusi AM -->
-        <div class="col-md-6">
-            <div class="dashboard-card chart-card">
-                <div class="card-header">
-                    <div class="card-header-content">
-                        <h5 class="card-title">Distribusi Pencapaian Target AM</h5>
-                        <p class="text-muted mb-0">Kuantitas performa Account Manager per bulan</p>
-                    </div>
+        <!-- CHART 2 -->
+        <div class="col-md-6 d-flex">  <!-- d-flex -->
+            <div class="dashboard-card chart-card w-100 h-100"> <!-- h-100 -->
+            ...
+            <div class="card-body chart-body">
+                <div id="chart-am-distrib" class="chart-container">
+                {!! $performanceChart ?? '' !!}
                 </div>
-                <div class="card-body chart-body">
-                    <div id="chart-am-distrib" class="chart-container chart-container--tall">
-                        @if(isset($performanceChart) && !empty($performanceChart))
-                            {!! $performanceChart !!}
-                        @else
-                            <div class="empty-state-enhanced" style="margin:0;background:transparent;border:none">
-                                <i class="fas fa-chart-bar"></i><h5>Chart Tidak Tersedia</h5><p>Data chart sedang dimuat atau tidak tersedia untuk periode ini</p>
-                            </div>
-                        @endif
-                    </div>
 
-                    <div class="mt-3 d-flex justify-content-center gap-3 chart-badges">
-                        <span class="badge bg-success-soft legend-pill"><i class="fas fa-circle me-1"></i> Hijau: ≥100%</span>
-                        <span class="badge bg-warning-soft legend-pill"><i class="fas fa-circle me-1"></i> Oranye: 80-99%</span>
-                        <span class="badge bg-danger-soft legend-pill"><i class="fas fa-circle me-1"></i> Merah: 0-80%</span>
-                    </div>
+                <!-- legend di bawah chart ini tetap boleh -->
+                <div class="mt-3 d-flex justify-content-center gap-3 chart-badges">
+                ...
                 </div>
+            </div>
             </div>
         </div>
     </div>
+
 
     <!-- TABEL -->
     <div class="dashboard-card mt-4">
@@ -745,8 +723,8 @@ $(document).ready(function() {
     }
     function getTableHeaders(tabType) {
         const headers = {
-            'witel': '<th>Ranking</th><th>Nama Witel</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th><th>Action</th>',
-            'segment': '<th>Ranking</th><th>Nama Segmen</th><th>Divisi</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th><th>Action</th>'
+            'witel': '<th>Ranking</th><th>Nama Witel</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th>',
+            'segment': '<th>Ranking</th><th>Nama Segmen</th><th>Divisi</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th>'
         };
         return headers[tabType] || '';
     }
@@ -758,7 +736,7 @@ $(document).ready(function() {
                     <td class="text-end">Rp ${formatCurrency(item.total_revenue || 0)}</td>
                     <td class="text-end">Rp ${formatCurrency(item.total_target || 0)}</td>
                     <td class="text-end"><span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">${(parseFloat(item.achievement_rate) || 0).toFixed(2)}%</span></td>
-                    <td><a href="${detailUrl}" class="btn btn-sm btn-primary">Detail</a></td>`;
+                    <td><a href="${detailUrl}"></a></td>`;
         } else if (tabType === 'segment') {
             row += `<td>${item.lsegment_ho || item.nama || 'N/A'}</td>
                     <td>${(item.divisi && item.divisi.nama) || item.divisi_nama || 'N/A'}</td>
@@ -766,7 +744,7 @@ $(document).ready(function() {
                     <td class="text-end">Rp ${formatCurrency(item.total_revenue || 0)}</td>
                     <td class="text-end">Rp ${formatCurrency(item.total_target || 0)}</td>
                     <td class="text-end"><span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">${(parseFloat(item.achievement_rate) || 0).toFixed(2)}%</span></td>
-                    <td><a href="${detailUrl}" class="btn btn-sm btn-primary">Detail</a></td>`;
+                    <td><a href="${detailUrl}"></a></td>`;
         }
         row += '</tr>'; return row;
     }

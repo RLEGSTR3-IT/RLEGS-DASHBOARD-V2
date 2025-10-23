@@ -1590,6 +1590,7 @@ button:focus,
    — Berlaku untuk kedua kartu grafik (line & bar)
    ========================================================= */
 
+
 /* Alas & frame lembut untuk area kanvas */
 .dashboard-card .chart-container{
     padding: 8px;
@@ -1644,4 +1645,71 @@ button:focus,
 .dashboard-card .chart-container + .mt-3.d-flex.gap-3 .badge i{
     font-size: .6rem;
     vertical-align: middle;
+}
+
+/* === Samakan tinggi kedua card chart === */
+.row-eq > [class*="col-"] { display: flex; align-items: stretch; }
+.row-eq .dashboard-card { display: flex; flex-direction: column; flex: 1; }
+
+/* Body kartu ikut memenuhi tinggi card */
+.chart-card .card-body.chart-body{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;         /* penting agar canvas boleh membesar */
+}
+
+/* Area chart mengisi ruang yang tersedia di dalam body */
+.chart-card .chart-container{
+  flex: 1;
+  min-height: 350px;     /* tinggi minimum yang sama untuk kedua chart */
+}
+
+/* Kanvas mengikuti kontainer */
+.chart-card .chart-container canvas{
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* (opsional) di layar kecil, turunkan tinggi minimal */
+@media (max-width: 768px){
+  .chart-card .chart-container{ min-height: 280px; }
+}
+
+/* Body kartu jadi posisi relatif agar badge bisa di-absolute */
+.chart-card .card-body.chart-body{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Kontainer chart isi ruang yang sama di kedua kartu */
+.chart-card .chart-container{
+  flex: 1;
+  min-height: 420px;              /* samakan tinggi area chart */
+  padding: 12px 12px 56px;        /* ruang untuk badges di bawah */
+}
+
+/* Kanvas mengikuti kontainer */
+.chart-card .chart-container canvas{
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Badges diposisikan absolut di bawah body kartu, sehingga
+   tidak “mengambil” tinggi kontainer chart */
+.chart-badges{
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  margin-top: 0 !important;       /* override mt-3 */
+  width: max-content;
+}
+
+/* Opsional: di layar kecil, samakan tapi kurangi tinggi minimum */
+@media (max-width: 768px){
+  .chart-card .chart-container{ min-height: 340px; padding-bottom: 52px; }
 }

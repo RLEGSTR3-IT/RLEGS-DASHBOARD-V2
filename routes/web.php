@@ -7,6 +7,10 @@ use App\Http\Controllers\Overview\DashboardController;
 use App\Http\Controllers\Overview\AmDashboardController;
 use App\Http\Controllers\Overview\WitelDashboardController;
 use App\Http\Controllers\Overview\CcDashboardController;
+use App\Http\Controllers\RevenueData\RevenueDataController;
+use App\Http\Controllers\RevenueData\RevenueImportController;
+use App\Http\Controllers\RevenueData\ImportCCController;
+use App\Http\Controllers\RevenueData\ImportAMController;
 
 // Laravel Core
 use Illuminate\Support\Facades\Route;
@@ -179,10 +183,87 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('info')->where('id', '[0-9]+');
     });
 
-    // ===== WITEL ROUTES =====
-    Route::get('witel/{id}', [DashboardController::class, 'showWitel'])
-        ->name('witel.show')
-        ->where('id', '[0-9]+');
+    // ===== WITEL ROUTES (UPDATED) =====
+    Route::prefix('witel')->name('witel.')->group(function () {
+        // Main detail page
+        Route::get('{id}', [WitelDashboardController::class, 'show'])
+            ->name('show')
+            ->where('id', '[0-9]+');
+
+        // AJAX endpoints (placeholder untuk future features)
+        Route::get('{id}/tab-data', function($id) {
+            return response()->json([
+                'message' => 'Witel tab data endpoint - coming soon',
+                'witel_id' => $id
+            ]);
+        })->name('tab-data')->where('id', '[0-9]+');
+
+        Route::get('{id}/card-data', function($id) {
+            return response()->json([
+                'message' => 'Witel card data endpoint - coming soon',
+                'witel_id' => $id
+            ]);
+        })->name('card-data')->where('id', '[0-9]+');
+
+        Route::get('{id}/chart-data', function($id) {
+            return response()->json([
+                'message' => 'Witel chart data endpoint - coming soon',
+                'witel_id' => $id
+            ]);
+        })->name('chart-data')->where('id', '[0-9]+');
+
+        Route::get('{id}/export', function($id) {
+            return response()->json([
+                'message' => 'Witel export endpoint - coming soon',
+                'witel_id' => $id
+            ]);
+        })->name('export')->where('id', '[0-9]+');
+
+        Route::get('{id}/info', function($id) {
+            $witel = Witel::findOrFail($id);
+
+            // Count AMs in this witel
+            $totalAM = AccountManager::where('witel_id', $id)
+                ->where('role', 'AM')
+                ->count();
+
+            $totalHOTDA = AccountManager::where('witel_id', $id)
+                ->where('role', 'HOTDA')
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $witel->id,
+                    'nama' => $witel->nama,
+                    'total_am' => $totalAM,
+                    'total_hotda' => $totalHOTDA,
+                    'total_account_managers' => $totalAM + $totalHOTDA
+                ]
+            ]);
+        })->name('info')->where('id', '[0-9]+');
+
+        Route::get('{id}/performance-summary', function($id) {
+            return response()->json([
+                'message' => 'Witel performance summary - coming soon',
+                'witel_id' => $id
+            ]);
+        })->name('performance-summary')->where('id', '[0-9]+');
+
+        Route::get('{id}/top-ams', function($id) {
+            return response()->json([
+                'message' => 'Witel top AMs - coming soon',
+                'witel_id' => $id
+            ]);
+        })->name('top-ams')->where('id', '[0-9]+');
+
+        Route::get('{id}/top-customers', function($id) {
+            return response()->json([
+                'message' => 'Witel top customers - coming soon',
+                'witel_id' => $id
+            ]);
+        })->name('top-customers')->where('id', '[0-9]+');
+    });
 
     // ===== SEGMENT ROUTES =====
     Route::get('segment/{id}', [DashboardController::class, 'showSegment'])
@@ -325,8 +406,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('leaderboardAM');
     })->name('leaderboard');
 
+    // ===== REVENUE DATA ROUTES =====
+    Route::prefix('revenue-data')->name('revenue.')->group(function () {
+        // Main Revenue Data Page
+        Route::get('/', [RevenueDataController::class, 'index'])->name('data');
+
+        // Get Revenue Data APIs
+        Route::get('revenue-cc', [RevenueDataController::class, 'getRevenueCC'])->name('api.cc');
+        Route::get('revenue-am', [RevenueDataController::class, 'getRevenueAM'])->name('api.am');
+        Route::get('data-am', [RevenueDataController::class, 'getDataAM'])->name('api.data.am');
+        Route::get('data-cc', [RevenueDataController::class, 'getDataCC'])->name('api.data.cc');
+        Route::get('filter-options', [RevenueDataController::class, 'getFilterOptions'])->name('api.filter.options');
+
+        // Import Routes
+        Route::post('import', [RevenueImportController::class, 'import'])->name('import');
+        Route::post('import-revenue-cc', [ImportCCController::class, 'importRevenueCC'])->name('import.cc');
+        Route::get('download-error-log/{filename}', [RevenueImportController::class, 'downloadErrorLog'])->name('download.error.log');
+    });
+
+    // Legacy route for backward compatibility
     Route::get('/revenue', function() {
-        return view('revenueData');
+        return redirect()->route('revenue.data');
     })->name('revenue.index');
 
     Route::get('/treg3', function() {
@@ -427,6 +527,41 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.user');
 
+    Route::get('debug/witel-routes', function() {
+        return response()->json([
+            'main_route' => 'GET /witel/{id}',
+            'description' => 'Witel detail page with revenue data from CC and AM sources',
+            'example_url' => url('/witel/5'),
+            'available_endpoints' => [
+                'detail' => '/witel/{id}',
+                'info' => '/witel/{id}/info',
+                'tab_data' => '/witel/{id}/tab-data (placeholder)',
+                'card_data' => '/witel/{id}/card-data (placeholder)',
+                'chart_data' => '/witel/{id}/chart-data (placeholder)',
+                'export' => '/witel/{id}/export (placeholder)',
+                'performance_summary' => '/witel/{id}/performance-summary (placeholder)',
+                'top_ams' => '/witel/{id}/top-ams (placeholder)',
+                'top_customers' => '/witel/{id}/top-customers (placeholder)'
+            ],
+            'filters_available' => [
+                'tahun' => 'Year filter',
+                'tipe_revenue' => 'Revenue type (REGULER/NGTMA)',
+                'revenue_source' => 'Revenue source (HO/BILL)',
+                'revenue_view_mode' => 'View mode (detail/agregat_bulan)',
+                'granularity' => 'Data granularity (account_manager/divisi/corporate_customer)',
+                'role_filter' => 'AM role filter (all/AM/HOTDA)',
+                'chart_tahun' => 'Chart year',
+                'chart_display' => 'Chart display mode (combination/revenue/achievement)'
+            ],
+            'revenue_logic' => [
+                'DPS' => 'Uses witel_bill_id from cc_revenues',
+                'DGS_DSS' => 'Uses witel_ho_id from cc_revenues',
+                'AM_Revenue' => 'Uses witel_id from am_revenues',
+                'combined' => 'Total = CC Revenue + AM Revenue'
+            ]
+        ]);
+    })->name('debug.witel-routes');
+
     Route::get('debug/cc-routes', function() {
         return response()->json([
             'main_route' => 'GET /corporate-customer/{id}',
@@ -445,6 +580,7 @@ if (app()->environment('local')) {
                 'tipe_revenue' => 'Revenue type (REGULER/NGTMA)',
                 'revenue_source' => 'Revenue source (HO/BILL)',
                 'revenue_view_mode' => 'View mode (detail/agregat_bulan)',
+                'granularity' => 'Data granularity (divisi/segment/account_manager)',
                 'chart_tahun' => 'Chart year',
                 'chart_display' => 'Chart display mode (combination/revenue/achievement)'
             ]

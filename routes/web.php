@@ -56,9 +56,6 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
     ->middleware('guest')
     ->name('search.account-managers');
 
-// ===== AUTHENTICATED ROUTES =====
-Route::middleware(['auth', 'verified'])->group(function () {
-
     // ===== MAIN DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -396,10 +393,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ===== PROFILE ROUTES =====
     Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
-        Route::patch('/', [ProfileController::class, 'update'])->name('update');
-        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
-    });
+
+    // tampilkan langsung partial (kalau memang mau render file ini saja)
+    Route::get('/', function () {
+        return view('profile.partials.update-profile-information-form');
+    })->name('edit');
+
+    // placeholder agar rute nama tetap ada (tanpa controller)
+    Route::patch('/', function () { return back(); })->name('update');
+    Route::delete('/', function () { return back(); })->name('destroy');
+});
 
     // ===== SIDEBAR ROUTES =====
     Route::get('/leaderboard', function() {
@@ -436,7 +439,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/witel-perform', function() {
         return view('performansi.witel');
     })->name('witel.perform');
-});
+
 
 // ===== UTILITY ROUTES =====
 Route::get('health-check', function () {

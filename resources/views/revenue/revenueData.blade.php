@@ -1,15 +1,58 @@
 @extends('layouts.main')
 
-@section('title', 'Revenue RLEGS TR3')
+@section('title', 'Revenue RLEGS')
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('css/revenue.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-    <!-- Flatpickr styles (core) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        /* Additional styles for result modal */
+        .result-modal-stat {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .result-modal-stat .icon {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .result-modal-stat .icon.success { background: #d4edda; color: #155724; }
+        .result-modal-stat .icon.danger { background: #f8d7da; color: #721c24; }
+        .result-modal-stat .icon.warning { background: #fff3cd; color: #856404; }
+        .result-modal-stat .icon.info { background: #d1ecf1; color: #0c5460; }
+        .result-modal-stat .content h4 { margin: 0; font-size: 1.5rem; font-weight: bold; }
+        .result-modal-stat .content p { margin: 0; color: #6c757d; }
+        .progress-bar-custom {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+        .progress-bar-fill-custom {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: width 0.5s ease;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -37,31 +80,20 @@
 
     <!-- ===== Filters Line ===== -->
     <div class="filters card-shadow">
-         <form class="searchbar" action="#" method="GET" onsubmit="return false;">
-                <input type="search" class="search-input" placeholder="Cari data...">
-                <button class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+         <form class="searchbar" action="#" method="GET" id="searchForm" onsubmit="return false;">
+                <input type="search" class="search-input" id="searchInput" placeholder="Cari data...">
+                <button class="search-btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
             </form>
         <div class="filter-group">
             <label>Witel</label>
-            <select class="form-select">
-                <option value="">Semua Witel</option>
-                <option>Witel Bali</option>
-                <option>Witel Jatim Barat</option>
-                <option>Witel Jatim Timur</option>
-                <option>Witel Nusa Tenggara</option>
-                <option>Witel Semarang Jateng Utara</option>
-                <option>Witel Solo Jateng Timur</option>
-                <option>Witel Suramadu</option>
-                <option>Witel Yogya Jateng Selatan</option>
+            <select class="form-select" id="filterWitel">
+                <option value="all">Semua Witel</option>
             </select>
         </div>
         <div class="filter-group">
             <label>Divisi</label>
-            <select class="form-select">
-                <option value="">Semua Divisi</option>
-                <option>DGS</option>
-                <option>DPS</option>
-                <option>DSS</option>
+            <select class="form-select" id="filterDivisi">
+                <option value="all">Semua Divisi</option>
             </select>
         </div>
         <div class="filter-group">
@@ -69,17 +101,12 @@
 
             <!-- Select asli (tetap ada untuk submit & nilai) -->
             <select class="form-select" id="filter-segment" name="segment">
-                <option value="">Semua Segment</option>
+                <option value="all">Semua Segment</option>
                 <!-- nilai akan diisi via JS; opsi statis ini hanya fallback -->
             </select>
 
             <!-- UI custom bertab -->
             <div class="seg-select" id="segSelect">
-                {{-- <button type="button" class="seg-select__btn" id="segBtn">
-                <span id="segBtnLabel">Semua Segment</span>
-                <i class="fa-solid fa-chevron-down seg-select__caret" aria-hidden="true"></i>
-                </button> --}}
-
                 <div class="seg-menu" id="segMenu" role="listbox" aria-labelledby="segBtn">
                 <div class="seg-tabs" role="tablist" aria-label="Divisi">
                     <button class="seg-tab active" data-tab="DPS" role="tab" aria-selected="true">DPS</button>
@@ -89,7 +116,7 @@
 
                 <div class="seg-panels">
                     <div class="seg-panel active" data-panel="DPS" role="tabpanel">
-                    <button class="seg-option all" data-value="">Semua Segment</button>
+                    <button class="seg-option all" data-value="all">Semua Segment</button>
                     <button class="seg-option" data-value="FWS">FWS</button>
                     <button class="seg-option" data-value="LMS">LMS</button>
                     <button class="seg-option" data-value="PBS">PBS</button>
@@ -99,7 +126,7 @@
                     </div>
 
                     <div class="seg-panel" data-panel="DSS" role="tabpanel">
-                    <button class="seg-option all" data-value="">Semua Segment</button>
+                    <button class="seg-option all" data-value="all">Semua Segment</button>
                     <button class="seg-option" data-value="ERS">ERS</button>
                     <button class="seg-option" data-value="FRBS">FRBS</button>
                     <button class="seg-option" data-value="MIS">MIS</button>
@@ -108,7 +135,7 @@
                     </div>
 
                     <div class="seg-panel" data-panel="DGS" role="tabpanel">
-                    <button class="seg-option all" data-value="">Semua Segment</button>
+                    <button class="seg-option all" data-value="all">Semua Segment</button>
                     <button class="seg-option" data-value="GPS">GPS</button>
                     <button class="seg-option" data-value="GDS">GDS</button>
                     <button class="seg-option" data-value="GIS">GIS</button>
@@ -121,11 +148,21 @@
 
 
         <!-- === Periode: Datepicker (kalender harian) === -->
-        <div class="filter-group">
+        <div class="filter-group" id="filterPeriodeGroup">
             <label>Periode</label>
             <input type="text" id="filter-date" class="form-control datepicker-control" placeholder="Pilih bulan & tahun" autocomplete="off">
             <input type="hidden" id="filter-month" name="month" value="{{ date('m') }}">
             <input type="hidden" id="filter-year"  name="year"  value="{{ date('Y') }}">
+        </div>
+
+        <!-- Filter Role (for AM tabs only) -->
+        <div class="filter-group" id="filterRoleGroup" style="display: none;">
+            <label>Role</label>
+            <select class="form-select" id="filterRole">
+                <option value="all">Semua</option>
+                <option value="AM">AM</option>
+                <option value="HOTDA">HOTDA</option>
+            </select>
         </div>
 
 
@@ -139,15 +176,19 @@
     <div class="tabs card-shadow">
         <button class="tab-btn active" data-tab="tab-cc-revenue">
             <i class="fa-solid fa-chart-line me-2"></i>Revenue CC
-            <span class="badge neutral" id="badge-cc-rev">5</span>
+            <span class="badge neutral" id="badge-cc-rev">0</span>
         </button>
         <button class="tab-btn" data-tab="tab-am-revenue">
             <i class="fa-solid fa-user-tie me-2"></i>Revenue AM
-            <span class="badge neutral" id="badge-am-rev">3</span>
+            <span class="badge neutral" id="badge-am-rev">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-data-am">
+            <i class="fa-solid fa-users me-2"></i>Data AM
+            <span class="badge neutral" id="badge-data-am">0</span>
         </button>
         <button class="tab-btn" data-tab="tab-data-cc">
             <i class="fa-solid fa-building me-2"></i>Data CC
-            <span class="badge neutral" id="badge-cc">4</span>
+            <span class="badge neutral" id="badge-cc">0</span>
         </button>
     </div>
 
@@ -159,9 +200,9 @@
                 <p class="muted">Gunakan <i>option button</i> untuk melihat kategori Revenue CC</p>
             </div>
             <div class="btn-segmentation" role="group" aria-label="Revenue Type">
-                <button class="seg-btn active" data-revtype="reg">Reguler</button>
-                <button class="seg-btn" data-revtype="ngtma">NGTMA</button>
-                <button class="seg-btn" data-revtype="komb">Kombinasi</button>
+                <button class="seg-btn active" data-revtype="REGULER">Reguler</button>
+                <button class="seg-btn" data-revtype="NGTMA">NGTMA</button>
+                <button class="seg-btn" data-revtype="KOMBINASI">Kombinasi</button>
             </div>
         </div>
 
@@ -180,52 +221,30 @@
                                title="Nilai ini menampilkan Revenue sesuai kategori (Reguler/NGTMA/Kombinasi). Hover pada angka untuk detail: Revenue Sold/Bill."></i>
                         </th>
                         <th>Bulan</th>
-                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableRevenueCC">
                     <tr>
-                        <td>PT Telkom Indonesia</td>
-                        <td><span class="badge-div dps">DPS</span></td>
-                        <td>Government</td>
-                        <td class="text-end">Rp 1.000.000.000</td>
-                        <td class="text-end"><span class="rev-val" data-bs-toggle="tooltip" title="Revenue Bill">Rp 1.200.000.000</span></td>
-                        <td>Jan 2025</td>
-                        <td class="text-center">
-                            <button class="icon-btn edit" title="Edit"><i class="fa-regular fa-pen-to-square"></i></button>
-                            <button class="icon-btn delete" title="Hapus"><i class="fa-regular fa-trash-can"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PT Indosat Tbk</td>
-                        <td><span class="badge-div dgs">DGS</span></td>
-                        <td>Enterprise</td>
-                        <td class="text-end">Rp 800.000.000</td>
-                        <td class="text-end"><span class="rev-val" data-bs-toggle="tooltip" title="Revenue Sold">Rp 650.000.000</span></td>
-                        <td>Jan 2025</td>
-                        <td class="text-center">
-                            <button class="icon-btn edit"><i class="fa-regular fa-pen-to-square"></i></button>
-                            <button class="icon-btn delete"><i class="fa-regular fa-trash-can"></i></button>
+                        <td colspan="6" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="pagination-bar">
-            <div class="info">Menampilkan 1–5 dari 5 hasil</div>
-            <div class="pages">
-                <button class="pager disabled"><i class="fa-solid fa-chevron-left"></i></button>
-                <button class="pager active">1</button>
-                <button class="pager disabled"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
+        <div class="pagination-bar" id="paginationRevenueCC">
+            <div class="info">Menampilkan 0 dari 0 hasil</div>
+            <div class="pages"></div>
             <div class="perpage">
                 <label>Baris</label>
                 <select class="form-select small">
-                    <option selected>25</option>
-                    <option>50</option>
-                    <option>75</option>
-                    <option>100</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="75">75</option>
+                    <option value="100">100</option>
                 </select>
             </div>
         </div>
@@ -240,8 +259,9 @@
             </div>
             <div class="am-toggles">
                 <div class="btn-toggle" data-role="amMode">
-                    <button class="am-btn active" data-mode="am">AM</button>
-                    <button class="am-btn" data-mode="hotda">HOTDA</button>
+                    <button class="am-btn active" data-mode="all">Semua</button>
+                    <button class="am-btn" data-mode="AM">AM</button>
+                    <button class="am-btn" data-mode="HOTDA">HOTDA</button>
                 </div>
             </div>
         </div>
@@ -262,44 +282,80 @@
                         </th>
                         <th class="text-end">Achievement</th>
                         <th>Bulan</th>
-                        <th class="hotda-col d-none">TELDA</th>
-                        <th class="text-center">Aksi</th>
+                        <th class="hotda-col" style="display: none;">TELDA</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableRevenueAM">
                     <tr>
-                        <td>John Doe</td>
-                        <td><span class="badge-div dss">DSS</span></td>
-                        <td>PT Example A</td>
-                        <td class="text-end">Rp 500.000.000</td>
-                        <td class="text-end"><span data-bs-toggle="tooltip" title="Revenue Bill">Rp 600.000.000</span></td>
-                        <td class="text-end"><span class="achv good">120.0%</span></td>
-                        <td>Jan 2025</td>
-                        <td class="hotda-col d-none">TELDA-01</td>
-                        <td class="text-center">
-                            <button class="icon-btn edit"><i class="fa-regular fa-pen-to-square"></i></button>
-                            <button class="icon-btn delete"><i class="fa-regular fa-trash-can"></i></button>
+                        <td colspan="8" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="pagination-bar">
-            <div class="info">Menampilkan 1–3 dari 3 hasil</div>
-            <div class="pages">
-                <button class="pager disabled"><i class="fa-solid fa-chevron-left"></i></button>
-                <button class="pager active">1</button>
-                <button class="pager disabled"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
+        <div class="pagination-bar" id="paginationRevenueAM">
+            <div class="info">Menampilkan 0 dari 0 hasil</div>
+            <div class="pages"></div>
             <div class="perpage">
                 <label>Baris</label>
                 <select class="form-select small">
-                    <option>10</option>
-                    <option selected>15</option>
-                    <option>25</option>
-                    <option>50</option>
-                    <option>100</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="75">75</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Tab: Data AM ===== -->
+    <div id="tab-data-am" class="tab-panel card-shadow">
+        <div class="panel-header">
+            <div class="left">
+                <h3>Data Account Manager</h3>
+                <p class="muted">Daftar Account Manager yang terdaftar di sistem</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table modern">
+                <thead>
+                    <tr>
+                        <th>Nama AM</th>
+                        <th>NIK</th>
+                        <th>Divisi</th>
+                        <th>Witel</th>
+                        <th>Role</th>
+                        <th class="hotda-col" style="display: none;">TELDA</th>
+                        <th>Status Registrasi</th>
+                    </tr>
+                </thead>
+                <tbody id="tableDataAM">
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-bar" id="paginationDataAM">
+            <div class="info">Menampilkan 0 dari 0 hasil</div>
+            <div class="pages"></div>
+            <div class="perpage">
+                <label>Baris</label>
+                <select class="form-select small">
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="75">75</option>
+                    <option value="100">100</option>
                 </select>
             </div>
         </div>
@@ -320,54 +376,30 @@
                     <tr>
                         <th>Nama CC</th>
                         <th>NIPNAS</th>
-                        <th>Divisi</th>
-                        <th>Segment</th>
-                        <th>Witel</th>
-                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableDataCC">
                     <tr>
-                        <td>PT Telkom Indonesia</td>
-                        <td>123456789</td>
-                        <td><span class="badge-div dps">DPS</span></td>
-                        <td>Government</td>
-                        <td>Witel Surabaya</td>
-                        <td class="text-center">
-                            <button class="icon-btn edit"><i class="fa-regular fa-pen-to-square"></i></button>
-                            <button class="icon-btn delete"><i class="fa-regular fa-trash-can"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PT Indosat Tbk</td>
-                        <td>987654321</td>
-                        <td><span class="badge-div dgs">DGS</span></td>
-                        <td>Enterprise</td>
-                        <td>Witel Malang</td>
-                        <td class="text-center">
-                            <button class="icon-btn edit"><i class="fa-regular fa-pen-to-square"></i></button>
-                            <button class="icon-btn delete"><i class="fa-regular fa-trash-can"></i></button>
+                        <td colspan="2" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="pagination-bar">
-            <div class="info">Menampilkan 1–4 dari 4 hasil</div>
-            <div class="pages">
-                <button class="pager disabled"><i class="fa-solid fa-chevron-left"></i></button>
-                <button class="pager active">1</button>
-                <button class="pager disabled"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
+        <div class="pagination-bar" id="paginationDataCC">
+            <div class="info">Menampilkan 0 dari 0 hasil</div>
+            <div class="pages"></div>
             <div class="perpage">
                 <label>Baris</label>
                 <select class="form-select small">
-                    <option>10</option>
-                    <option selected>15</option>
-                    <option>25</option>
-                    <option>50</option>
-                    <option>100</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="75">75</option>
+                    <option value="100">100</option>
                 </select>
             </div>
         </div>
@@ -395,99 +427,100 @@
 
         <!-- ====== Form: Data CC ====== -->
         <div id="imp-cc" class="imp-panel active">
-            <div class="subswitch">
-                <span class="label">Jenis File:</span>
-                <div class="btn-group">
-                    <button class="sub-btn active" data-sub="rev">Data Revenue</button>
-                    <button class="sub-btn" data-sub="target">Data Target</button>
-                </div>
-            </div>
-
-            <form action="#" method="POST" enctype="multipart/form-data" onsubmit="return false;">
+            <form id="formDataCC" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="import_type" value="data_cc">
                 <div class="row gx-3 gy-3">
                     <div class="col-md-6">
                         <label class="form-label">Unggah File (.csv)</label>
-                        <input type="file" class="form-control" accept=".csv">
+                        <input type="file" class="form-control" name="file" accept=".csv" required>
                     </div>
                 </div>
 
                 <div class="alert note mt-3">
                     <strong>Ketentuan file:</strong>
                     <ul class="mb-0">
-                        <li>Jika <em>Data Revenue CC</em> → wajib terdapat kolom <strong>Divisi</strong>.</li>
-                        <li>Jika <em>Data Target CC</em> → wajib terdapat kolom: <strong>Nama CC, NIPNAS, Divisi, Segment, Target</strong>.</li>
+                        <li>Format CSV dengan kolom: <strong>STANDARD_NAME, NIP_NAS</strong></li>
                     </ul>
                 </div>
 
                 <div class="mt-3">
-                    <button class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
                 </div>
             </form>
         </div>
 
         <!-- ====== Form: Data AM ====== -->
         <div id="imp-am" class="imp-panel">
-            <form action="#" method="POST" enctype="multipart/form-data" onsubmit="return false;">
+            <form id="formDataAM" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="import_type" value="data_am">
                 <div class="row gx-3 gy-3">
                     <div class="col-md-6">
                         <label class="form-label">Unggah File (.csv)</label>
-                        <input type="file" class="form-control" accept=".csv">
-                        <small class="text-muted">Kolom wajib: <strong>Nama AM, NIK, Witel, Divisi</strong>.</small>
+                        <input type="file" class="form-control" name="file" accept=".csv" required>
+                        <small class="text-muted">Kolom wajib: <strong>NAMA_AM, NIK, WITEL, DIVISI, ROLE</strong>.</small>
                     </div>
                 </div>
                 <div class="mt-3">
-                    <button class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
                 </div>
             </form>
         </div>
 
         <!-- ====== Form: Revenue CC ====== -->
         <div id="imp-rev-cc" class="imp-panel">
-            <form action="#" method="POST" enctype="multipart/form-data" onsubmit="return false;">
+            <form id="formRevenueCC" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="import_type" value="revenue_cc">
                 <div class="row gx-3 gy-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label">Unggah File (.csv)</label>
-                        <input type="file" class="form-control" accept=".csv">
+                        <input type="file" class="form-control" name="file" accept=".csv" required>
                     </div>
 
                     <!-- tambahkan wrapper kolom di sini -->
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="filter-group">
                         <label>Divisi</label>
-                        <select class="form-select">
-                            <option value="">Semua Divisi</option>
-                            <option>DGS</option>
-                            <option>DPS</option>
-                            <option>DSS</option>
+                        <select class="form-select" name="divisi_id" id="divisiImport" required>
+                            <option value="">Pilih Divisi</option>
                         </select>
                         </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Jenis Data</label>
+                        <select class="form-select" name="jenis_data" required>
+                            <option value="">Pilih Jenis</option>
+                            <option value="revenue">Revenue</option>
+                            <option value="target">Target</option>
+                        </select>
                     </div>
                 </div>
 
 
                 <div class="mt-3">
-                    <button class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
                 </div>
             </form>
         </div>
 
         <!-- ====== Form: Revenue AM (Mapping) ====== -->
         <div id="imp-rev-map" class="imp-panel">
-            <form action="#" method="POST" enctype="multipart/form-data" onsubmit="return false;">
+            <form id="formRevenueAM" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="import_type" value="revenue_am">
                 <div class="row gx-3 gy-3">
                     <div class="col-md-6">
                         <label class="form-label">Unggah File (.csv)</label>
-                        <input type="file" class="form-control" accept=".csv">
-                        <small class="text-muted">Kolom wajib: </br> <strong>NIPNAS CC, Nama CC, Divisi, Segmen, NIK AM, Witel HO, Divisi AM, Posisi, Telda, dan Proporsi</strong>.</small>
+                        <input type="file" class="form-control" name="file" accept=".csv" required>
+                        <small class="text-muted">Kolom wajib: </br> <strong>YEAR, MONTH, NIPNAS, NIK_AM, PROPORSI</strong> dll.</small>
                     </div>
                 </div>
 
                 <div class="mt-3">
-                    <button class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload me-2"></i>Import</button>
                 </div>
             </form>
         </div>
@@ -501,6 +534,25 @@
   </div>
 </div>
 
+<!-- =================== RESULT MODAL =================== -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hasil Import</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="resultModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <a href="#" class="btn btn-primary" id="btnDownloadErrorLog" style="display: none;" target="_blank">
+                    <i class="fa-solid fa-download me-2"></i>Download Error Log
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -508,625 +560,776 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ========================================
+  // GLOBAL STATE
+  // ========================================
+  let currentTab = 'tab-cc-revenue';
+  let currentPage = 1;
+  let perPage = 25;
+  let currentFilters = {
+    search: '',
+    witel_id: 'all',
+    divisi_id: 'all',
+    segment_id: 'all',
+    periode: '',
+    tipe_revenue: 'REGULER',
+    role: 'all'
+  };
+
+  // ========================================
+  // FLATPICKR INITIALIZATION
+  // ========================================
   const dateInput   = document.getElementById('filter-date');
   const hiddenMonth = document.getElementById('filter-month');
   const hiddenYear  = document.getElementById('filter-year');
 
-  if (!dateInput) return;
+  if (dateInput) {
+    const currentYear = new Date().getFullYear();
+    let selectedYear  = currentYear;
+    let selectedMonth = new Date().getMonth();
 
-  // Tahun dinamis - otomatis update setiap tahun
-  const currentYear = new Date().getFullYear();
-  let selectedYear  = currentYear;
-  let selectedMonth = new Date().getMonth();
-
-  // === WINDOW TAHUN DINAMIS (NOW ... NOW-5), MINIMAL 2020 ===
-  const YEAR_FLOOR = 2020;
-  function getYearWindow() {
-    const nowY = new Date().getFullYear();
-    const start = nowY;                         // tahun terbaru = tahun sekarang
-    const end   = Math.max(YEAR_FLOOR, nowY - 5); // 5 tahun ke belakang, minimal 2020
-    return { start, end };
-  }
-  function clampSelectedYear() {
-    const { start, end } = getYearWindow();
-    if (selectedYear > start) selectedYear = start;
-    if (selectedYear < end)   selectedYear = end;
-  }
-
-  let isYearView = false; // Track current view
-  let fpInstance = null;  // Store instance
-
-  // === Tambahan: sinkronisasi lebar popup dengan input trigger ===
-  function getTriggerEl(instance){
-    // Saat altInput:true, elemen yang terlihat adalah instance.altInput
-    return instance?.altInput || dateInput;
-  }
-  function syncCalendarWidth(instance){
-    try{
-      const cal = instance.calendarContainer;
-      const trigger = getTriggerEl(instance);
-      if (!cal || !trigger) return;
-
-      const rect = trigger.getBoundingClientRect();
-      const w = Math.round(rect.width);
-
-      // Kunci lebar popup agar sama persis dengan input
-      cal.style.boxSizing = 'border-box';
-      cal.style.width     = w + 'px';
-      cal.style.maxWidth  = w + 'px';
-      // (opsional) pastikan tidak kepotong di viewport sangat kecil
-      // cal.style.maxWidth = Math.min(window.innerWidth * 0.96, w) + 'px';
-    }catch(e){
-      // no-op
+    const YEAR_FLOOR = 2020;
+    function getYearWindow() {
+      const nowY = new Date().getFullYear();
+      const start = nowY;
+      const end   = Math.max(YEAR_FLOOR, nowY - 5);
+      return { start, end };
     }
-  }
+    function clampSelectedYear() {
+      const { start, end } = getYearWindow();
+      if (selectedYear > start) selectedYear = start;
+      if (selectedYear < end)   selectedYear = end;
+    }
 
-  const fp = flatpickr(dateInput, {
-    plugins: [ new monthSelectPlugin({
-      shorthand: true,
-      dateFormat: "Y-m",
-      altFormat: "F Y",
-      theme: "light"
-    })],
-    altInput: true,
-    defaultDate: new Date(),
-    allowInput: false,
-    monthSelectorType: 'static',
+    let isYearView = false;
+    let fpInstance = null;
 
-    onReady(selectedDates, value, instance) {
-      fpInstance = instance;
-      const d = selectedDates?.[0] || new Date();
-      selectedYear  = d.getFullYear();
-      selectedMonth = d.getMonth();
+    function getTriggerEl(instance){
+      return instance?.altInput || dateInput;
+    }
+    function syncCalendarWidth(instance){
+      try{
+        const cal = instance.calendarContainer;
+        const trigger = getTriggerEl(instance);
+        if (!cal || !trigger) return;
 
+        const rect = trigger.getBoundingClientRect();
+        cal.style.width = rect.width + 'px';
+      }catch(e){}
+    }
+
+    function buildMonthHTML() {
+      const { start, end } = getYearWindow();
+      const today = new Date();
+      const currentM = today.getMonth();
+      const currentY = today.getFullYear();
+
+      let html = `<div class="year-header">${selectedYear}</div>`;
+      html += '<div class="month-grid">';
+      for (let m = 0; m < 12; m++) {
+        const isCurrent = (selectedYear === currentY && m === currentM);
+        const isSelected = (m === selectedMonth);
+        let cls = 'month-item';
+        if (isSelected) cls += ' selected';
+        if (isCurrent)  cls += ' current-month';
+        const label = new Date(selectedYear, m).toLocaleDateString('id-ID', { month: 'short' });
+        html += `<div class="${cls}" data-month="${m}">${label}</div>`;
+      }
+      html += '</div>';
+
+      html += '<div class="year-nav">';
+      html += `<button type="button" class="year-btn" data-dir="prev" ${selectedYear <= end ? 'disabled' : ''}>◀</button>`;
+      html += `<button type="button" class="year-select-btn">${selectedYear}</button>`;
+      html += `<button type="button" class="year-btn" data-dir="next" ${selectedYear >= start ? 'disabled' : ''}>▶</button>`;
+      html += '</div>';
+
+      return html;
+    }
+
+    function buildYearHTML() {
+      const { start, end } = getYearWindow();
+      let html = '<div class="year-picker-grid">';
+      for (let y = start; y >= end; y--) {
+        const cls = (y === selectedYear) ? 'year-pick-item selected' : 'year-pick-item';
+        html += `<div class="${cls}" data-year="${y}">${y}</div>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function renderView() {
       clampSelectedYear();
+      const cal = fpInstance.calendarContainer;
+      if (!cal) return;
 
-      hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-      hiddenYear.value  = selectedYear;
+      if (!isYearView) {
+        cal.innerHTML = buildMonthHTML();
+        cal.querySelectorAll('.month-item').forEach(item => {
+          item.addEventListener('click', () => {
+            selectedMonth = parseInt(item.dataset.month, 10);
+            const d = new Date(selectedYear, selectedMonth, 1);
+            fpInstance.setDate(d, true);
+            fpInstance.close();
+            updateHiddenFields();
+          });
+        });
 
-      instance.calendarContainer.classList.add('fp-compact');
+        cal.querySelectorAll('.year-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const dir = btn.dataset.dir;
+            if (dir === 'prev' && !btn.disabled) selectedYear--;
+            if (dir === 'next' && !btn.disabled) selectedYear++;
+            renderView();
+          });
+        });
 
-      // ⬇️ Samakan lebar popup saat siap
-      syncCalendarWidth(instance);
-
-      setupCustomUI(instance);
-    },
-
-    onOpen(selectedDates, value, instance) {
-      fpInstance = instance;
-      isYearView = false;
-
-      clampSelectedYear();
-      renderMonthView(instance);
-
-      // ⬇️ Samakan lebar popup saat dibuka
-      syncCalendarWidth(instance);
-
-      setTimeout(() => {
-        const activeMonth = instance.calendarContainer.querySelector('.fp-month-option.selected');
-        if (activeMonth) {
-          activeMonth.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const ysBtn = cal.querySelector('.year-select-btn');
+        if (ysBtn) {
+          ysBtn.addEventListener('click', () => {
+            isYearView = true;
+            renderView();
+          });
         }
-      }, 100);
-    }
-  });
-
-  // Responsif: saat window di-resize & popup terbuka, lebar tetap mengikuti input
-  window.addEventListener('resize', () => {
-    if (fpInstance && fpInstance.isOpen) {
-      syncCalendarWidth(fpInstance);
-    }
-  });
-
-  function setupCustomUI(instance) {
-    const cal = instance.calendarContainer;
-
-    // Sembunyikan default month select
-    const monthsContainer = cal.querySelector('.flatpickr-monthSelect-months, .monthSelect-months');
-    if (monthsContainer) {
-      monthsContainer.style.display = 'none';
-    }
-  }
-
-  function renderMonthView(instance) {
-    const cal = instance.calendarContainer;
-    const header = cal.querySelector('.flatpickr-current-month');
-
-    if (header) {
-      header.innerHTML = `
-        <button type="button" class="fp-year-toggle" style="background:transparent;border:0;color:#fff;font-size:1.25rem;font-weight:700;cursor:pointer;padding:8px 16px;border-radius:8px;">
-          ${selectedYear} <span style="font-size:0.875rem;margin-left:4px;">▼</span>
-        </button>
-      `;
-      const yearToggle = header.querySelector('.fp-year-toggle');
-      yearToggle.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        isYearView = true;
-        renderYearView(instance);
-      });
-    }
-
-    let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-monthSelect-months, .monthSelect-months, .flatpickr-innerContainer');
-    if (!container) return;
-
-    container.innerHTML = '';
-    container.className = 'fp-month-grid';
-
-    // ⬇️ agar bisa fokus & scroll dengan keyboard/trackpad
-    container.setAttribute('tabindex', '0');
-
-    const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-
-    monthNames.forEach((name, idx) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'fp-month-option';
-      btn.textContent = name;
-
-      const currentSelectedDate = fp.selectedDates[0] || new Date();
-      if (idx === selectedMonth && selectedYear === currentSelectedDate.getFullYear()) {
-        btn.classList.add('selected');
+      } else {
+        cal.innerHTML = buildYearHTML();
+        cal.querySelectorAll('.year-pick-item').forEach(item => {
+          item.addEventListener('click', () => {
+            selectedYear = parseInt(item.dataset.year, 10);
+            isYearView = false;
+            renderView();
+          });
+        });
       }
-
-      btn.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        selectedMonth = idx;
-        const newDate = new Date(selectedYear, selectedMonth, 1);
-        fp.setDate(newDate, true);
-        hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-        hiddenYear.value  = selectedYear;
-        setTimeout(() => fp.close(), 150);
-      });
-
-      container.appendChild(btn);
-    });
-
-    // ⬇️ auto-scroll supaya bulan terpilih tampak di tengah grid
-    const activeMonth = container.querySelector('.fp-month-option.selected');
-    if (activeMonth) {
-      activeMonth.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }
 
-  function renderYearView(instance) {
-    const cal = instance.calendarContainer;
-    const header = cal.querySelector('.flatpickr-current-month');
+    function updateHiddenFields() {
+      if (hiddenMonth) hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
+      if (hiddenYear)  hiddenYear.value  = String(selectedYear);
 
-    if (header) {
-      // Header untuk year view dengan tombol back
-      header.innerHTML = `
-        <button type="button" class="fp-back-btn" style="background:transparent;border:0;color:#fff;font-size:1.5rem;cursor:pointer;position:absolute;left:16px;top:50%;transform:translateY(-50%);line-height:1;">
-          ‹
-        </button>
-        <span style="color:#fff;font-weight:700;font-size:1.125rem;">Tahun</span>
-      `;
+      // Update filter periode
+      currentFilters.periode = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+    }
 
-      const backBtn = header.querySelector('.fp-back-btn');
-      backBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    fpInstance = flatpickr(dateInput, {
+      altInput: true,
+      altFormat: "F Y",
+      dateFormat: "Y-m",
+      defaultDate: new Date(selectedYear, selectedMonth, 1),
+      onReady(_, __, fp) {
+        renderView();
+        syncCalendarWidth(fp);
+        updateHiddenFields();
+      },
+      onOpen(_, __, fp) {
         isYearView = false;
-        renderMonthView(instance);
-      });
-    }
-
-    let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-innerContainer');
-    if (!container) return;
-
-    // Buat year grid
-    container.innerHTML = '';
-    container.className = 'fp-year-grid';
-
-    // === Gunakan window dinamis (NOW ... NOW-5, minimal 2020) ===
-    const { start, end } = getYearWindow();
-    for (let y = start; y >= end; y--) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'fp-year-option';
-      btn.textContent = y;
-
-      if (y === selectedYear) {
-        btn.classList.add('active');
+        renderView();
+        syncCalendarWidth(fp);
       }
+    });
+  }
 
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+  // ========================================
+  // LOAD FILTER OPTIONS FROM BACKEND
+  // ========================================
+  function loadFilterOptions() {
+    $.ajax({
+      url: '{{ route("revenue.api.filter.options") }}',
+      method: 'GET',
+      success: function(response) {
+        // Populate Witel
+        const witelSelect = $('#filterWitel');
+        response.witels.forEach(function(witel) {
+          witelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
+        });
 
-        // Update selected year
-        selectedYear = y;
+        // Populate Divisi
+        const divisiSelect = $('#filterDivisi');
+        const divisiImport = $('#divisiImport');
+        response.divisions.forEach(function(divisi) {
+          divisiSelect.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
+          divisiImport.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
+        });
 
-        // Update hidden input
-        hiddenYear.value = selectedYear;
+        // Populate Segment
+        const segmentSelect = $('#filter-segment');
+        response.segments.forEach(function(segment) {
+          segmentSelect.append(`<option value="${segment.id}">${segment.lsegment_ho}</option>`);
+        });
 
-        // Kembali ke month view setelah pilih tahun
-        isYearView = false;
-        renderMonthView(instance);
-      });
-
-      container.appendChild(btn);
-    }
-
-    // Auto scroll ke tahun aktif
-    setTimeout(() => {
-      const activeYear = container.querySelector('.fp-year-option.active');
-      if (activeYear) {
-        activeYear.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Enhance selects
+        enhanceFilterBar();
+        enhanceModalDivisi();
+      },
+      error: function(xhr) {
+        console.error('Error loading filters:', xhr);
       }
-    }, 100);
-  }
-
-  // Reset button handler
-  const resetBtn = document.getElementById('btn-reset-filter');
-  if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
-      const now = new Date();
-      selectedYear  = now.getFullYear();
-      selectedMonth = now.getMonth();
-
-      clampSelectedYear();
-
-      fp.setDate(now, true);
-      hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-      hiddenYear.value  = selectedYear;
     });
   }
 
-  /* -----------------------
-   * 2) Tabs sederhana
-   * ----------------------- */
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById(btn.dataset.tab);
-      if (panel) panel.classList.add('active');
-    });
-  });
-
-  /* -------------------------------------
-   * 3) Revenue type switch (UI only)
-   * ------------------------------------- */
-  document.querySelectorAll('.seg-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.seg-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-    });
-  });
-
-  /* ---------------------------------------
-   * 4) AM / HOTDA toggle (show TELDA col)
-   * --------------------------------------- */
-  const amButtons = document.querySelectorAll('.am-btn');
-  const hotdaColsHeader = document.querySelectorAll('#table-am thead .hotda-col');
-  const hotdaColsBody   = document.querySelectorAll('#table-am tbody .hotda-col');
-  amButtons.forEach(b => {
-    b.addEventListener('click', () => {
-      amButtons.forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      const show = (b.dataset.mode === 'hotda');
-      hotdaColsHeader.forEach(td => td.classList.toggle('d-none', !show));
-      hotdaColsBody.forEach(td   => td.classList.toggle('d-none', !show));
-    });
-  });
-
-  /* --------------------------------
-   * 5) Import modal – tab switch
-   * -------------------------------- */
-  const typeButtons = document.querySelectorAll('.type-btn');
-  const impPanels   = document.querySelectorAll('.imp-panel');
-  typeButtons.forEach(tb => {
-    tb.addEventListener('click', () => {
-      typeButtons.forEach(x => x.classList.remove('active'));
-      impPanels.forEach(p => p.classList.remove('active'));
-      tb.classList.add('active');
-      const target = document.getElementById(tb.dataset.imp);
-      if (target) target.classList.add('active');
-    });
-  });
-
-  /* ------------------------------------------------
-   * 6) Data CC subswitch (Revenue / Target)
-   * ------------------------------------------------ */
-  const subBtns   = document.querySelectorAll('#imp-cc .sub-btn');
-  const subTarget = document.querySelector('#imp-cc .sub-target');
-  subBtns.forEach(sb => {
-    sb.addEventListener('click', () => {
-      subBtns.forEach(x => x.classList.remove('active'));
-      sb.classList.add('active');
-      const isTarget = sb.dataset.sub === 'target';
-      if (subTarget) subTarget.classList.toggle('d-none', !isTarget);
-    });
-  });
-
-  /* -----------------------------
-   * 7) Bootstrap tooltips (opsi)
-   * ----------------------------- */
-  if (window.bootstrap?.Tooltip) {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-      new bootstrap.Tooltip(el);
-    });
-  }
-
-  /* ---------------------------------------
-   * 8) Apply filter (UI-only console log)
-   * --------------------------------------- */
-  const applyBtn = document.getElementById('btn-apply-filter');
-  if (applyBtn) {
-    applyBtn.addEventListener('click', () => {
-      console.log('Apply filter', {
-        witel:   document.querySelectorAll('.filters .form-select')[0]?.value || '',
-        divisi:  document.querySelectorAll('.filters .form-select')[1]?.value || '',
-        segment: document.querySelectorAll('.filters .form-select')[2]?.value || '',
-        month:   document.getElementById('filter-month')?.value || '',
-        year:    document.getElementById('filter-year')?.value || '',
-      });
-    });
-  }
-
-  /* -----------------------------------------------------------------
-   * 9) NEW: Segment dropdown dibagi 3 section + sinkron dengan Divisi
-   * ----------------------------------------------------------------- */
-  (function setupSegmentSections(){
-    // Ambil select Divisi & Segment berdasarkan urutan di .filters
-    const divisionSelect = document.querySelectorAll('.filters .form-select')[1];
-    const segmentSelect  = document.querySelectorAll('.filters .form-select')[2];
-    if (!divisionSelect || !segmentSelect) return;
-
-    // Definisi mapping segment per divisi
-    const SEGMENTS = {
-      DPS: ['FWS','LMS','PBS','RMS','PCS','PRS'],
-      DSS: ['ERS','FRBS','MIS','TWS','SBS'],
-      DGS: ['GPS','GDS','GIS','GRS']
+  // ========================================
+  // LOAD DATA FROM BACKEND
+  // ========================================
+  function loadData() {
+    let url = '';
+    const params = {
+      page: currentPage,
+      per_page: perPage,
+      search: currentFilters.search,
+      witel_id: currentFilters.witel_id,
+      divisi_id: currentFilters.divisi_id,
+      segment_id: currentFilters.segment_id
     };
 
-    // Simpan pilihan awal (jika ada)
-    let initialValue = segmentSelect.value || '';
-
-    // Helper: buat option element
-    const mkOpt = (v, label=v) => {
-      const o = document.createElement('option');
-      o.value = v; o.textContent = label;
-      return o;
-    };
-
-    // Bangun ulang dropdown Segment menjadi <optgroup>
-    function buildAllSections(){
-      segmentSelect.innerHTML = '';
-      // Opsi "Semua Segment" di atas
-      segmentSelect.appendChild(mkOpt('', 'Semua Segment'));
-
-      Object.keys(SEGMENTS).forEach(divKey => {
-        const og = document.createElement('optgroup');
-        og.label = divKey;
-        SEGMENTS[divKey].forEach(seg => og.appendChild(mkOpt(seg)));
-        segmentSelect.appendChild(og);
-      });
+    if (currentTab === 'tab-cc-revenue') {
+      url = '{{ route("revenue.api.cc") }}';
+      params.periode = currentFilters.periode;
+      params.tipe_revenue = currentFilters.tipe_revenue;
+    } else if (currentTab === 'tab-am-revenue') {
+      url = '{{ route("revenue.api.am") }}';
+      params.periode = currentFilters.periode;
+      params.role = currentFilters.role;
+    } else if (currentTab === 'tab-data-am') {
+      url = '{{ route("revenue.api.data.am") }}';
+      params.role = currentFilters.role;
+    } else if (currentTab === 'tab-data-cc') {
+      url = '{{ route("revenue.api.data.cc") }}';
     }
 
-    // Tampilkan hanya section dari Divisi terpilih (jika ada)
-    function buildForDivision(divKey){
-      segmentSelect.innerHTML = '';
-      segmentSelect.appendChild(mkOpt('', 'Semua Segment'));
-      if (!divKey || !SEGMENTS[divKey]) {
-        // tak ada divisi → tampilkan semua section
-        buildAllSections();
-        return;
+    $.ajax({
+      url: url,
+      method: 'GET',
+      data: params,
+      success: function(response) {
+        if (currentTab === 'tab-cc-revenue') {
+          renderRevenueCC(response);
+        } else if (currentTab === 'tab-am-revenue') {
+          renderRevenueAM(response);
+        } else if (currentTab === 'tab-data-am') {
+          renderDataAM(response);
+        } else if (currentTab === 'tab-data-cc') {
+          renderDataCC(response);
+        }
+
+        renderPagination(response);
+        updateBadge(currentTab, response.total || 0);
+
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+      },
+      error: function(xhr) {
+        console.error('Error loading data:', xhr);
+        showAlert('Gagal memuat data', 'danger');
       }
-      const og = document.createElement('optgroup');
-      og.label = divKey;
-      SEGMENTS[divKey].forEach(seg => og.appendChild(mkOpt(seg)));
-      segmentSelect.appendChild(og);
-    }
-
-    // Inisialisasi: selalu mulai dengan 3 section
-    buildAllSections();
-
-    // Jika initialValue ada dan masih valid, pertahankan
-    if (initialValue) {
-      const exists = Array.from(segmentSelect.querySelectorAll('option'))
-        .some(o => o.value === initialValue);
-      if (exists) segmentSelect.value = initialValue;
-    }
-
-    // Ketika Divisi berubah → rebuild Segment agar hanya tampil section terkait
-    divisionSelect.addEventListener('change', () => {
-      const chosen = divisionSelect.value;            // '' | 'DPS' | 'DSS' | 'DGS'
-      const prev   = segmentSelect.value;
-
-      buildForDivision(chosen);
-
-      // Pertahankan nilai jika masih valid, kalau tidak reset ke ""
-      const stillThere = Array.from(segmentSelect.querySelectorAll('option'))
-        .some(o => o.value === prev);
-      segmentSelect.value = stillThere ? prev : '';
     });
-  })();
+  }
 
-  /* -----------------------------------------------------------------
-   * 10) NEW: Dropdown Segment bertab (DPS/DSS/DGS) — UI custom dinamis
-   *      (tanpa ubah HTML; native <select> tetap untuk submit)
-   * ----------------------------------------------------------------- */
-  (function buildTabbedSegmentDropdown(){
-    // Ambil native select Segment (urut ke-3 di .filters)
-    const segmentSelect = document.querySelectorAll('.filters .form-select')[2];
-    if (!segmentSelect) return;
+  // ========================================
+  // RENDER FUNCTIONS
+  // ========================================
+  function renderRevenueCC(response) {
+    const tbody = $('#tableRevenueCC');
+    tbody.empty();
 
-    // Pastikan punya id agar mudah dirujuk
-    if (!segmentSelect.id) segmentSelect.id = 'filter-segment';
+    if (response.data.length === 0) {
+      tbody.append('<tr><td colspan="6" class="text-center">Tidak ada data</td></tr>');
+      return;
+    }
 
-    // Sembunyikan native select (tetap ada untuk form submit)
-    segmentSelect.style.position = 'absolute';
-    segmentSelect.style.inset = '0 auto auto 0';
-    segmentSelect.style.width = '1px';
-    segmentSelect.style.height = '1px';
-    segmentSelect.style.opacity = '0';
-    segmentSelect.style.pointerEvents = 'none';
+    response.data.forEach(function(item) {
+      const divisiClass = item.kode ? item.kode.toLowerCase() : '';
+      const row = `
+        <tr>
+          <td>${item.nama_cc}</td>
+          <td><span class="badge-div ${divisiClass}">${item.divisi}</span></td>
+          <td>${item.segment || '-'}</td>
+          <td class="text-end">${formatCurrency(item.target_revenue)}</td>
+          <td class="text-end">
+            <span data-bs-toggle="tooltip" title="${item.revenue_type || ''}">
+              ${formatCurrency(item.real_revenue)}
+            </span>
+          </td>
+          <td>${item.bulan_display}</td>
+        </tr>
+      `;
+      tbody.append(row);
+    });
+  }
 
-    // Buat wrapper & tombol UI
-    const wrap = document.createElement('div');
-    wrap.className = 'seg-select';
-    wrap.style.position = 'relative';
+  function renderRevenueAM(response) {
+    const tbody = $('#tableRevenueAM');
+    tbody.empty();
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'seg-select__btn';
-    btn.style.width = '100%';
-    btn.innerHTML = `<span id="segBtnLabel">Semua Segment</span>
-                     <i class="fa-solid fa-chevron-down seg-select__caret" aria-hidden="true"></i>`;
+    if (response.data.length === 0) {
+      tbody.append('<tr><td colspan="8" class="text-center">Tidak ada data</td></tr>');
+      return;
+    }
 
-    const menu = document.createElement('div');
-    menu.className = 'seg-menu';
-    menu.style.position = 'absolute';
-    menu.style.top = 'calc(100% + 6px)';
-    menu.style.left = '0';
-    menu.style.right = '0';
-    menu.style.display = 'none';
-    menu.style.zIndex = '40';
-    menu.setAttribute('role','listbox');
+    response.data.forEach(function(item) {
+      const achievementClass = item.achievement_color || 'secondary';
+      const showTelda = currentFilters.role === 'HOTDA';
 
-    // Mapping segmen
-    const SEGMENTS = {
-      DPS: ['FWS','LMS','PBS','RMS','PCS','PRS'],
-      DSS: ['ERS','FRBS','MIS','TWS','SBS'],
-      DGS: ['GPS','GDS','GIS','GRS']
-    };
+      const row = `
+        <tr>
+          <td>${item.nama_am}</td>
+          <td>${item.divisi || '-'}</td>
+          <td>${item.corporate_customer}</td>
+          <td class="text-end">${formatCurrency(item.target_revenue)}</td>
+          <td class="text-end">${formatCurrency(item.real_revenue)}</td>
+          <td class="text-end"><span class="achv ${achievementClass}">${item.achievement_rate}%</span></td>
+          <td>${item.bulan_display}</td>
+          <td class="hotda-col" style="display: ${showTelda ? 'table-cell' : 'none'};">
+            ${item.nama_telda || '-'}
+          </td>
+        </tr>
+      `;
+      tbody.append(row);
+    });
+  }
 
-    // Tabs header
-    const tabs = document.createElement('div');
-    tabs.className = 'seg-tabs';
-    tabs.innerHTML = `
-      <button class="seg-tab active" data-tab="DPS" role="tab" aria-selected="true">DPS</button>
-      <button class="seg-tab" data-tab="DSS" role="tab" aria-selected="false">DSS</button>
-      <button class="seg-tab" data-tab="DGS" role="tab" aria-selected="false">DGS</button>
+  function renderDataAM(response) {
+    const tbody = $('#tableDataAM');
+    tbody.empty();
+
+    if (response.data.length === 0) {
+      tbody.append('<tr><td colspan="7" class="text-center">Tidak ada data</td></tr>');
+      return;
+    }
+
+    response.data.forEach(function(item) {
+      const statusClass = item.status_registrasi === 'Sudah Terdaftar' ? 'success' : 'secondary';
+      const showTelda = item.role === 'HOTDA';
+
+      const row = `
+        <tr>
+          <td>${item.nama}</td>
+          <td>${item.nik}</td>
+          <td>${item.divisi || '-'}</td>
+          <td>${item.witel}</td>
+          <td><span class="badge bg-primary">${item.role}</span></td>
+          <td class="hotda-col" style="display: ${showTelda ? 'table-cell' : 'none'};">
+            ${item.nama_telda || '-'}
+          </td>
+          <td><span class="badge bg-${statusClass}">${item.status_registrasi}</span></td>
+        </tr>
+      `;
+      tbody.append(row);
+    });
+  }
+
+  function renderDataCC(response) {
+    const tbody = $('#tableDataCC');
+    tbody.empty();
+
+    if (response.data.length === 0) {
+      tbody.append('<tr><td colspan="2" class="text-center">Tidak ada data</td></tr>');
+      return;
+    }
+
+    response.data.forEach(function(item) {
+      const row = `
+        <tr>
+          <td>${item.nama}</td>
+          <td>${item.nipnas}</td>
+        </tr>
+      `;
+      tbody.append(row);
+    });
+  }
+
+  function renderPagination(response) {
+    let paginationId = '';
+    if (currentTab === 'tab-cc-revenue') paginationId = 'paginationRevenueCC';
+    else if (currentTab === 'tab-am-revenue') paginationId = 'paginationRevenueAM';
+    else if (currentTab === 'tab-data-am') paginationId = 'paginationDataAM';
+    else if (currentTab === 'tab-data-cc') paginationId = 'paginationDataCC';
+
+    const container = $(`#${paginationId}`);
+    container.empty();
+
+    const info = `<div class="info">Menampilkan ${response.from || 0}–${response.to || 0} dari ${response.total} hasil</div>`;
+
+    let pages = '<div class="pages">';
+    pages += `<button class="pager ${currentPage === 1 ? 'disabled' : ''}" data-page="${currentPage - 1}">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>`;
+
+    for (let i = 1; i <= response.last_page; i++) {
+      if (i === 1 || i === response.last_page || (i >= currentPage - 2 && i <= currentPage + 2)) {
+        pages += `<button class="pager ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+      } else if (i === currentPage - 3 || i === currentPage + 3) {
+        pages += '<span>...</span>';
+      }
+    }
+
+    pages += `<button class="pager ${currentPage === response.last_page ? 'disabled' : ''}" data-page="${currentPage + 1}">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>`;
+    pages += '</div>';
+
+    const perPageSelect = `
+      <div class="perpage">
+        <label>Baris</label>
+        <select class="form-select small" id="perPageSelect">
+          <option value="25" ${perPage === 25 ? 'selected' : ''}>25</option>
+          <option value="50" ${perPage === 50 ? 'selected' : ''}>50</option>
+          <option value="75" ${perPage === 75 ? 'selected' : ''}>75</option>
+          <option value="100" ${perPage === 100 ? 'selected' : ''}>100</option>
+        </select>
+      </div>
     `;
 
-    // Panels container
-    const panels = document.createElement('div');
-    panels.className = 'seg-panels';
+    container.append(info + pages + perPageSelect);
 
-    // Helper buat panel
-    function panelHTML(key){
-      const items = SEGMENTS[key].map(v => `<button class="seg-option" data-value="${v}">${v}</button>`).join('');
-      return `
-        <div class="seg-panel${key==='DPS' ? ' active':''}" data-panel="${key}" role="tabpanel">
-          <button class="seg-option all" data-value="">Semua Segment</button>
-          ${items}
+    // Pagination click handlers
+    container.find('.pager[data-page]').click(function() {
+      const page = parseInt($(this).data('page'));
+      if (page > 0 && page <= response.last_page && page !== currentPage) {
+        currentPage = page;
+        loadData();
+      }
+    });
+
+    container.find('#perPageSelect').change(function() {
+      perPage = parseInt($(this).val());
+      currentPage = 1;
+      loadData();
+    });
+  }
+
+  // ========================================
+  // UPDATE BADGE COUNTER
+  // ========================================
+  function updateBadge(tabId, count) {
+    const badgeMapping = {
+      'tab-cc-revenue': 'badge-cc-rev',
+      'tab-am-revenue': 'badge-am-rev',
+      'tab-data-am': 'badge-data-am',
+      'tab-data-cc': 'badge-cc'
+    };
+
+    const badgeId = badgeMapping[tabId];
+    if (badgeId) {
+      $('#' + badgeId).text(count);
+    }
+  }
+
+  // ========================================
+  // TAB SWITCHING
+  // ========================================
+  $('.tab-btn').click(function() {
+    const tabId = $(this).data('tab');
+    switchTab(tabId);
+  });
+
+  function switchTab(tabId) {
+    $('.tab-btn').removeClass('active');
+    $(`.tab-btn[data-tab="${tabId}"]`).addClass('active');
+    $('.tab-panel').removeClass('active');
+    $(`#${tabId}`).addClass('active');
+
+    currentTab = tabId;
+    currentPage = 1;
+
+    // Show/hide filters based on tab
+    if (tabId === 'tab-am-revenue' || tabId === 'tab-data-am') {
+      $('#filterRoleGroup').show();
+      $('#filterPeriodeGroup').toggle(tabId === 'tab-am-revenue');
+    } else if (tabId === 'tab-cc-revenue') {
+      $('#filterRoleGroup').hide();
+      $('#filterPeriodeGroup').show();
+    } else {
+      $('#filterRoleGroup').hide();
+      $('#filterPeriodeGroup').hide();
+    }
+
+    loadData();
+  }
+
+  // ========================================
+  // FILTER HANDLERS
+  // ========================================
+  $('#searchForm').submit(function(e) {
+    e.preventDefault();
+    currentFilters.search = $('#searchInput').val();
+    currentPage = 1;
+    loadData();
+  });
+
+  $('#btn-apply-filter').click(function() {
+    currentFilters.witel_id = $('#filterWitel').val();
+    currentFilters.divisi_id = $('#filterDivisi').val();
+    currentFilters.segment_id = $('#filter-segment').val();
+    currentFilters.role = $('#filterRole').val();
+    currentPage = 1;
+    loadData();
+  });
+
+  $('#btn-reset-filter').click(function() {
+    $('#searchInput').val('');
+    $('#filterWitel').val('all');
+    $('#filterDivisi').val('all');
+    $('#filter-segment').val('all');
+    $('#filterRole').val('all');
+    $('#filter-date').value = '';
+
+    currentFilters = {
+      search: '',
+      witel_id: 'all',
+      divisi_id: 'all',
+      segment_id: 'all',
+      periode: '',
+      tipe_revenue: 'REGULER',
+      role: 'all'
+    };
+
+    currentPage = 1;
+    loadData();
+  });
+
+  // Revenue type toggle for Revenue CC
+  $('.seg-btn[data-revtype]').click(function() {
+    $('.seg-btn[data-revtype]').removeClass('active');
+    $(this).addClass('active');
+    currentFilters.tipe_revenue = $(this).data('revtype');
+    currentPage = 1;
+    loadData();
+  });
+
+  // AM mode toggle for Revenue AM
+  $('.am-btn[data-mode]').click(function() {
+    $('.am-btn[data-mode]').removeClass('active');
+    $(this).addClass('active');
+    const mode = $(this).data('mode');
+    currentFilters.role = mode;
+
+    // Show/hide Telda column
+    if (mode === 'HOTDA') {
+      $('.hotda-col').show();
+    } else {
+      $('.hotda-col').hide();
+    }
+
+    currentPage = 1;
+    loadData();
+  });
+
+  // ========================================
+  // IMPORT FUNCTIONALITY
+  // ========================================
+
+  // Import modal tab switching
+  $('.type-btn').click(function() {
+    $('.type-btn').removeClass('active');
+    $(this).addClass('active');
+
+    $('.imp-panel').removeClass('active');
+    const target = $(this).data('imp');
+    $(`#${target}`).addClass('active');
+  });
+
+  // Form submissions
+  $('#formDataCC').submit(function(e) {
+    e.preventDefault();
+    handleImport($(this));
+  });
+
+  $('#formDataAM').submit(function(e) {
+    e.preventDefault();
+    handleImport($(this));
+  });
+
+  $('#formRevenueCC').submit(function(e) {
+    e.preventDefault();
+    handleImport($(this));
+  });
+
+  $('#formRevenueAM').submit(function(e) {
+    e.preventDefault();
+    handleImport($(this));
+  });
+
+  function handleImport($form) {
+    const formData = new FormData($form[0]);
+    const submitBtn = $form.find('button[type="submit"]');
+    const originalText = submitBtn.html();
+
+    submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Uploading...');
+
+    $.ajax({
+      url: '{{ route("revenue.import") }}',
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function(response) {
+        $('#importModal').modal('hide');
+        submitBtn.prop('disabled', false).html(originalText);
+        $form[0].reset();
+
+        showImportResult(response);
+        loadData(); // Reload current tab data
+      },
+      error: function(xhr) {
+        submitBtn.prop('disabled', false).html(originalText);
+
+        let errorMessage = 'Terjadi kesalahan saat import';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errorMessage = xhr.responseJSON.message;
+        }
+        showAlert(errorMessage, 'danger');
+      }
+    });
+  }
+
+  function showImportResult(response) {
+    const stats = response.statistics;
+    const successRate = stats.total_rows > 0
+      ? ((stats.success_count / stats.total_rows) * 100).toFixed(2)
+      : 0;
+
+    let html = `
+      <div class="text-center mb-4">
+        <h4>${response.import_type_label}</h4>
+        <p class="text-muted">Import selesai pada ${response.import_time}</p>
+        <p class="text-muted">Durasi: ${response.duration}</p>
+      </div>
+
+      <div class="progress-bar-custom">
+        <div class="progress-bar-fill-custom" style="width: ${successRate}%">
+          ${successRate}%
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="result-modal-stat">
+            <div class="icon info">
+              <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <div class="content">
+              <h4>${stats.total_rows}</h4>
+              <p>Total Baris</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="result-modal-stat">
+            <div class="icon success">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="content">
+              <h4>${stats.success_count}</h4>
+              <p>Berhasil</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="result-modal-stat">
+            <div class="icon danger">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <div class="content">
+              <h4>${stats.failed_count}</h4>
+              <p>Gagal</p>
+            </div>
+          </div>
+        </div>
+    `;
+
+    if (stats.skipped_count !== undefined && stats.skipped_count > 0) {
+      html += `
+        <div class="col-md-3">
+          <div class="result-modal-stat">
+            <div class="icon warning">
+              <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <div class="content">
+              <h4>${stats.skipped_count}</h4>
+              <p>Diskip</p>
+            </div>
+          </div>
         </div>
       `;
     }
-    panels.innerHTML = panelHTML('DPS') + panelHTML('DSS') + panelHTML('DGS');
 
-    // Rakit menu
-    menu.appendChild(tabs);
-    menu.appendChild(panels);
+    html += '</div>';
 
-    // Sisipkan ke DOM: letakkan wrapper setelah native select
-    segmentSelect.parentNode.insertBefore(wrap, segmentSelect.nextSibling);
-    wrap.appendChild(btn);
-    wrap.appendChild(menu);
-
-    // Helpers
-    const labelEl = btn.querySelector('#segBtnLabel');
-    function open(){ wrap.classList.add('open'); menu.style.display = 'block'; syncMenuWidth(); }
-    function close(){ wrap.classList.remove('open'); menu.style.display = 'none'; }
-    function syncMenuWidth(){
-      const w = btn.getBoundingClientRect().width;
-      menu.style.width = w + 'px';
-    }
-    function activateTab(key){
-      wrap.querySelectorAll('.seg-tab').forEach(t=>{
-        const active = t.dataset.tab === key;
-        t.classList.toggle('active', active);
-        t.setAttribute('aria-selected', String(active));
-      });
-      wrap.querySelectorAll('.seg-panel').forEach(p=>{
-        p.classList.toggle('active', p.dataset.panel === key);
-      });
+    if (stats.failed_count > 0 || (stats.skipped_count && stats.skipped_count > 0)) {
+      html += `
+        <div class="alert alert-warning mt-3">
+          <i class="fa-solid fa-exclamation-triangle me-2"></i>
+          Beberapa data gagal diimport. Silakan unduh log error untuk detail.
+        </div>
+      `;
     }
 
-    // Events
-    btn.addEventListener('click', (e)=>{ e.stopPropagation(); (wrap.classList.contains('open')? close(): open()); });
-    document.addEventListener('click', (e)=>{ if(!wrap.contains(e.target)) close(); });
-    window.addEventListener('resize', ()=>{ if(wrap.classList.contains('open')) syncMenuWidth(); });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
+    $('#resultModalBody').html(html);
 
-    wrap.querySelectorAll('.seg-tab').forEach(t=>{
-      t.addEventListener('click', ()=> activateTab(t.dataset.tab));
+    // Show/hide error log button
+    if (response.error_log_path) {
+      $('#btnDownloadErrorLog').attr('href', response.error_log_path).show();
+    } else {
+      $('#btnDownloadErrorLog').hide();
+    }
+
+    $('#resultModal').modal('show');
+  }
+
+  // ========================================
+  // UTILITY FUNCTIONS
+  // ========================================
+  function formatCurrency(amount) {
+    if (!amount) return 'Rp 0';
+    return 'Rp ' + parseFloat(amount).toLocaleString('id-ID');
+  }
+
+  function showAlert(message, type = 'info') {
+    alert(message); // Replace with better notification system if available
+  }
+
+  // ========================================
+  // CUSTOM SEGMENT SELECT
+  // ========================================
+  (function initSegmentSelect(){
+    const wrap = document.getElementById('segSelect');
+    if (!wrap) return;
+
+    const menu = wrap.querySelector('#segMenu');
+    const segmentSelect = document.getElementById('filter-segment');
+    const panels = menu.querySelector('.seg-panels');
+
+    menu.querySelectorAll('.seg-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        menu.querySelectorAll('.seg-tab').forEach(t => {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+
+        const targetPanel = tab.dataset.tab;
+        panels.querySelectorAll('.seg-panel').forEach(p => p.classList.remove('active'));
+        panels.querySelector(`[data-panel="${targetPanel}"]`)?.classList.add('active');
+      });
     });
 
-    panels.addEventListener('click', (e)=>{
+    panels.addEventListener('click', (e) => {
       const opt = e.target.closest('.seg-option');
-      if(!opt) return;
-      const val = opt.dataset.value ?? '';
-      const label = val ? opt.textContent.trim() : 'Semua Segment';
+      if (!opt) return;
+      const val = opt.dataset.value ?? 'all';
 
-      // set native select + event
       segmentSelect.value = val;
       segmentSelect.dispatchEvent(new Event('change', {bubbles:true}));
 
-      // update UI
-      labelEl.textContent = label;
-      panels.querySelectorAll('.seg-option[aria-selected]').forEach(el=>el.removeAttribute('aria-selected'));
+      panels.querySelectorAll('.seg-option[aria-selected]').forEach(el => el.removeAttribute('aria-selected'));
       opt.setAttribute('aria-selected','true');
-
-      close();
     });
-
-    // Sinkron dengan Divisi (jika ada)
-    const divisionSelect = document.querySelectorAll('.filters .form-select')[1];
-    if (divisionSelect) {
-      divisionSelect.addEventListener('change', ()=>{
-        const d = divisionSelect.value; // '', 'DPS','DSS','DGS'
-        if (d) activateTab(d);
-      });
-    }
-
-    // Inisialisasi label dari nilai native (jika ada)
-    const initial = segmentSelect.value;
-    if (initial) {
-      labelEl.textContent = initial;
-      wrap.classList.add('has-value');
-      const map = {FWS:'DPS',LMS:'DPS',PBS:'DPS',RMS:'DPS',PCS:'DPS',PRS:'DPS',
-                   ERS:'DSS',FRBS:'DSS',MIS:'DSS',TWS:'DSS',SBS:'DSS',
-                   GPS:'DGS',GDS:'DGS',GIS:'DGS',GRS:'DGS'};
-      const tabKey = map[initial];
-      if (tabKey) activateTab(tabKey);
-      panels.querySelectorAll(`.seg-option[data-value="${initial}"]`).forEach(el=>el.setAttribute('aria-selected','true'));
-    } else {
-      labelEl.textContent = 'Semua Segment';
-      wrap.classList.remove('has-value');
-    }
-
-    panels.addEventListener('click', (e)=>{
-        const opt = e.target.closest('.seg-option');
-        if(!opt) return;
-        const val   = opt.dataset.value ?? '';
-        const label = val ? opt.textContent.trim() : 'Semua Segment';
-
-        segmentSelect.value = val;
-        segmentSelect.dispatchEvent(new Event('change', {bubbles:true}));
-
-        labelEl.textContent = label;
-
-        // === toggle state: bold hanya jika ada nilai ===
-        if (val) wrap.classList.add('has-value');
-        else     wrap.classList.remove('has-value');
-
-        panels.querySelectorAll('.seg-option[aria-selected]').forEach(el=>el.removeAttribute('aria-selected'));
-        opt.setAttribute('aria-selected','true');
-
-        close();
-        });
-
   })();
 
-  /* -----------------------------------------------------------------
-   * 11) ENHANCER GENERIK untuk Witel & Divisi (filter bar) + Divisi di modal
-   * ----------------------------------------------------------------- */
-
-  // Util: enhance satu <select> menjadi .cselect
+  // ========================================
+  // ENHANCE NATIVE SELECTS (Witel & Divisi)
+  // ========================================
   function enhanceNativeSelect(native, { inModal = false } = {}) {
     if (!native || native.dataset.enhanced === '1') return;
 
@@ -1172,14 +1375,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     menu.appendChild(list);
 
-    // Sisipkan DOM setelah select
     native.insertAdjacentElement('afterend', wrap);
     wrap.appendChild(btn);
     wrap.appendChild(menu);
 
-    // Sembunyikan select asli (tetap untuk submit)
     if (inModal) {
-      native.classList.add('visually-hidden-cselect'); // kamu sudah punya CSS-nya
+      native.classList.add('visually-hidden-cselect');
     } else {
       native.style.position = 'absolute';
       native.style.inset = '0 auto auto 0';
@@ -1189,7 +1390,6 @@ document.addEventListener('DOMContentLoaded', () => {
       native.style.pointerEvents = 'none';
     }
 
-    // Interaksi open/close
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (wrap.classList.contains('is-disabled')) return;
@@ -1202,7 +1402,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.key === 'Escape') wrap.classList.remove('is-open');
     });
 
-    // Sinkron jika nilai diubah dari luar
     native.addEventListener('change', () => {
       const v = native.value;
       const found = list.querySelector(`.cselect__option[data-value="${CSS.escape(v)}"]`);
@@ -1216,18 +1415,15 @@ document.addEventListener('DOMContentLoaded', () => {
     native.dataset.enhanced = '1';
   }
 
-  // 11a) Enhance dua filter pertama (Witel & Divisi) di bar filter (seperti semula)
-  (function enhanceFilterBar(){
+  function enhanceFilterBar(){
     const selects = document.querySelectorAll('.filters .filter-group:nth-of-type(-n+2) .form-select');
     selects.forEach(sel => enhanceNativeSelect(sel, { inModal: false }));
-  })();
+  }
 
-  // 11b) Enhance select "Divisi" di modal imp-rev-cc
-  (function enhanceModalDivisi(){
+  function enhanceModalDivisi(){
     const selModal = document.querySelector('#imp-rev-cc .filter-group .form-select');
     if (selModal) enhanceNativeSelect(selModal, { inModal: true });
 
-    // Jika modal baru dirender saat dibuka, pastikan enhancement tetap dilakukan
     const modalEl = document.getElementById('importModal');
     if (modalEl) {
       modalEl.addEventListener('shown.bs.modal', () => {
@@ -1237,7 +1433,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
-  })();
+  }
+
+  // ========================================
+  // INITIALIZATION
+  // ========================================
+  loadFilterOptions();
+  loadData();
 
 });
 </script>

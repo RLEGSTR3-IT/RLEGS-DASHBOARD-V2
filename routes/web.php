@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WitelPerformController;
+use App\Http\Controllers\CCWitelPerformController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -30,10 +31,14 @@ use App\Models\CorporateCustomer;
 |--------------------------------------------------------------------------
 */
 
+// NOTE: Use this command for closure error (Windows): `del bootstrap\cache\routes-*.php`
+
 // ===== BASIC ROUTES =====
 Route::get('/', function () {
     return view('auth.login');
 });
+// no closure version
+// Route::view('/', 'auth.login');
 
 // NOTE: ??? wat dis
 Route::get('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('guest.logout');
@@ -54,19 +59,25 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
 // ===== AUTHENTICATED ROUTES =====
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // ===== SINGLE DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
+    // ===== MAIN DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
+    // Handles admin, account_manager, witel_support roles
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ===== SIDEBAR ROUTES =====
     Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
     Route::view('/revenue', 'revenueData')->name('revenue.index');
-    Route::view('/treg3', 'treg3.index')->name('dashboard.treg3');
-    Route::view('/witel-perform', 'witelPerform')->name('witel.perform');
-    Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
     Route::view('/profile', 'profile.edit')->name('profile.edit');
+
+    // Witel + CC Performance Routes
+    Route::get('/witel-perform', [WitelPerformController::class, 'index'])->name('witel.perform');
+    Route::get('/treg3', [CCWitelPerformController::class, 'index'])->name('treg3.index');
 
     // ===== DASHBOARD API ROUTES =====
     Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        // CC + Witel data fetch
+        Route::get('/trend-data', [CCWitelPerformController::class, 'fetchTrendData']);
+        Route::get('/witel-performance-data', [CCWitelPerformController::class, 'fetchWitelPerformanceData']);
+
         // Core admin functionality
         Route::get('tab-data', [DashboardController::class, 'getTabData'])->name('tab-data');
         Route::get('export', [DashboardController::class, 'export'])->name('export');
@@ -77,11 +88,92 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('summary', [DashboardController::class, 'getSummary'])->name('summary');
         Route::get('insights', [DashboardController::class, 'getPerformanceInsights'])->name('insights');
 
-        // AM specific endpoints
+        // AM specific endpoints (when AM is logged in at /dashboard)
         Route::get('am-performance', [DashboardController::class, 'getAmPerformance'])->name('am-performance');
         Route::get('am-customers', [DashboardController::class, 'getAmCustomers'])->name('am-customers');
         Route::get('am-export', [DashboardController::class, 'exportAm'])->name('am-export');
     });
+
+    // Witel routes, TODO: add gate so only admin can access these routes
+    Route::post('/witel-perform/update-charts', [WitelPerformController::class, 'updateCharts'])->name('witel.update-charts');
+    Route::post('/witel-perform/filter-by-divisi', [WitelPerformController::class, 'filterByDivisi'])->name('witel.filter-by-divisi');
+    Route::post('/witel-perform/filter-by-witel', [WitelPerformController::class, 'filterByWitel'])->name('witel.filter-by-witel');
+    Route::post('/witel-perform/filter-by-regional', [WitelPerformController::class, 'filterByRegional'])->name('witel.filter-by-regional');
+
+    // ===== ACCOUNT MANAGER ROUTES =====
+    Route::prefix('account-manager')->name('account-manager.')->group(function () {
+        // Detail AM page - accessible from leaderboard or direct link
+        // URL: /account-manager/{id}
+        Route::get('{id}', [AmDashboardController::class, 'show'])
+            ->name('show')
+            ->where('id', '[0-9]+');
+
+        // AJAX endpoints for AM detail page
+        Route::get('{id}/tab-data', [AmDashboardController::class, 'getTabData'])
+            ->name('tab-data')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/card-data', [AmDashboardController::class, 'getCardData'])
+            ->name('card-data')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/ranking', [AmDashboardController::class, 'getRankingDataAjax'])
+            ->name('ranking')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/chart-data', [AmDashboardController::class, 'getChartData'])
+            ->name('chart-data')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/performance-summary', [AmDashboardController::class, 'getPerformanceSummary'])
+            ->name('performance-summary')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/update-filters', [AmDashboardController::class, 'updateFilters'])
+            ->name('update-filters')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/export', [AmDashboardController::class, 'export'])
+            ->name('export')
+            ->where('id', '[0-9]+');
+
+        // Additional AM endpoints
+        Route::get('{id}/info', [AmDashboardController::class, 'getAmInfo'])
+            ->name('info')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/compare', [AmDashboardController::class, 'compareWithOthers'])
+            ->name('compare')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/trend', [AmDashboardController::class, 'getHistoricalTrend'])
+            ->name('trend')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/top-customers', [AmDashboardController::class, 'getTopCustomers'])
+            ->name('top-customers')
+            ->where('id', '[0-9]+');
+
+        // Debug endpoint (local only)
+        if (app()->environment('local')) {
+            Route::get('{id}/debug', [AmDashboardController::class, 'debug'])
+                ->name('debug')
+                ->where('id', '[0-9]+');
+        }
+    });
+
+    // ===== DETAIL PAGES (OTHER ENTITIES) =====
+    Route::get('witel/{id}', [DashboardController::class, 'showWitel'])
+        ->name('witel.show')
+        ->where('id', '[0-9]+');
+
+    Route::get('corporate-customer/{id}', [DashboardController::class, 'showCorporateCustomer'])
+        ->name('corporate-customer.show')
+        ->where('id', '[0-9]+');
+
+    Route::get('segment/{id}', [DashboardController::class, 'showSegment'])
+        ->name('segment.show')
+        ->where('id', '[0-9]+');
 
     // ===== GENERAL API ROUTES =====
     Route::prefix('api')->name('api.')->group(function () {
@@ -91,7 +183,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('divisi');
 
         Route::get('witel', function () {
-            return response()->json(Witel::select('id', 'nama', 'kode')->orderBy('nama')->get());
+            return response()->json(Witel::select('id', 'nama')->orderBy('nama')->get());
         })->name('witel');
 
         Route::get('segments', function () {
@@ -181,7 +273,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return response()->json([
                 'id' => $user->id,
                 'name' => $user->name,
+                'email' => $user->email,
                 'role' => $user->role,
+                'account_manager_id' => $user->account_manager_id,
+                'witel_id' => $user->witel_id,
                 'permissions' => [
                     'can_export' => in_array($user->role, ['admin', 'witel_support', 'account_manager']),
                     'can_view_all_data' => $user->role === 'admin',
@@ -191,29 +286,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('user-info');
     });
-
-    // ===== DETAIL PAGES =====
-    Route::get('account-manager/{id}', [DashboardController::class, 'showAccountManager'])
-        ->name('account-manager.show')
-        ->where('id', '[0-9]+');
-
-    Route::get('witel/{id}', [DashboardController::class, 'showWitel'])
-        ->name('witel.show')
-        ->where('id', '[0-9]+');
-
-    Route::get('corporate-customer/{id}', [DashboardController::class, 'showCorporateCustomer'])
-        ->name('corporate-customer.show')
-        ->where('id', '[0-9]+');
-
-    Route::get('segment/{id}', [DashboardController::class, 'showSegment'])
-        ->name('segment.show')
-        ->where('id', '[0-9]+');
-
-    // ===== WITEL PERFORMANCE ROUTES =====
-    Route::post('/witel-perform/update-charts', [WitelPerformController::class, 'updateCharts'])->name('witel.update-charts');
-    Route::post('/witel-perform/filter-by-divisi', [WitelPerformController::class, 'filterByDivisi'])->name('witel.filter-by-divisi');
-    Route::post('/witel-perform/filter-by-witel', [WitelPerformController::class, 'filterByWitel'])->name('witel.filter-by-witel');
-    Route::post('/witel-perform/filter-by-regional', [WitelPerformController::class, 'filterByRegional'])->name('witel.filter-by-regional');
 
     // ===== LEGACY EXPORT COMPATIBILITY =====
     Route::get('export', function () {
@@ -226,6 +298,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/', [ProfileController::class, 'update'])->name('update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
+
+    // ===== SIDEBAR ROUTES =====
+    // Route::get('/leaderboard', function () {
+    //     return view('leaderboardAM');
+    // })->name('leaderboard');
+
+    // Route::get('/revenue', function () {
+    //     return view('revenueData');
+    // })->name('revenue.index');
+
+    // Route::get('/treg3', function () {
+    //     return view('treg3.index');
+    // })->name('dashboard.treg3');
+
+    // Route::get('/witel-perform', function () {
+    //     return view('performansi.witel');
+    // })->name('witel.perform');
 });
 
 // ===== UTILITY ROUTES =====
@@ -278,17 +367,68 @@ if (app()->environment('local')) {
             return response()->json(['error' => 'Not authenticated'], 401);
         }
 
+        $dashboardInfo = [];
+
+        switch ($user->role) {
+            case 'admin':
+                $dashboardInfo = [
+                    'view' => 'dashboard.blade.php',
+                    'controller' => 'DashboardController::handleAdminDashboard'
+                ];
+                break;
+            case 'account_manager':
+                $dashboardInfo = [
+                    'view' => 'detailAM.blade.php',
+                    'controller' => 'AmDashboardController::index',
+                    'account_manager_id' => $user->account_manager_id
+                ];
+                break;
+            case 'witel_support':
+                $dashboardInfo = [
+                    'view' => 'detailWitel.blade.php (pending)',
+                    'controller' => 'WitelDashboardController::index',
+                    'witel_id' => $user->witel_id
+                ];
+                break;
+        }
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role
+                'role' => $user->role,
+                'account_manager_id' => $user->account_manager_id,
+                'witel_id' => $user->witel_id
             ],
             'dashboard_route' => route('dashboard'),
-            'role_specific_view' => $user->role
+            'dashboard_info' => $dashboardInfo
         ]);
     })->name('debug.user');
+
+    Route::get('debug/am-routes', function () {
+        return response()->json([
+            'main_routes' => [
+                'dashboard_am' => 'GET /dashboard (when logged in as AM)',
+                'detail_am_from_leaderboard' => 'GET /account-manager/{id}'
+            ],
+            'ajax_endpoints' => [
+                'tab_data' => 'GET /account-manager/{id}/tab-data',
+                'card_data' => 'GET /account-manager/{id}/card-data',
+                'ranking' => 'GET /account-manager/{id}/ranking',
+                'chart_data' => 'GET /account-manager/{id}/chart-data',
+                'performance_summary' => 'GET /account-manager/{id}/performance-summary',
+                'update_filters' => 'GET /account-manager/{id}/update-filters',
+                'export' => 'GET /account-manager/{id}/export'
+            ],
+            'additional_endpoints' => [
+                'info' => 'GET /account-manager/{id}/info',
+                'compare' => 'GET /account-manager/{id}/compare',
+                'trend' => 'GET /account-manager/{id}/trend',
+                'top_customers' => 'GET /account-manager/{id}/top-customers'
+            ]
+        ]);
+    })->name('debug.am-routes');
 }
 
 // ===== FALLBACK =====
@@ -307,12 +447,3 @@ Route::fallback(function () {
 });
 
 require __DIR__ . '/auth.php';
-
-// ===== SIDEBAR ROUTES =====
-// NOTE: This was moved to the middleware
-// Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
-// Route::view('/revenue', 'revenueData')->name('revenue.index');
-// Route::view('/treg3', 'treg3.index')->name('dashboard.treg3');
-// Route::view('/witel-perform', 'witelPerform')->name('witel.perform');
-// Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
-// Route::view('/profile', 'profile.edit')->name('profile.edit');

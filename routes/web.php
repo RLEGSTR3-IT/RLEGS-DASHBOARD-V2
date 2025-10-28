@@ -12,6 +12,7 @@ use App\Http\Controllers\RevenueData\RevenueImportController;
 use App\Http\Controllers\RevenueData\ImportCCController;
 use App\Http\Controllers\RevenueData\ImportAMController;
 
+
 // Laravel Core
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -392,17 +393,18 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
     })->name('export');
 
     // ===== PROFILE ROUTES =====
-    Route::prefix('profile')->name('profile.')->group(function () {
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class,'index'])->name('profile.index');
+    Route::patch('/profile', [ProfileController::class,'update'])->name('profile.update');
+    Route::delete('/profile/photo', [ProfileController::class,'removePhoto'])->name('profile.remove-photo');
+    Route::put('/profile/password', [ProfileController::class,'updatePassword'])->name('profile.password');
 
-    // tampilkan langsung partial (kalau memang mau render file ini saja)
-    Route::get('/', function () {
-        return view('profile.partials.update-profile-information-form');
-    })->name('edit');
-
-    // placeholder agar rute nama tetap ada (tanpa controller)
-    Route::patch('/', function () { return back(); })->name('update');
-    Route::delete('/', function () { return back(); })->name('destroy');
+    Route::post('/email/verification-notification', function () {
+        request()->user()->sendEmailVerificationNotification();
+        return back()->with('verification-link-sent', true);
+    })->middleware(['throttle:6,1'])->name('verification.send');
 });
+
 
     // ===== SIDEBAR ROUTES =====
     Route::get('/leaderboard', function() {

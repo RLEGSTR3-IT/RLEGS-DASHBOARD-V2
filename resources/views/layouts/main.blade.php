@@ -69,7 +69,7 @@
                 </li> --}}
             </ul>
             <div class="sidebar-footer">
-                <a href="{{ route('profile.edit') }}" class="sidebar-link">
+                <a href="{{ route('profile.index') }}" class="sidebar-link">
                     <i class="lni lni-gear-1"></i><span>Settings</span>
                 </a>
             </div>
@@ -102,7 +102,7 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                                        <a class="dropdown-item" href="{{ route('profile.index') }}">
                                             {{ __('Settings') }}
                                         </a>
                                     </li>
@@ -289,7 +289,7 @@
                         <span>{{ Auth::user()->name ?? 'Admin' }}</span>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ route('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>

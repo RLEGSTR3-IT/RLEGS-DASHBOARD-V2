@@ -5,258 +5,6 @@
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/overview.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-/* Override font dengan Poppins */
-body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
-    font-family: 'Poppins', sans-serif !important;
-}
-
-/* Performance Section Tab Styling - FIXED CONTAINMENT */
-.performance-section {
-    background: var(--white);
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-card);
-    border: 1px solid var(--gray-200);
-    transition: var(--transition);
-    margin-bottom: 24px;
-    overflow: hidden;
-}
-
-.performance-section:hover {
-    box-shadow: var(--shadow-card-hover);
-    border-color: var(--gray-300);
-}
-
-.performance-section .card-header {
-    padding: 28px 32px 16px 32px;
-    border-bottom: none;
-    background: var(--gradient-subtle);
-}
-
-/* FIXED: Tab navigation contained within section */
-.performance-tabs {
-    border-bottom: 2px solid var(--gray-200);
-    padding: 0 32px;
-    background: var(--gray-50);
-    margin: 0;
-    width: 100%;
-}
-
-.performance-tabs .nav-link {
-    border: none;
-    border-bottom: 3px solid transparent;
-    padding: 16px 24px;
-    font-weight: 600;
-    color: var(--gray-600);
-    background: none;
-    font-family: 'Poppins', sans-serif;
-    transition: var(--transition);
-    font-size: 0.9rem;
-}
-
-.performance-tabs .nav-link:hover {
-    color: var(--telkom-red);
-    background: var(--telkom-red-soft);
-}
-
-.performance-tabs .nav-link.active {
-    color: var(--telkom-red);
-    border-bottom-color: var(--telkom-red);
-    background: var(--white);
-}
-
-/* Tab Content */
-.tab-content {
-    display: block !important;
-}
-
-.tab-pane {
-    display: none;
-    opacity: 1;
-    min-height: 400px;
-}
-
-.tab-pane.active {
-    display: block !important;
-}
-
-/* Table Container */
-.table-container {
-    min-height: 400px;
-    position: relative;
-}
-
-.table-container .table-responsive {
-    padding: 32px;
-}
-
-/* Enhanced Empty State */
-.empty-state-enhanced {
-    text-align: center;
-    padding: 60px 24px;
-    color: var(--gray-500);
-    background: var(--gray-25);
-    border-radius: var(--radius-lg);
-    margin: 20px 0;
-    border: 1px solid var(--gray-200);
-}
-
-.empty-state-enhanced i {
-    font-size: 4rem;
-    margin-bottom: 20px;
-    opacity: 0.5;
-    color: var(--gray-400);
-    display: block;
-}
-
-.empty-state-enhanced h5 {
-    margin-bottom: 12px;
-    font-weight: 700;
-    color: var(--gray-700);
-    font-size: 1.25rem;
-    font-family: 'Poppins', sans-serif;
-}
-
-.empty-state-enhanced p {
-    margin: 0;
-    font-size: 1rem;
-    color: var(--gray-500);
-    line-height: 1.6;
-    max-width: 400px;
-    margin: 0 auto;
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Filter group */
-.filter-group {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
-}
-
-.filter-select {
-    min-width: 120px;
-    max-width: 180px;
-    font-size: 0.875rem;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius-lg);
-    padding: 8px 12px;
-    background: var(--white);
-    color: var(--gray-700);
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.filter-select:focus {
-    border-color: var(--telkom-red);
-    box-shadow: 0 0 0 3px var(--telkom-red-subtle);
-    outline: none;
-}
-
-/* Achievement indicators */
-.achievement-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-}
-
-.achievement-excellent { background-color: #198754; }
-.achievement-good { background-color: #fd7e14; }
-.achievement-poor { background-color: #dc3545; }
-
-/* Period text */
-.period-text {
-    font-weight: 600;
-    color: var(--telkom-red);
-    font-size: 0.9rem;
-}
-
-/* AM Profile Picture */
-.am-profile-pic {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-/* Divisi Pills */
-.divisi-pills {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.divisi-pill {
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.badge-dgs { background-color: #e3f2fd; color: #1976d2; }
-.badge-dss { background-color: #e8f5e8; color: #388e3c; }
-.badge-dps { background-color: #fff3e0; color: #f57c00; }
-.badge-government { background-color: #e3f2fd; color: #1976d2; }
-.badge-soe { background-color: #e8f5e8; color: #388e3c; }
-.badge-private { background-color: #fff3e0; color: #f57c00; }
-
-/* Table hover effects */
-.clickable-row:hover {
-    background-color: var(--gray-50) !important;
-    cursor: pointer;
-}
-
-.table-hover-effect {
-    background-color: var(--telkom-red-subtle) !important;
-}
-
-/* Chart Container */
-.chart-container {
-    height: 350px !important;
-    width: 100% !important;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.chart-container canvas {
-    max-height: 350px !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .filter-group {
-        flex-wrap: wrap;
-        justify-content: stretch;
-    }
-
-    .filter-select {
-        min-width: auto;
-        flex: 1;
-    }
-
-    .performance-tabs {
-        padding: 0 16px;
-    }
-
-    .performance-tabs .nav-link {
-        padding: 12px 16px;
-        font-size: 0.8rem;
-    }
-
-    .table-container .table-responsive {
-        padding: 16px;
-    }
-}
-</style>
 @endsection
 
 @section('content')
@@ -277,7 +25,7 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
                 <!-- Filter Group -->
                 <div class="filter-group">
                     <!-- Period Type Filter (YTD/MTD) -->
-                    <select id="periodTypeFilter" class="form-select filter-select">
+                    <select id="periodTypeFilter" class="form-select filter-select js-enhance">
                         @foreach($filterOptions['period_types'] ?? ['YTD' => 'Year to Date', 'MTD' => 'Month to Date'] as $key => $label)
                         <option value="{{ $key }}" {{ $key == ($filters['period_type'] ?? 'YTD') ? 'selected' : '' }}>
                             {{ $label }}
@@ -286,7 +34,7 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
                     </select>
 
                     <!-- Divisi Filter dengan Kode -->
-                    <select id="divisiFilter" class="form-select filter-select">
+                    <select id="divisiFilter" class="form-select filter-select js-enhance">
                         <option value="">Semua Divisi</option>
                         @foreach($filterOptions['divisis'] ?? [] as $divisi)
                         <option value="{{ $divisi->id }}" {{ $divisi->id == ($filters['divisi_id'] ?? '') ? 'selected' : '' }}>
@@ -296,7 +44,7 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
                     </select>
 
                     <!-- Sort Indicator Filter -->
-                    <select id="sortIndicatorFilter" class="form-select filter-select">
+                    <select id="sortIndicatorFilter" class="form-select filter-select js-enhance">
                         @foreach($filterOptions['sort_indicators'] ?? ['total_revenue' => 'Total Revenue Tertinggi', 'achievement_rate' => 'Achievement Rate Tertinggi', 'semua' => 'Semua'] as $key => $label)
                         <option value="{{ $key }}" {{ $key == ($filters['sort_indicator'] ?? 'total_revenue') ? 'selected' : '' }}>
                             {{ $label }}
@@ -305,7 +53,7 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
                     </select>
 
                     <!-- Tipe Revenue Filter -->
-                    <select id="tipeRevenueFilter" class="form-select filter-select">
+                    <select id="tipeRevenueFilter" class="form-select filter-select js-enhance">
                         @foreach($filterOptions['tipe_revenues'] ?? ['all' => 'Semua Tipe'] as $key => $label)
                         <option value="{{ $key }}" {{ $key == ($filters['tipe_revenue'] ?? 'all') ? 'selected' : '' }}>
                             {{ $label }}
@@ -359,12 +107,9 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
             </div>
         </div>
         <div class="col-md-4">
-            <div class="stats-card">
+            <div class="stats-card is-achievement">
                 <div class="stats-title">Achievement Rate</div>
-                <div class="stats-value">
-                    <span class="achievement-indicator achievement-{{ $cardData['achievement_color'] ?? 'poor' }}"></span>
-                    {{ number_format($cardData['achievement_rate'] ?? 0, 2) }}%
-                </div>
+                <div class="stats-value">{{ number_format($cardData['achievement_rate'] ?? 0, 2) }}%<span class="achievement-indicator achievement-{{ $cardData['achievement_color'] ?? 'poor' }}"></span></div>
                 <div class="stats-period">Persentase pencapaian target pendapatan</div>
                 <div class="stats-icon icon-achievement">
                     <i class="fas fa-medal"></i>
@@ -553,7 +298,7 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
     </div>
 
     <!-- 3. VISUALISASI PENDAPATAN BULANAN -->
-    <div class="row mt-4">
+    <div class="row mt-4 equal-cards">
         <!-- Line Chart Total Revenue Bulanan -->
         <div class="col-md-6">
             <div class="dashboard-card">
@@ -565,16 +310,9 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
-                        @if(isset($monthlyChart) && !empty($monthlyChart))
-                            {!! $monthlyChart !!}
-                        @else
-                            <div class="empty-state-enhanced" style="margin: 0; background: transparent; border: none;">
-                                <i class="fas fa-chart-line"></i>
-                                <h5>Chart Tidak Tersedia</h5>
-                                <p>Data chart sedang dimuat atau tidak tersedia untuk periode ini</p>
-                            </div>
-                        @endif
+                        <canvas id="monthlyRevenueChart"></canvas>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -590,27 +328,9 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
-                        @if(isset($performanceChart) && !empty($performanceChart))
-                            {!! $performanceChart !!}
-                        @else
-                            <div class="empty-state-enhanced" style="margin: 0; background: transparent; border: none;">
-                                <i class="fas fa-chart-bar"></i>
-                                <h5>Chart Tidak Tersedia</h5>
-                                <p>Data chart sedang dimuat atau tidak tersedia untuk periode ini</p>
-                            </div>
-                        @endif
+                        <canvas id="amDistributionChart" style="max-height:350px"></canvas>
                     </div>
-                    <div class="mt-3 d-flex justify-content-center gap-3">
-                        <span class="badge bg-success-soft">
-                            <i class="fas fa-circle me-1"></i> Hijau: ≥100%
-                        </span>
-                        <span class="badge bg-warning-soft">
-                            <i class="fas fa-circle me-1"></i> Oranye: 80-99%
-                        </span>
-                        <span class="badge bg-danger-soft">
-                            <i class="fas fa-circle me-1"></i> Merah: 0-80%
-                        </span>
-                    </div>
+                    <div id="amDistributionLegend" class="am-legend-grid mt-3"></div>
                 </div>
             </div>
         </div>
@@ -683,6 +403,348 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
 
 @section('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+(function(){
+  function enhanceSelect(sel){
+    const wrapper = document.createElement('div');
+    wrapper.className = 'select-pill';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'select-pill__btn';
+    const menu = document.createElement('div');
+    menu.className = 'select-menu';
+    btn.textContent = sel.options[sel.selectedIndex]?.text || sel.options[0]?.text || 'Pilih';
+
+    // buat item
+    [...sel.options].forEach((opt,i)=>{
+      const a = document.createElement('button');
+      a.type='button';
+      a.className='select-item';
+      a.textContent = opt.text;
+      a.setAttribute('role','option');
+      if(opt.selected) a.setAttribute('aria-selected','true');
+      a.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        sel.selectedIndex = i;
+        btn.textContent = opt.text;
+        menu.querySelectorAll('.select-item').forEach(x=>x.removeAttribute('aria-selected'));
+        a.setAttribute('aria-selected','true');
+        sel.dispatchEvent(new Event('change', {bubbles:true}));
+        menu.classList.remove('is-open');
+      });
+      menu.appendChild(a);
+    });
+
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      document.querySelectorAll('.select-menu.is-open').forEach(m=>m.classList.remove('is-open'));
+      menu.classList.toggle('is-open');
+    });
+
+    document.addEventListener('click', ()=> menu.classList.remove('is-open'));
+
+    sel.style.display='none';
+    sel.parentNode.insertBefore(wrapper, sel);
+    wrapper.appendChild(sel);
+    wrapper.appendChild(btn);
+    wrapper.appendChild(menu);
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.querySelectorAll('select.filter-select.js-enhance').forEach(enhanceSelect);
+  });
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('monthlyRevenueChart');
+  if (!el) return;
+
+  // --- data dari controller + fallback tabel
+  let labels = @json($monthlyLabels ?? []);
+  let real   = (@json($monthlyReal ?? [])   || []).map(v => Number(v) || 0);
+  let target = (@json($monthlyTarget ?? []) || []).map(v => Number(v) || 0);
+
+  const fallback = @json($revenueTable ?? []);
+  if ((!labels || !labels.length) && Array.isArray(fallback) && fallback.length) {
+    labels = fallback.map(r => r.bulan ?? '');
+    real   = fallback.map(r => Number(r.realisasi ?? 0));
+    target = fallback.map(r => Number(r.target ?? 0));
+  }
+
+  const n = Math.min(labels.length, real.length, target.length);
+  if (!n) return;
+
+  labels = labels.slice(0, n);
+  real   = real.slice(0, n);
+  target = target.slice(0, n);
+
+  const achieve = real.map((v, i) => (target[i] ? (v / target[i]) * 100 : 0));
+
+  if (window._monthlyRevenueChart) window._monthlyRevenueChart.destroy();
+
+  // Nilai untuk membuat bar lebih ramping
+  const CAT = 0.50;   // lebar kelompok (diperkecil agar bar lebih ramping)
+  const BAR = 0.85;   // lebar masing-masing bar dalam kelompok
+
+  window._monthlyRevenueChart = new Chart(el.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Real Revenue',
+          type: 'bar',
+          yAxisID: 'y',
+          data: real,
+          backgroundColor: 'rgba(84,167,248,0.95)',
+          borderColor: 'rgba(84,167,248,1)',
+          borderWidth: 1,
+          borderRadius: 6,
+          categoryPercentage: CAT,
+          barPercentage: BAR,
+          order: 2  // bar di belakang
+        },
+        {
+          label: 'Target Revenue',
+          type: 'bar',
+          yAxisID: 'y',
+          data: target,
+          backgroundColor: 'rgba(217,221,231,0.95)',
+          borderColor: 'rgba(217,221,231,1)',
+          borderWidth: 1,
+          borderRadius: 6,
+          categoryPercentage: CAT,
+          barPercentage: BAR,
+          order: 2  // bar di belakang
+        },
+        {
+          label: 'Achievement (%)',
+          type: 'line',
+          yAxisID: 'y1',
+          data: achieve,
+          borderColor: '#ff4d73',
+          backgroundColor: '#ff4d73',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#ff4d73',
+          pointBorderWidth: 2,
+          tension: 0,
+          fill: false,
+          spanGaps: false,
+          order: 1  // garis di depan (angka lebih kecil = lebih depan)
+        }
+      ]
+    },
+    options: {
+      interaction: { mode: 'index', intersect: false },
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { usePointStyle: true, boxWidth: 10, boxHeight: 10, padding: 15 }
+        },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              if (ctx.dataset.yAxisID === 'y1') return ` ${ctx.dataset.label}: ${ctx.formattedValue}%`;
+              return ` ${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString('id-ID')}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          offset: true,
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { color: '#6b7280', font: { size: 11 } }
+        },
+        y: {
+          position: 'left',
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { 
+            color: '#6b7280',
+            callback: v => v.toLocaleString('id-ID'),
+            font: { size: 11 }
+          },
+          title: { display: true, text: 'Revenue (Juta Rp)', color: '#6b7280', font: { size: 12 } }
+        },
+        y1: {
+          position: 'right',
+          beginAtZero: true,
+          suggestedMax: 120,
+          grid: { drawOnChartArea: false },
+          ticks: { 
+            color: '#6b7280',
+            callback: v => `${v}%`,
+            font: { size: 11 }
+          },
+          title: { display: true, text: 'Achievement (%)', color: '#6b7280', font: { size: 12 } }
+        }
+      },
+      layout: { padding: { top: 10, right: 12, left: 4, bottom: 0 } }
+    }
+  });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('amDistributionChart');
+  if (!el) return;
+
+  // 1) Data raw dari controller (boleh berbagai bentuk)
+  const RAW = @json($amPerformanceDistribution ?? null);
+
+  // 2) Fallback sumber data dari list AM (server-side table)
+  const AM_ROWS = @json($performanceData['account_manager'] ?? []);
+
+  // --- Normalizer agar paham banyak bentuk ---
+  function normalizeFromRaw(raw){
+    const order = ['Hijau','Oranye','Merah'];
+    const aliases = {
+      hijau:'Hijau', green:'Hijau',
+      oranye:'Oranye', orange:'Oranye', kuning:'Oranye', yellow:'Oranye',
+      merah:'Merah', red:'Merah'
+    };
+    const bucket = {Hijau:0, Oranye:0, Merah:0};
+
+    const pickNum = (o)=> Number(
+      o?.count ?? o?.jumlah ?? o?.total ?? o?.qty ?? o?.value ?? o?.nilai ?? 0
+    ) || 0;
+
+    if (Array.isArray(raw)) {
+      if (raw.length === 3 && raw.every(v => !isNaN(Number(v)))) {
+        order.forEach((k,i)=> bucket[k] = Number(raw[i])||0);
+      } else {
+        raw.forEach(it=>{
+          const key = String(it?.status ?? it?.bucket ?? it?.name ?? '').toLowerCase();
+          const norm = aliases[key];
+          if (norm) bucket[norm] += pickNum(it);
+        });
+      }
+    } else if (raw && typeof raw === 'object') {
+      Object.entries(raw).forEach(([k,v])=>{
+        const key = String(k).toLowerCase();
+        const norm = aliases[key] || (['hijau','oranye','merah'].includes(key) ? (key[0].toUpperCase()+key.slice(1)) : null);
+        if (norm) bucket[norm] += Number(v)||0;
+      });
+    }
+
+    return bucket;
+  }
+
+  function normalizeFromAM(rows){
+    const bucket = {Hijau:0, Oranye:0, Merah:0};
+    (rows || []).forEach(r=>{
+      const rate = Number(r?.achievement_rate ?? r?.achievement ?? r?.rate ?? 0);
+      if (isNaN(rate)) return;
+      if (rate >= 100) bucket.Hijau += 1;
+      else if (rate >= 80) bucket.Oranye += 1;
+      else bucket.Merah += 1;
+    });
+    return bucket;
+  }
+
+  // 3) Gabungkan kedua sumber
+  let bucket = normalizeFromRaw(RAW);
+  const totalRaw = (bucket.Hijau||0)+(bucket.Oranye||0)+(bucket.Merah||0);
+
+  if (!totalRaw) {
+    bucket = normalizeFromAM(AM_ROWS);
+  }
+
+  const rows = [
+    { status:'Hijau',  count: bucket.Hijau||0,  color:'#10b981', label:'≥ 100%' },
+    { status:'Oranye', count: bucket.Oranye||0, color:'#f59e0b', label:'80–99%' },
+    { status:'Merah',  count: bucket.Merah||0,  color:'#ef4444', label:'< 80%'  },
+  ];
+
+  const labels = rows.map(r=>r.status);
+  const data   = rows.map(r=>r.count);
+  const colors = rows.map(r=>r.color);
+  const total  = data.reduce((a,b)=>a+b,0);
+
+  if (window._amDistributionChart) window._amDistributionChart.destroy();
+
+  const centerTextPlugin = {
+    id:'centerText',
+    beforeDraw(chart){
+      const {ctx, chartArea} = chart; if(!chartArea) return;
+      const {width, top, height} = chartArea;
+      const cx = width/2, cy = top + height/2 - 6;
+      ctx.save();
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='#111827'; ctx.font='700 30px Poppins,system-ui,sans-serif';
+      ctx.fillText(String(total), cx, cy);
+      ctx.fillStyle='#6b7280'; ctx.font='500 12px Poppins,system-ui,sans-serif';
+      ctx.fillText('Total AM', cx, cy+20);
+      ctx.restore();
+    }
+  };
+
+  window._amDistributionChart = new Chart(el.getContext('2d'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{
+      data, backgroundColor:colors, borderColor:'#fff', borderWidth:4,
+      hoverOffset:10, hoverBorderWidth:4
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'70%',
+      plugins:{ legend:{display:false}, tooltip:{
+        backgroundColor:'rgba(17,24,39,.92)', padding:12,
+        callbacks:{
+          title:(items)=> `${rows[items[0].dataIndex].status} • ${rows[items[0].dataIndex].label}`,
+          label:(ctx)=> {
+            const cnt = ctx.parsed||0;
+            const pct = total ? (cnt/total*100).toFixed(1) : '0.0';
+            return ` ${cnt} AM (${pct}%)`;
+          }
+        }
+      }}
+    },
+    plugins:[centerTextPlugin]
+  });
+
+  // (opsional) legend custom di elemen #amDistributionLegend kalau kamu punya
+  const legendEl = document.getElementById('amDistributionLegend');
+if (legendEl) {
+  const toRGBA = (hex, a=0.15) => {
+    const m = String(hex).replace('#','');
+    const [r,g,b] = m.length===3
+      ? m.split('').map(x=>parseInt(x+x,16))
+      : [m.slice(0,2),m.slice(2,4),m.slice(4,6)].map(x=>parseInt(x,16));
+    return `rgba(${r},${g},${b},${a})`;
+  };
+
+  legendEl.classList.add('am-legend-grid'); // grid wrapper
+  legendEl.innerHTML = rows.map(r => {
+    const pct = total ? (r.count/total*100).toFixed(1) : '0.0';
+    return `
+      <div class="am-legend-card2">
+        <div class="am-legend-head">
+          <span class="dot" style="background:${r.color}"></span>
+          <span class="label">${r.status}</span>
+          <span class="range">• ${r.label}</span>
+        </div>
+        <div class="am-legend-body">
+          <div class="count"><strong>${r.count}</strong> AM</div>
+          <div class="pct-chip" style="background:${toRGBA(r.color)}; color:${r.color}">
+            ${pct}%
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+});
+</script>
+
 
 <script>
 $(document).ready(function() {
@@ -835,7 +897,7 @@ $(document).ready(function() {
     function getTableHeaders(tabType) {
         const headers = {
             'witel': '<th>Ranking</th><th>Nama Witel</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th><th>Action</th>',
-            'segment': '<th>Ranking</th><th>Nama Segmen</th><th>Divisi</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th><th>Action</th>'
+            'segment': '<th>Ranking</th><th>Nama Segmen</th><th>Divisi</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th>'
         };
         return headers[tabType] || '';
     }
@@ -874,7 +936,7 @@ $(document).ready(function() {
                             ${(parseFloat(item.achievement_rate) || 0).toFixed(2)}%
                         </span>
                     </td>
-                    <td><a href="${detailUrl}" class="btn btn-sm btn-primary">Detail</a></td>
+                    <td><a href="${detailUrl}"></a></td>
                 `;
                 break;
 

@@ -264,22 +264,24 @@
                     </div>
                     @endif
 
-                    <!-- Tipe Revenue Filter -->
+                    <!-- ...elemen lain biarkan... -->
+
+                    <div class="two-filters">   <!-- <— ini baru -->
                     <div class="filter-group">
                         <select id="tipeRevenueFilter" class="selectpicker" title="Tipe Revenue">
-                            <option value="all" {{ $filters['tipe_revenue'] == 'all' ? 'selected' : '' }}>Semua Tipe</option>
-                            <option value="REGULER" {{ $filters['tipe_revenue'] == 'REGULER' ? 'selected' : '' }}>REGULER</option>
-                            <option value="NGTMA" {{ $filters['tipe_revenue'] == 'NGTMA' ? 'selected' : '' }}>NGTMA</option>
+                        <option value="all" {{ $filters['tipe_revenue']=='all'?'selected':'' }}>Semua Tipe</option>
+                        <option value="REGULER" {{ $filters['tipe_revenue']=='REGULER'?'selected':'' }}>REGULER</option>
+                        <option value="NGTMA" {{ $filters['tipe_revenue']=='NGTMA'?'selected':'' }}>NGTMA</option>
                         </select>
                     </div>
 
-                    <!-- Year Filter -->
                     <div class="filter-group year-selector">
                         <select id="customerYearFilter" class="selectpicker" title="Tahun">
-                            @foreach($filterOptions['available_years'] as $year)
-                                <option value="{{ $year }}" {{ $filters['tahun'] == $year ? 'selected' : '' }}>{{ $year }}</option>
-                            @endforeach
+                        @foreach($filterOptions['available_years'] as $year)
+                            <option value="{{ $year }}" {{ $filters['tahun']==$year?'selected':'' }}>{{ $year }}</option>
+                        @endforeach
                         </select>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -530,19 +532,19 @@
                     </h4>
 
                     <div class="chart-filters">
+                         <div class="filter-group">
+                            <select id="chartDisplayMode" class="selectpicker" title="Tampilan">
+                                <option value="combination" {{ $filters['chart_display'] == 'combination' ? 'selected' : '' }}>Kombinasi</option>
+                                <option value="revenue" {{ $filters['chart_display'] == 'revenue' ? 'selected' : '' }}>Revenue</option>
+                                <option value="achievement" {{ $filters['chart_display'] == 'achievement' ? 'selected' : '' }}>Achievement</option>
+                            </select>
+                        </div>
+                        
                         <div class="filter-group">
                             <select id="chartYearFilter" class="selectpicker" title="Tahun">
                                 @foreach($filterOptions['available_years'] as $year)
                                     <option value="{{ $year }}" {{ $filters['chart_tahun'] == $year ? 'selected' : '' }}>{{ $year }}</option>
                                 @endforeach
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <select id="chartDisplayMode" class="selectpicker" title="Tampilan">
-                                <option value="combination" {{ $filters['chart_display'] == 'combination' ? 'selected' : '' }}>Kombinasi</option>
-                                <option value="revenue" {{ $filters['chart_display'] == 'revenue' ? 'selected' : '' }}>Revenue</option>
-                                <option value="achievement" {{ $filters['chart_display'] == 'achievement' ? 'selected' : '' }}>Achievement</option>
                             </select>
                         </div>
                     </div>
@@ -983,28 +985,28 @@ $(document).ready(function() {
     }
 
     // Add tooltip for achievement badges
-    $('.achievement-badge').each(function() {
-        const achievement = parseFloat($(this).text());
-        let tooltipText = '';
+    $('.achievement-badge').each(function () {
+    const achievement = parseFloat($(this).text());
+    let tip = (achievement >= 100) ? 'Excellent! Mencapai target'
+            : (achievement >= 80) ? 'Good! Mendekati target'
+            : 'Perlu peningkatan';
 
-        if (achievement >= 100) {
-            tooltipText = 'Excellent! Mencapai target';
-        } else if (achievement >= 80) {
-            tooltipText = 'Good! Mendekati target';
-        } else {
-            tooltipText = 'Perlu peningkatan';
-        }
-
-        $(this).attr('title', tooltipText);
+    // gunakan atribut Bootstrap 5
+    $(this)
+        .attr('data-bs-toggle', 'tooltip')
+        .attr('data-bs-title', tip)   // pakai data-bs-title, bukan title
+        .removeAttr('title');         // hindari native tooltip
     });
+
 
     // Initialize tooltips if Bootstrap tooltip is available
     if (typeof $.fn.tooltip !== 'undefined') {
-        $('[title]').tooltip({
-            trigger: 'hover',
-            placement: 'top'
-        });
+    $('[data-bs-toggle="tooltip"]').tooltip({
+        trigger: 'hover',
+        placement: 'top'
+    });
     }
+
 
     // Add search/filter functionality for customer table (optional enhancement)
     let customerTableSearch = '';

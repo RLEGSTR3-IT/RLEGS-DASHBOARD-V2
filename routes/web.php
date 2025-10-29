@@ -12,6 +12,7 @@ use App\Http\Controllers\RevenueData\RevenueImportController;
 use App\Http\Controllers\RevenueData\ImportCCController;
 use App\Http\Controllers\RevenueData\ImportAMController;
 
+
 // Laravel Core
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -55,9 +56,6 @@ Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])
 Route::get('/search-account-managers', [RegisteredUserController::class, 'searchAccountManagers'])
     ->middleware('guest')
     ->name('search.account-managers');
-
-// ===== AUTHENTICATED ROUTES =====
-Route::middleware(['auth', 'verified'])->group(function () {
 
     // ===== MAIN DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -395,11 +393,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('export');
 
     // ===== PROFILE ROUTES =====
-    Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
-        Route::patch('/', [ProfileController::class, 'update'])->name('update');
-        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
-    });
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class,'index'])->name('profile.index');
+    Route::patch('/profile', [ProfileController::class,'update'])->name('profile.update');
+    Route::delete('/profile/photo', [ProfileController::class,'removePhoto'])->name('profile.remove-photo');
+    Route::put('/profile/password', [ProfileController::class,'updatePassword'])->name('profile.password');
+
+    Route::post('/email/verification-notification', function () {
+        request()->user()->sendEmailVerificationNotification();
+        return back()->with('verification-link-sent', true);
+    })->middleware(['throttle:6,1'])->name('verification.send');
+});
+
 
     // ===== SIDEBAR ROUTES =====
     Route::get('/leaderboard', function() {
@@ -465,7 +470,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/witel-perform', function() {
         return view('performansi.witel');
     })->name('witel.perform');
-});
+
 
 // ===== UTILITY ROUTES =====
 Route::get('health-check', function () {

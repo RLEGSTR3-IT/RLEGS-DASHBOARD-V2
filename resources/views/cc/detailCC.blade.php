@@ -446,18 +446,18 @@
 
                     <div class="chart-filters">
                         <div class="filter-item">
-                            <select id="chartYearFilter" class="selectpicker">
-                                @foreach($filterOptions['available_years'] as $year)
-                                    <option value="{{ $year }}" {{ $filters['chart_tahun'] == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="filter-item">
                             <select id="chartDisplayMode" class="selectpicker">
                                 <option value="combination" {{ $filters['chart_display'] == 'combination' ? 'selected' : '' }}>Kombinasi</option>
                                 <option value="revenue" {{ $filters['chart_display'] == 'revenue' ? 'selected' : '' }}>Revenue</option>
                                 <option value="achievement" {{ $filters['chart_display'] == 'achievement' ? 'selected' : '' }}>Achievement</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-item">
+                            <select id="chartYearFilter" class="selectpicker">
+                                @foreach($filterOptions['available_years'] as $year)
+                                    <option value="{{ $year }}" {{ $filters['chart_tahun'] == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>

@@ -8,256 +8,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <style>
-        /* Additional styles for result modal */
-        .result-modal-stats-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .result-modal-stat {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .result-modal-stat .icon {
-            font-size: 2rem;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .result-modal-stat .icon.success { background: #d4edda; color: #155724; }
-        .result-modal-stat .icon.danger { background: #f8d7da; color: #721c24; }
-        .result-modal-stat .icon.warning { background: #fff3cd; color: #856404; }
-        .result-modal-stat .icon.info { background: #d1ecf1; color: #0c5460; }
-        .result-modal-stat .content { flex: 1; }
-        .result-modal-stat .content h4 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        .result-modal-stat .content p { margin: 0; color: #6c757d; font-size: 0.9rem; }
-
-        .progress-bar-custom {
-            width: 100%;
-            height: 30px;
-            background: #e9ecef;
-            border-radius: 15px;
-            overflow: hidden;
-            margin: 1.5rem 0;
-        }
-        .progress-bar-fill-custom {
-            height: 100%;
-            background: linear-gradient(90deg, #28a745, #20c997);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            transition: width 0.5s ease;
-        }
-
-        /* Better badge colors for Role & Status */
-        .badge-role-am {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .badge-role-hotda {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .badge-status-registered {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .badge-status-not-registered {
-            background: #6c757d;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Checkbox column */
-        .table thead th:first-child,
-        .table tbody td:first-child {
-            width: 48px !important;
-            min-width: 48px !important;
-            text-align: center !important;
-            padding: 0.5rem !important;
-        }
-
-        .table thead th:first-child input[type="checkbox"],
-        .table tbody td:first-child input[type="checkbox"] {
-            width: 18px !important;
-            height: 18px !important;
-            cursor: pointer !important;
-            display: inline-block !important;
-            margin: 0 auto !important;
-        }
-
-        /* Aksi column wider for buttons */
-        .table thead th:last-child,
-        .table tbody td:last-child {
-            width: 150px !important;
-            min-width: 150px !important;
-            text-align: center !important;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* Tab button active state - MERAH bukan biru */
-        .tab-btn.active {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-            color: white !important;
-            border-color: #dc3545 !important;
-        }
-
-        .tab-btn.active .badge {
-            background: rgba(255, 255, 255, 0.3) !important;
-            color: white !important;
-        }
-
-        /* Modal form styling */
-        .modal-body .form-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-body .form-control,
-        .modal-body .form-select {
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 0.75rem;
-            transition: all 0.3s ease;
-        }
-
-        .modal-body .form-control:focus,
-        .modal-body .form-select:focus {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
-        }
-
-        .modal-body .nav-tabs {
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .modal-body .nav-tabs .nav-link {
-            border: none;
-            color: #6c757d;
-            font-weight: 600;
-            padding: 1rem 1.5rem;
-        }
-
-        .modal-body .nav-tabs .nav-link.active {
-            color: #dc3545;
-            border-bottom: 3px solid #dc3545;
-            background: transparent;
-        }
-
-        /* ✨ NEW: Divisi Button Group Styling */
-        .divisi-button-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-top: 0.5rem;
-        }
-
-        .divisi-toggle-btn {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .divisi-toggle-btn:hover {
-            border-color: #cbd5e0;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .divisi-toggle-btn.active {
-            color: white;
-            border-width: 2px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .divisi-toggle-btn.active::after {
-            content: '✓';
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: white;
-            color: inherit;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: bold;
-            border: 2px solid currentColor;
-        }
-
-        .divisi-toggle-btn.dps.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: #667eea;
-        }
-
-        .divisi-toggle-btn.dss.active {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-color: #f093fb;
-        }
-
-        .divisi-toggle-btn.dgs.active {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-color: #4facfe;
-        }
-
-        /* Hidden helper for form submission */
-        .divisi-hidden-container {
-            display: none;
-        }
-    </style>
 @endsection
 
 @section('content')
@@ -304,49 +54,28 @@
         <div class="filter-group">
             <label>Segment</label>
 
-            <!-- Select asli (tetap ada untuk submit & nilai) -->
+            <!-- Select asli (hidden, untuk form submit) -->
             <select class="form-select" id="filter-segment" name="segment">
                 <option value="all">Semua Segment</option>
-                <!-- nilai akan diisi via JS; opsi statis ini hanya fallback -->
+                <!-- Options dari database akan diisi via JS -->
             </select>
 
-            <!-- UI custom bertab -->
+            <!-- UI custom dengan tabs (akan di-generate via JS) -->
             <div class="seg-select" id="segSelect">
-                <div class="seg-menu" id="segMenu" role="listbox" aria-labelledby="segBtn">
-                <div class="seg-tabs" role="tablist" aria-label="Divisi">
-                    <button class="seg-tab active" data-tab="DPS" role="tab" aria-selected="true">DPS</button>
-                    <button class="seg-tab" data-tab="DSS" role="tab" aria-selected="false">DSS</button>
-                    <button class="seg-tab" data-tab="DGS" role="tab" aria-selected="false">DGS</button>
-                </div>
-
-                <div class="seg-panels">
-                    <div class="seg-panel active" data-panel="DPS" role="tabpanel">
-                    <button class="seg-option all" data-value="all">Semua Segment</button>
-                    <button class="seg-option" data-value="FWS">FWS</button>
-                    <button class="seg-option" data-value="LMS">LMS</button>
-                    <button class="seg-option" data-value="PBS">PBS</button>
-                    <button class="seg-option" data-value="RMS">RMS</button>
-                    <button class="seg-option" data-value="PCS">PCS</button>
-                    <button class="seg-option" data-value="PRS">PRS</button>
+                <!-- Tombol trigger -->
+                <button type="button" class="seg-select__btn" aria-haspopup="listbox">
+                    <span class="seg-select__label">Semua Segment</span>
+                    <span class="seg-select__caret"></span>
+                </button>
+                
+                <!-- Menu dropdown (akan diisi via JS) -->
+                <div class="seg-menu" id="segMenu" role="listbox">
+                    <div class="seg-tabs" id="segTabs" role="tablist">
+                        <!-- Tabs akan di-generate via JS -->
                     </div>
-
-                    <div class="seg-panel" data-panel="DSS" role="tabpanel">
-                    <button class="seg-option all" data-value="all">Semua Segment</button>
-                    <button class="seg-option" data-value="ERS">ERS</button>
-                    <button class="seg-option" data-value="FRBS">FRBS</button>
-                    <button class="seg-option" data-value="MIS">MIS</button>
-                    <button class="seg-option" data-value="TWS">TWS</button>
-                    <button class="seg-option" data-value="SBS">SBS</button>
+                    <div class="seg-panels" id="segPanels">
+                        <!-- Panels akan di-generate via JS -->
                     </div>
-
-                    <div class="seg-panel" data-panel="DGS" role="tabpanel">
-                    <button class="seg-option all" data-value="all">Semua Segment</button>
-                    <button class="seg-option" data-value="GPS">GPS</button>
-                    <button class="seg-option" data-value="GDS">GDS</button>
-                    <button class="seg-option" data-value="GIS">GIS</button>
-                    <button class="seg-option" data-value="GRS">GRS</button>
-                    </div>
-                </div>
                 </div>
             </div>
         </div>
@@ -1286,45 +1015,6 @@ $(document).ready(function() {
   })();
 
   // ========================================
-  // SEGMENT SELECT CUSTOM UI
-  // ========================================
-  (function initSegmentSelect() {
-    const segSelect = document.getElementById('segSelect');
-    if (!segSelect) return;
-
-    const nativeSelect = document.getElementById('filter-segment');
-    const segTabs = segSelect.querySelectorAll('.seg-tab');
-    const segPanels = segSelect.querySelectorAll('.seg-panel');
-    const segOptions = segSelect.querySelectorAll('.seg-option');
-
-    segTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const targetPanel = tab.dataset.tab;
-        segTabs.forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
-        });
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-
-        segPanels.forEach(panel => {
-          panel.classList.remove('active');
-        });
-        const activePanel = segSelect.querySelector(`.seg-panel[data-panel="${targetPanel}"]`);
-        if (activePanel) activePanel.classList.add('active');
-      });
-    });
-
-    segOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        const value = option.dataset.value;
-        nativeSelect.value = value;
-        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-    });
-  })();
-
-  // ========================================
   // CUSTOM SELECT ENHANCEMENT
   // ========================================
   function enhanceNativeSelect(native, opts = {}) {
@@ -1644,53 +1334,233 @@ $(document).ready(function() {
   // LOAD FILTER OPTIONS FROM BACKEND
   // ========================================
   function loadFilterOptions() {
-    $.ajax({
-      url: '{{ route("revenue.api.filter.options") }}',
-      method: 'GET',
-      success: function(response) {
-        // Populate Witel
-        const witelSelect = $('#filterWitel');
-        response.witels.forEach(function(witel) {
-          witelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
-        });
+  $.ajax({
+    url: '{{ route("revenue.api.filter.options") }}',
+    method: 'GET',
+    success: function(response) {
+      // Populate Witel
+      const witelSelect = $('#filterWitel');
+      response.witels.forEach(function(witel) {
+        witelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
+      });
 
-        // Populate Divisi
-        const divisiSelect = $('#filterDivisi');
-        const divisiImport = $('#divisiImport');
-        response.divisions.forEach(function(divisi) {
-          divisiSelect.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
-          divisiImport.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
-        });
+      // Populate Divisi
+      const divisiSelect = $('#filterDivisi');
+      const divisiImport = $('#divisiImport');
+      response.divisions.forEach(function(divisi) {
+        divisiSelect.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
+        divisiImport.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
+      });
 
-        // Populate Segment
-        const segmentSelect = $('#filter-segment');
-        response.segments.forEach(function(segment) {
-          segmentSelect.append(`<option value="${segment.id}">${segment.lsegment_ho}</option>`);
-        });
+      // ✅ BUILD SEGMENT UI dari database
+      buildSegmentUI(response.segments);
 
-        // Populate modal Edit Data AM - Witel
-        const editWitelSelect = $('#editDataAMWitel');
-        editWitelSelect.empty();
-        editWitelSelect.append('<option value="">Pilih Witel</option>');
-        response.witels.forEach(function(witel) {
-          editWitelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
-        });
+      // Populate modal Edit Data AM - Witel
+      const editWitelSelect = $('#editDataAMWitel');
+      editWitelSelect.empty();
+      editWitelSelect.append('<option value="">Pilih Witel</option>');
+      response.witels.forEach(function(witel) {
+        editWitelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
+      });
 
-        // ✨ Store divisi data globally for button group
-        allDivisiData = response.divisions;
+      // Store divisi data globally for button group
+      allDivisiData = response.divisions;
+      initDivisiButtonGroup();
 
-        // Initialize divisi button group
-        initDivisiButtonGroup();
+      // Enhance selects
+      enhanceFilterBar();
+      enhanceModalDivisi();
+    },
+    error: function(xhr) {
+      console.error('Error loading filters:', xhr);
+    }
+  });
+}
 
-        // Enhance selects
-        enhanceFilterBar();
-        enhanceModalDivisi();
-      },
-      error: function(xhr) {
-        console.error('Error loading filters:', xhr);
-      }
-    });
+// ========================================
+// ✅ BUILD SEGMENT DROPDOWN UI DARI DATABASE (tanpa tab "OTHER")
+// ========================================
+function buildSegmentUI(segments) {
+  const nativeSelect = document.getElementById('filter-segment');
+  const segTabs     = document.getElementById('segTabs');
+  const segPanels   = document.getElementById('segPanels');
+  if (!nativeSelect || !segTabs || !segPanels) return;
+
+  // --- Group by divisi (normalisasi + fallback OTHER)
+  const groupedSegments = {};
+  segments.forEach(segment => {
+    const raw = (segment.divisi_kode || segment.divisi || '').toString().trim().toUpperCase();
+    const divisiKode = raw || 'OTHER';
+
+    if (!groupedSegments[divisiKode]) groupedSegments[divisiKode] = [];
+    groupedSegments[divisiKode].push(segment);
+
+    // Sinkronkan juga ke select native
+    nativeSelect.innerHTML += `<option value="${segment.id}">${segment.lsegment_ho}</option>`;
+  });
+
+  // --- Urutan tab yang diinginkan (ubah sesuai kebutuhan)
+  const ORDER = ['DPS', 'DSS', 'DGS', 'DES'];
+
+  // Ambil hanya divisi bukan OTHER, lalu urutkan sesuai ORDER
+  const keys = Object.keys(groupedSegments);
+  const mainDivisi = keys.filter(k => k && k.toUpperCase() !== 'OTHER');
+  const divisiList = [
+    ...ORDER.filter(code => mainDivisi.includes(code)),
+    ...mainDivisi.filter(code => !ORDER.includes(code)).sort()
+  ];
+
+  segTabs.innerHTML = '';
+  segPanels.innerHTML = '';
+
+  // Jika tidak ada divisi utama tapi ada OTHER, buat satu panel generik
+  let firstTab = true;
+  let firstDivisiName = null;
+
+  if (divisiList.length === 0 && groupedSegments['OTHER']?.length) {
+    divisiList.push('SEGMENT');
+    groupedSegments['SEGMENT'] = []; // siapkan panel kosong, nanti OTHER disisipkan
   }
+
+  // Bangun tab & panel (tanpa OTHER)
+  divisiList.forEach(divisi => {
+    if (firstTab) firstDivisiName = divisi;
+
+    // Tab
+    const tabBtn = document.createElement('button');
+    tabBtn.className = `seg-tab${firstTab ? ' active' : ''}`;
+    tabBtn.dataset.tab = divisi;
+    tabBtn.setAttribute('role', 'tab');
+    tabBtn.setAttribute('aria-selected', firstTab ? 'true' : 'false');
+    tabBtn.textContent = divisi;
+    segTabs.appendChild(tabBtn);
+
+    // Panel
+    const panel = document.createElement('div');
+    panel.className = `seg-panel${firstTab ? ' active' : ''}`;
+    panel.dataset.panel = divisi;
+    panel.setAttribute('role', 'tabpanel');
+
+    // Opsi "Semua Segment"
+    const allOption = document.createElement('button');
+    allOption.className = 'seg-option all';
+    allOption.dataset.value = 'all';
+    allOption.textContent = 'Semua Segment';
+    panel.appendChild(allOption);
+
+    // Opsi segmen untuk divisi ini
+    (groupedSegments[divisi] || []).forEach(segment => {
+      const optionBtn = document.createElement('button');
+      optionBtn.className = 'seg-option';
+      optionBtn.dataset.value = segment.id;
+      optionBtn.textContent = segment.lsegment_ho;
+      panel.appendChild(optionBtn);
+    });
+
+    segPanels.appendChild(panel);
+    firstTab = false;
+  });
+
+  // --- Sisipkan item "OTHER" (kalau ada) ke panel pertama, TANPA membuat tab "OTHER"
+  const otherItems = groupedSegments['OTHER'];
+  if (firstDivisiName && Array.isArray(otherItems) && otherItems.length) {
+    const firstPanel = segPanels.querySelector(`.seg-panel[data-panel="${firstDivisiName}"]`);
+    if (firstPanel) {
+      otherItems.forEach(segment => {
+        const optionBtn = document.createElement('button');
+        optionBtn.className = 'seg-option';
+        optionBtn.dataset.value = segment.id;
+        optionBtn.textContent = segment.lsegment_ho;
+        firstPanel.appendChild(optionBtn);
+      });
+    }
+  }
+
+  // Inisialisasi interaksi
+  initSegmentSelectInteractions();
+}
+
+
+// ========================================
+// ✅ SEGMENT SELECT INTERACTIONS (after UI built)
+// ========================================
+function initSegmentSelectInteractions() {
+  const segSelect = document.getElementById('segSelect');
+  if (!segSelect) return;
+
+  const nativeSelect = document.getElementById('filter-segment');
+  const triggerBtn   = segSelect.querySelector('.seg-select__btn');
+  const labelSpan    = segSelect.querySelector('.seg-select__label');
+
+  // Ambil NodeList setelah UI selesai dibangun (termasuk sisipan OTHER)
+  const segTabs   = segSelect.querySelectorAll('.seg-tab');
+  const segPanels = segSelect.querySelectorAll('.seg-panel');
+  const segOptions= segSelect.querySelectorAll('.seg-option');
+
+  // Toggle menu
+  triggerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    segSelect.classList.toggle('open');
+  });
+
+  // Close di klik luar
+  document.addEventListener('click', (e) => {
+    if (!segSelect.contains(e.target)) segSelect.classList.remove('open');
+  });
+
+  // Ganti tab
+  segTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const targetPanel = tab.dataset.tab;
+
+      segTabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+
+      segPanels.forEach(panel => panel.classList.remove('active'));
+      const activePanel = segSelect.querySelector(`.seg-panel[data-panel="${targetPanel}"]`);
+      if (activePanel) activePanel.classList.add('active');
+    });
+  });
+
+  // Pilih opsi
+  segOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      const value = option.dataset.value;
+      const label = option.textContent.trim();
+
+      // Update select native + event change
+      nativeSelect.value = value;
+      nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // Update label tombol
+      labelSpan.textContent = label;
+
+      // State visual
+      segOptions.forEach(opt => opt.removeAttribute('aria-selected'));
+      option.setAttribute('aria-selected', 'true');
+
+      // Flag untuk style bila "Semua Segment" dipilih
+      if (value === 'all') {
+        segSelect.classList.add('is-all-selected');
+        segSelect.classList.remove('has-value');
+      } else {
+        segSelect.classList.remove('is-all-selected');
+        segSelect.classList.add('has-value');
+      }
+
+      // Tutup dropdown
+      setTimeout(() => segSelect.classList.remove('open'), 150);
+    });
+  });
+}
+
+
+
 
   // ========================================
   // LOAD DATA FROM BACKEND

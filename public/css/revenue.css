@@ -1854,20 +1854,20 @@ body {
     .rlegs-container {
         padding: var(--space-6) var(--space-8);
     }
-    
+
     .page-header {
         padding: var(--space-8);
         min-height: 120px;
     }
-    
+
     .page-title h1 {
         font-size: 2rem;
     }
-    
+
     .tab-panel {
         padding: var(--space-8);
     }
-    
+
     .filters {
         grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr auto;
         gap: var(--space-4);
@@ -1879,27 +1879,27 @@ body {
     .rlegs-container {
         padding: var(--space-6);
     }
-    
+
     .page-header {
         padding: var(--space-6);
         min-height: 100px;
     }
-    
+
     .page-title h1 {
         font-size: 1.875rem;
     }
-    
+
     .filters {
         grid-template-columns: 1.2fr 1fr 1fr 1fr auto;
         gap: var(--space-3);
         padding: var(--space-5) var(--space-6);
     }
-    
+
     .filter-group:nth-child(5) {
         grid-column: 1 / -1;
         max-width: 300px;
     }
-    
+
     .filter-actions {
         grid-column: -1;
     }
@@ -1911,18 +1911,18 @@ body {
         gap: var(--space-4);
         padding: var(--space-5);
     }
-    
+
     .filters .searchbar {
         grid-column: 1 / -1;
         max-width: none;
         margin-bottom: var(--space-4);
     }
-    
+
     .filter-group:nth-child(5) {
         grid-column: 1;
         max-width: none;
     }
-    
+
     .filter-actions {
         grid-column: 1 / -1;
         justify-content: flex-end;
@@ -1930,35 +1930,35 @@ body {
         padding-top: var(--space-4);
         border-top: 1px solid var(--gray-200);
     }
-    
+
     .page-header {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--space-6);
         min-height: auto;
     }
-    
+
     .page-actions {
         width: 100%;
         flex-wrap: wrap;
         justify-content: flex-start;
     }
-    
+
     .searchbar {
         max-width: 100%;
     }
-    
+
     .panel-header {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--space-6);
     }
-    
+
     .col-md-6 {
         flex: 0 0 100%;
         max-width: 100%;
     }
-    
+
     .tabs {
         flex-wrap: wrap;
         gap: var(--space-2);
@@ -1969,30 +1969,30 @@ body {
     .rlegs-container {
         padding: var(--space-4);
     }
-    
+
     .page-header {
         padding: var(--space-6);
     }
-    
+
     .page-title h1 {
         font-size: 1.75rem;
     }
-    
+
     .tab-panel {
         padding: var(--space-6);
     }
-    
+
     .filters {
         grid-template-columns: 1fr;
         gap: var(--space-4);
         padding: var(--space-4);
     }
-    
+
     .filters .searchbar {
         grid-column: 1;
         margin-bottom: var(--space-2);
     }
-    
+
     .filter-actions {
         flex-direction: column;
         align-items: stretch;
@@ -2000,37 +2000,37 @@ body {
         margin-top: var(--space-4);
         padding-top: var(--space-4);
     }
-    
+
     .filters .filter-actions .btn {
         min-height: 44px;
         justify-content: center;
     }
-    
+
     .table-wrap {
         overflow-x: auto;
         border-radius: var(--radius-xl);
     }
-    
+
     .pagination-bar {
         flex-direction: column;
         gap: var(--space-4);
         align-items: stretch;
         padding: var(--space-4);
     }
-    
+
     .pages {
         justify-content: center;
     }
-    
+
     .perpage {
         justify-content: center;
     }
-    
+
     .btn-segmentation {
         flex-direction: column;
         gap: var(--space-2);
     }
-    
+
     .import-type-switch {
         flex-direction: column;
         gap: var(--space-2);
@@ -2041,30 +2041,30 @@ body {
     .rlegs-container {
         padding: var(--space-3);
     }
-    
+
     .page-header {
         padding: var(--space-4);
     }
-    
+
     .page-title h1 {
         font-size: 1.5rem;
     }
-    
+
     .panel-header .left h3 {
         font-size: 1.25rem;
     }
-    
+
     .btn {
         padding: var(--space-3) var(--space-4);
         font-size: 0.9375rem;
         min-height: 44px;
     }
-    
+
     .tab-btn {
         padding: var(--space-3) var(--space-4);
         min-height: 40px;
     }
-    
+
     .filters .form-select,
     .filters .form-control,
     .filters .datepicker-control {
@@ -2072,49 +2072,49 @@ body {
         font-size: 0.875rem;
         min-height: 40px;
     }
-    
+
     .search-input {
         padding: var(--space-3);
         font-size: 0.875rem;
     }
-    
+
     .search-btn {
         width: 32px;
         height: 32px;
         font-size: 0.875rem;
     }
-    
+
     .searchbar {
         min-height: 40px;
     }
-    
+
     .icon-btn {
         width: 36px;
         height: 36px;
         border-radius: var(--radius-lg);
     }
-    
+
     .pager {
         min-width: 36px;
         height: 36px;
         font-size: 0.9375rem;
     }
-    
+
     .flatpickr-calendar {
         width: 340px;
     }
-    
+
     .flatpickr-monthSelect-month {
         height: 52px !important;
         line-height: 52px !important;
         font-size: 0.9375rem;
     }
-    
+
     .table.modern thead th {
         padding: var(--space-4);
         font-size: 0.8125rem;
     }
-    
+
     .table.modern tbody td {
         padding: var(--space-4);
         font-size: 0.875rem;
@@ -2174,31 +2174,33 @@ body {
     .icon-btn {
         display: none !important;
     }
-    
+
     .card-shadow {
         box-shadow: none !important;
         border: 1px solid var(--gray-300) !important;
     }
-    
+
     .table.modern tbody tr:hover {
         background: transparent !important;
     }
-    
+
     .rlegs-container {
         padding: var(--space-4);
     }
-    
+
     .page-header {
         padding: var(--space-4);
         background: var(--white) !important;
     }
-    
+
     .filters {
         background: transparent !important;
         border: none !important;
     }
-    
+
     .tabs {
         background: var(--white) !important;
     }
 }
+
+

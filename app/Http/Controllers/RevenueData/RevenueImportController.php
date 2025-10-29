@@ -82,11 +82,12 @@ class RevenueImportController extends Controller
 
     /**
      * Format import result untuk popup
+     * ENHANCED: Tambahkan informasi tambahan untuk card ke-4
      */
     private function formatImportResult($result, $importType, $startTime)
     {
-        // Get original response data
-        $originalData = $result->getData(true);
+        // Convert result to array instead of calling getData()
+        $originalData = is_array($result) ? $result : (array) $result;
 
         // Calculate duration
         $duration = now()->diffInSeconds($startTime);
@@ -115,39 +116,63 @@ class RevenueImportController extends Controller
                 ? round(($stats['success_count'] / $stats['total_rows']) * 100, 2)
                 : 0;
 
-            $formattedResult['summary'] = [
-                'title' => 'Import Berhasil!',
-                'success_rate' => $successRate,
-                'details' => [
-                    [
-                        'label' => 'Total Baris',
-                        'value' => $stats['total_rows'],
-                        'icon' => 'file-text'
-                    ],
-                    [
-                        'label' => 'Berhasil',
-                        'value' => $stats['success_count'],
-                        'icon' => 'check-circle',
-                        'color' => 'success'
-                    ],
-                    [
-                        'label' => 'Gagal',
-                        'value' => $stats['failed_count'],
-                        'icon' => 'x-circle',
-                        'color' => 'danger'
-                    ]
+            // ENHANCED: Prepare summary details dengan 4 cards
+            $summaryDetails = [
+                [
+                    'label' => 'Total Baris',
+                    'value' => $stats['total_rows'],
+                    'icon' => 'file-text',
+                    'color' => 'info'
+                ],
+                [
+                    'label' => 'Berhasil',
+                    'value' => $stats['success_count'],
+                    'icon' => 'check-circle',
+                    'color' => 'success'
+                ],
+                [
+                    'label' => 'Gagal',
+                    'value' => $stats['failed_count'],
+                    'icon' => 'x-circle',
+                    'color' => 'danger'
                 ]
             ];
 
-            // Add skipped count if exists
-            if (isset($stats['skipped_count']) && $stats['skipped_count'] > 0) {
-                $formattedResult['summary']['details'][] = [
-                    'label' => 'Diskip',
-                    'value' => $stats['skipped_count'],
-                    'icon' => 'alert-circle',
-                    'color' => 'warning'
+            // ENHANCED: Add card ke-4 based on import type
+            if (in_array($importType, ['revenue_cc', 'revenue_am'])) {
+                // Untuk revenue, tampilkan total revenue yang ditambahkan
+                $totalRevenue = $stats['total_revenue_added'] ?? 0;
+                $summaryDetails[] = [
+                    'label' => 'Total Revenue',
+                    'value' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
+                    'icon' => 'dollar-sign',
+                    'color' => 'primary'
                 ];
+            } else {
+                // Untuk data CC/AM, tampilkan skipped count
+                if (isset($stats['skipped_count']) && $stats['skipped_count'] > 0) {
+                    $summaryDetails[] = [
+                        'label' => 'Diskip',
+                        'value' => $stats['skipped_count'],
+                        'icon' => 'alert-circle',
+                        'color' => 'warning'
+                    ];
+                } else {
+                    // Jika tidak ada skipped, tampilkan data type info
+                    $summaryDetails[] = [
+                        'label' => 'Jenis Data',
+                        'value' => $importTypeLabels[$importType],
+                        'icon' => 'database',
+                        'color' => 'secondary'
+                    ];
+                }
             }
+
+            $formattedResult['summary'] = [
+                'title' => 'Import Berhasil!',
+                'success_rate' => $successRate,
+                'details' => $summaryDetails
+            ];
 
             // Add warning message if there are failures
             if ($stats['failed_count'] > 0 || (isset($stats['skipped_count']) && $stats['skipped_count'] > 0)) {
@@ -166,6 +191,7 @@ class RevenueImportController extends Controller
     /**
      * Import Data CC (General Corporate Customer)
      * Hanya menyimpan NAMA dan NIPNAS ke tabel corporate_customers
+     * ENHANCED: Tambahkan statistik total_data_added
      */
     private function importDataCC(Request $request)
     {
@@ -179,11 +205,12 @@ class RevenueImportController extends Controller
                 'total_rows' => 0,
                 'success_count' => 0,
                 'failed_count' => 0,
-                'failed_rows' => []
+                'failed_rows' => [],
+                'total_data_added' => 0  // ENHANCED: Track jumlah data yang ditambahkan
             ];
 
             // Validate required columns
-            $requiredColumns = ['STANDARD_NAME', 'NIP_NAS'];
+            $requiredColumns = ['STANDARD_NAME', 'NIPNAS'];
             $headers = array_shift($csvData); // Get headers
 
             if (!$this->validateHeaders($headers, $requiredColumns)) {
@@ -192,7 +219,7 @@ class RevenueImportController extends Controller
 
             // Get column indices
             $columnIndices = $this->getColumnIndices($headers, [
-                'STANDARD_NAME', 'NIP_NAS'
+                'STANDARD_NAME', 'NIPNAS'
             ]);
 
             $statistics['total_rows'] = count($csvData);
@@ -202,12 +229,17 @@ class RevenueImportController extends Controller
                 $rowNumber = $index + 2; // +2 karena index dimulai dari 0 dan ada header
 
                 try {
-                    $nipnas = $this->getColumnValue($row, $columnIndices['NIP_NAS']);
+                    $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                     $namaCC = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
 
                     // Validate required fields
                     if (empty($nipnas) || empty($namaCC)) {
                         throw new \Exception('NIPNAS atau Nama CC kosong');
+                    }
+
+                    // Validate NIPNAS format (numeric)
+                    if (!is_numeric($nipnas)) {
+                        throw new \Exception('NIPNAS harus berupa angka');
                     }
 
                     // Check if CC already exists
@@ -231,6 +263,8 @@ class RevenueImportController extends Controller
                             'created_at' => now(),
                             'updated_at' => now()
                         ]);
+
+                        $statistics['total_data_added']++; // ENHANCED: Increment counter
                     }
 
                     $statistics['success_count']++;
@@ -248,19 +282,19 @@ class RevenueImportController extends Controller
 
             DB::commit();
 
-            // Generate error log file if there are failed rows
             $errorLogPath = null;
             if ($statistics['failed_count'] > 0) {
                 $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'data_cc');
             }
 
-            return (object) [
+            return [
                 'success' => true,
                 'message' => 'Import Data CC selesai',
                 'statistics' => [
                     'total_rows' => $statistics['total_rows'],
                     'success_count' => $statistics['success_count'],
-                    'failed_count' => $statistics['failed_count']
+                    'failed_count' => $statistics['failed_count'],
+                    'total_data_added' => $statistics['total_data_added']  // ENHANCED
                 ],
                 'error_log_path' => $errorLogPath
             ];
@@ -269,16 +303,22 @@ class RevenueImportController extends Controller
             DB::rollBack();
             Log::error('Import Data CC Error: ' . $e->getMessage());
 
-            return (object) [
+            return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage(),
+                'statistics' => [
+                    'total_rows' => 0,
+                    'success_count' => 0,
+                    'failed_count' => 0,
+                    'total_data_added' => 0
+                ]
             ];
         }
     }
 
     /**
-     * Import Data AM (General Account Manager)
-     * AM bisa punya multiple divisi via account_manager_divisi
+     * Import Data AM (Account Manager)
+     * ENHANCED: Tambahkan statistik total_data_added
      */
     private function importDataAM(Request $request)
     {
@@ -292,36 +332,46 @@ class RevenueImportController extends Controller
                 'total_rows' => 0,
                 'success_count' => 0,
                 'failed_count' => 0,
-                'failed_rows' => []
+                'failed_rows' => [],
+                'total_data_added' => 0  // ENHANCED: Track jumlah data yang ditambahkan
             ];
 
             // Validate required columns
-            $requiredColumns = ['NAMA_AM', 'NIK', 'WITEL', 'DIVISI'];
+            $requiredColumns = ['NIK', 'NAMA_AM', 'WITEL', 'ROLE', 'DIVISI'];
             $headers = array_shift($csvData);
 
             if (!$this->validateHeaders($headers, $requiredColumns)) {
                 throw new \Exception('File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns));
             }
 
+            // Get column indices
             $columnIndices = $this->getColumnIndices($headers, [
-                'NAMA_AM', 'NIK', 'WITEL', 'DIVISI', 'ROLE', 'TELDA'
+                'NIK', 'NAMA_AM', 'WITEL', 'ROLE', 'DIVISI', 'TELDA'
             ]);
 
             $statistics['total_rows'] = count($csvData);
 
+            // Process each row
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
 
                 try {
                     $nik = $this->getColumnValue($row, $columnIndices['NIK']);
                     $namaAM = $this->getColumnValue($row, $columnIndices['NAMA_AM']);
+                    $witelName = $this->getColumnValue($row, $columnIndices['WITEL']);
+                    $role = strtoupper($this->getColumnValue($row, $columnIndices['ROLE']));
 
-                    if (empty($nik) || empty($namaAM)) {
-                        throw new \Exception('NIK atau Nama AM kosong');
+                    // Validate required fields
+                    if (empty($nik) || empty($namaAM) || empty($witelName) || empty($role)) {
+                        throw new \Exception('NIK, Nama AM, Witel, atau Role kosong');
                     }
 
-                    // Get witel_id (WAJIB)
-                    $witelName = $this->getColumnValue($row, $columnIndices['WITEL']);
+                    // Validate role
+                    if (!in_array($role, ['AM', 'HOTDA'])) {
+                        throw new \Exception('Role harus AM atau HOTDA');
+                    }
+
+                    // Find witel
                     $witel = DB::table('witel')
                         ->where('nama', 'LIKE', "%{$witelName}%")
                         ->first();
@@ -330,30 +380,25 @@ class RevenueImportController extends Controller
                         throw new \Exception("Witel '{$witelName}' tidak ditemukan");
                     }
 
-                    // Get role (AM/HOTDA)
-                    $role = $this->getColumnValue($row, $columnIndices['ROLE']);
-                    if (empty($role)) {
-                        $role = 'AM'; // Default role
-                    }
-                    $role = strtoupper($role);
-
-                    // Get telda_id if HOTDA
+                    // Handle TELDA (optional, for HOTDA)
                     $teldaId = null;
-                    if ($role === 'HOTDA') {
-                        $teldaName = $this->getColumnValue($row, $columnIndices['TELDA']);
-                        if (!empty($teldaName)) {
-                            $telda = DB::table('teldas')
-                                ->where('nama', 'LIKE', "%{$teldaName}%")
-                                ->where('witel_id', $witel->id)
-                                ->first();
-                            $teldaId = $telda ? $telda->id : null;
+                    $teldaName = $this->getColumnValue($row, $columnIndices['TELDA']);
+                    if (!empty($teldaName) && $role === 'HOTDA') {
+                        $telda = DB::table('witel')
+                            ->where('nama', 'LIKE', "%{$teldaName}%")
+                            ->first();
+
+                        if ($telda) {
+                            $teldaId = $telda->id;
                         }
                     }
 
-                    // Check if AM exists
+                    // Check if AM already exists
                     $existingAM = DB::table('account_managers')
                         ->where('nik', $nik)
                         ->first();
+
+                    $amId = null;
 
                     if ($existingAM) {
                         // Update existing AM
@@ -379,28 +424,32 @@ class RevenueImportController extends Controller
                             'created_at' => now(),
                             'updated_at' => now()
                         ]);
+
+                        $statistics['total_data_added']++; // ENHANCED: Increment counter
                     }
 
                     // Handle divisi mapping (account_manager_divisi)
                     $divisiName = $this->getColumnValue($row, $columnIndices['DIVISI']);
-                    $divisiList = explode(',', $divisiName); // Support multiple divisi separated by comma
 
-                    foreach ($divisiList as $idx => $divName) {
-                        $divName = trim($divName);
+                    if (!empty($divisiName)) {
+                        // Support multiple divisi separated by comma
+                        $divisiList = explode(',', $divisiName);
 
-                        $divisi = DB::table('divisi')
-                            ->where('nama', 'LIKE', "%{$divName}%")
-                            ->orWhere('kode', 'LIKE', "%{$divName}%")
-                            ->first();
+                        // Clear existing mappings for this AM
+                        DB::table('account_manager_divisi')
+                            ->where('account_manager_id', $amId)
+                            ->delete();
 
-                        if ($divisi) {
-                            // Check if mapping already exists
-                            $existingMapping = DB::table('account_manager_divisi')
-                                ->where('account_manager_id', $amId)
-                                ->where('divisi_id', $divisi->id)
+                        foreach ($divisiList as $idx => $divName) {
+                            $divName = trim($divName);
+
+                            // Find divisi by name or code (DGS/DSS/DPS)
+                            $divisi = DB::table('divisi')
+                                ->where('nama', 'LIKE', "%{$divName}%")
+                                ->orWhere('kode', 'LIKE', "%{$divName}%")
                                 ->first();
 
-                            if (!$existingMapping) {
+                            if ($divisi) {
                                 // First divisi is primary
                                 $isPrimary = ($idx === 0) ? 1 : 0;
 
@@ -435,13 +484,14 @@ class RevenueImportController extends Controller
                 $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'data_am');
             }
 
-            return (object) [
+            return [
                 'success' => true,
                 'message' => 'Import Data AM selesai',
                 'statistics' => [
                     'total_rows' => $statistics['total_rows'],
                     'success_count' => $statistics['success_count'],
-                    'failed_count' => $statistics['failed_count']
+                    'failed_count' => $statistics['failed_count'],
+                    'total_data_added' => $statistics['total_data_added']  // ENHANCED
                 ],
                 'error_log_path' => $errorLogPath
             ];
@@ -450,9 +500,15 @@ class RevenueImportController extends Controller
             DB::rollBack();
             Log::error('Import Data AM Error: ' . $e->getMessage());
 
-            return (object) [
+            return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage(),
+                'statistics' => [
+                    'total_rows' => 0,
+                    'success_count' => 0,
+                    'failed_count' => 0,
+                    'total_data_added' => 0
+                ]
             ];
         }
     }

@@ -16,6 +16,9 @@ class ImportCCController extends Controller
      * File per divisi (1 file = 1 divisi)
      * Ada input dropdown: Divisi (DGS/DSS/DPS)
      * Ada input dropdown: Jenis Data (Revenue/Target)
+     *
+     * FIX: revenue_source ditentukan dari divisi (HO/BILL) bukan dari SOURCE_DATA
+     * FIX: Return array instead of object
      */
     public function importRevenueCC(Request $request)
     {
@@ -57,8 +60,8 @@ class ImportCCController extends Controller
                 'failed_rows' => []
             ];
 
-            // Validate required columns
-            $requiredColumns = ['YEAR', 'MONTH', 'NIP_NAS', 'LSEGMENT_HO', 'WITEL_HO', 'SOURCE_DATA'];
+            // Validate required columns based on divisi
+            $requiredColumns = ['YEAR', 'MONTH', 'NIPNAS', 'LSEGMENT_HO', 'WITEL_HO'];
 
             // Add revenue columns based on divisi
             if ($divisi->kode === 'DPS') {
@@ -71,15 +74,21 @@ class ImportCCController extends Controller
             $headers = array_shift($csvData);
 
             if (!$this->validateHeaders($headers, $requiredColumns)) {
-                return response()->json([
+                return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
-                ], 422);
+                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns),
+                    'statistics' => [
+                        'total_rows' => 0,
+                        'success_count' => 0,
+                        'failed_count' => 0,
+                        'skipped_count' => 0
+                    ]
+                ];
             }
 
             // Get column indices
             $columnIndices = $this->getColumnIndices($headers, [
-                'YEAR', 'MONTH', 'NIP_NAS', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL',
+                'YEAR', 'MONTH', 'NIPNAS', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL',
                 'REVENUE_SOLD', 'REVENUE_BILL', 'SOURCE_DATA'
             ]);
 
@@ -90,7 +99,9 @@ class ImportCCController extends Controller
             foreach ($csvData as $row) {
                 $year = $this->getColumnValue($row, $columnIndices['YEAR']);
                 $month = $this->getColumnValue($row, $columnIndices['MONTH']);
-                $periodeSet[] = $year . '-' . $month;
+                if (!empty($year) && !empty($month)) {
+                    $periodeSet[] = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+                }
             }
             $uniquePeriode = array_unique($periodeSet);
             if (count($uniquePeriode) > 1) {
@@ -105,10 +116,20 @@ class ImportCCController extends Controller
                     // Get basic data
                     $year = $this->getColumnValue($row, $columnIndices['YEAR']);
                     $month = $this->getColumnValue($row, $columnIndices['MONTH']);
-                    $nipnas = $this->getColumnValue($row, $columnIndices['NIP_NAS']);
+                    $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
 
                     if (empty($year) || empty($month) || empty($nipnas)) {
-                        throw new \Exception('YEAR, MONTH, atau NIP_NAS kosong');
+                        throw new \Exception('YEAR, MONTH, atau NIPNAS kosong');
+                    }
+
+                    // Validate year format
+                    if (!is_numeric($year) || strlen($year) != 4) {
+                        throw new \Exception('YEAR harus 4 digit');
+                    }
+
+                    // Validate month format
+                    if (!is_numeric($month) || $month < 1 || $month > 12) {
+                        throw new \Exception('MONTH harus antara 1-12');
                     }
 
                     // MANDATORY: Find Corporate Customer by NIPNAS
@@ -157,26 +178,33 @@ class ImportCCController extends Controller
                         $witelBillId = $witelBill ? $witelBill->id : null;
                     }
 
-                    // Determine revenue value based on divisi
+                    // FIX: Determine revenue value and revenue_source based on divisi
                     $revenueValue = 0;
                     $revenueSource = 'HO'; // Default
 
                     if (in_array($divisi->kode, ['DGS', 'DSS'])) {
-                        // DGS/DSS menggunakan REVENUE_SOLD
+                        // DGS/DSS menggunakan REVENUE_SOLD dan revenue_source = HO
                         $revenueValue = $this->getColumnValue($row, $columnIndices['REVENUE_SOLD']);
                         $revenueSource = 'HO';
                     } else if ($divisi->kode === 'DPS') {
-                        // DPS menggunakan REVENUE_BILL
+                        // DPS menggunakan REVENUE_BILL dan revenue_source = BILL
                         $revenueValue = $this->getColumnValue($row, $columnIndices['REVENUE_BILL']);
                         $revenueSource = 'BILL';
                     }
 
-                    // Get SOURCE_DATA from file
-                    $sourceData = $this->getColumnValue($row, $columnIndices['SOURCE_DATA']);
+                    // Validate revenue value exists
+                    if ($revenueValue === null || $revenueValue === '') {
+                        throw new \Exception('Nilai revenue kosong');
+                    }
 
-                    // Clean revenue value (remove non-numeric characters)
+                    // Clean revenue value (remove non-numeric characters except decimal point)
                     $revenueValue = preg_replace('/[^0-9.]/', '', $revenueValue);
                     $revenueValue = floatval($revenueValue);
+
+                    // Validate revenue value is positive
+                    if ($revenueValue < 0) {
+                        throw new \Exception('Nilai revenue tidak boleh negatif');
+                    }
 
                     // Prepare data for insert/update
                     $dataToSave = [
@@ -187,7 +215,7 @@ class ImportCCController extends Controller
                         'witel_bill_id' => $witelBillId,
                         'nama_cc' => $corporateCustomer->nama,
                         'nipnas' => $nipnas,
-                        'revenue_source' => $revenueSource,
+                        'revenue_source' => $revenueSource, // FIX: Based on divisi, not SOURCE_DATA
                         'tipe_revenue' => 'REGULER', // Default, bisa disesuaikan
                         'bulan' => intval($month),
                         'tahun' => intval($year),
@@ -249,7 +277,8 @@ class ImportCCController extends Controller
                 $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'revenue_cc');
             }
 
-            return response()->json([
+            // FIX: Return array instead of object
+            return [
                 'success' => true,
                 'message' => 'Import Revenue CC selesai',
                 'statistics' => [
@@ -259,16 +288,23 @@ class ImportCCController extends Controller
                     'skipped_count' => $statistics['skipped_count']
                 ],
                 'error_log_path' => $errorLogPath
-            ]);
+            ];
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Import Revenue CC Error: ' . $e->getMessage());
 
-            return response()->json([
+            // FIX: Return array instead of object
+            return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage(),
+                'statistics' => [
+                    'total_rows' => 0,
+                    'success_count' => 0,
+                    'failed_count' => 0,
+                    'skipped_count' => 0
+                ]
+            ];
         }
     }
 

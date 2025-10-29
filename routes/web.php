@@ -280,18 +280,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
         })->name('divisi');
 
-        Route::get('witel', function() {
+        Route::get('witels', function() {
             return response()->json(
                 Witel::select('id', 'nama')
                     ->orderBy('nama')
                     ->get()
             );
-        })->name('witel');
+        })->name('witels');
 
         Route::get('segments', function() {
             return response()->json(
-                Segment::with('divisi:id,nama')
-                    ->select('id', 'lsegment_ho', 'ssegment_ho', 'divisi_id')
+                Segment::select('id', 'lsegment_ho')
+                    ->distinct()
                     ->orderBy('lsegment_ho')
                     ->get()
             );
@@ -406,19 +406,48 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('leaderboardAM');
     })->name('leaderboard');
 
-    // ===== REVENUE DATA ROUTES =====
+    // ===== REVENUE DATA ROUTES (EXTENDED WITH CRUD) =====
     Route::prefix('revenue-data')->name('revenue.')->group(function () {
         // Main Revenue Data Page
         Route::get('/', [RevenueDataController::class, 'index'])->name('data');
 
-        // Get Revenue Data APIs
+        // ===== GET DATA APIs =====
         Route::get('revenue-cc', [RevenueDataController::class, 'getRevenueCC'])->name('api.cc');
         Route::get('revenue-am', [RevenueDataController::class, 'getRevenueAM'])->name('api.am');
         Route::get('data-am', [RevenueDataController::class, 'getDataAM'])->name('api.data.am');
         Route::get('data-cc', [RevenueDataController::class, 'getDataCC'])->name('api.data.cc');
         Route::get('filter-options', [RevenueDataController::class, 'getFilterOptions'])->name('api.filter.options');
 
-        // Import Routes
+        // ===== REVENUE CC CRUD =====
+        Route::get('revenue-cc/{id}', [RevenueDataController::class, 'showRevenueCC'])->name('api.show-cc');
+        Route::put('revenue-cc/{id}', [RevenueDataController::class, 'updateRevenueCC'])->name('api.update-cc');
+        Route::delete('revenue-cc/{id}', [RevenueDataController::class, 'deleteRevenueCC'])->name('api.delete-cc');
+        Route::post('bulk-delete-cc-revenue', [RevenueDataController::class, 'bulkDeleteRevenueCC'])->name('api.bulk-delete-cc');
+        Route::post('bulk-delete-all-cc-revenue', [RevenueDataController::class, 'bulkDeleteAllRevenueCC'])->name('api.bulk-delete-all-cc');
+
+        // ===== REVENUE AM CRUD =====
+        Route::get('revenue-am/{id}', [RevenueDataController::class, 'showRevenueAM'])->name('api.show-am');
+        Route::put('revenue-am/{id}', [RevenueDataController::class, 'updateRevenueAM'])->name('api.update-am');
+        Route::delete('revenue-am/{id}', [RevenueDataController::class, 'deleteRevenueAM'])->name('api.delete-am');
+        Route::post('bulk-delete-am-revenue', [RevenueDataController::class, 'bulkDeleteRevenueAM'])->name('api.bulk-delete-am');
+        Route::post('bulk-delete-all-am-revenue', [RevenueDataController::class, 'bulkDeleteAllRevenueAM'])->name('api.bulk-delete-all-am');
+
+        // ===== DATA AM CRUD =====
+        Route::get('data-am/{id}', [RevenueDataController::class, 'showDataAM'])->name('api.show-data-am');
+        Route::put('data-am/{id}', [RevenueDataController::class, 'updateDataAM'])->name('api.update-data-am');
+        Route::delete('data-am/{id}', [RevenueDataController::class, 'deleteDataAM'])->name('api.delete-data-am');
+        Route::post('data-am/{id}/change-password', [RevenueDataController::class, 'changePasswordAM'])->name('api.change-password-am');
+        Route::post('bulk-delete-data-am', [RevenueDataController::class, 'bulkDeleteDataAM'])->name('api.bulk-delete-data-am');
+        Route::post('bulk-delete-all-data-am', [RevenueDataController::class, 'bulkDeleteAllDataAM'])->name('api.bulk-delete-all-data-am');
+
+        // ===== DATA CC CRUD =====
+        Route::get('data-cc/{id}', [RevenueDataController::class, 'showDataCC'])->name('api.show-data-cc');
+        Route::put('data-cc/{id}', [RevenueDataController::class, 'updateDataCC'])->name('api.update-data-cc');
+        Route::delete('data-cc/{id}', [RevenueDataController::class, 'deleteDataCC'])->name('api.delete-data-cc');
+        Route::post('bulk-delete-data-cc', [RevenueDataController::class, 'bulkDeleteDataCC'])->name('api.bulk-delete-data-cc');
+        Route::post('bulk-delete-all-data-cc', [RevenueDataController::class, 'bulkDeleteAllDataCC'])->name('api.bulk-delete-all-data-cc');
+
+        // ===== IMPORT ROUTES =====
         Route::post('import', [RevenueImportController::class, 'import'])->name('import');
         Route::post('import-revenue-cc', [ImportCCController::class, 'importRevenueCC'])->name('import.cc');
         Route::get('download-error-log/{filename}', [RevenueImportController::class, 'downloadErrorLog'])->name('download.error.log');

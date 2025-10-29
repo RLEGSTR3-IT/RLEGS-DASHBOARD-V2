@@ -14,14 +14,45 @@ class ImportAMController extends Controller
     /**
      * Import Revenue AM Mapping
      * Mapping AM ke CC dengan proporsi pembagian revenue
-     * File harus lengkap: NIPNAS CC, Nama CC, Divisi, Segment, NIK AM, Witel HO, Divisi AM, Role, Telda, Proporsi
+     *
+     * FIX: Kolom YEAR & MONTH tidak ada di file, periode diambil dari input form (month picker)
+     * FIX: Update struktur kolom sesuai file sebenarnya
+     * FIX: Return array instead of object
+     *
+     * Struktur file sebenarnya:
+     * NIK | NAMA AM | PROPORSI | WITEL AM | NIPNAS | STANDARD NAME | GROUP CONGLO | DIVISI AM | SEGMEN | WITEL HO | REGIONAL | DIVISI | TELDA
      */
     public function importRevenueMapping(Request $request)
     {
+        // FIX: Validate tambahan untuk bulan & tahun dari form input
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:csv,txt|max:10240',
+            'bulan' => 'required|numeric|min:1|max:12',
+            'tahun' => 'required|numeric|min:2020|max:2100',
+        ]);
+
+        if ($validator->fails()) {
+            return [
+                'success' => false,
+                'message' => 'Validasi gagal: ' . $validator->errors()->first(),
+                'statistics' => [
+                    'total_rows' => 0,
+                    'success_count' => 0,
+                    'failed_count' => 0,
+                    'skipped_count' => 0
+                ]
+            ];
+        }
+
         try {
             DB::beginTransaction();
 
             $file = $request->file('file');
+
+            // FIX: Periode diambil dari input form, bukan dari file
+            $bulan = intval($request->bulan);
+            $tahun = intval($request->tahun);
+
             $csvData = $this->parseCsvFile($file);
 
             $statistics = [
@@ -32,68 +63,68 @@ class ImportAMController extends Controller
                 'failed_rows' => []
             ];
 
-            // Validate required columns
+            // FIX: Update required columns sesuai struktur file sebenarnya
             $requiredColumns = [
-                'YEAR', 'MONTH', 'NIPNAS', 'NAMA_CC', 'DIVISI', 'SEGMENT',
-                'NIK_AM', 'WITEL_HO', 'DIVISI_AM', 'ROLE', 'PROPORSI'
+                'NIK', 'NAMA AM', 'PROPORSI', 'WITEL AM', 'NIPNAS',
+                'STANDARD NAME', 'DIVISI'
             ];
 
             $headers = array_shift($csvData);
 
             if (!$this->validateHeaders($headers, $requiredColumns)) {
-                return (object) [
+                return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
+                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns),
+                    'statistics' => [
+                        'total_rows' => 0,
+                        'success_count' => 0,
+                        'failed_count' => 0,
+                        'skipped_count' => 0
+                    ]
                 ];
             }
 
-            // Get column indices
+            // FIX: Get column indices dengan nama kolom yang benar
             $columnIndices = $this->getColumnIndices($headers, [
-                'YEAR', 'MONTH', 'NIPNAS', 'NAMA_CC', 'DIVISI', 'SEGMENT',
-                'NIK_AM', 'WITEL_HO', 'DIVISI_AM', 'ROLE', 'TELDA', 'PROPORSI'
+                'NIK', 'NAMA AM', 'PROPORSI', 'WITEL AM', 'NIPNAS',
+                'STANDARD NAME', 'GROUP CONGLO', 'DIVISI AM', 'SEGMEN',
+                'WITEL HO', 'REGIONAL', 'DIVISI', 'TELDA'
             ]);
 
             $statistics['total_rows'] = count($csvData);
-
-            // Validate periode consistency
-            $periodeSet = [];
-            foreach ($csvData as $row) {
-                $year = $this->getColumnValue($row, $columnIndices['YEAR']);
-                $month = $this->getColumnValue($row, $columnIndices['MONTH']);
-                $periodeSet[] = $year . '-' . $month;
-            }
-            $uniquePeriode = array_unique($periodeSet);
-            if (count($uniquePeriode) > 1) {
-                throw new \Exception('File mengandung data dari beberapa periode berbeda. Satu file harus mewakili satu periode.');
-            }
 
             // Group by CC untuk validasi proporsi
             $ccGroups = [];
             foreach ($csvData as $index => $row) {
                 $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
-                $year = $this->getColumnValue($row, $columnIndices['YEAR']);
-                $month = $this->getColumnValue($row, $columnIndices['MONTH']);
-                $key = $nipnas . '-' . $year . '-' . $month;
+                $key = $nipnas . '-' . $tahun . '-' . $bulan;
 
                 if (!isset($ccGroups[$key])) {
                     $ccGroups[$key] = [];
                 }
 
+                $proporsiValue = $this->getColumnValue($row, $columnIndices['PROPORSI']);
+                // Handle proporsi dalam bentuk desimal (0.3) atau persentase (30)
+                $proporsiFloat = floatval($proporsiValue);
+                if ($proporsiFloat > 1) {
+                    $proporsiFloat = $proporsiFloat / 100; // Convert dari 30 ke 0.3
+                }
+
                 $ccGroups[$key][] = [
                     'index' => $index,
                     'row' => $row,
-                    'proporsi' => floatval($this->getColumnValue($row, $columnIndices['PROPORSI']))
+                    'proporsi' => $proporsiFloat
                 ];
             }
 
-            // Validate proporsi per CC harus = 100%
+            // Validate proporsi per CC harus = 1.0 (100%)
             $proporsiErrors = [];
             foreach ($ccGroups as $key => $group) {
                 $totalProporsi = array_sum(array_column($group, 'proporsi'));
-                if (abs($totalProporsi - 100) > 0.01) { // Toleransi 0.01 untuk floating point
+                if (abs($totalProporsi - 1.0) > 0.01) { // Toleransi 0.01 untuk floating point
                     $proporsiErrors[$key] = [
                         'nipnas' => explode('-', $key)[0],
-                        'total_proporsi' => $totalProporsi,
+                        'total_proporsi' => round($totalProporsi * 100, 2) . '%',
                         'rows' => array_map(function($item) { return $item['index'] + 2; }, $group)
                     ];
                 }
@@ -103,7 +134,7 @@ class ImportAMController extends Controller
             if (!empty($proporsiErrors)) {
                 $errorMessage = "Proporsi tidak valid untuk beberapa CC:\n";
                 foreach ($proporsiErrors as $key => $error) {
-                    $errorMessage .= "- NIPNAS {$error['nipnas']}: Total proporsi = {$error['total_proporsi']}% (harus 100%)\n";
+                    $errorMessage .= "- NIPNAS {$error['nipnas']}: Total proporsi = {$error['total_proporsi']} (harus 100%)\n";
                     $errorMessage .= "  Baris: " . implode(', ', $error['rows']) . "\n";
                 }
 
@@ -115,14 +146,20 @@ class ImportAMController extends Controller
                 $rowNumber = $index + 2;
 
                 try {
-                    // Get basic data
-                    $year = $this->getColumnValue($row, $columnIndices['YEAR']);
-                    $month = $this->getColumnValue($row, $columnIndices['MONTH']);
+                    // FIX: Get data dari kolom yang benar
+                    $nikAM = $this->getColumnValue($row, $columnIndices['NIK']);
+                    $namaAM = $this->getColumnValue($row, $columnIndices['NAMA AM']);
                     $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
-                    $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
+                    $namaCC = $this->getColumnValue($row, $columnIndices['STANDARD NAME']);
+                    $divisiName = $this->getColumnValue($row, $columnIndices['DIVISI']);
 
-                    if (empty($year) || empty($month) || empty($nipnas) || empty($nikAM)) {
-                        throw new \Exception('Data wajib (YEAR, MONTH, NIPNAS, NIK_AM) tidak lengkap');
+                    if (empty($nikAM) || empty($nipnas) || empty($divisiName)) {
+                        throw new \Exception('Data wajib (NIK, NIPNAS, DIVISI) tidak lengkap');
+                    }
+
+                    // Validate NIK format
+                    if (!is_numeric($nikAM)) {
+                        throw new \Exception('NIK harus berupa angka');
                     }
 
                     // MANDATORY: Find Corporate Customer by NIPNAS
@@ -157,8 +194,7 @@ class ImportAMController extends Controller
                         continue;
                     }
 
-                    // Get CC Revenue untuk ambil target & real revenue
-                    $divisiName = $this->getColumnValue($row, $columnIndices['DIVISI']);
+                    // Find Divisi
                     $divisi = DB::table('divisi')
                         ->where('nama', 'LIKE', "%{$divisiName}%")
                         ->orWhere('kode', 'LIKE', "%{$divisiName}%")
@@ -172,8 +208,8 @@ class ImportAMController extends Controller
                     $ccRevenue = DB::table('cc_revenues')
                         ->where('corporate_customer_id', $corporateCustomer->id)
                         ->where('divisi_id', $divisi->id)
-                        ->where('bulan', intval($month))
-                        ->where('tahun', intval($year))
+                        ->where('bulan', $bulan)
+                        ->where('tahun', $tahun)
                         ->first();
 
                     if (!$ccRevenue) {
@@ -188,11 +224,22 @@ class ImportAMController extends Controller
                     }
 
                     // Get proporsi
-                    $proporsi = floatval($this->getColumnValue($row, $columnIndices['PROPORSI'])) / 100; // Convert to decimal
+                    $proporsiValue = $this->getColumnValue($row, $columnIndices['PROPORSI']);
+                    $proporsi = floatval($proporsiValue);
 
-                    // Get witel_id
+                    // Handle proporsi dalam bentuk persentase atau desimal
+                    if ($proporsi > 1) {
+                        $proporsi = $proporsi / 100; // Convert dari 30 ke 0.3
+                    }
+
+                    // Validate proporsi range
+                    if ($proporsi <= 0 || $proporsi > 1) {
+                        throw new \Exception('Proporsi harus antara 0-100% atau 0.0-1.0');
+                    }
+
+                    // Get witel_id dari WITEL AM
                     $witelId = null;
-                    $witelName = $this->getColumnValue($row, $columnIndices['WITEL_HO']);
+                    $witelName = $this->getColumnValue($row, $columnIndices['WITEL AM']);
                     if (!empty($witelName)) {
                         $witel = DB::table('witel')
                             ->where('nama', 'LIKE', "%{$witelName}%")
@@ -202,8 +249,7 @@ class ImportAMController extends Controller
 
                     // Get telda_id jika HOTDA
                     $teldaId = null;
-                    $role = strtoupper($this->getColumnValue($row, $columnIndices['ROLE']));
-                    if ($role === 'HOTDA') {
+                    if ($accountManager->role === 'HOTDA') {
                         $teldaName = $this->getColumnValue($row, $columnIndices['TELDA']);
                         if (!empty($teldaName)) {
                             $telda = DB::table('teldas')
@@ -234,8 +280,8 @@ class ImportAMController extends Controller
                         'target_revenue' => $targetRevenue,
                         'real_revenue' => $realRevenue,
                         'achievement_rate' => round($achievementRate, 2),
-                        'bulan' => intval($month),
-                        'tahun' => intval($year),
+                        'bulan' => $bulan, // FIX: Dari input form
+                        'tahun' => $tahun, // FIX: Dari input form
                         'updated_at' => now()
                     ];
 
@@ -243,8 +289,9 @@ class ImportAMController extends Controller
                     $existingRecord = DB::table('am_revenues')
                         ->where('account_manager_id', $accountManager->id)
                         ->where('corporate_customer_id', $corporateCustomer->id)
-                        ->where('bulan', intval($month))
-                        ->where('tahun', intval($year))
+                        ->where('divisi_id', $divisi->id)
+                        ->where('bulan', $bulan)
+                        ->where('tahun', $tahun)
                         ->first();
 
                     if ($existingRecord) {
@@ -279,7 +326,8 @@ class ImportAMController extends Controller
                 $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'revenue_am');
             }
 
-            return (object) [
+            // FIX: Return array instead of object
+            return [
                 'success' => true,
                 'message' => 'Import Revenue AM Mapping selesai',
                 'statistics' => [
@@ -288,16 +336,24 @@ class ImportAMController extends Controller
                     'failed_count' => $statistics['failed_count'],
                     'skipped_count' => $statistics['skipped_count']
                 ],
-                'error_log_path' => $errorLogPath
+                'error_log_path' => $errorLogPath,
+                'periode' => Carbon::createFromDate($tahun, $bulan, 1)->locale('id')->translatedFormat('F Y')
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Import Revenue AM Mapping Error: ' . $e->getMessage());
 
-            return (object) [
+            // FIX: Return array instead of object
+            return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage(),
+                'statistics' => [
+                    'total_rows' => 0,
+                    'success_count' => 0,
+                    'failed_count' => 0,
+                    'skipped_count' => 0
+                ]
             ];
         }
     }

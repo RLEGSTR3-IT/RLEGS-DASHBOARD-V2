@@ -28,7 +28,7 @@
             </button>
             <div class="export-group">
             <a href="/export/excel" class="btn btn-primary">
-                <i class="fa-solid fa-file-export me-2"></i> Export 
+                <i class="fa-solid fa-file-export me-2"></i> Export
             </a>
             </div>
 

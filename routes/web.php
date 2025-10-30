@@ -164,35 +164,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where('id', '[0-9]+');
 
         // AJAX endpoints (placeholder untuk future features)
-        Route::get('{id}/tab-data', function($id) {
+        Route::get('{id}/tab-data', function ($id) {
             return response()->json([
                 'message' => 'CC tab data endpoint - coming soon',
                 'cc_id' => $id
             ]);
         })->name('tab-data')->where('id', '[0-9]+');
 
-        Route::get('{id}/card-data', function($id) {
+        Route::get('{id}/card-data', function ($id) {
             return response()->json([
                 'message' => 'CC card data endpoint - coming soon',
                 'cc_id' => $id
             ]);
         })->name('card-data')->where('id', '[0-9]+');
 
-        Route::get('{id}/chart-data', function($id) {
+        Route::get('{id}/chart-data', function ($id) {
             return response()->json([
                 'message' => 'CC chart data endpoint - coming soon',
                 'cc_id' => $id
             ]);
         })->name('chart-data')->where('id', '[0-9]+');
 
-        Route::get('{id}/export', function($id) {
+        Route::get('{id}/export', function ($id) {
             return response()->json([
                 'message' => 'CC export endpoint - coming soon',
                 'cc_id' => $id
             ]);
         })->name('export')->where('id', '[0-9]+');
 
-        Route::get('{id}/info', function($id) {
+        Route::get('{id}/info', function ($id) {
             $customer = CorporateCustomer::findOrFail($id);
             return response()->json([
                 'success' => true,
@@ -213,35 +213,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where('id', '[0-9]+');
 
         // AJAX endpoints (placeholder untuk future features)
-        Route::get('{id}/tab-data', function($id) {
+        Route::get('{id}/tab-data', function ($id) {
             return response()->json([
                 'message' => 'Witel tab data endpoint - coming soon',
                 'witel_id' => $id
             ]);
         })->name('tab-data')->where('id', '[0-9]+');
 
-        Route::get('{id}/card-data', function($id) {
+        Route::get('{id}/card-data', function ($id) {
             return response()->json([
                 'message' => 'Witel card data endpoint - coming soon',
                 'witel_id' => $id
             ]);
         })->name('card-data')->where('id', '[0-9]+');
 
-        Route::get('{id}/chart-data', function($id) {
+        Route::get('{id}/chart-data', function ($id) {
             return response()->json([
                 'message' => 'Witel chart data endpoint - coming soon',
                 'witel_id' => $id
             ]);
         })->name('chart-data')->where('id', '[0-9]+');
 
-        Route::get('{id}/export', function($id) {
+        Route::get('{id}/export', function ($id) {
             return response()->json([
                 'message' => 'Witel export endpoint - coming soon',
                 'witel_id' => $id
             ]);
         })->name('export')->where('id', '[0-9]+');
 
-        Route::get('{id}/info', function($id) {
+        Route::get('{id}/info', function ($id) {
             $witel = Witel::findOrFail($id);
 
             // Count AMs in this witel
@@ -265,21 +265,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('info')->where('id', '[0-9]+');
 
-        Route::get('{id}/performance-summary', function($id) {
+        Route::get('{id}/performance-summary', function ($id) {
             return response()->json([
                 'message' => 'Witel performance summary - coming soon',
                 'witel_id' => $id
             ]);
         })->name('performance-summary')->where('id', '[0-9]+');
 
-        Route::get('{id}/top-ams', function($id) {
+        Route::get('{id}/top-ams', function ($id) {
             return response()->json([
                 'message' => 'Witel top AMs - coming soon',
                 'witel_id' => $id
             ]);
         })->name('top-ams')->where('id', '[0-9]+');
 
-        Route::get('{id}/top-customers', function($id) {
+        Route::get('{id}/top-customers', function ($id) {
             return response()->json([
                 'message' => 'Witel top customers - coming soon',
                 'witel_id' => $id
@@ -375,7 +375,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ===== GENERAL API ROUTES =====
     Route::prefix('api')->name('api.')->group(function () {
-        Route::get('divisi', function() {
+        Route::get('divisi', function () {
             return response()->json(
                 Divisi::select('id', 'nama', 'kode')
                     ->orderBy('nama')
@@ -383,7 +383,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
         })->name('divisi');
 
-        Route::get('witels', function() {
+        Route::get('witels', function () {
             return response()->json(
                 Witel::select('id', 'nama')
                     ->orderBy('nama')
@@ -501,21 +501,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('export');
 
     // ===== PROFILE ROUTES =====
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class,'index'])->name('profile.index');
-    Route::patch('/profile', [ProfileController::class,'update'])->name('profile.update');
-    Route::delete('/profile/photo', [ProfileController::class,'removePhoto'])->name('profile.remove-photo');
-    Route::put('/profile/password', [ProfileController::class,'updatePassword'])->name('profile.password');
+    Route::middleware('auth')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.remove-photo');
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
-    Route::post('/email/verification-notification', function () {
-        request()->user()->sendEmailVerificationNotification();
-        return back()->with('verification-link-sent', true);
-    })->middleware(['throttle:6,1'])->name('verification.send');
-});
+        Route::post('/email/verification-notification', function () {
+            request()->user()->sendEmailVerificationNotification();
+            return back()->with('verification-link-sent', true);
+        })->middleware(['throttle:6,1'])->name('verification.send');
+    });
 
 
     // ===== SIDEBAR ROUTES =====
-    Route::get('/leaderboard', function() {
+    Route::get('/leaderboard', function () {
         return view('leaderboardAM');
     })->name('leaderboard');
 
@@ -567,18 +567,18 @@ Route::middleware('auth')->group(function () {
     });
 
     // Legacy route for backward compatibility
-    Route::get('/revenue', function() {
+    Route::get('/revenue', function () {
         return redirect()->route('revenue.data');
     })->name('revenue.index');
 
-    Route::get('/treg3', function() {
+    Route::get('/treg3', function () {
         return view('treg3.index');
     })->name('dashboard.treg3');
 
-    Route::get('/witel-perform', function() {
+    Route::get('/witel-perform', function () {
         return view('performansi.witel');
     })->name('witel.perform');
-
+});
 
 // ===== UTILITY ROUTES =====
 Route::get('health-check', function () {
@@ -663,17 +663,13 @@ if (app()->environment('local')) {
                 'role' => $user->role,
                 'account_manager_id' => $user->account_manager_id,
                 'witel_id' => $user->witel_id
-                'role' => $user->role,
-                'account_manager_id' => $user->account_manager_id,
-                'witel_id' => $user->witel_id
             ],
             'dashboard_route' => route('dashboard'),
-            'dashboard_info' => $dashboardInfo
             'dashboard_info' => $dashboardInfo
         ]);
     })->name('debug.user');
 
-    Route::get('debug/witel-routes', function() {
+    Route::get('debug/witel-routes', function () {
         return response()->json([
             'main_route' => 'GET /witel/{id}',
             'description' => 'Witel detail page with revenue data from CC and AM sources',
@@ -708,7 +704,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.witel-routes');
 
-    Route::get('debug/cc-routes', function() {
+    Route::get('debug/cc-routes', function () {
         return response()->json([
             'main_route' => 'GET /corporate-customer/{id}',
             'description' => 'Corporate Customer detail page with revenue data and analysis',
@@ -733,7 +729,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.cc-routes');
 
-    Route::get('debug/am-routes', function() {
+    Route::get('debug/am-routes', function () {
         return response()->json([
             'main_routes' => [
                 'dashboard_am' => 'GET /dashboard (when logged in as AM)',
@@ -757,7 +753,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.am-routes');
 
-    Route::get('debug/database', function() {
+    Route::get('debug/database', function () {
         try {
             $stats = [
                 'account_managers' => AccountManager::count(),
@@ -809,4 +805,5 @@ Route::fallback(function () {
     return view('errors.404');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
+

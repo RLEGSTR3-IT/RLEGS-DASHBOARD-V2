@@ -70,13 +70,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ===== SIDEBAR ROUTES =====
-    Route::view('/leaderboardAM', 'leaderboardAM')->name('leaderboard');
     Route::view('/revenue', 'revenueData')->name('revenue.index');
-    Route::view('/profile', 'profile.edit')->name('profile.edit');
 
     // Witel + CC Performance Routes
     Route::get('/witel-perform', [WitelPerformController::class, 'index'])->name('witel.perform');
-    Route::get('/treg3', [CCWitelPerformController::class, 'index'])->name('treg3.index');
+    Route::get('/treg3', [CCWitelPerformController::class, 'index'])->name('witel-cc-index');
 
     // ===== DASHBOARD API ROUTES =====
     Route::prefix('dashboard')->name('dashboard.')->group(function () {
@@ -570,14 +568,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/revenue', function () {
         return redirect()->route('revenue.data');
     })->name('revenue.index');
-
-    Route::get('/treg3', function () {
-        return view('treg3.index');
-    })->name('dashboard.treg3');
-
-    Route::get('/witel-perform', function () {
-        return view('performansi.witel');
-    })->name('witel.perform');
 });
 
 // ===== UTILITY ROUTES =====
@@ -806,4 +796,3 @@ Route::fallback(function () {
 });
 
 require __DIR__ . '/auth.php';
-

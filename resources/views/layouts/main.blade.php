@@ -54,7 +54,7 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="{{ route('treg3.index') }}" class="sidebar-link">
+                    <a href="{{ route('witel-cc-index') }}" class="sidebar-link">
                         <i class="lni lni-buildings-1"></i><span>CC & Witel</span>
                     </a>
                 </li>
@@ -67,7 +67,7 @@
                     <a href="" class="sidebar-link">
                         <i class="lni lni-cloud-upload"></i><span>File Management</span>
                     </a>
-                </li> --}}
+                </li>
             </ul>
             <div class="sidebar-footer">
                 <a href="{{ route('profile.index') }}" class="sidebar-link">

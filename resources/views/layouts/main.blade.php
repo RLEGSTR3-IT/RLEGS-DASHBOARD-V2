@@ -7,14 +7,17 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@yield('title', 'RLEGS Dashboard')</title>
 
-    <!-- CSS Files -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.lineicons.com/5.0/lineicons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
 
-    <!-- Custom CSS -->
+    <!-- 1) Font + Global Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/header.css') }}">
+
+    <!-- 2) Komponen/layout spesifik -->
     <link rel="stylesheet" href="{{ asset('css/sidebarpage.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 
@@ -64,10 +67,10 @@
                     <a href="" class="sidebar-link">
                         <i class="lni lni-cloud-upload"></i><span>File Management</span>
                     </a>
-                </li>
+                </li> --}}
             </ul>
             <div class="sidebar-footer">
-                <a href="{{ route('profile.edit') }}" class="sidebar-link">
+                <a href="{{ route('profile.index') }}" class="sidebar-link">
                     <i class="lni lni-gear-1"></i><span>Settings</span>
                 </a>
             </div>
@@ -101,7 +104,7 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                                        <a class="dropdown-item" href="{{ route('profile.index') }}">
                                             {{ __('Settings') }}
                                         </a>
                                     </li>
@@ -288,7 +291,7 @@
                         <span>{{ Auth::user()->name ?? 'Admin' }}</span>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ route('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>

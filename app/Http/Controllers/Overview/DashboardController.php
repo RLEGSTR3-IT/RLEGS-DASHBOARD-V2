@@ -38,65 +38,42 @@ class DashboardController extends Controller
     }
 
     /**
-     * Main dashboard entry point with conditional rendering
+     * Main dashboard entry point
      */
     public function index(Request $request)
     {
         $user = Auth::user();
 
         try {
-            // CONDITIONAL RENDERING LOGIC BERDASARKAN REQUIREMENT
             switch ($user->role) {
                 case 'admin':
                     return $this->handleAdminDashboard($request);
-
                 case 'account_manager':
                     return $this->handleAmDashboard($request);
-
                 case 'witel_support':
                     return $this->handleWitelDashboard($request);
-
                 default:
-                    Log::warning('Unauthorized dashboard access attempt', [
-                        'user_id' => $user->id,
-                        'role' => $user->role,
-                        'ip' => $request->ip(),
-                        'timestamp' => now()
-                    ]);
-
                     return redirect()->route('login')
-                        ->with('error', 'Role Anda tidak dikenali atau tidak memiliki akses ke dashboard.')
-                        ->withInput();
+                        ->with('error', 'Role tidak memiliki akses ke dashboard.');
             }
         } catch (\Exception $e) {
-            Log::error('Dashboard access critical error', [
+            Log::error('Dashboard access error', [
                 'user_id' => $user->id,
-                'role' => $user->role,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->except(['password', '_token'])
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.')
-                ->withInput();
+                ->with('error', 'Terjadi kesalahan sistem.');
         }
     }
 
-    /**
-     * Handle Account Manager Dashboard
-     * FIXED: Gunakan Laravel Service Container untuk auto-resolve dependencies
-     */
     private function handleAmDashboard(Request $request)
     {
         $amController = app(AmDashboardController::class);
         return $amController->index($request);
     }
 
-    /**
-     * Handle Witel Dashboard
-     * FIXED: Gunakan Laravel Service Container untuk auto-resolve dependencies
-     */
     private function handleWitelDashboard(Request $request)
     {
         $witelController = app(WitelDashboardController::class);
@@ -109,75 +86,48 @@ class DashboardController extends Controller
     private function handleAdminDashboard(Request $request)
     {
         try {
-            // EXTRACT FILTERS WITH YTD/MTD SUPPORT
             $filters = $this->extractFiltersWithYtdMtd($request);
             $dateRange = $this->calculateDateRange($filters['period_type']);
 
-            // 1. CARD GROUP SECTION
+            // 1. CARD GROUP
             $cardData = $this->revenueService->getTotalRevenueDataWithDateRange(
-                null, // Admin sees all witels
+                null,
                 $filters['divisi_id'],
                 $dateRange['start'],
                 $dateRange['end'],
                 $filters['revenue_source'],
                 $filters['tipe_revenue']
             );
-
-            // Add dynamic period text untuk stats card
             $cardData['period_text'] = $this->generatePeriodText($filters['period_type'], $dateRange);
 
             // 2. PERFORMANCE SECTION
             $performanceData = [
-                'account_manager' => $this->getTopAccountManagersFixed(
-                    null, 20, $dateRange, $filters
-                ),
-                'corporate_customer' => $this->getTopCorporateCustomersFixed(
-                    null, 20, $dateRange, $filters
-                )
+                'account_manager' => $this->getTopAccountManagersFixed(null, 20, $dateRange, $filters),
+                'corporate_customer' => $this->getTopCorporateCustomersFixed(null, 20, $dateRange, $filters)
             ];
-
-            // Add clickable URLs for navigation
             $this->addClickableUrls($performanceData);
 
-            // 3. VISUALISASI PENDAPATAN BULANAN
+            // 3. CHARTS
             $currentYear = date('Y');
             $monthlyRevenue = $this->revenueService->getMonthlyRevenue(
                 $currentYear, null, $filters['divisi_id'],
                 $filters['revenue_source'], $filters['tipe_revenue']
             );
-
             $performanceDistribution = $this->performanceService->getPerformanceDistribution(
                 $currentYear, null, $filters['divisi_id'],
                 $filters['revenue_source'], $filters['tipe_revenue']
             );
-
-            // Generate Charts dengan Chart.js
             $monthlyChart = $this->generateMonthlyChart($monthlyRevenue, $currentYear);
             $performanceChart = $this->generatePerformanceChart($performanceDistribution);
 
-            // 4. TABEL TOTAL PENDAPATAN BULANAN
+            // 4. REVENUE TABLE
             $revenueTable = $this->revenueService->getRevenueTableDataWithDateRange(
                 $dateRange['start'], $dateRange['end'], null, $filters['divisi_id'],
                 $filters['revenue_source'], $filters['tipe_revenue']
             );
 
-            // Filter options untuk dropdown UI
             $filterOptions = $this->getFilterOptionsForAdmin();
 
-            // Log successful access untuk monitoring
-            Log::info('Admin dashboard loaded successfully', [
-                'user_id' => Auth::id(),
-                'filters' => $filters,
-                'data_summary' => [
-                    'total_revenue' => $cardData['total_revenue'] ?? 0,
-                    'performance_count' => [
-                        'am' => $performanceData['account_manager']->count(),
-                        'corporate' => $performanceData['corporate_customer']->count()
-                    ]
-                ]
-            ]);
-
-            // RETURN dashboard.blade.php (admin view)
             return view('dashboard', compact(
                 'cardData',
                 'performanceData',
@@ -190,15 +140,14 @@ class DashboardController extends Controller
             ));
 
         } catch (\Exception $e) {
-            Log::error('Admin dashboard rendering failed', [
-                'user_id' => Auth::id(),
+            Log::error('Admin dashboard failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
             ]);
 
-            // Graceful degradation dengan empty data
             return view('dashboard', [
-                'error' => 'Gagal memuat data dashboard admin. Silakan refresh halaman atau hubungi administrator.',
+                'error' => 'Gagal memuat dashboard.',
                 'filters' => $this->getDefaultFilters(),
                 'filterOptions' => $this->getFilterOptionsForAdmin(),
                 'cardData' => $this->getEmptyCardData(),
@@ -211,158 +160,146 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get top Corporate Customers - proper data loading and calculation
+     * FIXED: Get top Corporate Customers - Sesuai SQL Structure
      */
     private function getTopCorporateCustomersFixed($witelId = null, $limit = 20, $dateRange, $filters)
     {
-        $query = CcRevenue::query();
+        try {
+            $query = DB::table('cc_revenues');
 
-        // Date range filtering
-        if ($dateRange['start'] && $dateRange['end']) {
-            $startYear = Carbon::parse($dateRange['start'])->year;
-            $endYear = Carbon::parse($dateRange['end'])->year;
-            $startMonth = Carbon::parse($dateRange['start'])->month;
-            $endMonth = Carbon::parse($dateRange['end'])->month;
+            // Date filtering
+            if ($dateRange['start'] && $dateRange['end']) {
+                $startYear = Carbon::parse($dateRange['start'])->year;
+                $startMonth = Carbon::parse($dateRange['start'])->month;
+                $endMonth = Carbon::parse($dateRange['end'])->month;
 
-            if ($startYear === $endYear) {
                 $query->where('tahun', $startYear)
                       ->whereBetween('bulan', [$startMonth, $endMonth]);
+            } else {
+                $query->where('tahun', $this->getCurrentDataYear());
             }
-        } else {
-            $query->where('tahun', $this->getCurrentDataYear());
-        }
 
-        if ($witelId) {
-            $query->where(function($q) use ($witelId) {
-                $q->where('witel_ho_id', $witelId)
-                  ->orWhere('witel_bill_id', $witelId);
-            });
-        }
+            // Witel filtering
+            if ($witelId) {
+                $query->where(function($q) use ($witelId) {
+                    $q->where('witel_ho_id', $witelId)
+                      ->orWhere('witel_bill_id', $witelId);
+                });
+            }
 
-        if ($filters['divisi_id'] && $filters['divisi_id'] !== 'all') {
-            $query->where('divisi_id', $filters['divisi_id']);
-        }
+            // Divisi filtering
+            if (isset($filters['divisi_id']) && $filters['divisi_id'] && $filters['divisi_id'] !== 'all') {
+                $query->where('divisi_id', $filters['divisi_id']);
+            }
 
-        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
-            $query->where('revenue_source', $filters['revenue_source']);
-        }
+            // Revenue source filtering
+            if (isset($filters['revenue_source']) && $filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
+                $query->where('revenue_source', $filters['revenue_source']);
+            }
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->where('tipe_revenue', $filters['tipe_revenue']);
-        }
+            // Tipe revenue filtering
+            if (isset($filters['tipe_revenue']) && $filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
+                $query->where('tipe_revenue', $filters['tipe_revenue']);
+            }
 
-        // Get aggregated data with proper calculation
-        $revenueData = $query->selectRaw('
-                corporate_customer_id,
-                divisi_id,
-                segment_id,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target
-            ')
-            ->groupBy('corporate_customer_id', 'divisi_id', 'segment_id')
-            ->orderByDesc('total_revenue')
-            ->limit($limit)
-            ->get();
+            // Get aggregated data - FIXED
+            $revenueData = $query
+                ->select('corporate_customer_id')
+                ->selectRaw('SUM(real_revenue) as total_revenue')
+                ->selectRaw('SUM(target_revenue) as total_target')
+                ->whereNotNull('corporate_customer_id')
+                ->groupBy('corporate_customer_id')
+                ->orderByDesc('total_revenue')
+                ->limit($limit)
+                ->get();
 
-        // Load related data and calculate achievement
-        $results = collect([]);
+            $results = collect([]);
 
-        foreach ($revenueData as $revenue) {
-            $customer = CorporateCustomer::find($revenue->corporate_customer_id);
-            $divisi = Divisi::find($revenue->divisi_id);
-            $segment = Segment::find($revenue->segment_id);
+            foreach ($revenueData as $revenue) {
+                $customer = DB::table('corporate_customers')
+                    ->where('id', $revenue->corporate_customer_id)
+                    ->first();
 
-            $achievementRate = $revenue->total_target > 0
-                ? ($revenue->total_revenue / $revenue->total_target) * 100
-                : 0;
+                if (!$customer) continue;
 
-            $results->push((object) [
-                'id' => $revenue->corporate_customer_id,
-                'nama' => $customer->nama ?? 'N/A',
-                'nipnas' => $customer->nipnas ?? 'Unknown',
-                'divisi_nama' => $divisi->nama ?? 'N/A',
-                'segment_nama' => $segment->lsegment_ho ?? 'N/A',
-                'total_revenue' => floatval($revenue->total_revenue),
-                'total_target' => floatval($revenue->total_target),
-                'achievement_rate' => round($achievementRate, 2),
-                'achievement_color' => $this->getAchievementColor($achievementRate)
+                // Get latest record
+                $latestRecord = DB::table('cc_revenues')
+                    ->where('corporate_customer_id', $revenue->corporate_customer_id)
+                    ->orderByDesc('tahun')
+                    ->orderByDesc('bulan')
+                    ->first();
+
+                // Get divisi - FIXED: gunakan nama tabel 'divisi' sesuai SQL
+                $divisiName = 'N/A';
+                if ($latestRecord && $latestRecord->divisi_id) {
+                    $divisi = DB::table('divisi')->where('id', $latestRecord->divisi_id)->first();
+                    $divisiName = $divisi ? $divisi->nama : 'N/A';
+                }
+
+                // Get segment - FIXED: gunakan nama tabel 'segments' sesuai SQL
+                $segmentName = 'N/A';
+                if ($latestRecord && $latestRecord->segment_id) {
+                    $segment = DB::table('segments')->where('id', $latestRecord->segment_id)->first();
+                    $segmentName = $segment ? $segment->lsegment_ho : 'N/A';
+                }
+
+                $achievementRate = $revenue->total_target > 0
+                    ? ($revenue->total_revenue / $revenue->total_target) * 100
+                    : 0;
+
+                $results->push((object) [
+                    'id' => $revenue->corporate_customer_id,
+                    'nama' => $customer->nama,
+                    'nipnas' => $customer->nipnas,
+                    'divisi_nama' => $divisiName,
+                    'segment_nama' => $segmentName,
+                    'total_revenue' => floatval($revenue->total_revenue),
+                    'total_target' => floatval($revenue->total_target),
+                    'achievement_rate' => round($achievementRate, 2),
+                    'achievement_color' => $this->getAchievementColor($achievementRate)
+                ]);
+            }
+
+            return $results;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get top corporate customers', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
             ]);
+            return collect([]);
         }
-
-        return $results;
     }
 
     /**
-     * Get top Account Managers with proper ranking and divisi display
+     * Get top Account Managers
      */
     private function getTopAccountManagersFixed($witelId = null, $limit = 20, $dateRange, $filters)
     {
-        // Get AM revenue data dengan proper aggregation
         $query = AmRevenue::query();
 
-        // Date range filtering
         if ($dateRange['start'] && $dateRange['end']) {
             $startYear = Carbon::parse($dateRange['start'])->year;
-            $endYear = Carbon::parse($dateRange['end'])->year;
             $startMonth = Carbon::parse($dateRange['start'])->month;
             $endMonth = Carbon::parse($dateRange['end'])->month;
 
-            if ($startYear === $endYear) {
-                $query->where('tahun', $startYear)
-                      ->whereBetween('bulan', [$startMonth, $endMonth]);
-            }
+            $query->where('tahun', $startYear)
+                  ->whereBetween('bulan', [$startMonth, $endMonth]);
         } else {
             $query->where('tahun', $this->getCurrentDataYear());
         }
 
-        // Witel filtering
         if ($witelId) {
             $query->whereHas('accountManager', function($q) use ($witelId) {
                 $q->where('witel_id', $witelId);
             });
         }
 
-        // Divisi filtering
-        if ($filters['divisi_id']) {
-            $query->where(function($q) use ($filters) {
-                $q->where('divisi_id', $filters['divisi_id'])
-                  ->orWhereHas('accountManager.divisis', function($subq) use ($filters) {
-                      $subq->where('divisi.id', $filters['divisi_id']);
-                  });
-            });
+        if (isset($filters['divisi_id']) && $filters['divisi_id'] && $filters['divisi_id'] !== 'all') {
+            $query->where('divisi_id', $filters['divisi_id']);
         }
 
-        // Revenue source dan tipe revenue filtering
-        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all' ||
-            $filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereExists(function($subquery) use ($dateRange, $filters) {
-                $subquery->select(DB::raw(1))
-                        ->from('cc_revenues')
-                        ->whereColumn('cc_revenues.corporate_customer_id', 'am_revenues.corporate_customer_id');
-
-                // Date filtering for cc_revenues
-                if ($dateRange['start'] && $dateRange['end']) {
-                    $startYear = Carbon::parse($dateRange['start'])->year;
-                    $startMonth = Carbon::parse($dateRange['start'])->month;
-                    $endMonth = Carbon::parse($dateRange['end'])->month;
-
-                    $subquery->where('tahun', $startYear)
-                             ->whereBetween('bulan', [$startMonth, $endMonth]);
-                } else {
-                    $subquery->where('tahun', $this->getCurrentDataYear());
-                }
-
-                if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
-                    $subquery->where('revenue_source', $filters['revenue_source']);
-                }
-
-                if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-                    $subquery->where('tipe_revenue', $filters['tipe_revenue']);
-                }
-            });
-        }
-
-        // Get aggregated revenue per AM
         $revenueData = $query->selectRaw('
                 account_manager_id,
                 SUM(real_revenue) as total_revenue,
@@ -377,16 +314,13 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('account_manager_id');
 
-        // Get Account Manager data dengan eager loading yang benar
-        $amQuery = AccountManager::where('role', 'AM')
-            ->with(['witel', 'divisis']);
+        $amQuery = AccountManager::where('role', 'AM')->with(['witel', 'divisis']);
 
         if ($witelId) {
             $amQuery->where('witel_id', $witelId);
         }
 
-        // Filter berdasarkan divisi jika diperlukan
-        if ($filters['divisi_id']) {
+        if (isset($filters['divisi_id']) && $filters['divisi_id'] && $filters['divisi_id'] !== 'all') {
             $amQuery->whereHas('divisis', function($q) use ($filters) {
                 $q->where('divisi.id', $filters['divisi_id']);
             });
@@ -394,31 +328,24 @@ class DashboardController extends Controller
 
         $results = $amQuery->get()->map(function($am) use ($revenueData) {
             $revenue = $revenueData->get($am->id);
-            $totalRevenue = $revenue->total_revenue ?? 0;
-            $totalTarget = $revenue->total_target ?? 0;
+            $totalRevenue = $revenue ? $revenue->total_revenue : 0;
+            $totalTarget = $revenue ? $revenue->total_target : 0;
             $achievement = $totalTarget > 0 ? ($totalRevenue / $totalTarget) * 100 : 0;
 
             $am->total_revenue = $totalRevenue;
             $am->total_target = $totalTarget;
             $am->achievement_rate = round($achievement, 2);
             $am->achievement_color = $this->getAchievementColor($achievement);
-
-            // Proper divisi display
             $am->divisi_list = $am->divisis && $am->divisis->count() > 0
                 ? $am->divisis->pluck('nama')->join(', ')
                 : 'N/A';
 
             return $am;
         })
-        ->sort(function($a, $b) use ($filters) {
-            $sortBy = $filters['sort_indicator'] ?? 'total_revenue';
-
-            if ($sortBy === 'achievement_rate') {
-                return $b->achievement_rate <=> $a->achievement_rate;
-            } else {
-                return $b->total_revenue <=> $a->total_revenue;
-            }
+        ->filter(function($am) {
+            return $am->total_revenue > 0 || $am->total_target > 0;
         })
+        ->sortByDesc('total_revenue')
         ->take($limit)
         ->values();
 
@@ -426,265 +353,229 @@ class DashboardController extends Controller
     }
 
     /**
-     * AJAX TAB SWITCHING
+     * AJAX Tab Data
      */
     public function getTabData(Request $request)
     {
         $user = Auth::user();
 
-        // Authorization check
         if ($user->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized access'], 403);
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
-
-        $tab = $request->get('tab');
 
         try {
             $filters = $this->extractFiltersWithYtdMtd($request);
             $dateRange = $this->calculateDateRange($filters['period_type']);
+            $tab = $request->get('tab');
 
             $data = $this->getAdminTabDataFixed($tab, $dateRange, $filters);
 
             return response()->json([
                 'success' => true,
                 'data' => $data,
-                'tab' => $tab,
-                'count' => is_countable($data) ? count($data) : 0,
-                'period_text' => $this->generatePeriodText($filters['period_type'], $dateRange)
+                'count' => is_countable($data) ? count($data) : 0
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Admin tab data loading failed', [
-                'tab' => $tab,
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Gagal memuat data tab',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Tab data failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Gagal memuat data'], 500);
         }
     }
 
-    /**
-     * Get tab data with proper structure and calculations
-     */
     private function getAdminTabDataFixed($tab, $dateRange, $filters)
     {
         switch ($tab) {
             case 'account_manager':
                 return $this->getTopAccountManagersFixed(null, 20, $dateRange, $filters);
-
             case 'witel':
                 return $this->getTopWitelsFixed(20, $dateRange, $filters);
-
             case 'segment':
                 return $this->getTopSegmentsFixed(20, $dateRange, $filters);
-
             case 'corporate_customer':
                 return $this->getTopCorporateCustomersFixed(null, 20, $dateRange, $filters);
-
             default:
-                throw new \InvalidArgumentException('Invalid tab type: ' . $tab);
+                throw new \InvalidArgumentException('Invalid tab');
         }
     }
 
     /**
-     * Get top Witels with proper calculation
+     * Get top Witels - FIXED
      */
     private function getTopWitelsFixed($limit = 20, $dateRange, $filters)
     {
-        $query = CcRevenue::query();
+        try {
+            $query = DB::table('cc_revenues');
 
-        // Date range filtering
-        if ($dateRange['start'] && $dateRange['end']) {
-            $startYear = Carbon::parse($dateRange['start'])->year;
-            $endYear = Carbon::parse($dateRange['end'])->year;
-            $startMonth = Carbon::parse($dateRange['start'])->month;
-            $endMonth = Carbon::parse($dateRange['end'])->month;
+            if ($dateRange['start'] && $dateRange['end']) {
+                $startYear = Carbon::parse($dateRange['start'])->year;
+                $startMonth = Carbon::parse($dateRange['start'])->month;
+                $endMonth = Carbon::parse($dateRange['end'])->month;
 
-            if ($startYear === $endYear) {
                 $query->where('tahun', $startYear)
                       ->whereBetween('bulan', [$startMonth, $endMonth]);
+            } else {
+                $query->where('tahun', $this->getCurrentDataYear());
             }
-        } else {
-            $query->where('tahun', $this->getCurrentDataYear());
+
+            if (isset($filters['divisi_id']) && $filters['divisi_id'] && $filters['divisi_id'] !== 'all') {
+                $query->where('divisi_id', $filters['divisi_id']);
+            }
+
+            if (isset($filters['revenue_source']) && $filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
+                $query->where('revenue_source', $filters['revenue_source']);
+            }
+
+            if (isset($filters['tipe_revenue']) && $filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
+                $query->where('tipe_revenue', $filters['tipe_revenue']);
+            }
+
+            $revenueData = $query
+                ->selectRaw('
+                    CASE
+                        WHEN witel_ho_id IS NOT NULL THEN witel_ho_id
+                        ELSE witel_bill_id
+                    END as witel_id,
+                    COUNT(DISTINCT corporate_customer_id) as total_customers,
+                    SUM(real_revenue) as total_revenue,
+                    SUM(target_revenue) as total_target
+                ')
+                ->whereNotNull(DB::raw('CASE WHEN witel_ho_id IS NOT NULL THEN witel_ho_id ELSE witel_bill_id END'))
+                ->groupBy(DB::raw('CASE WHEN witel_ho_id IS NOT NULL THEN witel_ho_id ELSE witel_bill_id END'))
+                ->orderByDesc('total_revenue')
+                ->limit($limit)
+                ->get();
+
+            $results = collect([]);
+
+            foreach ($revenueData as $revenue) {
+                // FIXED: Gunakan nama tabel 'witel' sesuai SQL
+                $witel = DB::table('witel')->where('id', $revenue->witel_id)->first();
+                if (!$witel) continue;
+
+                $achievementRate = $revenue->total_target > 0
+                    ? ($revenue->total_revenue / $revenue->total_target) * 100
+                    : 0;
+
+                $results->push((object) [
+                    'id' => $witel->id,
+                    'nama' => $witel->nama,
+                    'total_customers' => intval($revenue->total_customers),
+                    'total_revenue' => floatval($revenue->total_revenue),
+                    'total_target' => floatval($revenue->total_target),
+                    'achievement_rate' => round($achievementRate, 2),
+                    'achievement_color' => $this->getAchievementColor($achievementRate)
+                ]);
+            }
+
+            return $results;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get top witels', ['error' => $e->getMessage()]);
+            return collect([]);
         }
-
-        if ($filters['divisi_id']) {
-            $query->where('divisi_id', $filters['divisi_id']);
-        }
-
-        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
-            $query->where('revenue_source', $filters['revenue_source']);
-        }
-
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->where('tipe_revenue', $filters['tipe_revenue']);
-        }
-
-        // Get aggregated data by witel
-        $revenueData = $query->selectRaw('
-                CASE
-                    WHEN witel_ho_id IS NOT NULL THEN witel_ho_id
-                    ELSE witel_bill_id
-                END as witel_id,
-                COUNT(DISTINCT corporate_customer_id) as total_customers,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target
-            ')
-            ->whereNotNull(DB::raw('CASE WHEN witel_ho_id IS NOT NULL THEN witel_ho_id ELSE witel_bill_id END'))
-            ->groupBy(DB::raw('CASE WHEN witel_ho_id IS NOT NULL THEN witel_ho_id ELSE witel_bill_id END'))
-            ->orderByDesc('total_revenue')
-            ->limit($limit)
-            ->get();
-
-        $results = collect([]);
-
-        foreach ($revenueData as $revenue) {
-            $witel = Witel::find($revenue->witel_id);
-            if (!$witel) continue;
-
-            $achievementRate = $revenue->total_target > 0
-                ? ($revenue->total_revenue / $revenue->total_target) * 100
-                : 0;
-
-            $results->push((object) [
-                'id' => $witel->id,
-                'nama' => $witel->nama,
-                'total_customers' => intval($revenue->total_customers),
-                'total_revenue' => floatval($revenue->total_revenue),
-                'total_target' => floatval($revenue->total_target),
-                'achievement_rate' => round($achievementRate, 2),
-                'achievement_color' => $this->getAchievementColor($achievementRate)
-            ]);
-        }
-
-        return $results;
     }
 
     /**
-     * Get top Segments with proper calculation
+     * Get top Segments - FIXED
      */
     private function getTopSegmentsFixed($limit = 20, $dateRange, $filters)
     {
-        $query = CcRevenue::query();
+        try {
+            $query = DB::table('cc_revenues');
 
-        // Date range filtering
-        if ($dateRange['start'] && $dateRange['end']) {
-            $startYear = Carbon::parse($dateRange['start'])->year;
-            $endYear = Carbon::parse($dateRange['end'])->year;
-            $startMonth = Carbon::parse($dateRange['start'])->month;
-            $endMonth = Carbon::parse($dateRange['end'])->month;
+            if ($dateRange['start'] && $dateRange['end']) {
+                $startYear = Carbon::parse($dateRange['start'])->year;
+                $startMonth = Carbon::parse($dateRange['start'])->month;
+                $endMonth = Carbon::parse($dateRange['end'])->month;
 
-            if ($startYear === $endYear) {
                 $query->where('tahun', $startYear)
                       ->whereBetween('bulan', [$startMonth, $endMonth]);
+            } else {
+                $query->where('tahun', $this->getCurrentDataYear());
             }
-        } else {
-            $query->where('tahun', $this->getCurrentDataYear());
+
+            if (isset($filters['divisi_id']) && $filters['divisi_id'] && $filters['divisi_id'] !== 'all') {
+                $query->where('divisi_id', $filters['divisi_id']);
+            }
+
+            if (isset($filters['revenue_source']) && $filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
+                $query->where('revenue_source', $filters['revenue_source']);
+            }
+
+            if (isset($filters['tipe_revenue']) && $filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
+                $query->where('tipe_revenue', $filters['tipe_revenue']);
+            }
+
+            $revenueData = $query
+                ->select('segment_id', 'divisi_id')
+                ->selectRaw('COUNT(DISTINCT corporate_customer_id) as total_customers')
+                ->selectRaw('SUM(real_revenue) as total_revenue')
+                ->selectRaw('SUM(target_revenue) as total_target')
+                ->whereNotNull('segment_id')
+                ->groupBy('segment_id', 'divisi_id')
+                ->orderByDesc('total_revenue')
+                ->limit($limit)
+                ->get();
+
+            $results = collect([]);
+
+            foreach ($revenueData as $revenue) {
+                // FIXED: Gunakan tabel dan kolom sesuai SQL
+                $segment = DB::table('segments')->where('id', $revenue->segment_id)->first();
+                $divisi = DB::table('divisi')->where('id', $revenue->divisi_id)->first();
+
+                if (!$segment) continue;
+
+                $achievementRate = $revenue->total_target > 0
+                    ? ($revenue->total_revenue / $revenue->total_target) * 100
+                    : 0;
+
+                $results->push((object) [
+                    'id' => $segment->id,
+                    'lsegment_ho' => $segment->lsegment_ho,
+                    'nama' => $segment->lsegment_ho,
+                    'divisi_nama' => $divisi ? $divisi->nama : 'N/A',
+                    'total_customers' => intval($revenue->total_customers),
+                    'total_revenue' => floatval($revenue->total_revenue),
+                    'total_target' => floatval($revenue->total_target),
+                    'achievement_rate' => round($achievementRate, 2),
+                    'achievement_color' => $this->getAchievementColor($achievementRate)
+                ]);
+            }
+
+            return $results;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get top segments', ['error' => $e->getMessage()]);
+            return collect([]);
         }
-
-        if ($filters['divisi_id']) {
-            $query->where('divisi_id', $filters['divisi_id']);
-        }
-
-        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
-            $query->where('revenue_source', $filters['revenue_source']);
-        }
-
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->where('tipe_revenue', $filters['tipe_revenue']);
-        }
-
-        // Get aggregated data by segment
-        $revenueData = $query->selectRaw('
-                segment_id,
-                divisi_id,
-                COUNT(DISTINCT corporate_customer_id) as total_customers,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target
-            ')
-            ->whereNotNull('segment_id')
-            ->groupBy('segment_id', 'divisi_id')
-            ->orderByDesc('total_revenue')
-            ->limit($limit)
-            ->get();
-
-        $results = collect([]);
-
-        foreach ($revenueData as $revenue) {
-            $segment = Segment::find($revenue->segment_id);
-            $divisi = Divisi::find($revenue->divisi_id);
-
-            if (!$segment) continue;
-
-            $achievementRate = $revenue->total_target > 0
-                ? ($revenue->total_revenue / $revenue->total_target) * 100
-                : 0;
-
-            $results->push((object) [
-                'id' => $segment->id,
-                'lsegment_ho' => $segment->lsegment_ho ?? 'Unknown',
-                'nama' => $segment->lsegment_ho ?? 'Unknown',
-                'divisi_nama' => $divisi->nama ?? 'Unknown',
-                'divisi' => (object) ['nama' => $divisi->nama ?? 'Unknown'],
-                'total_customers' => intval($revenue->total_customers),
-                'total_revenue' => floatval($revenue->total_revenue),
-                'total_target' => floatval($revenue->total_target),
-                'achievement_rate' => round($achievementRate, 2),
-                'achievement_color' => $this->getAchievementColor($achievementRate)
-            ]);
-        }
-
-        return $results;
     }
 
     /**
-     * Export functionality
+     * Export
      */
     public function export(Request $request)
     {
         $user = Auth::user();
 
-        // Authorization check
         if ($user->role !== 'admin') {
-            abort(403, 'Unauthorized export access');
+            abort(403);
         }
 
         try {
             $filters = $this->extractFiltersWithYtdMtd($request);
             $dateRange = $this->calculateDateRange($filters['period_type']);
-
-            // Collect ALL data untuk comprehensive export
             $exportData = $this->prepareExportData($dateRange, $filters);
-
-            // Generate filename dengan timestamp dan filter info
             $filename = $this->generateExportFilename($filters);
 
-            // Log export activity
-            Log::info('Admin dashboard export initiated', [
-                'user_id' => Auth::id(),
-                'filters' => $filters,
-                'filename' => $filename
-            ]);
-
-            // Return comprehensive Excel dengan multiple sheets
             return Excel::download(
                 new AdminDashboardExport($exportData, $dateRange, $filters),
                 $filename
             );
 
         } catch (\Exception $e) {
-            Log::error('Admin dashboard export failed', [
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->back()
-                ->with('error', 'Export gagal: ' . $e->getMessage());
+            Log::error('Export failed', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Export gagal');
         }
     }
 
@@ -696,18 +587,10 @@ class DashboardController extends Controller
                 $filters['revenue_source'], $filters['tipe_revenue']
             ),
             'performance' => [
-                'account_managers' => $this->getTopAccountManagersFixed(
-                    null, 200, $dateRange, $filters
-                ),
-                'witels' => $this->getTopWitelsFixed(
-                    200, $dateRange, $filters
-                ),
-                'segments' => $this->getTopSegmentsFixed(
-                    200, $dateRange, $filters
-                ),
-                'corporate_customers' => $this->getTopCorporateCustomersFixed(
-                    null, 200, $dateRange, $filters
-                )
+                'account_managers' => $this->getTopAccountManagersFixed(null, 200, $dateRange, $filters),
+                'witels' => $this->getTopWitelsFixed(200, $dateRange, $filters),
+                'segments' => $this->getTopSegmentsFixed(200, $dateRange, $filters),
+                'corporate_customers' => $this->getTopCorporateCustomersFixed(null, 200, $dateRange, $filters)
             ],
             'summary' => $this->revenueService->getTotalRevenueDataWithDateRange(
                 null, $filters['divisi_id'], $dateRange['start'], $dateRange['end'],
@@ -719,15 +602,131 @@ class DashboardController extends Controller
     private function generateExportFilename($filters)
     {
         $periodText = strtolower($filters['period_type']);
-        $divisiText = $filters['divisi_id'] ? "_divisi{$filters['divisi_id']}" : "_all_divisi";
-        $sortText = isset($filters['sort_indicator']) ? "_{$filters['sort_indicator']}" : "";
         $timestamp = date('Y-m-d_H-i-s');
-
-        return "admin_dashboard_export_{$periodText}{$divisiText}{$sortText}_{$timestamp}.xlsx";
+        return "dashboard_export_{$periodText}_{$timestamp}.xlsx";
     }
 
     /**
-     * Helper Methods
+     * Detail Pages
+     */
+    public function showAccountManager($id)
+    {
+        try {
+            $accountManager = AccountManager::with(['witel', 'divisis'])->findOrFail($id);
+            $user = Auth::user();
+
+            if ($user->role === 'account_manager' && $user->account_manager_id !== $id) {
+                abort(403);
+            }
+
+            $currentYear = date('Y');
+            $performanceData = $this->performanceService->getAMPerformanceSummary($id, $currentYear);
+            $monthlyChart = $this->performanceService->getAMMonthlyChart($id, $currentYear);
+            $customerPerformance = $this->performanceService->getAMCustomerPerformance($id, $currentYear);
+
+            return view('am.detailAM', compact(
+                'accountManager',
+                'performanceData',
+                'monthlyChart',
+                'customerPerformance'
+            ));
+
+        } catch (\Exception $e) {
+            Log::error('AM detail failed', ['error' => $e->getMessage()]);
+            return redirect()->route('dashboard')->with('error', 'Gagal memuat detail AM');
+        }
+    }
+
+    public function showWitel($id)
+    {
+        try {
+            $witel = Witel::findOrFail($id);
+            $user = Auth::user();
+
+            if ($user->role === 'witel_support' && $user->witel_id !== $id) {
+                abort(403);
+            }
+
+            $currentYear = date('Y');
+            $witelData = $this->revenueService->getTotalRevenueData($id, null, $currentYear);
+            $topAMs = $this->revenueService->getTopAccountManagers($id, 20, $currentYear);
+            $categoryDistribution = $this->rankingService->getCategoryDistribution($id, $currentYear);
+
+            return view('detailWitel', compact('witel', 'witelData', 'topAMs', 'categoryDistribution'));
+
+        } catch (\Exception $e) {
+            Log::error('Witel detail failed', ['error' => $e->getMessage()]);
+            return redirect()->route('dashboard')->with('error', 'Gagal memuat detail Witel');
+        }
+    }
+
+    public function showCorporateCustomer($id)
+    {
+        try {
+            $ccController = app(CcDashboardController::class);
+            return $ccController->show($id, request());
+        } catch (\Exception $e) {
+            Log::error('CC detail failed', ['error' => $e->getMessage()]);
+            return redirect()->route('dashboard')->with('error', 'Gagal memuat detail CC');
+        }
+    }
+
+    public function showSegment($id)
+    {
+        try {
+            $segment = Segment::with('divisi')->findOrFail($id);
+            $currentYear = date('Y');
+
+            $segmentData = CcRevenue::where('segment_id', $id)
+                ->where('tahun', $currentYear)
+                ->selectRaw('
+                    COUNT(DISTINCT corporate_customer_id) as total_customers,
+                    SUM(real_revenue) as total_revenue,
+                    SUM(target_revenue) as total_target
+                ')
+                ->first();
+
+            $topCustomers = CcRevenue::where('segment_id', $id)
+                ->where('tahun', $currentYear)
+                ->with('corporateCustomer')
+                ->selectRaw('
+                    corporate_customer_id,
+                    SUM(real_revenue) as total_revenue,
+                    SUM(target_revenue) as total_target
+                ')
+                ->groupBy('corporate_customer_id')
+                ->orderByDesc('total_revenue')
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'segment' => [
+                        'id' => $segment->id,
+                        'nama' => $segment->lsegment_ho,
+                        'divisi' => $segment->divisi->nama ?? 'N/A'
+                    ],
+                    'performance' => [
+                        'total_customers' => $segmentData->total_customers ?? 0,
+                        'total_revenue' => $segmentData->total_revenue ?? 0,
+                        'total_target' => $segmentData->total_target ?? 0,
+                        'achievement_rate' => $segmentData->total_target > 0
+                            ? round(($segmentData->total_revenue / $segmentData->total_target) * 100, 2)
+                            : 0
+                    ],
+                    'top_customers' => $topCustomers
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Segment detail failed', ['error' => $e->getMessage()]);
+            return redirect()->route('dashboard')->with('error', 'Gagal memuat detail Segment');
+        }
+    }
+
+    /**
+     * HELPER METHODS
      */
     private function extractFiltersWithYtdMtd(Request $request)
     {
@@ -764,7 +763,6 @@ class DashboardController extends Controller
     {
         $startDate = $dateRange['start']->format('d M');
         $endDate = $dateRange['end']->format('d M Y');
-
         return "dari {$startDate} - {$endDate}";
     }
 
@@ -785,6 +783,11 @@ class DashboardController extends Controller
                 'all' => 'Semua Tipe',
                 'REGULER' => 'Revenue Reguler',
                 'NGTMA' => 'Revenue NGTMA'
+            ],
+            'revenue_sources' => [
+                'all' => 'Semua Source',
+                'HO' => 'HO Revenue',
+                'BILL' => 'BILL Revenue'
             ]
         ];
     }
@@ -796,6 +799,7 @@ class DashboardController extends Controller
             'divisi_id' => null,
             'sort_indicator' => 'total_revenue',
             'tipe_revenue' => 'all',
+            'revenue_source' => 'all',
             'active_tab' => 'account_manager'
         ];
     }
@@ -848,6 +852,9 @@ class DashboardController extends Controller
         }
     }
 
+    /**
+     * CHART GENERATION
+     */
     private function generateMonthlyChart($monthlyRevenue, $tahun)
     {
         if (!$monthlyRevenue || $monthlyRevenue->isEmpty()) {
@@ -903,7 +910,21 @@ class DashboardController extends Controller
                         plugins: {
                             title: {
                                 display: true,
-                                text: 'Perkembangan Revenue Bulanan ({$tahun})'
+                                text: 'Perkembangan Revenue Bulanan ({$tahun})',
+                                font: { size: 16 }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Revenue (Juta Rp)'
+                                }
                             }
                         }
                     }
@@ -968,12 +989,24 @@ class DashboardController extends Controller
                         plugins: {
                             title: {
                                 display: true,
-                                text: 'Distribusi Pencapaian Target AM per Bulan'
+                                text: 'Distribusi Pencapaian Target AM per Bulan',
+                                font: { size: 16 }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
                             }
                         },
                         scales: {
                             x: { stacked: true },
-                            y: { stacked: true, beginAtZero: true }
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Jumlah Account Manager'
+                                }
+                            }
                         }
                     }
                 });
@@ -999,391 +1032,42 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get achievement color based on rate - sesuai requirement PDF
+     * Get achievement color
      */
     private function getAchievementColor($achievementRate)
     {
         if ($achievementRate >= 100) {
-            return 'success'; // Hijau: ≥100%
+            return 'success';
         } elseif ($achievementRate >= 80) {
-            return 'warning'; // Oranye: 80-99%
+            return 'warning';
         } else {
-            return 'danger';  // Merah: 0-80%
+            return 'danger';
         }
     }
 
     /**
-     * Get current data year (tahun terkini dari data aktual)
+     * Get current data year
      */
     private function getCurrentDataYear()
     {
         static $currentYear = null;
 
         if ($currentYear === null) {
-            $currentYear = CcRevenue::max('tahun') ?? 2025;
+            $currentYear = CcRevenue::max('tahun') ?? date('Y');
         }
 
         return $currentYear;
     }
 
     /**
-     * AM Dashboard Delegation Methods
-     */
-    public function getAmPerformance(Request $request)
-    {
-        $user = Auth::user();
-
-        if ($user->role !== 'account_manager') {
-            return response()->json(['error' => 'Unauthorized access'], 403);
-        }
-
-        try {
-            // Gunakan service container untuk resolve
-            $amController = app(AmDashboardController::class);
-
-            // Get AM's performance summary
-            $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
-            if (!$accountManager) {
-                return response()->json(['error' => 'Account Manager not found'], 404);
-            }
-
-            $filters = $this->extractFilters($request);
-            $dateRange = $this->calculateDateRange($filters['period_type']);
-
-            $performanceSummary = $amController->getAmPerformanceSummary(
-                $accountManager->id, $dateRange, $filters
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $performanceSummary
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('AM performance data failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Failed to load AM performance data',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function getAmCustomers(Request $request)
-    {
-        $user = Auth::user();
-
-        if ($user->role !== 'account_manager') {
-            return response()->json(['error' => 'Unauthorized access'], 403);
-        }
-
-        try {
-            $amController = app(AmDashboardController::class);
-
-            $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
-            if (!$accountManager) {
-                return response()->json(['error' => 'Account Manager not found'], 404);
-            }
-
-            $filters = $this->extractFilters($request);
-            $dateRange = $this->calculateDateRange($filters['period_type']);
-
-            $corporateCustomers = $amController->getAmCorporateCustomers(
-                $accountManager->id, $dateRange, $filters
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $corporateCustomers
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('AM customers data failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Failed to load AM customers data',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function exportAm(Request $request)
-    {
-        $user = Auth::user();
-
-        if ($user->role !== 'account_manager') {
-            abort(403, 'Unauthorized export access');
-        }
-
-        try {
-            $amController = app(AmDashboardController::class);
-            return $amController->export($request);
-
-        } catch (\Exception $e) {
-            Log::error('AM export failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return redirect()->back()
-                ->with('error', 'Export AM gagal: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Detail Page Methods - FIXED
-     */
-    public function showAccountManager($id)
-    {
-        try {
-            $accountManager = AccountManager::with(['witel', 'divisis'])
-                ->findOrFail($id);
-
-            // FIXED: Authorization check tanpa user_id
-            $user = Auth::user();
-            if ($user->role === 'account_manager') {
-                // Cek apakah ini AM sendiri yang akses datanya
-                if ($user->account_manager_id !== $id) {
-                    abort(403, 'Unauthorized access to this Account Manager data');
-                }
-            }
-            // Admin dan witel_support bisa akses semua AM data
-
-            // Get performance data
-            $currentYear = date('Y');
-            $performanceData = $this->performanceService->getAMPerformanceSummary($id, $currentYear);
-            $monthlyChart = $this->performanceService->getAMMonthlyChart($id, $currentYear);
-            $customerPerformance = $this->performanceService->getAMCustomerPerformance($id, $currentYear);
-
-            // FIXED: View path sesuai file yang ada
-            return view('am.detailAM', compact(
-                'accountManager',
-                'performanceData',
-                'monthlyChart',
-                'customerPerformance'
-            ));
-
-        } catch (\Exception $e) {
-            Log::error('Account Manager detail page failed', [
-                'am_id' => $id,
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->route('dashboard')
-                ->with('error', 'Gagal memuat detail Account Manager');
-        }
-    }
-
-    public function showWitel($id)
-    {
-        try {
-            $witel = Witel::findOrFail($id);
-
-            // FIXED: Authorization check tanpa user_id yang salah
-            $user = Auth::user();
-            if ($user->role === 'witel_support') {
-                // Cek witel_id dari tabel users langsung
-                if ($user->witel_id !== $id) {
-                    abort(403, 'Unauthorized access to this Witel data');
-                }
-            }
-
-            // Get witel performance data
-            $currentYear = date('Y');
-            $witelData = $this->revenueService->getTotalRevenueData($id, null, $currentYear);
-            $topAMs = $this->revenueService->getTopAccountManagers($id, 20, $currentYear);
-            $categoryDistribution = $this->rankingService->getCategoryDistribution($id, $currentYear);
-
-            // FIXED: View path sesuai file yang ada
-            return view('detailWitel', compact(
-                'witel',
-                'witelData',
-                'topAMs',
-                'categoryDistribution'
-            ));
-
-        } catch (\Exception $e) {
-            Log::error('Witel detail page failed', [
-                'witel_id' => $id,
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->route('dashboard')
-                ->with('error', 'Gagal memuat detail Witel');
-        }
-    }
-
-    public function showCorporateCustomer($id)
-    {
-        try {
-            // Query customer data
-            $customer = CorporateCustomer::findOrFail($id);
-
-            // Get customer revenue data with proper joins
-            $currentYear = date('Y');
-            $revenueData = CcRevenue::where('corporate_customer_id', $id)
-                ->where('tahun', $currentYear)
-                ->selectRaw('
-                    SUM(real_revenue) as total_revenue,
-                    SUM(target_revenue) as total_target
-                ')
-                ->first();
-
-            $monthlyData = CcRevenue::where('corporate_customer_id', $id)
-                ->where('tahun', $currentYear)
-                ->selectRaw('
-                    bulan,
-                    SUM(real_revenue) as monthly_revenue,
-                    SUM(target_revenue) as monthly_target
-                ')
-                ->groupBy('bulan')
-                ->orderBy('bulan')
-                ->get();
-
-            // Get divisi and segment from cc_revenues
-            $customerDetails = CcRevenue::where('corporate_customer_id', $id)
-                ->with(['divisi', 'segment'])
-                ->first();
-
-            $customer->divisi = $customerDetails->divisi ?? null;
-            $customer->segment = $customerDetails->segment ?? null;
-
-            // TEMPORARY: Return JSON response karena view belum dibuat
-            // Setelah view detailCorporateCustomer.blade.php dibuat, ganti dengan:
-            // return view('detailCorporateCustomer', compact('customer', 'revenueData', 'monthlyData'));
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data Corporate Customer berhasil dimuat',
-                'data' => [
-                    'customer' => [
-                        'id' => $customer->id,
-                        'nama' => $customer->nama,
-                        'nipnas' => $customer->nipnas,
-                        'divisi' => $customer->divisi->nama ?? 'N/A',
-                        'segment' => $customer->segment->lsegment_ho ?? 'N/A'
-                    ],
-                    'revenue' => [
-                        'total_revenue' => $revenueData->total_revenue ?? 0,
-                        'total_target' => $revenueData->total_target ?? 0,
-                        'achievement_rate' => $revenueData->total_target > 0
-                            ? round(($revenueData->total_revenue / $revenueData->total_target) * 100, 2)
-                            : 0
-                    ],
-                    'monthly_data' => $monthlyData
-                ],
-                'note' => 'View detailCorporateCustomer.blade.php belum dibuat. Ini adalah response JSON sementara.'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Corporate Customer detail page failed', [
-                'customer_id' => $id,
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->route('dashboard')
-                ->with('error', 'Gagal memuat detail Corporate Customer: ' . $e->getMessage());
-        }
-    }
-
-    public function showSegment($id)
-    {
-        try {
-            $segment = Segment::with('divisi')->findOrFail($id);
-
-            // Get segment performance data
-            $currentYear = date('Y');
-            $segmentData = CcRevenue::where('segment_id', $id)
-                ->where('tahun', $currentYear)
-                ->selectRaw('
-                    COUNT(DISTINCT corporate_customer_id) as total_customers,
-                    SUM(real_revenue) as total_revenue,
-                    SUM(target_revenue) as total_target
-                ')
-                ->first();
-
-            $topCustomers = CcRevenue::where('segment_id', $id)
-                ->where('tahun', $currentYear)
-                ->with('corporateCustomer')
-                ->selectRaw('
-                    corporate_customer_id,
-                    SUM(real_revenue) as total_revenue,
-                    SUM(target_revenue) as total_target
-                ')
-                ->groupBy('corporate_customer_id')
-                ->orderByDesc('total_revenue')
-                ->limit(10)
-                ->get();
-
-            // TEMPORARY: Return JSON response karena view belum dibuat
-            // Setelah view detailSegment.blade.php dibuat, ganti dengan:
-            // return view('detailSegment', compact('segment', 'segmentData', 'topCustomers'));
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data Segment berhasil dimuat',
-                'data' => [
-                    'segment' => [
-                        'id' => $segment->id,
-                        'nama' => $segment->lsegment_ho,
-                        'divisi' => $segment->divisi->nama ?? 'N/A'
-                    ],
-                    'performance' => [
-                        'total_customers' => $segmentData->total_customers ?? 0,
-                        'total_revenue' => $segmentData->total_revenue ?? 0,
-                        'total_target' => $segmentData->total_target ?? 0,
-                        'achievement_rate' => $segmentData->total_target > 0
-                            ? round(($segmentData->total_revenue / $segmentData->total_target) * 100, 2)
-                            : 0
-                    ],
-                    'top_customers' => $topCustomers->map(function($item) {
-                        return [
-                            'customer_name' => $item->corporateCustomer->nama ?? 'N/A',
-                            'total_revenue' => $item->total_revenue,
-                            'total_target' => $item->total_target,
-                            'achievement' => $item->total_target > 0
-                                ? round(($item->total_revenue / $item->total_target) * 100, 2)
-                                : 0
-                        ];
-                    })
-                ],
-                'note' => 'View detailSegment.blade.php belum dibuat. Ini adalah response JSON sementara.'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Segment detail page failed', [
-                'segment_id' => $id,
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->route('dashboard')
-                ->with('error', 'Gagal memuat detail Segment: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Additional API Methods for Dashboard
+     * API METHODS
      */
     public function getChartData(Request $request)
     {
         $user = Auth::user();
 
         if ($user->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized access'], 403);
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         try {
@@ -1407,15 +1091,8 @@ class DashboardController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Chart data loading failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Failed to load chart data',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Chart data failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load chart data'], 500);
         }
     }
 
@@ -1424,7 +1101,7 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         if ($user->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized access'], 403);
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         try {
@@ -1442,15 +1119,8 @@ class DashboardController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Revenue table loading failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Failed to load revenue table',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Revenue table failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load revenue table'], 500);
         }
     }
 
@@ -1459,7 +1129,7 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         if ($user->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized access'], 403);
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         try {
@@ -1479,15 +1149,8 @@ class DashboardController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Summary loading failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Failed to load summary',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Summary failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load summary'], 500);
         }
     }
 
@@ -1496,19 +1159,15 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         if ($user->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized access'], 403);
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         try {
-            // Generate performance insights for admin dashboard
             $insights = [
                 'total_insights' => 0,
                 'insights' => [],
                 'recommendations' => []
             ];
-
-            // This would be implemented based on specific business requirements
-            // For now, return a placeholder response
 
             return response()->json([
                 'success' => true,
@@ -1516,15 +1175,97 @@ class DashboardController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Performance insights loading failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
+            Log::error('Performance insights failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load insights'], 500);
+        }
+    }
+
+    /**
+     * AM DELEGATION METHODS
+     */
+    public function getAmPerformance(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'account_manager') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $amController = app(AmDashboardController::class);
+            $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
+
+            if (!$accountManager) {
+                return response()->json(['error' => 'Account Manager not found'], 404);
+            }
+
+            $filters = $this->extractFiltersWithYtdMtd($request);
+            $dateRange = $this->calculateDateRange($filters['period_type']);
+
+            $performanceSummary = $amController->getAmPerformanceSummary(
+                $accountManager->id, $dateRange, $filters
+            );
 
             return response()->json([
-                'error' => 'Failed to load performance insights',
-                'message' => $e->getMessage()
-            ], 500);
+                'success' => true,
+                'data' => $performanceSummary
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('AM performance failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load AM performance'], 500);
+        }
+    }
+
+    public function getAmCustomers(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'account_manager') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $amController = app(AmDashboardController::class);
+            $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
+
+            if (!$accountManager) {
+                return response()->json(['error' => 'Account Manager not found'], 404);
+            }
+
+            $filters = $this->extractFiltersWithYtdMtd($request);
+            $dateRange = $this->calculateDateRange($filters['period_type']);
+
+            $corporateCustomers = $amController->getAmCorporateCustomers(
+                $accountManager->id, $dateRange, $filters
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $corporateCustomers
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('AM customers failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load AM customers'], 500);
+        }
+    }
+
+    public function exportAm(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'account_manager') {
+            abort(403, 'Unauthorized export access');
+        }
+
+        try {
+            $amController = app(AmDashboardController::class);
+            return $amController->export($request);
+
+        } catch (\Exception $e) {
+            Log::error('AM export failed', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Export AM gagal');
         }
     }
 

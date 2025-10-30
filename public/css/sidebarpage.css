@@ -217,6 +217,19 @@ html{ scroll-padding-top: calc(var(--nav-h) + 24px); }
   display:none;
 }
 
+/* 35px = lebar logo; var(--sb-collapsed)=70px */
+#sidebar:not(.expand) .avatar.rounded-circle{
+  display:block;
+  margin-left: calc((var(--sb-collapsed) - 55px) / 2) !important;
+}
+
+/* saat expanded, kembalikan sesuai kebutuhan */
+#sidebar.expand .avatar.rounded-circle{
+  margin-left: 0 !important;   /* atau 16px kalau mau ada inset */
+}
+
+
+
 
 /* — Saat collapsed, pusatkan logo */
 #sidebar:not(.expand) .sidebar-logo{
@@ -231,7 +244,8 @@ html{ scroll-padding-top: calc(var(--nav-h) + 24px); }
   padding:12px; border-radius:10px; margin-left:2px;
   transition:background var(--tfast);
 }
-#toggle-btn:hover{ background:#fff1f1; }
+/* HAPUS hover pink */
+#toggle-btn:hover{ background:transparent; }
 #toggle-btn img{
   width:34px; height:34px; border-radius:50%;
   border:2px solid #ffe1e1;
@@ -264,7 +278,7 @@ html{ scroll-padding-top: calc(var(--nav-h) + 24px); }
   display:flex; align-items:center; gap:14px;
   padding:12px 14px; margin:2px 8px;
   color:var(--ink-800);
-  border-left:3px solid transparent;
+  border-left: 3px solid var(--red-200);
   border-radius:12px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   transition:background var(--tfast), transform var(--tfast),
@@ -275,15 +289,17 @@ html{ scroll-padding-top: calc(var(--nav-h) + 24px); }
   color:var(--red-600);
   transition:transform var(--tfast), color var(--tfast), opacity var(--tfast);
 }
+/* HAPUS hover pink di sidebar */
 .sidebar-link:hover{
-  background:#fff1f1; color:var(--ink-900);
+  border-left-color: var(--red-500);
+  background: transparent; 
+  color:var(--ink-900);
   transform:translateX(2px);
-  border-left-color:var(--red-600);
   box-shadow:0 1px 0 rgba(220,38,38,.08) inset;
 }
 .sidebar-link.active{
   background:#ffe8e8; color:var(--ink-900);
-  border-left-color:var(--red-600);
+  border-left-color: var(--red-600);
   font-weight:600;
 }
 
@@ -317,8 +333,9 @@ html{ scroll-padding-top: calc(var(--nav-h) + 24px); }
   background:#fff;
 }
 .sidebar-footer .sidebar-link{ margin:2px 8px; }
+/* HAPUS hover pink di footer */
 .sidebar-footer .sidebar-link:hover{
-  background:#fff1f1; color:var(--red-700);
+  background:transparent; color:var(--red-700);
 }
 
 
@@ -354,7 +371,8 @@ html{ scroll-padding-top: calc(var(--nav-h) + 24px); }
   margin:0 6px; padding:10px 16px 10px 44px; font-size:.9rem;
   color:var(--ink-800); border-radius:8px;
 }
-.sidebar-dropdown .sidebar-link:hover{ background:#fff1f1; color:var(--ink-900); }
+/* HAPUS hover pink di dropdown */
+.sidebar-dropdown .sidebar-link:hover{ background:transparent; color:var(--ink-900); }
 
 
 /* Collapsed: floating ke kanan */
@@ -509,11 +527,12 @@ html{ scroll-padding-top: calc(var(--nav-h) + 24px); }
   color:var(--ink-800);
   transition:transform var(--tfast), background var(--tfast), color var(--tfast);
 }
+/* HAPUS hover pink di menu dropdown */
 .dropdown-item:hover{
-  background:#fff1f1; color:var(--red-600); transform:translateX(2px);
+  background:transparent; color:var(--red-600); transform:translateX(2px);
 }
 .dropdown-item.text-danger:hover{
-  background:#ffe9e9; color:var(--red-800);
+  background:transparent; color:var(--red-800);
 }
 
 
@@ -683,11 +702,11 @@ header#top .nav-link {
   border-radius: 8px;              /* slightly rounded */
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
-
+/* HAPUS hover pink di top navbar */
 header#top .nav-link:hover {
-  background: #fff1f1;             /* soft red hover background */
-  color: var(--red-700);           /* stronger red text */
-  transform: translateY(-1px);     /* subtle lift */
+  background: transparent;
+  color: var(--red-700);
+  transform: translateY(-1px);
 }
 
 header#top .nav-link i {

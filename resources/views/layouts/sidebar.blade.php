@@ -19,7 +19,7 @@
         <aside id="sidebar">
             <div class="d-flex">
                 <button id="toggle-btn" type="button" aria-label="Toggle sidebar">
-                    <img src="{{ asset('img/logo-outline.png') }}" class="avatar rounded-circle" alt="Logo" width="35" height="35" style="margin-left: 1px">
+                    <img src="{{ asset('img/logo-outline.png') }}" class="avatar rounded-circle" alt="Logo" width="35" height="35" >
                 </button>
                 <div class="sidebar-logo">
                     <a href="#">RLEGS</a>
@@ -79,7 +79,7 @@
                     </a>
                 </li>
             </ul> --}}
-            <div class="sidebar-footer">
+            <div class="sidebar-footer">w
                 <a href="{{ route('profile.edit') }}" class="sidebar-link">
                     <i class="lni lni-gear-1"></i><span>Settings</span>
                 </a>

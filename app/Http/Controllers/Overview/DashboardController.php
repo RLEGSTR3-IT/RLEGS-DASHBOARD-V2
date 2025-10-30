@@ -85,23 +85,21 @@ class DashboardController extends Controller
 
     /**
      * Handle Account Manager Dashboard
+     * FIXED: Gunakan Laravel Service Container untuk auto-resolve dependencies
      */
     private function handleAmDashboard(Request $request)
     {
-        $amController = new AmDashboardController($this->revenueService);
+        $amController = app(AmDashboardController::class);
         return $amController->index($request);
     }
 
     /**
      * Handle Witel Dashboard
+     * FIXED: Gunakan Laravel Service Container untuk auto-resolve dependencies
      */
     private function handleWitelDashboard(Request $request)
     {
-        $witelController = new WitelDashboardController(
-            $this->revenueService,
-            $this->rankingService,
-            $this->performanceService
-        );
+        $witelController = app(WitelDashboardController::class);
         return $witelController->index($request);
     }
 
@@ -1040,7 +1038,8 @@ class DashboardController extends Controller
         }
 
         try {
-            $amController = new \App\Http\Controllers\Overview\AmDashboardController($this->revenueService);
+            // Gunakan service container untuk resolve
+            $amController = app(AmDashboardController::class);
 
             // Get AM's performance summary
             $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
@@ -1082,7 +1081,7 @@ class DashboardController extends Controller
         }
 
         try {
-            $amController = new \App\Http\Controllers\Overview\AmDashboardController($this->revenueService);
+            $amController = app(AmDashboardController::class);
 
             $accountManager = AccountManager::where('id', $user->account_manager_id)->first();
             if (!$accountManager) {
@@ -1123,7 +1122,7 @@ class DashboardController extends Controller
         }
 
         try {
-            $amController = new \App\Http\Controllers\Overview\AmDashboardController($this->revenueService);
+            $amController = app(AmDashboardController::class);
             return $amController->export($request);
 
         } catch (\Exception $e) {
@@ -1163,7 +1162,7 @@ class DashboardController extends Controller
             $customerPerformance = $this->performanceService->getAMCustomerPerformance($id, $currentYear);
 
             // FIXED: View path sesuai file yang ada
-            return view('detailAM', compact(
+            return view('am.detailAM', compact(
                 'accountManager',
                 'performanceData',
                 'monthlyChart',

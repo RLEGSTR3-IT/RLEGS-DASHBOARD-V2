@@ -104,3 +104,62 @@
 
 .section-block { border-radius: var(--radius-xl); box-shadow:  var(--shadow-card); min-height: auto; padding: 0; }
 .section-block:hover { box-shadow:  var(--shadow-card-hover); transform: none; }
+
+/* NOTE: New Stuff */
+
+/* General font for the example */
+body {
+    background-color: #ffffff; /* Light grey background to make the white card pop */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2rem;
+}
+
+/* The main white card container */
+.header-block {
+    background-color: #ffffff;
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    padding: 24px 32px; /* Inner spacing */
+    border-top: 4px solid #d90429; /* The key red top border */
+}
+
+/* Flexbox container to align items */
+.header-content {
+    display: flex;
+    justify-content: space-between; /* Pushes text and button to opposite ends */
+    align-items: center; /* Vertically aligns them in the middle */
+}
+
+/* Text styling */
+.header-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #212529; /* Dark text color */
+}
+
+.header-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    color: #6c757d; /* Lighter, secondary text color */
+}
+
+/* Button styling */
+.export-btn {
+    background-color: #d90429; /* Matching red background */
+    color: #ffffff; /* White text */
+    border: none;
+    border-radius: 6px; /* Slightly rounded corners for the button */
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between the icon and the text */
+    transition: background-color 0.2s ease-in-out; /* Smooth hover effect */
+}
+
+.export-btn:hover {
+    background-color: #b50321; /* A slightly darker red for hover */
+}

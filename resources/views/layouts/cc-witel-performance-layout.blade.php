@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<t!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -52,13 +52,8 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="{{ route('witel.perform') }}" class="sidebar-link">
-                        <i class="lni lni-buildings-1"></i><span>CC & Witel</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
                     <a href="{{ route('treg3.index') }}" class="sidebar-link">
-                        <i class="lni lni-buildings-1"></i><span>[NEW] CC & Witel</span>
+                        <i class="lni lni-buildings-1"></i><span>CC & Witel</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
@@ -97,34 +92,26 @@
                       <ul class="navbar-nav flex-row gap-3 mb-0 d-none d-md-flex">
                         <li class="nav-item">
                           <a href="#trend-revenue" class="nav-link d-flex align-items-center px-3 py-2">
-                            <i class="lni lni-bar-chart-4 me-2"></i><span>Trend Revenue</span>
-                          </a>
-                        </li>
-                        <li class="nav-item">
-                          <a href="#revenue-performance" class="nav-link d-flex align-items-center px-3 py-2">
-                            <i class="lni lni-dollar-circle me-2"></i><span>Revenue Performance</span>
+                            <i class="lni lni-bar-chart-4 me-2"></i><span>Revenue Trend</span>
                           </a>
                         </li>
                         <li class="nav-item">
                           <a href="#witel-performance" class="nav-link d-flex align-items-center px-3 py-2">
-                            <i class="lni lni-buildings-1 me-2"></i><span>Witel Performance</span>
+                            <i class="lni lni-buildings-1 me-2"></i><span>Witel Achievement</span>
                           </a>
                         </li>
                         <li class="nav-item">
                           <a href="#top-customers" class="nav-link d-flex align-items-center px-3 py-2">
-                            <i class="lni lni-trophy-1 me-2"></i><span>Top Customers</span>
+                            <i class="lni lni-trophy-1 me-2"></i><span>Customers Leaderboard</span>
                           </a>
                         </li>
+                        {{--
                         <li class="nav-item">
                           <a href="#division-overview" class="nav-link d-flex align-items-center px-3 py-2">
-                            <i class="lni lni-pie-chart-2 me-2"></i><span>Division Overview</span>
+                            <i class="lni lni-pie-chart-2 me-2"></i><span>Segmentation Overview</span>
                           </a>
                         </li>
-                        <li class="nav-item">
-                          <a href="#cc-performance" class="nav-link d-flex align-items-center px-3 py-2">
-                            <i class="lni lni-search-2 me-2"></i><span>CC Performance</span>
-                          </a>
-                        </li>
+                        --}}
                       </ul>
                     </nav>
 

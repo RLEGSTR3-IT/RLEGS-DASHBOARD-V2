@@ -77,6 +77,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // CC + Witel data fetch
         Route::get('/trend-data', [CCWitelPerformController::class, 'fetchTrendData']);
         Route::get('/witel-performance-data', [CCWitelPerformController::class, 'fetchWitelPerformanceData']);
+        Route::get('/customers-leaderboard', [CCWitelPerformController::class, 'fetchOverallCustomersLeaderboard']);
 
         // Core admin functionality
         Route::get('tab-data', [DashboardController::class, 'getTabData'])->name('tab-data');

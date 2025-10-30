@@ -621,5 +621,497 @@
     }
 }
 
-/* start of trans from blade to here */
+/* start of trans from blade to here (NOTE: Definitely contains duplicates, good luck) */
+.filters-row {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
 
+.date-filter-container,
+.divisi-filter-container {
+    position: relative;
+    min-width: 200px;
+}
+
+/* Date filter styling - with WHITE TEXT color */
+.date-filter {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    border: 1px solid #2c5aa0;
+    border-radius: 6px;
+    background-color: #2c5aa0;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.date-filter:hover {
+    background-color: #224785;
+    border-color: #224785;
+}
+
+.date-filter i {
+    margin-right: 10px;
+    color: white;
+}
+
+.date-filter .fa-chevron-down {
+    margin-left: 10px;
+    font-size: 12px;
+    color: white;
+}
+
+#dateRangeText {
+    color: white;
+}
+
+/* Filter button styling */
+.filter-button {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    border: 1px solid #2c5aa0;
+    border-radius: 6px;
+    background-color: #2c5aa0;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.filter-button:hover {
+    background-color: #224785;
+    border-color: #224785;
+}
+
+.filter-button i {
+    color: white;
+}
+
+.filter-divisi-value {
+    font-weight: 600;
+    color: white;
+    margin-left: 5px;
+}
+
+/* Cleaner styling for filter panel */
+#filterPanel {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    width: 280px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: 1050;
+    padding: 15px;
+    display: none;
+}
+
+.regions-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.region-row {
+    display: flex;
+    gap: 30px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.region-box {
+    flex: 1;
+    max-width: 345px;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.region-box:hover:not([style*="pointer-events: none"]) {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+    transform: translateY(-1px);
+}
+
+.region-box.active {
+    background-color: #1e5bb0;
+    color: white;
+    border-color: #1e5bb0;
+    box-shadow: 0 2px 8px rgba(30, 91, 176, 0.3);
+}
+
+.region-box.active:hover:not([style*="pointer-events: none"]) {
+    background-color: #1a4f9a;
+    border-color: #1a4f9a;
+}
+
+.region-box.active:not([data-region="all"])::after {
+    content: "✓";
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.region-box[style*="pointer-events: none"] {
+    cursor: not-allowed !important;
+    background-color: #f5f5f5 !important;
+    color: #999 !important;
+    border-color: #ddd !important;
+    position: relative;
+}
+
+.region-box[style*="pointer-events: none"]:hover {
+    background-color: #f5f5f5 !important;
+    transform: none !important;
+}
+
+/*  Add "locked" icon for disabled buttons */
+.region-box[style*="pointer-events: none"]:not(.active)::before {
+    content: "🔒";
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+.region-box[data-region="all"] {
+    font-weight: 600;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.region-box[data-region="all"].active {
+    background: linear-gradient(135deg, #1e5bb0 0%, #1a4f9a 100%);
+    font-weight: 700;
+}
+
+.region-box[data-region="all"]:hover:not([style*="pointer-events: none"]) {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.region-box[data-region="all"].active:hover:not([style*="pointer-events: none"]) {
+    background: linear-gradient(135deg, #1a4f9a 0%, #164080 100%);
+}
+
+/* Achievement percentage styling */
+.achievement-percentage {
+    font-size: 1.2em;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.achievement-percentage.success {
+    color: #22c55e;
+}
+
+.achievement-percentage.good {
+    color: #3b82f6;
+}
+
+.achievement-percentage.warning {
+    color: #f59e0b;
+}
+
+.achievement-percentage.danger {
+    color: #ef4444;
+}
+
+.division-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* === Summary Card Color Styling === */
+.summary-card.rlegs {
+    border-left: 6px solid #C62828;
+}
+.summary-card.rlegs .summary-icon {
+    background-color: #C62828;
+}
+.summary-card.dss {
+    border-left: 6px solid #003366; /* Biru Tua */
+}
+.summary-card.dss .summary-icon {
+    background-color: #003366;
+}
+
+/* DSS - Biru Tua */
+.summary-card.dss {
+    border-left: 6px solid #003366; /* Biru Tua */
+}
+.summary-card.dss .summary-icon {
+    background-color: #003366;
+}
+
+/* DPS - Biru Muda (lebih kontras, tidak terlalu terang) */
+.summary-card.dps {
+    border-left: 6px solid #3399FF; /* Medium Sky Blue */
+}
+.summary-card.dps .summary-icon {
+    background-color: #3399FF;
+}
+
+
+/* DGS - Dark Orange (selaras dengan JavaScript) */
+.summary-card.dgs {
+    border-left: 6px solid #FF8C00; /* Dark Orange */
+}
+.summary-card.dgs .summary-icon {
+    background-color: #FF8C00;
+}
+
+
+
+/* Chart container enhancements */
+.chart-container {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.chart-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-title .chart-icon {
+    width: 24px;
+    height: 24px;
+    opacity: 0.7;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.chart-body {
+    position: relative;
+    min-height: 350px;
+}
+
+/* Filter overlay */
+.filter-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 1040;
+}
+
+/* Alert styling */
+.alert-container {
+    transition: all 0.3s ease;
+}
+
+/* Filter tabs */
+.filter-tabs {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.filter-tab-btn {
+    padding: 8px 15px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.filter-tab-btn.active {
+    color: #2c5aa0;
+    border-bottom-color: #2c5aa0;
+}
+
+/* Filter content */
+.filter-content {
+    padding: 10px 0;
+}
+
+.form-check {
+    margin-bottom: 10px;
+}
+
+/* Empty data state */
+.empty-data-state {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    z-index: 5;
+}
+
+.empty-data-state i {
+    font-size: 48px;
+    color: #6c757d;
+    margin-bottom: 16px;
+}
+
+.empty-data-state .empty-text {
+    color: #6c757d;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Chart header layout */
+.chart-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.chart-filters {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.chart-filters .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.chart-filters .filter-group label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+.chart-canvas-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+}
+
+.chart-canvas-container canvas {
+    max-height: 350px !important;
+}
+
+/* Horizontal chart container */
+.horizontal-chart-container {
+    height: 500px;
+}
+
+/* Period label styling */
+.period-label {
+    background: linear-gradient(135deg, #2c5aa0, #1e4080);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Bootstrap Select Dropdown Styling */
+.bootstrap-select .dropdown-toggle {
+    background-color: #2c5aa0 !important;
+    border-color: #2c5aa0 !important;
+    color: white !important;
+    font-weight: 500 !important;
+    padding: 8px 15px !important;
+    border-radius: 6px !important;
+}
+
+.bootstrap-select .dropdown-toggle:hover,
+.bootstrap-select .dropdown-toggle:focus,
+.bootstrap-select.show .dropdown-toggle {
+    background-color: #224785 !important;
+    border-color: #224785 !important;
+    color: white !important;
+    box-shadow: none !important;
+}
+
+.bootstrap-select .dropdown-menu {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e0e6ed !important;
+}
+
+.bootstrap-select .dropdown-item {
+    padding: 8px 15px !important;
+    transition: all 0.2s ease !important;
+}
+
+.bootstrap-select .dropdown-item:hover,
+.bootstrap-select .dropdown-item.active {
+    background-color: #2c5aa0 !important;
+    color: white !important;
+}
+
+/* Dynamic achievement colors for summary cards */
+.summary-percentage.achieved {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.summary-percentage.not-achieved {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    color: white;
+}

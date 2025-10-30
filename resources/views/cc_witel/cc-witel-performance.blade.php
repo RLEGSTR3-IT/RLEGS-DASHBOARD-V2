@@ -2,6 +2,9 @@
 
 @section('styles')
     {{-- <link rel="stylesheet" href="{{ asset('css/inertia.css') }}"> --}}
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
     {{-- NOTE: change cards ui components to match with the react inertia ones in other repo --}}
     <link rel="stylesheet" href="{{ asset('css/ccwitel.css') }}">
 @endsection
@@ -36,12 +39,12 @@
           @include('cc_witel.partials.witel-performance')
       </div>
 
-      <div class="ccw-component">
-          {{-- @include('cc_witel.partials.division-overview', ['_placeholder' => true]) --}}
+      <div id="top-customers" class="ccw-component">
+          @include('cc_witel.partials.customers-leaderboard')
       </div>
 
       <div class="ccw-component">
-          {{-- @include('cc_witel.partials.top-customers', ['_placeholder' => true]) --}}
+          {{-- @include('cc_witel.partials.division-overview', ['_placeholder' => true]) --}}
       </div>
 
       <div class="ccw-component">

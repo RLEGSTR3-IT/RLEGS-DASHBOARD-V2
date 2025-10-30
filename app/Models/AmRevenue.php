@@ -132,9 +132,18 @@ class AmRevenue extends Model
     public function getPeriodNameAttribute(): string
     {
         $months = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
         ];
 
         return $months[$this->bulan] . ' ' . $this->tahun;
@@ -242,9 +251,9 @@ class AmRevenue extends Model
         }
 
         return $query->selectRaw('account_manager_id, SUM(real_revenue) as total_revenue, SUM(target_revenue) as total_target, COUNT(*) as cc_count')
-                    ->groupBy('account_manager_id')
-                    ->orderBy('total_revenue', 'desc')
-                    ->get();
+            ->groupBy('account_manager_id')
+            ->orderBy('total_revenue', 'desc')
+            ->get();
     }
 
     public static function getTotalRevenueByDivisi($year, $month = null)
@@ -256,9 +265,9 @@ class AmRevenue extends Model
         }
 
         return $query->selectRaw('divisi_id, SUM(real_revenue) as total_revenue, SUM(target_revenue) as total_target, COUNT(DISTINCT account_manager_id) as am_count')
-                    ->whereNotNull('divisi_id')
-                    ->groupBy('divisi_id')
-                    ->get();
+            ->whereNotNull('divisi_id')
+            ->groupBy('divisi_id')
+            ->get();
     }
 
     public static function getTotalRevenueByWitel($year, $month = null)
@@ -270,9 +279,9 @@ class AmRevenue extends Model
         }
 
         return $query->selectRaw('witel_id, SUM(real_revenue) as total_revenue, SUM(target_revenue) as total_target, COUNT(DISTINCT account_manager_id) as am_count')
-                    ->whereNotNull('witel_id')
-                    ->groupBy('witel_id')
-                    ->get();
+            ->whereNotNull('witel_id')
+            ->groupBy('witel_id')
+            ->get();
     }
 
     public static function getTop10AM($year, $month = null)
@@ -283,9 +292,9 @@ class AmRevenue extends Model
     public static function validateProporsiTotal($corporateCustomerId, $year, $month)
     {
         $totalProporsi = static::where('corporate_customer_id', $corporateCustomerId)
-                              ->where('tahun', $year)
-                              ->where('bulan', $month)
-                              ->sum('proporsi');
+            ->where('tahun', $year)
+            ->where('bulan', $month)
+            ->sum('proporsi');
 
         return abs($totalProporsi - 100) < 0.01; // Allow small floating point differences
     }
@@ -326,3 +335,4 @@ class AmRevenue extends Model
         });
     }
 }
+

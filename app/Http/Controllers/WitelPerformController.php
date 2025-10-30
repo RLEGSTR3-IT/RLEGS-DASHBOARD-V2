@@ -5,11 +5,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Revenue;
+use App\Models\AmRevenue;
 use App\Models\Witel;
 use App\Models\Divisi;
 use App\Models\AccountManager;
-use App\Models\Regional;
+// use App\Models\Regional;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -42,8 +42,17 @@ class WitelPerformController extends Controller
             $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
             $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
             $selectedWitel = $request->input('witel', 'all');
-            $selectedRegional = $request->input('regional', 'all');
+            $selectedRegional = $request->input('regional', 'all'); // this shouldn't exist anymore
             $selectedDivisi = $request->input('divisi', 'all');
+
+            Log::info("Entering CC & Witel Performance. Give it up everyone");
+            Log::info("Here damn for now:", [
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'selectedWitel' => $selectedWitel,
+                'selectedRegional' => $selectedRegional,
+                'selectedDivisi' => $selectedDivisi,
+            ]);
 
             // ✅ NEW: Handle array witel from multi-select
             if (is_string($selectedWitel) && $selectedWitel !== 'all') {
@@ -54,12 +63,6 @@ class WitelPerformController extends Controller
             $witels = Witel::pluck('nama')->toArray();
             if (empty($witels)) {
                 $witels = $this->defaultWitels;
-            }
-
-            // Get all regionals
-            $regionals = Regional::pluck('nama')->toArray();
-            if (empty($regionals)) {
-                $regionals = ['TREG 1', 'TREG 2', 'TREG 3', 'TREG 4', 'TREG 5', 'TREG 6', 'TREG 7'];
             }
 
             // Get divisions with fallback to defaults if table is empty
@@ -79,7 +82,6 @@ class WitelPerformController extends Controller
 
             return view('witelPerform', compact(
                 'witels',
-                'regionals',
                 'divisis',
                 'selectedWitel',
                 'selectedRegional',
@@ -408,14 +410,6 @@ class WitelPerformController extends Controller
     {
         $query = AccountManager::query();
 
-        // Apply regional filter
-        if ($regional !== 'all') {
-            $regionalId = Regional::where('nama', $regional)->first()?->id;
-            if ($regionalId) {
-                $query->where('regional_id', $regionalId);
-            }
-        }
-
         // ✅ UPDATED: Apply witel filter (supports array)
         if ($witel !== 'all') {
             if (is_array($witel)) {
@@ -431,9 +425,11 @@ class WitelPerformController extends Controller
                     $query->where('witel_id', $witelId);
                 }
             }
+            Log::info("getAMIdByFilter: Got me some witel:", ['witelId' => $witelId]);
         }
 
         $accountManagerIds = $query->pluck('id')->toArray();
+        Log::info("Got me some AM ids in GAMIBF:", ['accountManagerIds' => $accountManagerIds]);
 
         // ✅ FIXED: Apply division filter using many-to-many relationship
         if ($divisi !== 'all' && !empty($accountManagerIds)) {
@@ -577,6 +573,8 @@ class WitelPerformController extends Controller
                     $achievement = ($currentPeriodData['total_real'] / $currentPeriodData['total_target']) * 100;
                 }
 
+                Log::info("WitelPerform: Revenue Summary Got");
+
                 // ✅ FIXED: Format numbers properly for card display
                 $data[$division] = [
                     'total_real' => $currentPeriodData['total_real'], // Keep raw number
@@ -634,13 +632,16 @@ class WitelPerformController extends Controller
     private function getRevenueForPeriod($accountManagerIds, $startDate, $endDate, $divisionName = null)
     {
         if (empty($accountManagerIds)) {
+            Log::info('WitelPerform: empty accountManagerIds');
             return [
                 'total_target' => 0,
                 'total_real' => 0
             ];
         }
 
-        $query = Revenue::whereIn('account_manager_id', $accountManagerIds)
+        Log::info("WitelPerform: Getting Revenue for Period whatever");
+
+        $query = AmRevenue::whereIn('account_manager_id', $accountManagerIds)
             ->whereBetween('bulan', [$startDate, $endDate]);
 
         // ✅ MAJOR FIX: Add division filter to revenue query
@@ -654,8 +655,7 @@ class WitelPerformController extends Controller
         $result = $query->select(
             DB::raw('COALESCE(SUM(target_revenue), 0) as total_target'),
             DB::raw('COALESCE(SUM(real_revenue), 0) as total_real')
-        )
-            ->first();
+        )->first();
 
         return [
             'total_target' => $result ? $result->total_target : 0,
@@ -736,8 +736,8 @@ class WitelPerformController extends Controller
         }
     }
 
-    /**
-     * ✅ UPDATED: Filter by regional with proper data
+    /*
+        NOTE: Filter by regional with proper data (unused)
      */
     public function filterByRegional(Request $request)
     {

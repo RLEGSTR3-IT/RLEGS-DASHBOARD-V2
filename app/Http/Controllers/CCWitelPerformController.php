@@ -41,7 +41,7 @@ class CCWitelPerformController extends Controller
                 ->where(DB::raw("CONCAT(tahun, '-', LPAD(bulan, 2, '0'), '-01')"), '<=', $request->end_date)
                 ->get();
 
-            Log::info("CCW Controller", ['fetched' => $revenueData]);
+            Log::info("CCW Controller", ['fetched_trend_data' => $revenueData]);
 
             return response()->json($revenueData);
         } catch (\Exception $e) {
@@ -73,8 +73,8 @@ class CCWitelPerformController extends Controller
         // Validation
         $validator = Validator::make($request->all(), [
             'mode' => 'required|in:ytd,monthly,annual',
-            'year' => 'required|integer|min:2020',
-            'month' => 'required|integer|min:1|max:12',
+            'year' => 'nullable|integer|min:2020',
+            'month' => 'nullable|integer|min:1|max:12',
             'source' => 'required|in:reguler,ngtma',
         ]);
         if ($validator->fails()) return response()->json(['error' => $validator->errors()], 422);
@@ -93,6 +93,9 @@ class CCWitelPerformController extends Controller
 
         // Get all Witels
         $witels = DB::table('witel')->select('id', 'nama')->get()->keyBy('id');
+        Log::info('CCW Controller', ['witels_fetched' => $witels]);
+
+        Log::info('CCW Controller - Get ready to fetch buddy');
 
         // Get Annual Target Revenue for all Witels
         $targetsSubquery = DB::table('cc_revenues')
@@ -101,7 +104,9 @@ class CCWitelPerformController extends Controller
             ->groupBy('witel_id');
         $this->applyDateFilters($targetsSubquery, $mode, $year, $month);
         //$targets = DB::query()->fromSub($targetsSubquery, 't')->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
-        $targets = $targetsSubquery->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
+        $targets = DB::query()->fromSub($targetsSubquery, 't')->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
+
+        Log::info('CCW Controller', ['wp_leaderboard_targets' => $targets]);
 
         // Get YTD Real Revenue for all Witels
         $revenueSubquery = DB::table('cc_revenues')
@@ -110,7 +115,9 @@ class CCWitelPerformController extends Controller
             ->groupBy('witel_id');
         $this->applyDateFilters($revenueSubquery, $mode, $year, $month);
         //$revenues = DB::query()->fromSub($revenueSubquery, 'r')->whereNotNull('witel_id')->pluck('revenueM', 'witel_id');
-        $revenues = $revenueSubquery->whereNotNull('witel_id')->pluck('revenueM', 'witel_id');
+        $revenues = DB::query()->fromSub($revenueSubquery, 'r')->whereNotNull('witel_id')->pluck('revenueM', 'witel_id');
+
+        Log::info('CCW Controller', ['wp_leaderboard_revenues' => $revenues]);
 
         // Get ALL Customers for ALL Witels for the selected MONTH
         //$allCustomers = DB::table('cc_revenues')
@@ -132,13 +139,15 @@ class CCWitelPerformController extends Controller
         //    ->get();
 
         $customersQuery = DB::table('cc_revenues')
-            ->select('nama_cc', DB::raw('SUM(real_revenue) as total_revenue'), DB::raw('CASE WHEN division_id IN (1, 2) THEN witel_ho_id WHEN division_id = 3 THEN witel_bill_id END as witel_id'))
+            ->select('nama_cc', DB::raw('SUM(real_revenue) as total_revenue'), DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'))
             ->where('tipe_revenue', $dbSource)
             ->groupBy('witel_id', 'nama_cc')
             ->orderBy('witel_id')
             ->orderByDesc('total_revenue');
         $this->applyDateFilters($customersQuery, $mode, $year, $month);
-        $allCustomers = $customersQuery->whereNotNull(DB::raw('CASE WHEN division_id IN (1, 2) THEN witel_ho_id WHEN division_id = 3 THEN witel_bill_id END'))->get();
+        $allCustomers = DB::query()->fromSub($customersQuery, 't')->whereNotNull('witel_id')->get();
+
+        Log::info('CCW Controller', ['wp_leaderboard_allCustomers' => $allCustomers]);
 
         // Process customers into a map for easy lookup
         $customerMap = [];
@@ -171,8 +180,68 @@ class CCWitelPerformController extends Controller
             return $b['revenueM'] <=> $a['revenueM'];
         });
 
-        Log::info("CCW Controller", ['returned' => $leaderboard]);
+        Log::info("CCW Controller", ['returned_leaderboard' => $leaderboard]);
 
         return response()->json($leaderboard);
+    }
+
+    public function fetchOverallCustomersLeaderboard(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'source' => 'required|in:reguler,ngtma',
+            'division_id' => 'required|integer|in:1,2,3', // 1=DGS, 2=DSS, 3=DPS
+            'mode' => 'required|in:ytd,monthly,annual',
+            'year' => 'nullable|integer|min:2020',
+            'month' => 'nullable|integer|min:1|max:12',
+        ]);
+        if ($validator->fails()) return response()->json(['error' => $validator->errors()], 422);
+
+        $dbSource = $request->source;
+        $divisionId = $request->division_id;
+        $mode = $request->mode;
+
+        $now = Carbon::now();
+        $year = $request->input('year', $now->year);
+        $month = $request->input('month', $now->month);
+
+        if ($mode === 'ytd') {
+            $year = $now->year;
+            $month = $now->month;
+        }
+
+        $witelIdColumn = ($divisionId == 3) ? 'witel_bill_id' : 'witel_ho_id';
+
+        try {
+            // 4. Query Top Customers
+            $topCustomers = DB::table('cc_revenues as cr')
+                ->select(
+                    'cr.nama_cc',
+                    DB::raw('SUM(cr.real_revenue) as total_revenue'),
+                    DB::raw('SUM(cr.target_revenue) as target_revenue'),
+                    'w.nama as witel_name' // Select Witel name
+                )
+                ->leftJoin('witel as w', "cr.$witelIdColumn", '=', 'w.id') // Join with Witel table
+                ->where('cr.tipe_revenue', $dbSource)
+                ->where('cr.divisi_id', $divisionId)
+                ->whereNotNull('cr.nama_cc')      // Ensure customer name exists
+                ->groupBy('cr.nama_cc', 'w.nama') // Group by customer and witel name
+                ->orderByDesc('total_revenue');
+            $this->applyDateFilters($topCustomers, $mode, $year, $month);
+
+            $allCustomers = $topCustomers->get()
+                ->map(function ($customer) {
+                    $customer->achievement = ($customer->target_revenue > 0)
+                        ? ($customer->total_revenue / $customer->target_revenue) * 100
+                        : null;
+                    return $customer;
+                });
+
+            Log::info('CCW Controller - Top Customers Fetch:', ['fetched_customers_leaderboard' => $allCustomers]);
+
+            return response()->json($allCustomers);
+        } catch (\Exception $e) {
+            Log::error('CCW Controller - Top Customers Fetch Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error fetching top customers.'], 500);
+        }
     }
 }

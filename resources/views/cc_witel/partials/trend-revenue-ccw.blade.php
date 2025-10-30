@@ -30,7 +30,7 @@
                             <i class="fas fa-chart-line text-green-600"></i>
                         </h2>
                         <p id="header-subtitle" class="header-subtitle">
-                            Monthly revenue performance
+                            Revenue performance
                         </p>
                     </div>
                 </div>
@@ -341,7 +341,7 @@
                 // Update the subtitle based on the division and time range
                 const divisionText = state.division === 'All' ? 'all divisions' : state.division;
                 const timeFrameText = state.timeRange === 'ytd' ? `(YTD ${new Date().getFullYear()})` : `(Custom Range)`;
-                dom.headerSubtitle.textContent = `Monthly revenue performance across ${divisionText} ${timeFrameText}`;
+                dom.headerSubtitle.textContent = `Revenue performance across ${divisionText} ${timeFrameText}`;
 
                 // Update the date range display
                 const endText = endDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });

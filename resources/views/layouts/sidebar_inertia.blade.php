@@ -10,7 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css">
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.css">
 
   <link rel="stylesheet" href="{{ asset('css/sidebarpage.css') }}">
   <link rel="stylesheet" href="{{ asset('css/overview.css') }}">
@@ -45,7 +45,7 @@
         </a>
       </li>
       <li class="sidebar-item">
-        <a href="{{ route('revenue.index') }}" class="sidebar-link">
+        <a href="{{ route('revenue.data') }}" class="sidebar-link">
           <i class="lni lni-file-pencil"></i><span>Data Revenue</span>
         </a>
       </li>
@@ -55,7 +55,7 @@
         </a>
       </li>
       <li class="sidebar-item">
-        <a href="{{ url('leaderboardAM') }}" class="sidebar-link">
+        <a href="{{ route('leaderboard') }}" class="sidebar-link">
           <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
         </a>
       </li>
@@ -72,7 +72,7 @@
     </ul>
 
     <div class="sidebar-footer">
-      <a href="{{ route('profile.edit') }}" class="sidebar-link">
+      <a href="{{ route('profile.index') }}" class="sidebar-link">
         <i class="lni lni-gear-1"></i><span>Settings</span>
       </a>
     </div>
@@ -84,7 +84,7 @@
   </aside>
 
   {{-- ===== Content column (offset by fixed rail) ===== --}}
-  <div id="content-wrapper" class="flex min-h-screen flex-col bg-gray-50 pt-4"> <!-- pt-20 = 80px matches header height -->
+  <div id="content-wrapper" class="flex min-h-screen flex-col bg-gray-50 pt-4">
 
     {{-- Top navbar (fixed) --}}
     <header id="top">
@@ -153,7 +153,7 @@
                   </span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                  <li><a class="dropdown-item" href="{{ route('profile.edit') }}">{{ __('Settings') }}</a></li>
+                  <li><a class="dropdown-item" href="{{ route('profile.index') }}">{{ __('Settings') }}</a></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <form method="POST" action="{{ route('logout') }}" class="m-0">

@@ -539,7 +539,7 @@
                                 <option value="achievement" {{ $filters['chart_display'] == 'achievement' ? 'selected' : '' }}>Achievement</option>
                             </select>
                         </div>
-                        
+
                         <div class="filter-group">
                             <select id="chartYearFilter" class="selectpicker" title="Tahun">
                                 @foreach($filterOptions['available_years'] as $year)

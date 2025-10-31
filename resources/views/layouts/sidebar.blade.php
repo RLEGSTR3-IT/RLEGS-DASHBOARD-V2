@@ -51,11 +51,7 @@
                                 <i class="lni lni-react"></i><span>Witel</span>
                             </a>
                         </li>
-                        <li class="sidebar-item">
-                            <a href="{{ url('leaderboardAM') }}" class="sidebar-link">
-                                <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
-                            </a>
-                        </li>
+                        
                         <li class="sidebar-item">
                             <a href="{{ route('dashboard.treg3') }}" class="sidebar-link">
                                 <i class="lni lni-react"></i><span>TREG-3 React Dashboard</span>

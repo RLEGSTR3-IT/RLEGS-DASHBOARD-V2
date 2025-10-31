@@ -15,7 +15,7 @@
 
             <div>
                 <x-primary-button class="text-white">
-                    {{ __('Kirim Ulang Email Verifikasi') }}
+                    {{ __('Kirim Email Verifikasi') }}
                 </x-primary-button>
             </div>
         </form>

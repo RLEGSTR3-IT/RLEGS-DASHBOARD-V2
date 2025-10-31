@@ -65,7 +65,7 @@
 
         <h2 class="text-center text-xl font-bold mb-5">Dashboard Monitoring RLEGS</h2>
 
-        <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data" data-recaptcha-action="register">
+        <form id="registration-form" method="POST" action="{{ route('register') }}" enctype="multipart/form-data" data-recaptcha-action="register">
           @csrf
 
           <!-- Role Selection Dropdown -->
@@ -82,7 +82,7 @@
             @enderror
           </div>
 
-          <!-- Account Manager Fields -->
+          <!-- NOTE: Account Manager Fields -->
           <div id="account_manager_fields">
             <div class="mb-4">
               <label for="account_manager_search" class="block font-medium text-sm text-gray-700 mb-1">Nama Account Manager</label>
@@ -93,8 +93,9 @@
                      class="absolute z-10 w-full bg-white shadow-md rounded-lg mt-1 hidden"></div>
               </div>
               <input type="hidden" id="account_manager_id" name="account_manager_id" required>
+              <p class="text-red-500 text-xs mt-1 error-msg" id="error_am"></p>
               @error('account_manager_id')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                <p class="text-red-500 text-xs mt-1" id="error_am_id" >{{ $message }}</p>
               @enderror
             </div>
 
@@ -230,7 +231,6 @@
             @enderror
           </div>
 
-          <!-- TODO: add a captcha before submission -->
           <x-recaptcha-v3 />
 
           <!-- Footer: login link + submit -->
@@ -277,6 +277,30 @@
   </div>
 
   <script>
+    // CSRF Token refresh
+    (async function () {
+      async function refreshCsrf() {
+        try {
+          const res = await fetch('{{ route('csrf.token') }}', { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const { token } = await res.json();
+          // update meta
+          const meta = document.querySelector('meta[name="csrf-token"]');
+          if (meta) meta.setAttribute('content', token);
+          // update all hidden _token inputs
+          document.querySelectorAll('input[name="_token"]').forEach(i => { i.value = token; });
+        } catch (_) {}
+      }
+
+      // Refresh when the tab regains focus (common 419 trigger)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshCsrf();
+      });
+
+      // Also refresh on a timer (every 5 minutes)
+      setInterval(refreshCsrf, 5 * 60 * 1000);
+    })();
+
     document.addEventListener('DOMContentLoaded', function () {
       // cacptcha check
       const forms = document.querySelectorAll('form[data-recaptcha-action]');
@@ -290,6 +314,8 @@
               }
           });
       });
+
+
 
       // typing animation
       const text = 'Welcome Back!';
@@ -398,15 +424,108 @@
         }
       });
 
-      // AM search
+      // AM search and check account availability
+      const registForm = document.getElementById('registration-form');
       const searchInput = document.getElementById('account_manager_search');
       const suggestionsContainer = document.getElementById('account_manager_suggestions');
       const idInput = document.getElementById('account_manager_id');
+      const errorContainer = document.getElementById('error_am');
+      // NOTE: might be redundant, use querySelectorAll instead? but who cares though
+      const amIdErrorContainer = document.getElementById('error_am_id');
+      const submitBtn = registForm?.querySelector('[type="submit"]');
       let debounceTimer;
 
+      // AM Account Exists
+      function showInlineError(msg) {
+        if (!errorContainer) return;
+        errorContainer.textContent = msg || 'Terjadi kesalahan';
+        errorContainer.classList.add('visible');
+
+        // shake animation
+        errorContainer.style.animation = 'none';
+        requestAnimationFrame(() => { errorContainer.style.animation = 'shake .3s'; });
+      }
+
+      function clearInlineError() {
+        if (!errorContainer || !amIdErrorContainer) return;
+        errorContainer.textContent = '';
+        amIdErrorContainer.textContent = '';
+        errorContainer.classList.remove('visible');
+        amIdErrorContainer.classList.remove('visible');
+      }
+
+      function setSubmitEnabled(on) {
+        submitBtn.disabled = !on;
+        submitBtn.classList.toggle('disabled', !on);
+      }
+
+      // setSubmitEnabled(false);
+
+      async function handleSelectSuggestionClick(am) {
+        searchInput.value = am.nama;
+        try {
+          const res = await fetch(`/am/check-account-available?account_manager_id=${encodeURIComponent(am.id)}`, {
+            headers: { 'Accept': 'application/json' }
+          });
+
+          if (res.status === 409) {
+            const j = await res.json().catch(() => ({}));
+            // TODO: if AM already has an account, assign idInput as 'invalid' or something so backend can return->withErrors()
+            idInput.value = null;
+            showInlineError(j.message || 'Nama ini telah terdaftar pada akun lain.');
+            searchInput.focus();
+            return;
+          }
+          if (!res.ok) {
+            showInlineError('Gagal memeriksa ketersediaan akun. Silahkan coba lagi.');
+            return;
+          }
+
+          clearInlineError();
+          idInput.value = am.id;
+          // setSubmitEnabled(true);
+          // erm maybe not needed
+          // suggestionsBox.classList.add('hidden');
+        }
+        catch {
+          showInlineError('Terjadi kesalahan jaringan.');
+        }
+      }
+
+      registForm.addEventListener('submit', (e) => {
+        // user typed a name but never selected (am_id empty)
+        if (!idInput.value) {
+          if (searchInput.value.trim().length > 0) {
+            e.preventDefault();
+            setError('Pilih nama AM dari daftar agar valid.');
+            searchInput.focus();
+          } else {
+            e.preventDefault();
+            setError('Kolom AM wajib diisi.');
+            searchInput.focus();
+          }
+          return;
+        }
+
+        // Optional: ultra-safe recheck right before submit (cheap GET)
+        /*
+        e.preventDefault();
+        fetch(`/am/check-registered?am_id=${encodeURIComponent(idInput.value)}`, { headers:{Accept:'application/json'} })
+          .then(r => (r.status === 409 ? r.json().then(j=>{ throw new Error(j.message||'AM sudah terdaftar.'); }) : (r.ok?r.json():Promise.reject())))
+          .then(() => { clearError(); setSubmitEnabled(true); form.submit(); })
+          .catch(err => { setError(err.message); });
+        */
+      });
+
+      // AM Search functionality
       if (searchInput) {
         searchInput.addEventListener('input', function () {
           clearTimeout(debounceTimer);
+          idInput.value = null;
+
+          clearInlineError();
+          // setSubmitEnabled(false);
+
           const query = this.value.trim();
           if (query.length < 3) { suggestionsContainer.classList.add('hidden'); return; }
 
@@ -419,16 +538,16 @@
               .then(r => r.json())
               .then(data => {
                 suggestionsContainer.innerHTML = '';
-                if (!data.length) { suggestionsContainer.innerHTML = '<div class="p-2 text-center text-gray-500">Tidak ditemukan</div>'; return; }
+                if (!data.length) {
+                    suggestionsContainer.innerHTML = '<div class="p-2 text-center text-gray-500">Tidak ditemukan</div>';
+                    return;
+                }
                 data.forEach(function (am) {
                   const div = document.createElement('div');
                   div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
                   div.textContent = `${am.nama}`;
-                  div.addEventListener('click', function () {
-                    searchInput.value = am.nama;
-                    idInput.value = am.id;
-                    suggestionsContainer.classList.add('hidden');
-                  });
+                  div.addEventListener('click', () => handleSelectSuggestionClick(am));
+
                   suggestionsContainer.appendChild(div);
                 });
               })

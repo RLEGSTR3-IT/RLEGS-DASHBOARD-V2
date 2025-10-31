@@ -105,7 +105,6 @@ class AmDashboardController extends Controller
                 'filterOptions',
                 'filters'
             ));
-
         } catch (\Exception $e) {
             Log::error('AM dashboard rendering failed', [
                 'am_id' => $amId,
@@ -179,7 +178,7 @@ class AmDashboardController extends Controller
             ->get();
 
         // Find current AM position
-        $currentPosition = $rankings->search(function($item) use ($amId) {
+        $currentPosition = $rankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
@@ -213,7 +212,7 @@ class AmDashboardController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        $previousPosition = $previousRankings->search(function($item) use ($amId) {
+        $previousPosition = $previousRankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
@@ -261,7 +260,7 @@ class AmDashboardController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        $currentPosition = $rankings->search(function($item) use ($amId) {
+        $currentPosition = $rankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
@@ -297,7 +296,7 @@ class AmDashboardController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        $previousPosition = $previousRankings->search(function($item) use ($amId) {
+        $previousPosition = $previousRankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
@@ -341,7 +340,7 @@ class AmDashboardController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        $currentPosition = $rankings->search(function($item) use ($amId) {
+        $currentPosition = $rankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
@@ -371,7 +370,7 @@ class AmDashboardController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        $previousPosition = $previousRankings->search(function($item) use ($amId) {
+        $previousPosition = $previousRankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
@@ -473,7 +472,7 @@ class AmDashboardController extends Controller
                 'id' => $accountManager->witel->id,
                 'nama' => $accountManager->witel->nama
             ],
-            'divisis' => $divisiList->map(function($divisi) {
+            'divisis' => $divisiList->map(function ($divisi) {
                 return [
                     'id' => $divisi->id,
                     'nama' => $divisi->nama,
@@ -510,9 +509,9 @@ class AmDashboardController extends Controller
         }
 
         if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function($q) use ($filters) {
+            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
                 $q->where('tipe_revenue', $filters['tipe_revenue'])
-                  ->where('tahun', $filters['tahun']);
+                    ->where('tahun', $filters['tahun']);
             });
         }
 
@@ -591,9 +590,9 @@ class AmDashboardController extends Controller
         }
 
         if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function($q) use ($filters) {
+            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
                 $q->where('tipe_revenue', $filters['tipe_revenue'])
-                  ->where('tahun', $filters['tahun']);
+                    ->where('tahun', $filters['tahun']);
             });
         }
 
@@ -607,7 +606,7 @@ class AmDashboardController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        return $aggregated->map(function($item) use ($filters) {
+        return $aggregated->map(function ($item) use ($filters) {
             $customer = CorporateCustomer::find($item->corporate_customer_id);
             $divisi = Divisi::find($item->divisi_id);
 
@@ -647,9 +646,9 @@ class AmDashboardController extends Controller
         }
 
         if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function($q) use ($filters) {
+            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
                 $q->where('tipe_revenue', $filters['tipe_revenue'])
-                  ->where('tahun', $filters['tahun']);
+                    ->where('tahun', $filters['tahun']);
             });
         }
 
@@ -668,7 +667,7 @@ class AmDashboardController extends Controller
             ->orderBy('bulan')
             ->get();
 
-        return $monthlyData->map(function($item) {
+        return $monthlyData->map(function ($item) {
             $achievementRate = $item->monthly_target > 0
                 ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
                 : 0;
@@ -699,9 +698,9 @@ class AmDashboardController extends Controller
         }
 
         if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function($q) use ($filters) {
+            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
                 $q->where('tipe_revenue', $filters['tipe_revenue'])
-                  ->where('tahun', $filters['tahun']);
+                    ->where('tahun', $filters['tahun']);
             });
         }
 
@@ -709,7 +708,7 @@ class AmDashboardController extends Controller
             ->orderBy('corporate_customer_id')
             ->get();
 
-        return $detailData->map(function($item) use ($filters) {
+        return $detailData->map(function ($item) use ($filters) {
             $achievementRate = $item->target_revenue > 0
                 ? round(($item->real_revenue / $item->target_revenue) * 100, 2)
                 : 0;
@@ -814,7 +813,7 @@ class AmDashboardController extends Controller
                 'YTD' => 'Year to Date',
                 'MTD' => 'Month to Date'
             ],
-            'divisis' => $divisiList->map(function($divisi) {
+            'divisis' => $divisiList->map(function ($divisi) {
                 return [
                     'id' => $divisi->id,
                     'nama' => $divisi->nama,
@@ -953,7 +952,6 @@ class AmDashboardController extends Controller
                 'data' => $data,
                 'tab' => $tab
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM tab data loading failed', [
                 'am_id' => $amId,
@@ -1009,7 +1007,6 @@ class AmDashboardController extends Controller
                 new AmDashboardExport($exportData, $accountManager, $filters),
                 $filename
             );
-
         } catch (\Exception $e) {
             Log::error('AM dashboard export failed', [
                 'am_id' => $amId,
@@ -1096,7 +1093,6 @@ class AmDashboardController extends Controller
                 'success' => true,
                 'data' => $cardData
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM card data loading failed', [
                 'am_id' => $amId,
@@ -1142,7 +1138,6 @@ class AmDashboardController extends Controller
                 'success' => true,
                 'data' => $rankingData
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM ranking data loading failed', [
                 'am_id' => $amId,
@@ -1192,7 +1187,6 @@ class AmDashboardController extends Controller
                 'success' => true,
                 'data' => $chartData
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM chart data loading failed', [
                 'am_id' => $amId,
@@ -1238,7 +1232,6 @@ class AmDashboardController extends Controller
                 'success' => true,
                 'data' => $summary
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM performance summary loading failed', [
                 'am_id' => $amId,
@@ -1314,7 +1307,6 @@ class AmDashboardController extends Controller
                 'data' => $data,
                 'filters' => $filters
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM filter update failed', [
                 'am_id' => $amId,
@@ -1366,7 +1358,7 @@ class AmDashboardController extends Controller
                         'id' => $accountManager->witel->id,
                         'nama' => $accountManager->witel->nama
                     ],
-                    'divisis' => $divisiList->map(function($divisi) {
+                    'divisis' => $divisiList->map(function ($divisi) {
                         return [
                             'id' => $divisi->id,
                             'nama' => $divisi->nama,
@@ -1384,7 +1376,6 @@ class AmDashboardController extends Controller
                     'detail_url' => route('account-manager.show', $id)
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get AM info', [
                 'am_id' => $id,
@@ -1436,7 +1427,6 @@ class AmDashboardController extends Controller
                 'success' => true,
                 'data' => $comparisonData
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM comparison failed', [
                 'am_id' => $amId,
@@ -1480,7 +1470,6 @@ class AmDashboardController extends Controller
                 'success' => true,
                 'data' => $trendData
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM historical trend failed', [
                 'am_id' => $amId,
@@ -1528,7 +1517,6 @@ class AmDashboardController extends Controller
                 'success' => true,
                 'data' => $topCustomers
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM top customers failed', [
                 'am_id' => $amId,
@@ -1569,7 +1557,7 @@ class AmDashboardController extends Controller
                 'witel_name' => $accountManager->witel->nama,
                 'divisi_id' => $accountManager->divisi_id
             ],
-            'divisis' => $divisiList->map(function($divisi) {
+            'divisis' => $divisiList->map(function ($divisi) {
                 return [
                     'id' => $divisi->id,
                     'nama' => $divisi->nama,
@@ -1584,7 +1572,8 @@ class AmDashboardController extends Controller
             ],
             'database_checks' => [
                 'am_revenues_count' => AmRevenue::where('account_manager_id', $id)->count(),
-                'cc_revenues_related' => CcRevenue::whereIn('corporate_customer_id',
+                'cc_revenues_related' => CcRevenue::whereIn(
+                    'corporate_customer_id',
                     AmRevenue::where('account_manager_id', $id)->pluck('corporate_customer_id')
                 )->count(),
                 'pivot_table_count' => DB::table('account_manager_divisi')
@@ -1626,7 +1615,7 @@ class AmDashboardController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        $position = $rankings->search(function($item) use ($amId) {
+        $position = $rankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
@@ -1637,7 +1626,7 @@ class AmDashboardController extends Controller
             'my_position' => $position !== false ? $position + 1 : null,
             'my_achievement' => $myData ? round($myData->achievement_rate, 2) : 0,
             'my_revenue' => $myData ? $myData->total_revenue : 0,
-            'top_5' => $rankings->take(5)->map(function($item) {
+            'top_5' => $rankings->take(5)->map(function ($item) {
                 return [
                     'am_id' => $item->account_manager_id,
                     'achievement' => round($item->achievement_rate, 2),
@@ -1726,10 +1715,18 @@ class AmDashboardController extends Controller
     private function getMonthName($monthNumber)
     {
         $months = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
-            4 => 'April', 5 => 'Mei', 6 => 'Juni',
-            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
-            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
         ];
 
         return $months[$monthNumber] ?? 'Unknown';
@@ -1741,9 +1738,18 @@ class AmDashboardController extends Controller
     private function getShortMonthName($monthNumber)
     {
         $months = [
-            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
-            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agt',
-            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
+            1 => 'Jan',
+            2 => 'Feb',
+            3 => 'Mar',
+            4 => 'Apr',
+            5 => 'Mei',
+            6 => 'Jun',
+            7 => 'Jul',
+            8 => 'Agt',
+            9 => 'Sep',
+            10 => 'Okt',
+            11 => 'Nov',
+            12 => 'Des'
         ];
 
         return $months[$monthNumber] ?? 'N/A';

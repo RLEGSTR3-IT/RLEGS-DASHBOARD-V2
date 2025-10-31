@@ -4,7 +4,6 @@
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/overview.css') }}">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 @endsection
 
 @section('content')
@@ -13,7 +12,7 @@
     <div class="header-dashboard">
         <div class="header-content">
             <div class="header-text">
-                <h1 class="header-title">Overview Data for Admin</h1>
+                <h1 class="header-title">Overview Data</h1>
                 <p class="header-subtitle">
                     Monitoring Pendapatan RLEGS TREG 3
                     @if(isset($cardData['period_text']))

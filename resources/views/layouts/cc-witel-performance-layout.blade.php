@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<t!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,19 +7,17 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@yield('title', 'RLEGS Dashboard')</title>
 
+    <!-- CSS Files -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.lineicons.com/5.0/lineicons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
 
-    <!-- 1) Font + Global Typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/header.css') }}">
-
-    <!-- 2) Komponen/layout spesifik -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/sidebarpage.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/inertia.css') }}">
 
     @yield('styles')
     <style>[x-cloak]{display:none !important}</style>
@@ -28,7 +26,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.13.10/dist/cdn.min.js"></script>
 </head>
 <body>
     <div class="wrapper">
@@ -88,6 +86,35 @@
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                         <span class="navbar-toggler-icon"></span>
                     </button>
+
+                    <!-- Center: quick links with consistent spacing -->
+                    <nav class="flex-fill">
+                      <ul class="navbar-nav flex-row gap-3 mb-0 d-none d-md-flex">
+                        <li class="nav-item">
+                          <a href="#trend-revenue" class="nav-link d-flex align-items-center px-3 py-2">
+                            <i class="lni lni-bar-chart-4 me-2"></i><span>Revenue Trend</span>
+                          </a>
+                        </li>
+                        <li class="nav-item">
+                          <a href="#witel-performance" class="nav-link d-flex align-items-center px-3 py-2">
+                            <i class="lni lni-buildings-1 me-2"></i><span>Witel Achievement</span>
+                          </a>
+                        </li>
+                        <li class="nav-item">
+                          <a href="#top-customers" class="nav-link d-flex align-items-center px-3 py-2">
+                            <i class="lni lni-trophy-1 me-2"></i><span>Customers Leaderboard</span>
+                          </a>
+                        </li>
+                        {{--
+                        <li class="nav-item">
+                          <a href="#division-overview" class="nav-link d-flex align-items-center px-3 py-2">
+                            <i class="lni lni-pie-chart-2 me-2"></i><span>Segmentation Overview</span>
+                          </a>
+                        </li>
+                        --}}
+                      </ul>
+                    </nav>
+
                     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                         <ul class="navbar-nav align-items-center">
                             <li class="nav-item dropdown ms-1">

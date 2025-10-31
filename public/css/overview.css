@@ -96,18 +96,12 @@
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    
-    /* Typography */
-    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-               Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
 /* ===== RESET & BASE ===== */
 * { box-sizing: border-box; }
 
 body {
-    font-family: var(--font-sans);
     line-height: 1.6;
     color: var(--gray-700);
     background: var(--light-blue);
@@ -117,9 +111,48 @@ body {
     letter-spacing: -0.01em;
 }
 
-/* Override font dengan Poppins */
-body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
-    font-family: 'Poppins', sans-serif !important;
+.header-title,
+.header-subtitle,
+.card-title,
+.table-modern thead th,
+.table-modern tbody td,
+.navbar,
+.sidebar-link,
+.dropdown-item,
+.btn,
+.status-badge,
+.customer-title,
+.filter-title,
+.filter-btn,
+.category-btn,
+.filter-select,
+.performance-tabs .nav-link,
+.empty-state-enhanced h5,
+.empty-state-enhanced p,
+.am-title, .am-sub, .am-kpi .count, .am-kpi .pct,
+.stats-title, .stats-value, .stats-period {
+  font-family: inherit !important;   /* warisi --font-main dari global */
+}
+
+/* Hilangkan sisa Poppins eksplisit */
+[class*="Poppins"], [style*="Poppins"]{
+  font-family: inherit !important;
+}
+
+/* Stats number: buang mono lokal agar ikut global */
+.stats-value { /* font-family: var(--font-mono); => HAPUS */
+  letter-spacing: -0.02em;
+}
+
+/* Tab link & filter select: jangan pakai font sendiri */
+.performance-tabs .nav-link,
+.filter-select { /* font-family: 'Poppins', sans-serif; => HAPUS */
+  font-family: inherit !important;
+}
+
+/* AM legend: hapus font khusus */
+.am-title, .am-sub, .am-kpi .count, .am-kpi .pct { /* Poppins => HAPUS */
+  font-family: inherit !important;
 }
 
 /* ===== LAYOUT STRUCTURE ===== */
@@ -145,29 +178,150 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
     backdrop-filter: blur(8px);
 }
 
-/* ===== ENHANCED HEADER ===== */
-.header-dashboard {
-    background: var(--white);
-    color: var(--gray-900);
-    padding: 32px 40px;
-    border-radius: var(--radius-2xl);
-    margin-bottom: 32px;
-    box-shadow: var(--shadow-card);
-    border: 1px solid var(--gray-200);
-    position: relative;
-    overflow: visible !important;
-    z-index: 5; 
+/* ===============================
+   HEADER COMPACT (OVERVIEW)
+   — hanya override area header
+   =============================== */
+
+/* Container header: kecilkan padding + strip merah */
+.header-dashboard{
+  background:
+    linear-gradient(var(--telkom-red), var(--telkom-red)) top/100% 4px no-repeat,
+    var(--white) !important;
+  color: var(--gray-900);
+  padding: 18px 24px;              /* <= lebih kompak */
+  border-radius: var(--radius-xl); /* selaras dengan page bawah */
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--gray-200);
+  position: relative;
+  overflow: visible !important;
+  min-height: auto;                /* pastikan tidak memaksa tinggi */
 }
-.header-dashboard::before {
-    content: '';
-    position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-    background: var(--gradient-red);
+
+/* === HEADER SCALE TWEAK – medium (mendekati header Data Revenue) === */
+.header-dashboard{
+  /* strip merah sedikit lebih tebal + padding sedang */
+  background:
+    linear-gradient(var(--telkom-red), var(--telkom-red)) top/100% 5px no-repeat,
+    var(--white) !important;
+  padding: 24px 28px;            /* naik dari 18/24 -> 24/28 */
+  border-radius: var(--radius-2xl);
 }
-.header-content { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
-.header-text { flex: 1; }
-.header-title { font-size: 2.5rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.04em; color: var(--gray-900); line-height: 1.2; }
-.header-subtitle { font-size: 1rem; font-weight: 500; color: var(--gray-600); margin: 0; line-height: 1.4; }
-.header-actions { flex-shrink: 0; display: flex; gap: 55px; align-items: flex-start; }
+
+.header-content{
+  align-items: center;
+  gap: 18px;
+}
+
+.header-title{
+  font-weight: 800;
+  font-size: var(--fz-h1);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+  color: var(--c-title);
+  margin: 0 0 6px 0;
+}
+
+.header-subtitle{
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: var(--lh-snug);
+  color: var(--c-muted);
+  margin: 0;
+}
+
+/* Kontrol filter & tombol: sedikit lebih tinggi agar proporsional */
+.header-actions .btn,
+.header-actions .select-pill__btn,
+.header-actions .filter-select,
+.header-actions .form-select{
+  height: 42px;
+  min-height: 42px;
+  padding: 8px 14px;
+  font-size: .9rem;
+  border-radius: 12px;
+}
+
+.header-actions{ gap: 12px; }
+
+/* Responsif */
+@media (max-width: 640px){
+  .header-dashboard{ padding: 18px; }
+  .header-title{ font-size: 1.9rem; }
+}
+
+
+/* Layout baris: judul kiri, aksi/filters kanan, rata tengah */
+.header-content{
+  display: flex;
+  align-items: center;             /* <= sematkan vertikal */
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header-text{ flex: 1 1 auto; min-width: 0; }
+
+/* Typography judul & subjudul — samakan dengan header “Data Revenue RLEGS” */
+.header-title{
+  font-weight: 800;
+  font-size: 2rem;                 /* <= lebih kecil dari 2.5rem */
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--gray-900);
+  margin: 0 0 4px 0;               /* <= kecilkan jarak bawah */
+}
+
+.header-subtitle{
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Aksi & filter di kanan, kompak */
+.header-actions{
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;                       /* rapatkan jarak */
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 10;
+}
+
+/* Samakan tinggi kontrol jadi 40px agar tidak menambah tinggi header */
+.header-actions .btn,
+.header-actions .select-pill__btn,
+.header-actions .filter-select,
+.header-actions .form-select{
+  min-height: 40px;
+  height: 40px;
+  padding: 8px 12px;
+  font-size: .875rem;
+  border-radius: 12px;
+}
+
+/* Dropdown panel lebih dekat ke tombol */
+.header-actions .select-menu{ margin-top: 6px; }
+
+/* Filter group di dalam header — kompak */
+.header-dashboard .filter-group{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Responsif ringan */
+@media (max-width: 992px){
+  .header-content{ flex-direction: column; align-items: flex-start; gap: 12px; }
+  .header-actions{ width: 100%; justify-content: flex-start; }
+}
+@media (max-width: 640px){
+  .header-dashboard{ padding: 16px; }
+  .header-title{ font-size: 1.75rem; }
+}
 
 /* ===== ENHANCED STATS CARDS ===== */
 .stats-card {
@@ -190,7 +344,7 @@ body, .main-content, .header-title, .card-title, .stats-title, .stats-value {
 .stats-card:hover::before { height: 6px; }
 
 .stats-title { font-size: 0.75rem; font-weight: 600; color: var(--gray-500); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.1em; line-height: 1.2; }
-.stats-value { font-size: 2.25rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; line-height: 1.1; font-family: var(--font-mono); letter-spacing: -0.02em; }
+.stats-value { font-size: 2.25rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; line-height: 1.1; letter-spacing: -0.02em; }
 .stats-period { font-size: 0.8125rem; color: var(--gray-500); font-weight: 500; margin: 0; }
 .stats-icon { position: absolute; top: 24px; right: 24px; width: 48px; height: 48px; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; font-size: 20px; transition: var(--transition-bounce); opacity: 0.9; }
 .stats-card:hover .stats-icon { transform: scale(1.05) rotate(3deg); opacity: 1; }
@@ -409,7 +563,7 @@ button:focus, .btn:focus { outline: none; box-shadow: 0 0 0 3px var(--telkom-red
 .performance-tabs .nav-link {
     border: none; border-bottom: 3px solid transparent;
     padding: 16px 24px; font-weight: 600; color: var(--gray-600);
-    background: none; font-family: 'Poppins', sans-serif; transition: var(--transition); font-size: 0.9rem;
+    background: none; transition: var(--transition); font-size: 0.9rem;
 }
 .performance-tabs .nav-link:hover { color: var(--telkom-red); background: var(--telkom-red-soft); }
 .performance-tabs .nav-link.active { color: var(--telkom-red); border-bottom-color: var(--telkom-red); background: var(--white); }
@@ -428,8 +582,8 @@ button:focus, .btn:focus { outline: none; box-shadow: 0 0 0 3px var(--telkom-red
     margin: 20px 0; border: 1px solid var(--gray-200);
 }
 .empty-state-enhanced i { font-size: 4rem; margin-bottom: 20px; opacity: 0.5; color: var(--gray-400); display: block; }
-.empty-state-enhanced h5 { margin-bottom: 12px; font-weight: 700; color: var(--gray-700); font-size: 1.25rem; font-family: 'Poppins', sans-serif; }
-.empty-state-enhanced p { margin: 0; font-size: 1rem; color: var(--gray-500); line-height: 1.6; max-width: 400px; margin: 0 auto; font-family: 'Poppins', sans-serif; }
+.empty-state-enhanced h5 { margin-bottom: 12px; font-weight: 700; color: var(--gray-700); font-size: 1.25rem;}
+.empty-state-enhanced p { margin: 0; font-size: 1rem; color: var(--gray-500); line-height: 1.6; max-width: 400px; margin: 0 auto;}
 
 /* Filter group (inside performance header) */
 .filter-group { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; justify-content: flex-end; }
@@ -437,7 +591,7 @@ button:focus, .btn:focus { outline: none; box-shadow: 0 0 0 3px var(--telkom-red
     min-width: 120px; max-width: 180px; font-size: 0.875rem;
     border: 1px solid var(--gray-300); border-radius: var(--radius-lg);
     padding: 8px 12px; background: var(--white); color: var(--gray-700);
-    font-family: 'Poppins', sans-serif; font-weight: 500; transition: var(--transition);
+    font-weight: 500; transition: var(--transition);
 }
 .filter-select:focus { border-color: var(--telkom-red); box-shadow: 0 0 0 3px var(--telkom-red-subtle); outline: none; }
 

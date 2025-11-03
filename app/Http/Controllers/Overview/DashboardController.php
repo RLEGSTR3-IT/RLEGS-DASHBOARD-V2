@@ -42,19 +42,26 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
-        Log::info("DashboardController", ['request' => $request]);
+        Log::info("Accessing DashboardController");
 
         $user = Auth::user();
 
         try {
             switch ($user->role) {
                 case 'admin':
+                    Log::info("DashboardController - role is Admin so naturally");
                     return $this->handleAdminDashboard($request);
                 case 'account_manager':
+                    Log::info("DashboardController - role is AM so naturally");
                     return $this->handleAmDashboard($request);
-                case 'witel_support':
-                    return $this->handleWitelDashboard($request);
+                case 'witel':
+                    Log::info("DashboardController - role is Witel so naturally");
+                    return $this->handleWitelDashboard($request, $user->witel_id);
                 default:
+                    Log::info("DashboardController - ermm don't know what role so, bye");
+                    Auth::logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
                     return redirect()->route('login')
                         ->with('error', 'Role tidak memiliki akses ke dashboard.');
             }
@@ -64,6 +71,10 @@ class DashboardController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan sistem.');
@@ -76,10 +87,10 @@ class DashboardController extends Controller
         return $amController->index($request);
     }
 
-    private function handleWitelDashboard(Request $request)
+    private function handleWitelDashboard(Request $request, $witel_id)
     {
         $witelController = app(WitelDashboardController::class);
-        return $witelController->index($request);
+        return $witelController->show($witel_id, $request);
     }
 
     /**
@@ -646,6 +657,7 @@ class DashboardController extends Controller
             ));
         } catch (\Exception $e) {
             Log::error('AM detail failed', ['error' => $e->getMessage()]);
+            Log::info("DashboardController - redirect to dashboard about to begin");
             return redirect()->route('dashboard')->with('error', 'Gagal memuat detail AM');
         }
     }
@@ -665,9 +677,10 @@ class DashboardController extends Controller
             $topAMs = $this->revenueService->getTopAccountManagers($id, 20, $currentYear);
             $categoryDistribution = $this->rankingService->getCategoryDistribution($id, $currentYear);
 
-            return view('detailWitel', compact('witel', 'witelData', 'topAMs', 'categoryDistribution'));
+            return view('witel.detailWitel', compact('witel', 'witelData', 'topAMs', 'categoryDistribution'));
         } catch (\Exception $e) {
             Log::error('Witel detail failed', ['error' => $e->getMessage()]);
+            Log::info("DashboardController - redirect to dashboard about to begin");
             return redirect()->route('dashboard')->with('error', 'Gagal memuat detail Witel');
         }
     }
@@ -679,6 +692,7 @@ class DashboardController extends Controller
             return $ccController->show($id, request());
         } catch (\Exception $e) {
             Log::error('CC detail failed', ['error' => $e->getMessage()]);
+            Log::info("DashboardController - redirect to dashboard about to begin");
             return redirect()->route('dashboard')->with('error', 'Gagal memuat detail CC');
         }
     }
@@ -732,6 +746,7 @@ class DashboardController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Segment detail failed', ['error' => $e->getMessage()]);
+            Log::info("DashboardController - redirect to dashboard about to begin");
             return redirect()->route('dashboard')->with('error', 'Gagal memuat detail Segment');
         }
     }
@@ -1303,4 +1318,3 @@ class DashboardController extends Controller
         ];
     }
 }
-

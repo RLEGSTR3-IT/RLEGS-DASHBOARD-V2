@@ -179,7 +179,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('export')
             ->where('id', '[0-9]+');
 
-        Route::get('{id}/info', function($id) {
+        Route::get('{id}/info', function ($id) {
             $customer = CorporateCustomer::findOrFail($id);
             return response()->json([
                 'success' => true,
@@ -222,7 +222,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('export')
             ->where('id', '[0-9]+');
 
-        Route::get('{id}/info', function($id) {
+        Route::get('{id}/info', function ($id) {
             $witel = Witel::findOrFail($id);
 
             $totalAM = AccountManager::where('witel_id', $id)
@@ -285,7 +285,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ===== GENERAL API ROUTES =====
     Route::prefix('api')->name('api.')->group(function () {
-        Route::get('divisi', function() {
+        Route::get('divisi', function () {
             return response()->json(
                 Divisi::select('id', 'nama', 'kode')
                     ->orderBy('nama')
@@ -293,7 +293,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
         })->name('divisi');
 
-        Route::get('witel', function() {
+        Route::get('witel', function () {
             return response()->json(
                 Witel::select('id', 'nama')
                     ->orderBy('nama')
@@ -301,15 +301,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
         })->name('witel');
 
-        Route::get('witels', function() {
+        Route::get('witels', function () {
             return redirect()->route('api.witel');
         })->name('witels');
 
-        Route::get('witels', function() {
+        Route::get('witels', function () {
             return redirect()->route('api.witel');
         })->name('witels');
 
-        Route::get('segments', function() {
+        Route::get('segments', function () {
             return response()->json(
                 Segment::select('id', 'lsegment_ho', 'ssegment_ho', 'divisi_id')
                     ->orderBy('lsegment_ho')
@@ -317,7 +317,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
         })->name('segments');
 
-        Route::get('segments-by-divisi/{divisi_id}', function($divisi_id) {
+        Route::get('segments-by-divisi/{divisi_id}', function ($divisi_id) {
             return response()->json(
                 Segment::select('id', 'lsegment_ho', 'ssegment_ho')
                     ->where('divisi_id', $divisi_id)
@@ -326,7 +326,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
         })->name('segments-by-divisi');
 
-        Route::get('revenue-sources', function() {
+        Route::get('revenue-sources', function () {
             return response()->json([
                 'all' => 'Semua Source',
                 'HO' => 'HO Revenue',
@@ -334,7 +334,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('revenue-sources');
 
-        Route::get('tipe-revenues', function() {
+        Route::get('tipe-revenues', function () {
             return response()->json([
                 'all' => 'Semua Tipe',
                 'REGULER' => 'Revenue Reguler',
@@ -342,7 +342,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('tipe-revenues');
 
-        Route::get('period-types', function() {
+        Route::get('period-types', function () {
             return response()->json([
                 'YTD' => 'Year to Date',
                 'MTD' => 'Month to Date',
@@ -350,7 +350,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('period-types');
 
-        Route::get('available-years', function() {
+        Route::get('available-years', function () {
             try {
                 $years = CcRevenue::distinct()
                     ->orderBy('tahun', 'desc')
@@ -383,7 +383,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             }
         })->name('available-years');
 
-        Route::get('available-months/{year}', function($year) {
+        Route::get('available-months/{year}', function ($year) {
             try {
                 $months = CcRevenue::where('tahun', $year)
                     ->distinct()
@@ -408,7 +408,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             }
         })->name('available-months');
 
-        Route::get('health', function() {
+        Route::get('health', function () {
             try {
                 DB::connection()->getPdo();
                 $dbStatus = 'connected';
@@ -425,7 +425,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('health');
 
-        Route::get('user-info', function() {
+        Route::get('user-info', function () {
             $user = Auth::user();
             return response()->json([
                 'id' => $user->id,
@@ -446,7 +446,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('user-info');
 
-        Route::get('dashboard-stats', function() {
+        Route::get('dashboard-stats', function () {
             try {
                 $currentYear = date('Y');
                 $currentMonth = date('n');
@@ -488,15 +488,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ===== LEGACY EXPORT COMPATIBILITY =====
-    Route::get('export', function() {
+    Route::get('export', function () {
         return redirect()->route('dashboard.export', request()->all());
     })->name('export');
 
     // ===== PROFILE ROUTES =====
-    Route::get('/profile', [ProfileController::class,'index'])->name('profile.index');
-    Route::patch('/profile', [ProfileController::class,'update'])->name('profile.update');
-    Route::delete('/profile/photo', [ProfileController::class,'removePhoto'])->name('profile.remove-photo');
-    Route::put('/profile/password', [ProfileController::class,'updatePassword'])->name('profile.password');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.remove-photo');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::post('/email/verification-notification', function () {
         request()->user()->sendEmailVerificationNotification();
@@ -504,11 +504,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 
     // ===== SIDEBAR ROUTES =====
-    Route::get('/treg3', function() {
+    Route::get('/treg3', function () {
         return view('treg3.index');
     })->name('dashboard.treg3');
 
-    Route::get('/witel-perform', function() {
+    Route::get('/witel-perform', function () {
         return view('performansi.witel');
     })->name('witel.perform');
 
@@ -572,7 +572,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('template/revenue-cc-dps', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'revenue-cc-dps')->name('template.revenue-cc-dps');
         Route::get('template/revenue-am', [ImportAMController::class, 'downloadTemplate'])->defaults('type', 'revenue-am')->name('template.revenue-am');
 
-        Route::get('template/{type}', function($type) {
+        Route::get('template/{type}', function ($type) {
             if (in_array($type, ['data-cc', 'revenue-cc-dgs', 'revenue-cc-dps'])) {
                 $controller = new ImportCCController();
                 return $controller->downloadTemplate($type);
@@ -589,13 +589,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Legacy route for backward compatibility
-    Route::get('/revenue', function() {
+    Route::get('/revenue', function () {
         if (Auth::user()->role !== 'admin') {
             return redirect()->route('dashboard')->with('error', 'Akses ditolak. Halaman ini hanya untuk Admin.');
         }
         return redirect()->route('revenue.data');
     })->name('revenue.index');
-
 }); // End of auth middleware
 
 // ===== UTILITY ROUTES =====
@@ -625,8 +624,8 @@ Route::get('health-check', function () {
 
 // ===== DEBUG ROUTES (DEVELOPMENT ONLY) =====
 if (app()->environment('local')) {
-    Route::get('debug/routes', function() {
-        $routes = collect(Route::getRoutes())->map(function($route) {
+    Route::get('debug/routes', function () {
+        $routes = collect(Route::getRoutes())->map(function ($route) {
             return [
                 'method' => implode('|', $route->methods()),
                 'uri' => $route->uri(),
@@ -641,7 +640,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.routes');
 
-    Route::get('debug/user', function() {
+    Route::get('debug/user', function () {
         $user = Auth::user();
 
         if (!$user) {
@@ -687,7 +686,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.user');
 
-    Route::get('debug/leaderboard', function() {
+    Route::get('debug/leaderboard', function () {
         return response()->json([
             'main_route' => 'GET /leaderboard',
             'route_name' => 'leaderboard',
@@ -716,7 +715,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.leaderboard');
 
-    Route::get('debug/witel-routes', function() {
+    Route::get('debug/witel-routes', function () {
         return response()->json([
             'main_route' => 'GET /witel/{id}',
             'description' => 'Witel detail page with revenue data from CC and AM sources',
@@ -736,7 +735,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.witel-routes');
 
-    Route::get('debug/cc-routes', function() {
+    Route::get('debug/cc-routes', function () {
         return response()->json([
             'main_route' => 'GET /corporate-customer/{id}',
             'description' => 'Corporate Customer detail page with revenue data and analysis',
@@ -754,10 +753,10 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.cc-routes');
 
-    Route::get('debug/am-routes', function() {
+    Route::get('debug/am-routes', function () {
         return response()->json([
             'main_routes' => [
-                'dashboard_am' => 'GET /dashboard (when logged in as AM)',
+                'dashboard_am' => 'GET /dashboard', // (when logged in as AM)
                 'detail_am_from_leaderboard' => 'GET /account-manager/{id}',
                 'leaderboard' => 'GET /leaderboard'
             ],
@@ -779,7 +778,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.am-routes');
 
-    Route::get('debug/import-routes', function() {
+    Route::get('debug/import-routes', function () {
         return response()->json([
             'two_step_import' => [
                 'step_1_preview' => 'POST /revenue-data/import/preview',
@@ -826,7 +825,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.import-routes');
 
-    Route::get('debug/database', function() {
+    Route::get('debug/database', function () {
         try {
             $stats = [
                 'account_managers' => AccountManager::count(),
@@ -862,16 +861,16 @@ if (app()->environment('local')) {
         }
     })->name('debug.database');
 
-    Route::get('debug/import-test', function() {
+    Route::get('debug/import-test', function () {
         return view('debug.import-test');
     })->name('debug.import-test');
 
-    Route::get('debug/table-names', function() {
+    Route::get('debug/table-names', function () {
         try {
             $tables = DB::select('SHOW TABLES');
             $dbName = DB::getDatabaseName();
 
-            $tableNames = array_map(function($table) use ($dbName) {
+            $tableNames = array_map(function ($table) use ($dbName) {
                 $key = "Tables_in_{$dbName}";
                 return $table->$key;
             }, $tables);
@@ -895,7 +894,7 @@ if (app()->environment('local')) {
         }
     })->name('debug.table-names');
 
-    Route::get('debug/role-access', function() {
+    Route::get('debug/role-access', function () {
         $user = Auth::user();
 
         if (!$user) {
@@ -939,4 +938,5 @@ Route::fallback(function () {
     return view('errors.404');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
+

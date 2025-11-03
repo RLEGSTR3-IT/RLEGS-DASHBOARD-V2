@@ -262,7 +262,8 @@ class RegisteredUserController extends Controller
             Auth::login($user);
 
             if (Auth::check()) {
-                request()->session()->regenerate();
+                //request()->session()->regenerate();
+                $request->session()->regenerate();
 
                 Log::info('Manually logged in user.', [
                     'user_id' => $user->id,
@@ -273,6 +274,9 @@ class RegisteredUserController extends Controller
             }
 
             Log::error('Failed to log in user manually.', ['email' => $user->email]);
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
             return redirect()->route('login')
                 ->withErrors(['email' => 'Gagal mengautentikasi, silahkan log in ulang']);
 

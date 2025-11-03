@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
+use Illuminate\Support\Facades\Log;
+
 class ConfirmablePasswordController extends Controller
 {
     /**
@@ -24,6 +26,9 @@ class ConfirmablePasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+
+        Log::info("ConfirmablePasswordController - redirect to dashboard about to begin");
+
         if (! Auth::guard('web')->validate([
             'email' => $request->user()->email,
             'password' => $request->password,

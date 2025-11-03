@@ -62,7 +62,6 @@ class WitelDashboardController extends Controller
                 'filterOptions',
                 'filters'
             ));
-
         } catch (\Exception $e) {
             Log::error('Witel dashboard rendering failed', [
                 'witel_id' => $id,
@@ -71,75 +70,76 @@ class WitelDashboardController extends Controller
                 'file' => $e->getFile()
             ]);
 
+            Log::info("WitelDashboardController - redirect to dashboard about to begin");
+
             return redirect()->route('dashboard')
                 ->with('error', 'Gagal memuat detail Witel: ' . $e->getMessage());
         }
     }
 
-
-
     /**
- * Get Revenue Summary
- */
-private function getRevenueSummary($witelId, $filters)
-{
-    try {
-        // Get monthly achievements
-        $monthlyAchievements = $this->getMonthlyAchievements($witelId);
+     * Get Revenue Summary
+     */
+    private function getRevenueSummary($witelId, $filters)
+    {
+        try {
+            // Get monthly achievements
+            $monthlyAchievements = $this->getMonthlyAchievements($witelId);
 
-        if ($monthlyAchievements->isEmpty()) {
+            Log::info("WitelDashboardController", ['monthlyAchievements' => $monthlyAchievements]);
+
+            if ($monthlyAchievements->isEmpty()) {
+                return $this->getEmptySummary();
+            }
+
+            // Calculate all-time totals
+            $totalRevenue = $monthlyAchievements->sum('total_revenue');
+            $totalTarget = $monthlyAchievements->sum('total_target');
+            $overallAchievement = $totalTarget > 0
+                ? round(($totalRevenue / $totalTarget) * 100, 2)
+                : 0;
+
+            // Find highest achievement month
+            $highestAchievement = $monthlyAchievements->sortByDesc('achievement_rate')->first();
+
+            // Find highest revenue month
+            $highestRevenue = $monthlyAchievements->sortByDesc('total_revenue')->first();
+
+            // Calculate average achievement
+            $avgAchievement = $monthlyAchievements->avg('achievement_rate');
+
+            // Calculate trend
+            $trend = $this->calculateTrend($witelId, 3, $filters);
+
+            return [
+                'total_revenue_all_time' => floatval($totalRevenue),
+                'total_target_all_time' => floatval($totalTarget),
+                'overall_achievement_rate' => $overallAchievement,
+                'highest_achievement' => [
+                    'bulan' => $highestAchievement
+                        ? $this->getMonthName($highestAchievement->bulan) . ' ' . $highestAchievement->tahun
+                        : 'N/A',
+                    'value' => $highestAchievement ? round($highestAchievement->achievement_rate, 2) : 0
+                ],
+                'highest_revenue' => [
+                    'bulan' => $highestRevenue
+                        ? $this->getMonthName($highestRevenue->bulan) . ' ' . $highestRevenue->tahun
+                        : 'N/A',
+                    'value' => $highestRevenue ? floatval($highestRevenue->total_revenue) : 0
+                ],
+                'average_achievement' => round($avgAchievement, 2),
+                'trend' => $trend['status'],
+                'trend_percentage' => $trend['percentage'],
+                'trend_description' => $trend['description']
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get revenue summary', [
+                'witel_id' => $witelId,
+                'error' => $e->getMessage()
+            ]);
             return $this->getEmptySummary();
         }
-
-        // Calculate all-time totals
-        $totalRevenue = $monthlyAchievements->sum('total_revenue');
-        $totalTarget = $monthlyAchievements->sum('total_target');
-        $overallAchievement = $totalTarget > 0
-            ? round(($totalRevenue / $totalTarget) * 100, 2)
-            : 0;
-
-        // Find highest achievement month
-        $highestAchievement = $monthlyAchievements->sortByDesc('achievement_rate')->first();
-
-        // Find highest revenue month
-        $highestRevenue = $monthlyAchievements->sortByDesc('total_revenue')->first();
-
-        // Calculate average achievement
-        $avgAchievement = $monthlyAchievements->avg('achievement_rate');
-
-        // Calculate trend
-        $trend = $this->calculateTrend($witelId, 3, $filters);
-
-        return [
-            'total_revenue_all_time' => floatval($totalRevenue),
-            'total_target_all_time' => floatval($totalTarget),
-            'overall_achievement_rate' => $overallAchievement,
-            'highest_achievement' => [
-                'bulan' => $highestAchievement
-                    ? $this->getMonthName($highestAchievement->bulan) . ' ' . $highestAchievement->tahun
-                    : 'N/A',
-                'value' => $highestAchievement ? round($highestAchievement->achievement_rate, 2) : 0
-            ],
-            'highest_revenue' => [
-                'bulan' => $highestRevenue
-                    ? $this->getMonthName($highestRevenue->bulan) . ' ' . $highestRevenue->tahun
-                    : 'N/A',
-                'value' => $highestRevenue ? floatval($highestRevenue->total_revenue) : 0
-            ],
-            'average_achievement' => round($avgAchievement, 2),
-            'trend' => $trend['status'],
-            'trend_percentage' => $trend['percentage'],
-            'trend_description' => $trend['description']
-        ];
-
-    } catch (\Exception $e) {
-        Log::error('Failed to get revenue summary', [
-            'witel_id' => $witelId,
-            'error' => $e->getMessage()
-        ]);
-        return $this->getEmptySummary();
     }
-}
 
     /**
      * Get Witel Profile Data
@@ -159,15 +159,15 @@ private function getRevenueSummary($witelId, $filters)
 
         // Count unique customers from both cc_revenues and am_revenues
         $customersFromCC = DB::table('cc_revenues')
-            ->where(function($query) use ($witelId) {
-                $query->where(function($q) use ($witelId) {
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     // DPS: use witel_bill_id
                     $q->where('divisi_id', 3)
-                      ->where('witel_bill_id', $witelId);
-                })->orWhere(function($q) use ($witelId) {
+                        ->where('witel_bill_id', $witelId);
+                })->orWhere(function ($q) use ($witelId) {
                     // DGS & DSS: use witel_ho_id
                     $q->whereIn('divisi_id', [1, 2])
-                      ->where('witel_ho_id', $witelId);
+                        ->where('witel_ho_id', $witelId);
                 });
             })
             ->distinct()
@@ -221,15 +221,15 @@ private function getRevenueSummary($witelId, $filters)
     {
         // Revenue from cc_revenues (with DPS/DGS/DSS rule)
         $ccQuery = CcRevenue::where('tahun', $filters['tahun'])
-            ->where(function($query) use ($witelId) {
-                $query->where(function($q) use ($witelId) {
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     // DPS: use witel_bill_id
                     $q->where('divisi_id', 3)
-                      ->where('witel_bill_id', $witelId);
-                })->orWhere(function($q) use ($witelId) {
+                        ->where('witel_bill_id', $witelId);
+                })->orWhere(function ($q) use ($witelId) {
                     // DGS & DSS: use witel_ho_id
                     $q->whereIn('divisi_id', [1, 2])
-                      ->where('witel_ho_id', $witelId);
+                        ->where('witel_ho_id', $witelId);
                 });
             });
 
@@ -347,10 +347,10 @@ private function getRevenueSummary($witelId, $filters)
             $query->where('role', $filters['role_filter']);
         }
 
-        $accountManagers = $query->with(['amRevenues' => function($q) use ($filters) {
+        $accountManagers = $query->with(['amRevenues' => function ($q) use ($filters) {
             $q->where('tahun', $filters['tahun'])
-              ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
-              ->with('divisi');
+                ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
+                ->with('divisi');
         }])->get();
 
         $results = collect([]);
@@ -390,9 +390,9 @@ private function getRevenueSummary($witelId, $filters)
             $query->where('role', $filters['role_filter']);
         }
 
-        $accountManagers = $query->with(['amRevenues' => function($q) use ($filters) {
+        $accountManagers = $query->with(['amRevenues' => function ($q) use ($filters) {
             $q->where('tahun', $filters['tahun'])
-              ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']]);
+                ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']]);
         }])->get();
 
         $results = collect([]);
@@ -431,10 +431,10 @@ private function getRevenueSummary($witelId, $filters)
     {
         $ccQuery = CcRevenue::where('tahun', $filters['tahun'])
             ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
-            ->where(function($query) use ($witelId) {
-                $query->where(function($q) use ($witelId) {
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     $q->where('divisi_id', 3)->where('witel_bill_id', $witelId);
-                })->orWhere(function($q) use ($witelId) {
+                })->orWhere(function ($q) use ($witelId) {
                     $q->whereIn('divisi_id', [1, 2])->where('witel_ho_id', $witelId);
                 });
             })
@@ -507,7 +507,7 @@ private function getRevenueSummary($witelId, $filters)
             $ccQuery = CcRevenue::where('tahun', $filters['tahun'])
                 ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
                 ->where('divisi_id', $divisi->id)
-                ->where(function($query) use ($witelId, $divisi) {
+                ->where(function ($query) use ($witelId, $divisi) {
                     if ($divisi->id == 3) {
                         $query->where('witel_bill_id', $witelId);
                     } else {
@@ -545,7 +545,7 @@ private function getRevenueSummary($witelId, $filters)
 
             $combinedData = $ccMonthly->concat($amMonthly)
                 ->groupBy('bulan')
-                ->map(function($items, $bulan) use ($divisi) {
+                ->map(function ($items, $bulan) use ($divisi) {
                     $totalRevenue = $items->sum('monthly_revenue');
                     $totalTarget = $items->sum('monthly_target');
                     $achievementRate = $totalTarget > 0
@@ -576,10 +576,10 @@ private function getRevenueSummary($witelId, $filters)
     {
         $query = CcRevenue::where('tahun', $filters['tahun'])
             ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
-            ->where(function($query) use ($witelId) {
-                $query->where(function($q) use ($witelId) {
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     $q->where('divisi_id', 3)->where('witel_bill_id', $witelId);
-                })->orWhere(function($q) use ($witelId) {
+                })->orWhere(function ($q) use ($witelId) {
                     $q->whereIn('divisi_id', [1, 2])->where('witel_ho_id', $witelId);
                 });
             })
@@ -595,7 +595,7 @@ private function getRevenueSummary($witelId, $filters)
 
         $ccData = $query->get();
 
-        return $ccData->map(function($revenue) {
+        return $ccData->map(function ($revenue) {
             $achievementRate = $revenue->target_revenue > 0
                 ? round(($revenue->real_revenue / $revenue->target_revenue) * 100, 2)
                 : 0;
@@ -621,10 +621,10 @@ private function getRevenueSummary($witelId, $filters)
     {
         $query = CcRevenue::where('tahun', $filters['tahun'])
             ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
-            ->where(function($query) use ($witelId) {
-                $query->where(function($q) use ($witelId) {
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     $q->where('divisi_id', 3)->where('witel_bill_id', $witelId);
-                })->orWhere(function($q) use ($witelId) {
+                })->orWhere(function ($q) use ($witelId) {
                     $q->whereIn('divisi_id', [1, 2])->where('witel_ho_id', $witelId);
                 });
             })
@@ -648,7 +648,7 @@ private function getRevenueSummary($witelId, $filters)
             ->orderBy('bulan')
             ->get();
 
-        return $data->map(function($item) {
+        return $data->map(function ($item) {
             $customer = CorporateCustomer::find($item->corporate_customer_id);
             $achievementRate = $item->monthly_target > 0
                 ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
@@ -691,10 +691,10 @@ private function getRevenueSummary($witelId, $filters)
     private function getMonthlyAchievements($witelId)
     {
         $ccMonthly = DB::table('cc_revenues')
-            ->where(function($query) use ($witelId) {
-                $query->where(function($q) use ($witelId) {
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     $q->where('divisi_id', 3)->where('witel_bill_id', $witelId);
-                })->orWhere(function($q) use ($witelId) {
+                })->orWhere(function ($q) use ($witelId) {
                     $q->whereIn('divisi_id', [1, 2])->where('witel_ho_id', $witelId);
                 });
             })
@@ -707,6 +707,8 @@ private function getRevenueSummary($witelId, $filters)
             ->groupBy('tahun', 'bulan')
             ->get();
 
+        Log::info("WitelDashboardController", ['ccMonthly' => $ccMonthly]);
+
         $amMonthly = AmRevenue::where('witel_id', $witelId)
             ->selectRaw('
                 tahun,
@@ -717,10 +719,12 @@ private function getRevenueSummary($witelId, $filters)
             ->groupBy('tahun', 'bulan')
             ->get();
 
+        Log::info("WitelDashboardController", ['amMonthly' => $amMonthly]);
+
         $combined = collect([]);
         $allData = $ccMonthly->concat($amMonthly);
 
-        $grouped = $allData->groupBy(function($item) {
+        $grouped = $allData->groupBy(function ($item) {
             return $item->tahun . '-' . $item->bulan;
         });
 
@@ -739,7 +743,9 @@ private function getRevenueSummary($witelId, $filters)
             ]);
         }
 
-        return $combined->sortByDesc(function($item) {
+        Log::info("WitelDashboardController", ['combined' => $combined]);
+
+        return $combined->sortByDesc(function ($item) {
             return $item->tahun . str_pad($item->bulan, 2, '0', STR_PAD_LEFT);
         })->values();
     }
@@ -780,7 +786,6 @@ private function getRevenueSummary($witelId, $filters)
                 'percentage' => round($percentageChange, 2),
                 'description' => $description
             ];
-
         } catch (\Exception $e) {
             Log::error('Failed to calculate trend', [
                 'witel_id' => $witelId,
@@ -802,10 +807,10 @@ private function getRevenueSummary($witelId, $filters)
         try {
             // CC Revenue
             $ccQuery = CcRevenue::where('tahun', $tahun)
-                ->where(function($query) use ($witelId) {
-                    $query->where(function($q) use ($witelId) {
+                ->where(function ($query) use ($witelId) {
+                    $query->where(function ($q) use ($witelId) {
                         $q->where('divisi_id', 3)->where('witel_bill_id', $witelId);
-                    })->orWhere(function($q) use ($witelId) {
+                    })->orWhere(function ($q) use ($witelId) {
                         $q->whereIn('divisi_id', [1, 2])->where('witel_ho_id', $witelId);
                     });
                 });
@@ -868,7 +873,6 @@ private function getRevenueSummary($witelId, $filters)
                 'tahun' => $tahun,
                 'display_mode' => $filters['chart_display'] ?? 'combination'
             ];
-
         } catch (\Exception $e) {
             Log::error('Failed to get monthly chart', [
                 'witel_id' => $witelId,
@@ -884,10 +888,10 @@ private function getRevenueSummary($witelId, $filters)
     private function getAvailableYears($witelId)
     {
         $ccYears = DB::table('cc_revenues')
-            ->where(function($query) use ($witelId) {
-                $query->where(function($q) use ($witelId) {
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     $q->where('divisi_id', 3)->where('witel_bill_id', $witelId);
-                })->orWhere(function($q) use ($witelId) {
+                })->orWhere(function ($q) use ($witelId) {
                     $q->whereIn('divisi_id', [1, 2])->where('witel_ho_id', $witelId);
                 });
             })
@@ -984,10 +988,18 @@ private function getRevenueSummary($witelId, $filters)
     private function getMonthName($monthNumber)
     {
         $months = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
-            4 => 'April', 5 => 'Mei', 6 => 'Juni',
-            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
-            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
         ];
 
         return $months[$monthNumber] ?? 'Unknown';
@@ -996,9 +1008,18 @@ private function getRevenueSummary($witelId, $filters)
     private function getShortMonthName($monthNumber)
     {
         $months = [
-            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
-            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agt',
-            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
+            1 => 'Jan',
+            2 => 'Feb',
+            3 => 'Mar',
+            4 => 'Apr',
+            5 => 'Mei',
+            6 => 'Jun',
+            7 => 'Jul',
+            8 => 'Agt',
+            9 => 'Sep',
+            10 => 'Okt',
+            11 => 'Nov',
+            12 => 'Des'
         ];
 
         return $months[$monthNumber] ?? 'N/A';

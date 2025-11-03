@@ -194,7 +194,6 @@
     (async function () {
       async function refreshCsrf() {
         try {
-          Log::info("Called refreshCsrf");
           const res = await fetch('{{ route('csrf.token') }}', { credentials: 'same-origin' });
           if (!res.ok) return;
           const { token } = await res.json();

@@ -5,6 +5,29 @@
 @section('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <link rel="stylesheet" href="{{ asset('css/detailAM.css') }}">
+<style>
+    /* Division Pill Styling - Inline Override */
+    .divisi-pill.dgs {
+        background: rgba(191, 143, 0, 0.12);
+        color: #bf8f00;
+        border: 1px solid rgba(191, 143, 0, 0.3);
+    }
+    .divisi-pill.dps {
+        background: rgba(0, 112, 192, 0.12);
+        color: #0070c0;
+        border: 1px solid rgba(0, 112, 192, 0.3);
+    }
+    .divisi-pill.dss {
+        background: rgba(32, 55, 100, 0.12);
+        color: #203764;
+        border: 1px solid rgba(32, 55, 100, 0.3);
+    }
+    .divisi-pill.des {
+        background: rgba(13, 90, 219, 0.12);
+        color: #0d5adb;
+        border: 1px solid rgba(13, 90, 219, 0.3);
+    }
+</style>
 @endsection
 
 @section('content')
@@ -61,7 +84,7 @@
                             @php
                                 $divisiClass = strtolower($divisi->kode);
                             @endphp
-                            <span class="divisi-pill {{ $divisiClass }}">{{ $divisi->nama }}</span>
+                            <span class="divisi-pill {{ $divisiClass }}">{{ $divisi->kode }}</span>
                         @empty
                             <span class="text-muted">N/A</span>
                         @endforelse
@@ -72,17 +95,18 @@
     </div>
 
     <!-- Division Selector Section (for multi-divisi AM) -->
-    @if($accountManager->divisis->count() > 1)
+    @if($profileData['has_government'] && $profileData['has_enterprise'])
     <div class="division-selector-section">
         <div class="division-selector-label">
             <i class="fas fa-layer-group"></i>
-            Pilih Divisi untuk Peringkat:
+            Pilih Divisi Umum untuk Peringkat:
         </div>
         <div class="division-selector">
-            <select id="division-ranking-select" class="selectpicker" title="Pilih Divisi" data-style="btn-outline-primary">
-                @foreach($accountManager->divisis as $divisi)
-                    <option value="{{ $divisi->id }}" {{ $filters['divisi_id'] == $divisi->id ? 'selected' : '' }}>
-                        {{ $divisi->nama }}
+            <select id="division-ranking-select" class="selectpicker" title="Pilih Divisi Umum" data-style="btn-outline-primary">
+                @foreach($profileData['divisi_umum_list'] as $divisiUmum)
+                    <option value="{{ $divisiUmum['code'] }}"
+                            {{ $filters['divisi_umum'] == $divisiUmum['code'] ? 'selected' : '' }}>
+                        {{ $divisiUmum['name'] }}
                     </option>
                 @endforeach
             </select>
@@ -96,7 +120,8 @@
             $rankingData = $rankingData ?? [];
             $globalRanking = $rankingData['global'] ?? ['rank' => null, 'total' => 0, 'status' => 'unknown', 'change' => 0];
             $witelRanking = $rankingData['witel'] ?? ['rank' => null, 'total' => 0, 'status' => 'unknown', 'change' => 0];
-            $divisiRankings = $rankingData['divisi'] ?? [];
+            $divisiUmumRankings = $rankingData['divisi_umum'] ?? [];
+            $activeDivisiUmum = $rankingData['active_divisi_umum'] ?? null;
 
             // Icon mapping
             $getIcon = function($rank) {
@@ -165,27 +190,29 @@
                 </div>
             </div>
 
-            <!-- Card 3: Division Ranking -->
+            <!-- Card 3: Division Ranking (Divisi Umum) -->
             <div class="col-md-4 mb-3">
                 <div class="division-rankings-container">
-                    @if(count($divisiRankings) > 0)
-                        @foreach($divisiRankings as $divisiKode => $ranking)
+                    @if(count($divisiUmumRankings) > 0 && $activeDivisiUmum)
+                        @php
+                            $ranking = $divisiUmumRankings[$activeDivisiUmum] ?? null;
+                        @endphp
+
+                        @if($ranking)
                             @php
                                 $badge = $getBadgeInfo($ranking['status'] ?? 'tetap', $ranking['change'] ?? 0);
-                                $isSelected = $filters['divisi_id'] &&
-                                    $accountManager->divisis->where('id', $filters['divisi_id'])->where('kode', $divisiKode)->count() > 0;
-                                $isFirst = $loop->first && !$filters['divisi_id'];
                             @endphp
-                            <div class="ranking-card division division-rank-card"
-                                 data-divisi-kode="{{ $divisiKode }}"
-                                 style="{{ ($isSelected || $isFirst) ? '' : 'display: none;' }}">
+
+                            <div class="ranking-card division division-rank-card" data-divisi-umum="{{ $activeDivisiUmum }}">
                                 <div class="ranking-icon">
                                     <img src="{{ asset('img/' . $getIcon($ranking['rank'])) }}" alt="Peringkat" width="36" height="36">
                                 </div>
                                 <div class="ranking-info">
                                     <div class="ranking-title">
                                         Peringkat Divisi
-                                        <span class="divisi-badge {{ strtolower($divisiKode) }}">{{ $ranking['divisi_nama'] ?? $divisiKode }}</span>
+                                        <span class="divisi-badge {{ strtolower($activeDivisiUmum) }}">
+                                            {{ $activeDivisiUmum }}
+                                        </span>
                                     </div>
                                     <div class="ranking-value">
                                         {{ $ranking['rank'] ?? 'N/A' }} dari {{ $ranking['total'] ?? 0 }}
@@ -199,7 +226,18 @@
                                     </div>
                                 @endif
                             </div>
-                        @endforeach
+                        @else
+                            <div class="ranking-card division">
+                                <div class="ranking-icon">
+                                    <img src="{{ asset('img/up100.svg') }}" alt="Peringkat" width="36" height="36">
+                                </div>
+                                <div class="ranking-info">
+                                    <div class="ranking-title">Peringkat Divisi</div>
+                                    <div class="ranking-value">N/A</div>
+                                    <span class="rank-change-detail neutral">Tidak ada data</span>
+                                </div>
+                            </div>
+                        @endif
                     @else
                         <div class="ranking-card division">
                             <div class="ranking-icon">
@@ -208,7 +246,7 @@
                             <div class="ranking-info">
                                 <div class="ranking-title">Peringkat Divisi</div>
                                 <div class="ranking-value">N/A</div>
-                                <span class="rank-change-detail neutral">belum ada data</span>
+                                <span class="rank-change-detail neutral">Belum ada data</span>
                             </div>
                         </div>
                     @endif
@@ -257,31 +295,29 @@
                             <option value="">Semua Divisi</option>
                             @foreach($accountManager->divisis as $divisi)
                                 <option value="{{ $divisi->id }}" {{ $filters['divisi_id'] == $divisi->id ? 'selected' : '' }}>
-                                    {{ $divisi->nama }}
+                                    {{ $divisi->kode }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     @endif
 
-                    <!-- ...elemen lain biarkan... -->
+                    <div class="two-filters">
+                        <div class="filter-group">
+                            <select id="tipeRevenueFilter" class="selectpicker" title="Tipe Revenue">
+                                <option value="all" {{ $filters['tipe_revenue']=='all'?'selected':'' }}>Semua Tipe</option>
+                                <option value="REGULER" {{ $filters['tipe_revenue']=='REGULER'?'selected':'' }}>REGULER</option>
+                                <option value="NGTMA" {{ $filters['tipe_revenue']=='NGTMA'?'selected':'' }}>NGTMA</option>
+                            </select>
+                        </div>
 
-                    <div class="two-filters">   <!-- <— ini baru -->
-                    <div class="filter-group">
-                        <select id="tipeRevenueFilter" class="selectpicker" title="Tipe Revenue">
-                        <option value="all" {{ $filters['tipe_revenue']=='all'?'selected':'' }}>Semua Tipe</option>
-                        <option value="REGULER" {{ $filters['tipe_revenue']=='REGULER'?'selected':'' }}>REGULER</option>
-                        <option value="NGTMA" {{ $filters['tipe_revenue']=='NGTMA'?'selected':'' }}>NGTMA</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group year-selector">
-                        <select id="customerYearFilter" class="selectpicker" title="Tahun">
-                        @foreach($filterOptions['available_years'] as $year)
-                            <option value="{{ $year }}" {{ $filters['tahun']==$year?'selected':'' }}>{{ $year }}</option>
-                        @endforeach
-                        </select>
-                    </div>
+                        <div class="filter-group year-selector">
+                            <select id="customerYearFilter" class="selectpicker" title="Tahun">
+                                @foreach($filterOptions['available_years'] as $year)
+                                    <option value="{{ $year }}" {{ $filters['tahun']==$year?'selected':'' }}>{{ $year }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -323,10 +359,10 @@
                                         @endif
                                         @if($filters['customer_view_mode'] != 'agregat_bulan')
                                             <td class="customer-divisi">{{ $customer->divisi ?? 'N/A' }}</td>
-                                            <td class="customer-divisi">{{ $customer->segment ?? 'N/A' }}</td>
+                                            <td class="customer-segment">{{ $customer->segment ?? 'N/A' }}</td>
                                         @endif
-                                        <td>Rp {{ number_format($customer->total_target ?? $customer->target ?? 0, 0, ',', '.') }}</td>
-                                        <td>Rp {{ number_format($customer->total_revenue ?? $customer->revenue ?? 0, 0, ',', '.') }}</td>
+                                        <td class="revenue-value">Rp {{ number_format($customer->total_target ?? $customer->target ?? 0, 0, ',', '.') }}</td>
+                                        <td class="revenue-value">Rp {{ number_format($customer->total_revenue ?? $customer->revenue ?? 0, 0, ',', '.') }}</td>
                                         <td>
                                             @php
                                                 $achievement = $customer->achievement_rate ?? $customer->achievement ?? 0;
@@ -382,7 +418,7 @@
                             <option value="">Semua Divisi</option>
                             @foreach($accountManager->divisis as $divisi)
                                 <option value="{{ $divisi->id }}" {{ $filters['divisi_id'] == $divisi->id ? 'selected' : '' }}>
-                                    {{ $divisi->nama }}
+                                    {{ $divisi->kode }}
                                 </option>
                             @endforeach
                         </select>
@@ -532,14 +568,14 @@
                     </h4>
 
                     <div class="chart-filters">
-                         <div class="filter-group">
+                        <div class="filter-group">
                             <select id="chartDisplayMode" class="selectpicker" title="Tampilan">
                                 <option value="combination" {{ $filters['chart_display'] == 'combination' ? 'selected' : '' }}>Kombinasi</option>
                                 <option value="revenue" {{ $filters['chart_display'] == 'revenue' ? 'selected' : '' }}>Revenue</option>
                                 <option value="achievement" {{ $filters['chart_display'] == 'achievement' ? 'selected' : '' }}>Achievement</option>
                             </select>
                         </div>
-                        
+
                         <div class="filter-group">
                             <select id="chartYearFilter" class="selectpicker" title="Tahun">
                                 @foreach($filterOptions['available_years'] as $year)
@@ -595,25 +631,14 @@ $(document).ready(function() {
         updateUrlParameter('customer_view_mode', mode);
     });
 
-    // Division Ranking Selector
+    // Division Ranking Selector (untuk multi-divisi dengan GOVERNMENT & ENTERPRISE)
     $('#division-ranking-select').on('changed.bs.select', function() {
-        const divisiId = $(this).val();
+        const divisiUmum = $(this).val();
 
-        // Get divisi kode from selected option
-        const selectedDivisi = @json($accountManager->divisis);
-        const divisi = selectedDivisi.find(d => d.id == divisiId);
-        const divisiKode = divisi ? divisi.kode : '';
+        console.log('Selected Divisi Umum:', divisiUmum);
 
-        // Hide all division ranking cards
-        $('.division-rank-card').hide();
-
-        // Show selected division ranking card
-        if (divisiKode) {
-            $(`.division-rank-card[data-divisi-kode="${divisiKode}"]`).show();
-        }
-
-        // Update URL with divisi parameter
-        updateUrlParameter('divisi_id', divisiId);
+        // Update URL dengan divisi_umum parameter
+        updateUrlParameter('divisi_umum', divisiUmum);
     });
 
     // Customer Divisi Filter
@@ -985,28 +1010,26 @@ $(document).ready(function() {
     }
 
     // Add tooltip for achievement badges
-    $('.achievement-badge').each(function () {
-    const achievement = parseFloat($(this).text());
-    let tip = (achievement >= 100) ? 'Excellent! Mencapai target'
-            : (achievement >= 80) ? 'Good! Mendekati target'
-            : 'Perlu peningkatan';
+    $('.achievement-badge').each(function() {
+        const achievement = parseFloat($(this).text());
+        let tip = (achievement >= 100) ? 'Excellent! Mencapai target'
+                : (achievement >= 80) ? 'Good! Mendekati target'
+                : 'Perlu peningkatan';
 
-    // gunakan atribut Bootstrap 5
-    $(this)
-        .attr('data-bs-toggle', 'tooltip')
-        .attr('data-bs-title', tip)   // pakai data-bs-title, bukan title
-        .removeAttr('title');         // hindari native tooltip
+        // gunakan atribut Bootstrap 5
+        $(this)
+            .attr('data-bs-toggle', 'tooltip')
+            .attr('data-bs-title', tip)
+            .removeAttr('title');
     });
-
 
     // Initialize tooltips if Bootstrap tooltip is available
     if (typeof $.fn.tooltip !== 'undefined') {
-    $('[data-bs-toggle="tooltip"]').tooltip({
-        trigger: 'hover',
-        placement: 'top'
-    });
+        $('[data-bs-toggle="tooltip"]').tooltip({
+            trigger: 'hover',
+            placement: 'top'
+        });
     }
-
 
     // Add search/filter functionality for customer table (optional enhancement)
     let customerTableSearch = '';
@@ -1122,6 +1145,8 @@ $(document).ready(function() {
     // Console log for debugging (remove in production)
     console.log('detailAM Dashboard initialized successfully');
     console.log('Current filters:', @json($filters));
+    console.log('Ranking Data:', @json($rankingData));
+    console.log('Profile Data:', @json($profileData));
 });
 </script>
 @endsection

@@ -34,6 +34,7 @@ class RegisteredUserController extends Controller
 
             // Mengambil data Witel untuk dropdown
             $witels = Witel::select('id', 'nama')->get();
+            Log::info("Registrate", ['witels' => $witels]);
 
             // Periksa jika tidak ada Account Manager/Witel, tampilkan pesan
             $noAccountManagers = $accountManagers->isEmpty();
@@ -118,7 +119,8 @@ class RegisteredUserController extends Controller
 
                 if ($witelsExist) {
                     $roleSpecificRules = [
-                        'witel_id' => ['required', 'exists:witel,id']
+                        'witel_id' => ['required', 'exists:witel,id'],
+                        'witel_code' => ['required', 'string']
                     ];
                 } else {
                     Log::warning('Registration failed: No witel available');
@@ -152,6 +154,20 @@ class RegisteredUserController extends Controller
                 });
             }
 
+            // Validasi khusus untuk kode witel
+            else {
+                $validator->after(function ($validator) use ($request) {
+                    // NOTE: the order of this array is important to keep it as is
+                    $witel_codes = ["bali", "jatim_barat", "jatim_timur", "nusa_tenggara", "semarang_jateng_utara", "solo_jateng_timur", "suramadu", "yogya_jateng_selatan"];
+
+                    $hash = config("auth.witel_{$witel_codes[$request->witel_id - 1]}_code_hash");
+
+                    if (!Hash::check($request->witel_code, $hash)) {
+                        $validator->errors()->add('witel_code', 'Kode witel tidak valid.');
+                    }
+                });
+            }
+
             if ($validator->fails()) {
                 Log::warning('Registration validation failed', [
                     'errors' => $validator->errors()->toArray()
@@ -168,6 +184,7 @@ class RegisteredUserController extends Controller
                 //'account_manager_nik' => null,
                 'witel_id' => null,
                 'admin_code' => null,
+                'witel_code' => null,
             ];
 
             // Proses untuk admin
@@ -195,6 +212,8 @@ class RegisteredUserController extends Controller
                     $witel = Witel::findOrFail($request->witel_id);
                     $userData['name'] = "Support Witel " . $witel->nama;
                     $userData['witel_id'] = $witel->id;
+                    // NOTE: wut??
+                    $userData['witel_code'] = $request->witel_code;
                 } catch (Exception $e) {
                     Log::error('Witel not found', [
                         'witel_id' => $request->witel_id,
@@ -227,7 +246,7 @@ class RegisteredUserController extends Controller
             $user = User::create($userData);
 
             // automatically verify admin email upon creation
-            if ($request->role === 'admin') {
+            if ($request->role === 'admin' || $request->role === 'witel') {
                 $user->markEmailAsVerified();
             }
 
@@ -242,7 +261,20 @@ class RegisteredUserController extends Controller
             Log::info('$user in RegUseCont', [$user]);
             Auth::login($user);
 
-            return redirect()->route('verification.notice');
+            if (Auth::check()) {
+                request()->session()->regenerate();
+
+                Log::info('Manually logged in user.', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+
+                return redirect()->route('verification.notice');
+            }
+
+            Log::error('Failed to log in user manually.', ['email' => $user->email]);
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Gagal mengautentikasi, silahkan log in ulang']);
 
             //return redirect(route('login', absolute: false))->with('success', 'Pendaftaran berhasil! Silakan login dengan akun yang telah Anda buat.');
         } catch (Exception $e) {

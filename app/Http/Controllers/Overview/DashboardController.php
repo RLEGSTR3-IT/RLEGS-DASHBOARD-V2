@@ -42,6 +42,8 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
+        Log::info("DashboardController", ['request' => $request]);
+
         $user = Auth::user();
 
         try {
@@ -110,20 +112,30 @@ class DashboardController extends Controller
             // 3. CHARTS
             $currentYear = date('Y');
             $monthlyRevenue = $this->revenueService->getMonthlyRevenue(
-                $currentYear, null, $filters['divisi_id'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                $currentYear,
+                null,
+                $filters['divisi_id'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             );
             $performanceDistribution = $this->performanceService->getPerformanceDistribution(
-                $currentYear, null, $filters['divisi_id'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                $currentYear,
+                null,
+                $filters['divisi_id'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             );
             $monthlyChart = $this->generateMonthlyChart($monthlyRevenue, $currentYear);
             $performanceChart = $this->generatePerformanceChart($performanceDistribution);
 
             // 4. REVENUE TABLE
             $revenueTable = $this->revenueService->getRevenueTableDataWithDateRange(
-                $dateRange['start'], $dateRange['end'], null, $filters['divisi_id'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                $dateRange['start'],
+                $dateRange['end'],
+                null,
+                $filters['divisi_id'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             );
 
             $filterOptions = $this->getFilterOptionsForAdmin();
@@ -138,7 +150,6 @@ class DashboardController extends Controller
                 'filterOptions',
                 'filters'
             ));
-
         } catch (\Exception $e) {
             Log::error('Admin dashboard failed', [
                 'error' => $e->getMessage(),
@@ -174,16 +185,16 @@ class DashboardController extends Controller
                 $endMonth = Carbon::parse($dateRange['end'])->month;
 
                 $query->where('tahun', $startYear)
-                      ->whereBetween('bulan', [$startMonth, $endMonth]);
+                    ->whereBetween('bulan', [$startMonth, $endMonth]);
             } else {
                 $query->where('tahun', $this->getCurrentDataYear());
             }
 
             // Witel filtering
             if ($witelId) {
-                $query->where(function($q) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
                     $q->where('witel_ho_id', $witelId)
-                      ->orWhere('witel_bill_id', $witelId);
+                        ->orWhere('witel_bill_id', $witelId);
                 });
             }
 
@@ -261,7 +272,6 @@ class DashboardController extends Controller
             }
 
             return $results;
-
         } catch (\Exception $e) {
             Log::error('Failed to get top corporate customers', [
                 'error' => $e->getMessage(),
@@ -285,13 +295,13 @@ class DashboardController extends Controller
             $endMonth = Carbon::parse($dateRange['end'])->month;
 
             $query->where('tahun', $startYear)
-                  ->whereBetween('bulan', [$startMonth, $endMonth]);
+                ->whereBetween('bulan', [$startMonth, $endMonth]);
         } else {
             $query->where('tahun', $this->getCurrentDataYear());
         }
 
         if ($witelId) {
-            $query->whereHas('accountManager', function($q) use ($witelId) {
+            $query->whereHas('accountManager', function ($q) use ($witelId) {
                 $q->where('witel_id', $witelId);
             });
         }
@@ -321,12 +331,12 @@ class DashboardController extends Controller
         }
 
         if (isset($filters['divisi_id']) && $filters['divisi_id'] && $filters['divisi_id'] !== 'all') {
-            $amQuery->whereHas('divisis', function($q) use ($filters) {
+            $amQuery->whereHas('divisis', function ($q) use ($filters) {
                 $q->where('divisi.id', $filters['divisi_id']);
             });
         }
 
-        $results = $amQuery->get()->map(function($am) use ($revenueData) {
+        $results = $amQuery->get()->map(function ($am) use ($revenueData) {
             $revenue = $revenueData->get($am->id);
             $totalRevenue = $revenue ? $revenue->total_revenue : 0;
             $totalTarget = $revenue ? $revenue->total_target : 0;
@@ -342,12 +352,12 @@ class DashboardController extends Controller
 
             return $am;
         })
-        ->filter(function($am) {
-            return $am->total_revenue > 0 || $am->total_target > 0;
-        })
-        ->sortByDesc('total_revenue')
-        ->take($limit)
-        ->values();
+            ->filter(function ($am) {
+                return $am->total_revenue > 0 || $am->total_target > 0;
+            })
+            ->sortByDesc('total_revenue')
+            ->take($limit)
+            ->values();
 
         return $results;
     }
@@ -375,7 +385,6 @@ class DashboardController extends Controller
                 'data' => $data,
                 'count' => is_countable($data) ? count($data) : 0
             ]);
-
         } catch (\Exception $e) {
             Log::error('Tab data failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Gagal memuat data'], 500);
@@ -412,7 +421,7 @@ class DashboardController extends Controller
                 $endMonth = Carbon::parse($dateRange['end'])->month;
 
                 $query->where('tahun', $startYear)
-                      ->whereBetween('bulan', [$startMonth, $endMonth]);
+                    ->whereBetween('bulan', [$startMonth, $endMonth]);
             } else {
                 $query->where('tahun', $this->getCurrentDataYear());
             }
@@ -468,7 +477,6 @@ class DashboardController extends Controller
             }
 
             return $results;
-
         } catch (\Exception $e) {
             Log::error('Failed to get top witels', ['error' => $e->getMessage()]);
             return collect([]);
@@ -489,7 +497,7 @@ class DashboardController extends Controller
                 $endMonth = Carbon::parse($dateRange['end'])->month;
 
                 $query->where('tahun', $startYear)
-                      ->whereBetween('bulan', [$startMonth, $endMonth]);
+                    ->whereBetween('bulan', [$startMonth, $endMonth]);
             } else {
                 $query->where('tahun', $this->getCurrentDataYear());
             }
@@ -544,7 +552,6 @@ class DashboardController extends Controller
             }
 
             return $results;
-
         } catch (\Exception $e) {
             Log::error('Failed to get top segments', ['error' => $e->getMessage()]);
             return collect([]);
@@ -572,7 +579,6 @@ class DashboardController extends Controller
                 new AdminDashboardExport($exportData, $dateRange, $filters),
                 $filename
             );
-
         } catch (\Exception $e) {
             Log::error('Export failed', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Export gagal');
@@ -583,8 +589,12 @@ class DashboardController extends Controller
     {
         return [
             'revenue_table' => $this->revenueService->getRevenueTableDataWithDateRange(
-                $dateRange['start'], $dateRange['end'], null, $filters['divisi_id'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                $dateRange['start'],
+                $dateRange['end'],
+                null,
+                $filters['divisi_id'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             ),
             'performance' => [
                 'account_managers' => $this->getTopAccountManagersFixed(null, 200, $dateRange, $filters),
@@ -593,8 +603,12 @@ class DashboardController extends Controller
                 'corporate_customers' => $this->getTopCorporateCustomersFixed(null, 200, $dateRange, $filters)
             ],
             'summary' => $this->revenueService->getTotalRevenueDataWithDateRange(
-                null, $filters['divisi_id'], $dateRange['start'], $dateRange['end'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                null,
+                $filters['divisi_id'],
+                $dateRange['start'],
+                $dateRange['end'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             )
         ];
     }
@@ -630,7 +644,6 @@ class DashboardController extends Controller
                 'monthlyChart',
                 'customerPerformance'
             ));
-
         } catch (\Exception $e) {
             Log::error('AM detail failed', ['error' => $e->getMessage()]);
             return redirect()->route('dashboard')->with('error', 'Gagal memuat detail AM');
@@ -653,7 +666,6 @@ class DashboardController extends Controller
             $categoryDistribution = $this->rankingService->getCategoryDistribution($id, $currentYear);
 
             return view('detailWitel', compact('witel', 'witelData', 'topAMs', 'categoryDistribution'));
-
         } catch (\Exception $e) {
             Log::error('Witel detail failed', ['error' => $e->getMessage()]);
             return redirect()->route('dashboard')->with('error', 'Gagal memuat detail Witel');
@@ -718,7 +730,6 @@ class DashboardController extends Controller
                     'top_customers' => $topCustomers
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Segment detail failed', ['error' => $e->getMessage()]);
             return redirect()->route('dashboard')->with('error', 'Gagal memuat detail Segment');
@@ -828,25 +839,25 @@ class DashboardController extends Controller
     private function addClickableUrls(&$performanceData)
     {
         if (isset($performanceData['account_manager'])) {
-            $performanceData['account_manager']->each(function($am) {
+            $performanceData['account_manager']->each(function ($am) {
                 $am->detail_url = route('account-manager.show', $am->id);
             });
         }
 
         if (isset($performanceData['witel'])) {
-            $performanceData['witel']->each(function($witel) {
+            $performanceData['witel']->each(function ($witel) {
                 $witel->detail_url = route('witel.show', $witel->id);
             });
         }
 
         if (isset($performanceData['segment'])) {
-            $performanceData['segment']->each(function($segment) {
+            $performanceData['segment']->each(function ($segment) {
                 $segment->detail_url = route('segment.show', $segment->id);
             });
         }
 
         if (isset($performanceData['corporate_customer'])) {
-            $performanceData['corporate_customer']->each(function($customer) {
+            $performanceData['corporate_customer']->each(function ($customer) {
                 $customer->detail_url = route('corporate-customer.show', $customer->id);
             });
         }
@@ -1075,13 +1086,19 @@ class DashboardController extends Controller
             $currentYear = date('Y');
 
             $monthlyRevenue = $this->revenueService->getMonthlyRevenue(
-                $currentYear, null, $filters['divisi_id'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                $currentYear,
+                null,
+                $filters['divisi_id'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             );
 
             $performanceDistribution = $this->performanceService->getPerformanceDistribution(
-                $currentYear, null, $filters['divisi_id'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                $currentYear,
+                null,
+                $filters['divisi_id'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             );
 
             return response()->json([
@@ -1089,7 +1106,6 @@ class DashboardController extends Controller
                 'monthly_data' => $monthlyRevenue,
                 'performance_data' => $performanceDistribution
             ]);
-
         } catch (\Exception $e) {
             Log::error('Chart data failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to load chart data'], 500);
@@ -1109,15 +1125,18 @@ class DashboardController extends Controller
             $dateRange = $this->calculateDateRange($filters['period_type']);
 
             $revenueTable = $this->revenueService->getRevenueTableDataWithDateRange(
-                $dateRange['start'], $dateRange['end'], null, $filters['divisi_id'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                $dateRange['start'],
+                $dateRange['end'],
+                null,
+                $filters['divisi_id'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             );
 
             return response()->json([
                 'success' => true,
                 'data' => $revenueTable
             ]);
-
         } catch (\Exception $e) {
             Log::error('Revenue table failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to load revenue table'], 500);
@@ -1137,8 +1156,12 @@ class DashboardController extends Controller
             $dateRange = $this->calculateDateRange($filters['period_type']);
 
             $summary = $this->revenueService->getTotalRevenueDataWithDateRange(
-                null, $filters['divisi_id'], $dateRange['start'], $dateRange['end'],
-                $filters['revenue_source'], $filters['tipe_revenue']
+                null,
+                $filters['divisi_id'],
+                $dateRange['start'],
+                $dateRange['end'],
+                $filters['revenue_source'],
+                $filters['tipe_revenue']
             );
 
             $summary['period_text'] = $this->generatePeriodText($filters['period_type'], $dateRange);
@@ -1147,7 +1170,6 @@ class DashboardController extends Controller
                 'success' => true,
                 'data' => $summary
             ]);
-
         } catch (\Exception $e) {
             Log::error('Summary failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to load summary'], 500);
@@ -1173,7 +1195,6 @@ class DashboardController extends Controller
                 'success' => true,
                 'data' => $insights
             ]);
-
         } catch (\Exception $e) {
             Log::error('Performance insights failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to load insights'], 500);
@@ -1203,14 +1224,15 @@ class DashboardController extends Controller
             $dateRange = $this->calculateDateRange($filters['period_type']);
 
             $performanceSummary = $amController->getAmPerformanceSummary(
-                $accountManager->id, $dateRange, $filters
+                $accountManager->id,
+                $dateRange,
+                $filters
             );
 
             return response()->json([
                 'success' => true,
                 'data' => $performanceSummary
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM performance failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to load AM performance'], 500);
@@ -1237,14 +1259,15 @@ class DashboardController extends Controller
             $dateRange = $this->calculateDateRange($filters['period_type']);
 
             $corporateCustomers = $amController->getAmCorporateCustomers(
-                $accountManager->id, $dateRange, $filters
+                $accountManager->id,
+                $dateRange,
+                $filters
             );
 
             return response()->json([
                 'success' => true,
                 'data' => $corporateCustomers
             ]);
-
         } catch (\Exception $e) {
             Log::error('AM customers failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to load AM customers'], 500);
@@ -1262,7 +1285,6 @@ class DashboardController extends Controller
         try {
             $amController = app(AmDashboardController::class);
             return $amController->export($request);
-
         } catch (\Exception $e) {
             Log::error('AM export failed', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Export AM gagal');
@@ -1281,3 +1303,4 @@ class DashboardController extends Controller
         ];
     }
 }
+

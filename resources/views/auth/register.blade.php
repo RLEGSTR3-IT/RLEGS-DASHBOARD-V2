@@ -129,6 +129,26 @@
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
               @enderror
             </div>
+
+            {{-- FIX: change to witel code and add backend handler --}}
+            <div class="mb-4">
+              <label for="witel_code" class="block font-medium text-sm text-gray-700 mb-1">Kode Witel</label>
+              <div class="relative">
+                <input id="witel_code" name="witel_code" type="password" placeholder="Masukkan kode witel"
+                       class="w-full border-gray-300 focus:border-red-600 focus:ring-red-600 rounded-md shadow-sm pr-10">
+                <button type="button" class="toggle-password absolute inset-y-0 right-0 pr-3 flex items-center"
+                        data-target="witel_code" aria-label="Toggle witel code visibility">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+              <p class="text-sm text-gray-500 mt-1">Masukkan kode witel untuk verifikasi.</p>
+              @error('witel_code')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+              @enderror
+            </div>
           </div>
 
           <!-- Admin Fields -->
@@ -387,6 +407,7 @@
         const amId = document.getElementById('account_manager_id');
         const amNik = document.getElementById('nik');
         const witelId = document.getElementById('witel_id');
+        const witelCode = document.getElementById('witel_code');
         const adminName = document.getElementById('admin_name');
         const adminCode = document.getElementById('admin_code');
 
@@ -394,6 +415,7 @@
         if (amId) amId.required = false;
         if (amNik) amNik.required = false;
         if (witelId) witelId.required = false;
+        if (witelCode) witelCode.required = false;
         if (adminName) adminName.required = false;
         if (adminCode) adminCode.required = false;
 
@@ -402,6 +424,7 @@
           adminName.value = '';
           adminCode.value = '';
           witelId.value = '';
+          witelCode.value = '';
           if (amSearch) amSearch.required = true;
           if (amId) amId.required = true;
           if (amNik) amNik.required = true;
@@ -413,12 +436,14 @@
           adminName.value = '';
           adminCode.value = '';
           if (witelId) witelId.required = true;
+          if (witelCode) witelCode.required = true;
         } else if (this.value === 'admin') {
           adminFields.classList.remove('hidden');
           amSearch.value = '';
           amId.value = '';
           amNik.value = '';
           witelId.value = '';
+          witelCode.value = '';
           if (adminName) adminName.required = true;
           if (adminCode) adminCode.required = true;
         }
@@ -484,7 +509,7 @@
           clearInlineError();
           idInput.value = am.id;
           // setSubmitEnabled(true);
-          // erm maybe not needed
+          // ermm maybe not needed
           // suggestionsBox.classList.add('hidden');
         }
         catch {

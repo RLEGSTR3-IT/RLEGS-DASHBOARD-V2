@@ -31,7 +31,6 @@
       </div>
 
       <div id="trend-revenue" class="ccw-component">
-          {{-- TODO: add YTD overview cards for trend revenue --}}
           @include('cc_witel.partials.trend-revenue-ccw')
       </div>
 

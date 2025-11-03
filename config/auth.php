@@ -2,6 +2,16 @@
 
 return [
     'admin_code_hash' => env('ADMIN_CODE', null),
+    'witel_code_hash' => env('WITEL_CODE', null),
+
+    'witel_bali_code_hash' => env('WITEL_BALI_CODE', null),
+    'witel_jatim_barat_code_hash' => env('WITEL_JATIM_BARAT_CODE', null),
+    'witel_jatim_timur_code_hash' => env('WITEL_JATIM_TIMUR_CODE', null),
+    'witel_nusa_tenggara_code_hash' => env('WITEL_NUSA_TENGGARA_CODE', null),
+    'witel_semarang_jateng_utara_code_hash' => env('WITEL_SEMARANG_JATENG_UTARA_CODE', null),
+    'witel_solo_jateng_timur_code_hash' => env('WITEL_SOLO_JATENG_TIMUR_CODE', null),
+    'witel_suramadu_code_hash' => env('WITEL_SURAMADU_CODE', null),
+    'witel_yogya_jateng_selatan_code_hash' => env('WITEL_YOGYA_JATENG_SELATAN_CODE', null),
 
     /*
     |--------------------------------------------------------------------------

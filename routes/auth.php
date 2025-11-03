@@ -25,11 +25,13 @@ Route::middleware('guest')->group(function () {
     Route::get('/am/check-account-available', [RegisteredUserController::class, 'checkAccountAvailable'])
         ->name('am.check-account-available');
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
+    Route::get('login', [AuthenticatedSessionController::class, 'create']);
+    //     ->middleware('throttle:8,1')
+    //     ->name('login');
+
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:8,1')
         ->name('login');
-
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 
-{{-- TODO: Add overview cards of YTD revenue across all divisions --}}
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">

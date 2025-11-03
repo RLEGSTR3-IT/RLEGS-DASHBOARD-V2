@@ -67,7 +67,7 @@
                     <span class="seg-select__label">Semua Segment</span>
                     <span class="seg-select__caret"></span>
                 </button>
-                
+
                 <!-- Menu dropdown (akan diisi via JS) -->
                 <div class="seg-menu" id="segMenu" role="listbox">
                     <div class="seg-tabs" id="segTabs" role="tablist">

@@ -21,8 +21,7 @@
 
 <body class="bg-gray-100 p-8">
     {{-- TODO: --}}
-    {{-- make em responsive, fix the witel red logo to make it similar to trend revenue --}}
-    {{-- make the icon align horizontally, reset year filter selected to default (now) when switching between modes except source --}}
+    {{-- make em responsive --}}
 
     <div class="witel-performance-layout">
         {{-- Witel Leaderboard --}}

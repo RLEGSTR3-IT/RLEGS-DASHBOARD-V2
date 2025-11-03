@@ -891,53 +891,31 @@
         <div class="filter-group">
             <label>Segment</label>
 
-            <!-- Select asli (tetap ada untuk submit & nilai) -->
+            <!-- Select asli (hidden, untuk form submit) -->
             <select class="form-select" id="filter-segment" name="segment">
                 <option value="all">Semua Segment</option>
-                <!-- nilai akan diisi via JS; opsi statis ini hanya fallback -->
+                <!-- Options dari database akan diisi via JS -->
             </select>
 
-            <!-- UI custom bertab -->
+            <!-- UI custom dengan tabs (akan di-generate via JS) -->
             <div class="seg-select" id="segSelect">
-                <div class="seg-menu" id="segMenu" role="listbox" aria-labelledby="segBtn">
-                <div class="seg-tabs" role="tablist" aria-label="Divisi">
-                    <button class="seg-tab active" data-tab="DPS" role="tab" aria-selected="true">DPS</button>
-                    <button class="seg-tab" data-tab="DSS" role="tab" aria-selected="false">DSS</button>
-                    <button class="seg-tab" data-tab="DGS" role="tab" aria-selected="false">DGS</button>
-                </div>
+                <!-- Tombol trigger -->
+                <button type="button" class="seg-select__btn" aria-haspopup="listbox">
+                    <span class="seg-select__label">Semua Segment</span>
+                    <span class="seg-select__caret"></span>
+                </button>
 
-                <div class="seg-panels">
-                    <div class="seg-panel active" data-panel="DPS" role="tabpanel">
-                    <button class="seg-option all" data-value="all">Semua Segment</button>
-                    <button class="seg-option" data-value="FWS">FWS</button>
-                    <button class="seg-option" data-value="LMS">LMS</button>
-                    <button class="seg-option" data-value="PBS">PBS</button>
-                    <button class="seg-option" data-value="RMS">RMS</button>
-                    <button class="seg-option" data-value="PCS">PCS</button>
-                    <button class="seg-option" data-value="PRS">PRS</button>
+                <!-- Menu dropdown (akan diisi via JS) -->
+                <div class="seg-menu" id="segMenu" role="listbox">
+                    <div class="seg-tabs" id="segTabs" role="tablist">
+                        <!-- Tabs akan di-generate via JS -->
                     </div>
-
-                    <div class="seg-panel" data-panel="DSS" role="tabpanel">
-                    <button class="seg-option all" data-value="all">Semua Segment</button>
-                    <button class="seg-option" data-value="ERS">ERS</button>
-                    <button class="seg-option" data-value="FRBS">FRBS</button>
-                    <button class="seg-option" data-value="MIS">MIS</button>
-                    <button class="seg-option" data-value="TWS">TWS</button>
-                    <button class="seg-option" data-value="SBS">SBS</button>
+                    <div class="seg-panels" id="segPanels">
+                        <!-- Panels akan di-generate via JS -->
                     </div>
-
-                    <div class="seg-panel" data-panel="DGS" role="tabpanel">
-                    <button class="seg-option all" data-value="all">Semua Segment</button>
-                    <button class="seg-option" data-value="GPS">GPS</button>
-                    <button class="seg-option" data-value="GDS">GDS</button>
-                    <button class="seg-option" data-value="GIS">GIS</button>
-                    <button class="seg-option" data-value="GRS">GRS</button>
-                    </div>
-                </div>
                 </div>
             </div>
         </div>
-
 
         <!-- === Periode: MONTHPICKER (pilih bulan & tahun) === -->
         <div class="filter-group" id="filterPeriodeGroup">

@@ -63,11 +63,7 @@
                         <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
                     </a>
                 </li>
-                <li class="sidebar-item">
-                    <a href="" class="sidebar-link">
-                        <i class="lni lni-cloud-upload"></i><span>File Management</span>
-                    </a>
-                </li>
+
             </ul>
             <div class="sidebar-footer">
                 <a href="{{ route('profile.index') }}" class="sidebar-link">

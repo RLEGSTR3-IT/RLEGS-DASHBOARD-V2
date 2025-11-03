@@ -13,22 +13,32 @@ use Illuminate\Support\Facades\Cache;
 /**
  * RevenueImportController - Main Import Router
  *
- * FIXED VERSION - 2025-10-31 23:00
+ * FIXED VERSION - 2025-11-03
  *
- * ✅ FIXED: Session menyimpan year, month, divisi_id, jenis_data
- * ✅ FIXED: Execute dapat parameter lengkap dari session
+ * ✅ FIXED: Pass year & month to ImportAMController->previewRevenueAM()
+ * ✅ FIXED: Pass year & month to ImportAMController->executeRevenueAM()
+ * ✅ FIXED: Validation untuk revenue_am (year & month dari form, bukan CSV)
  * ✅ MAINTAINED: Semua fungsi existing (downloadTemplate, validateImport, executeImport, cleanup, dll)
  *
- * CHANGES:
- * - previewImport(): Line 95-102 → Added year, month, divisi_id, jenis_data to session
- * - executeImport(): Line 220-231 → Merge session params to request before execute
+ * CHANGES FROM PREVIOUS VERSION:
+ * - Line 106-110: Added year/month validation for revenue_am
+ * - Line 133-136: Save year/month to session for revenue_am
+ * - Line 154: Pass year & month params to previewRevenueAM()
+ * - Line 273: Pass year & month params from session to executeRevenueAM()
+ * - Line 369: Improved legacy import for revenue_am with year/month
  * - ALL OTHER METHODS: Unchanged
+ *
+ * KEY FLOW:
+ * 1. Frontend sends: file + year + month (from month picker)
+ * 2. Preview: Save to session, pass to ImportAMController
+ * 3. Execute: Load from session, pass to ImportAMController
+ * 4. ImportAMController: Use params, not from CSV columns
  */
 class RevenueImportController extends Controller
 {
     /**
      * STEP 1: Preview Import - Check for duplicates
-     * ✅ FIXED: Save year, month, divisi_id to session
+     * ✅ FIXED: Added year/month validation & passing for revenue_am
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -110,8 +120,13 @@ class RevenueImportController extends Controller
                     break;
 
                 case 'revenue_am':
+                    // ✅ FIXED: Pass year & month from form to preview
                     $controller = new ImportAMController();
-                    $previewResult = $controller->previewRevenueAM($tempFullPath);
+                    $previewResult = $controller->previewRevenueAM(
+                        $tempFullPath,
+                        $request->year,
+                        $request->month
+                    );
                     break;
 
                 default:
@@ -146,13 +161,11 @@ class RevenueImportController extends Controller
                     'month' => $request->month
                 ];
             } elseif ($importType === 'revenue_am') {
-                // Revenue AM might have year/month in CSV or form - save if exists
-                if ($request->has('year')) {
-                    $sessionData['additional_params']['year'] = $request->year;
-                }
-                if ($request->has('month')) {
-                    $sessionData['additional_params']['month'] = $request->month;
-                }
+                // ✅ FIXED: Save year/month for revenue_am
+                $sessionData['additional_params'] = [
+                    'year' => $request->year,
+                    'month' => $request->month
+                ];
             }
 
             Cache::put($sessionId, $sessionData, now()->addHours(2));
@@ -164,6 +177,7 @@ class RevenueImportController extends Controller
             Log::info("Preview Import completed", [
                 'type' => $importType,
                 'session_id' => $sessionId,
+                'additional_params' => $sessionData['additional_params'] ?? null,
                 'preview_result' => [
                     'total_rows' => $previewResult['data']['summary']['total_rows'] ?? 0,
                     'new_count' => $previewResult['data']['summary']['new_count'] ?? 0,
@@ -187,7 +201,7 @@ class RevenueImportController extends Controller
 
     /**
      * STEP 2: Execute Import - Process with user confirmation
-     * ✅ FIXED: Merge additional_params from session to request
+     * ✅ FIXED: Merge additional_params from session to request (including year/month for revenue_am)
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -295,6 +309,7 @@ class RevenueImportController extends Controller
                     break;
 
                 case 'revenue_am':
+                    // ✅ FIXED: Year & month sudah ada di $importRequest dari session merge
                     $controller = new ImportAMController();
                     $executeResult = $controller->executeRevenueAM($importRequest);
                     break;
@@ -334,6 +349,7 @@ class RevenueImportController extends Controller
 
     /**
      * Legacy single-step import (maintained for backward compatibility)
+     * ✅ FIXED: Added year/month handling for revenue_am
      */
     public function import(Request $request)
     {
@@ -384,10 +400,17 @@ class RevenueImportController extends Controller
                 'temp_file' => $tempFullPath
             ]);
 
+            // ✅ FIXED: Merge params based on import type
             if ($importType === 'revenue_cc') {
                 $importRequest->merge([
                     'divisi_id' => $request->divisi_id,
                     'jenis_data' => $request->jenis_data,
+                    'year' => $request->year,
+                    'month' => $request->month
+                ]);
+            } elseif ($importType === 'revenue_am') {
+                // ✅ FIXED: Add year/month for revenue_am
+                $importRequest->merge([
                     'year' => $request->year,
                     'month' => $request->month
                 ]);
@@ -460,7 +483,7 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * Get import history (placeholder)
+     * Get import history
      */
     public function getImportHistory()
     {
@@ -507,6 +530,7 @@ class RevenueImportController extends Controller
 
     /**
      * Get additional validation rules based on import type
+     * ✅ FIXED: Added year/month validation for revenue_am
      */
     private function getAdditionalValidationRules($importType)
     {
@@ -515,6 +539,12 @@ class RevenueImportController extends Controller
         if ($importType === 'revenue_cc') {
             $rules['divisi_id'] = 'required|exists:divisi,id';
             $rules['jenis_data'] = 'required|in:revenue,target';
+            $rules['year'] = 'required|integer|min:2020|max:2100';
+            $rules['month'] = 'required|integer|min:1|max:12';
+        }
+
+        // ✅ FIXED: Add validation for revenue_am
+        if ($importType === 'revenue_am') {
             $rules['year'] = 'required|integer|min:2020|max:2100';
             $rules['month'] = 'required|integer|min:1|max:12';
         }

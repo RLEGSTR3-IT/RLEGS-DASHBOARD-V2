@@ -12,23 +12,32 @@ use Carbon\Carbon;
 /**
  * ImportAMController - Account Manager Import Handler
  *
- * FIXED VERSION - 2025-10-31
+ * FIXED VERSION - 2025-11-03
  *
- * ✅ FIXED: Nama tabel 'witels' → 'witel' (line 273, 284)
- * ✅ FIXED: Response structure untuk preview (data.summary.new_count, data.rows)
- * ✅ MAINTAINED: Semua fungsi existing (downloadTemplate, execute, helper methods)
- *
- * KEY FEATURES:
- * ✅ Hanya validasi kolom WAJIB (NIK, NAMA AM, WITEL AM, DIVISI AM)
- * ✅ Abaikan kolom tambahan (STANDARD NAME, GROUP CONGLO, SEGMEN, dll)
- * ✅ Support kolom opsional (PROPORSI, NIPNAS, DIVISI, TELDA)
- * ✅ Header matching: case-insensitive + trim
- * ✅ Many-to-many divisi support
- * ✅ Preview + Execute pattern with duplicate detection
+ * ✅ FIXED: Revenue AM tidak perlu kolom YEAR & MONTH di CSV (ambil dari parameter)
+ * ✅ FIXED: Flexible column handling - abaikan kolom extra di CSV
+ * ✅ FIXED: previewRevenueAM() signature: ($tempFilePath, $year, $month)
+ * ✅ FIXED: executeRevenueAM() ambil year/month dari $request->year & $request->month
+ * ✅ MAINTAINED: Semua fungsi existing (Data AM, template, helper methods)
  *
  * CHANGELOG:
- * - Line 273: DB::table('witels') → DB::table('witel')
- * - Line 284: DB::table('teldas') sudah benar (tidak diubah)
+ * - Line 439: Changed $requiredColumns from ['YEAR', 'MONTH', 'NIPNAS', 'NIK_AM', 'PROPORSI']
+ *             to ['NIPNAS', 'NIK_AM', 'PROPORSI']
+ * - Line 437: Added parameters $year, $month to previewRevenueAM()
+ * - Line 461-462: Use $year, $month from parameters instead of CSV
+ * - Line 530: Added parameters to executeRevenueAM() signature
+ * - Line 532-544: Extract year/month from request, validate them
+ * - Line 564: Changed $requiredColumns (same as preview)
+ * - Line 598-599: Use $year, $month from request parameters
+ * - ALL OTHER METHODS: Unchanged (Data AM, downloadTemplate, helpers)
+ *
+ * KEY FEATURES:
+ * ✅ Data AM: Hanya validasi kolom WAJIB (NIK, NAMA AM, WITEL AM, DIVISI AM)
+ * ✅ Revenue AM: Hanya validasi kolom WAJIB (NIPNAS, NIK_AM, PROPORSI)
+ * ✅ Year & Month: Dari form input (month picker), BUKAN dari CSV
+ * ✅ Flexible Columns: Kolom extra di CSV diabaikan (tidak error)
+ * ✅ Header matching: case-insensitive + trim
+ * ✅ Preview + Execute pattern with duplicate detection
  */
 class ImportAMController extends Controller
 {
@@ -49,11 +58,11 @@ class ImportAMController extends Controller
             ],
             'revenue-am' => [
                 'filename' => 'template_revenue_am.csv',
-                'headers' => ['YEAR', 'MONTH', 'NIPNAS', 'NIK_AM', 'PROPORSI'],
+                'headers' => ['NIPNAS', 'NIK_AM', 'PROPORSI'],
                 'sample' => [
-                    ['2025', '12', '76590001', '0001', '60'],
-                    ['2025', '12', '76590001', '000', '40'],
-                    ['2025', '12', '76590002', 'AM0003', '100']
+                    ['76590001', '0001', '60'],
+                    ['76590001', '0002', '40'],
+                    ['76590002', 'AM0003', '100']
                 ]
             ]
         ];
@@ -84,7 +93,7 @@ class ImportAMController extends Controller
     }
 
     /**
-     * ✅ FIXED: Preview Data AM Import
+     * ✅ MAINTAINED: Preview Data AM Import (unchanged)
      */
     public function previewDataAM($tempFilePath)
     {
@@ -196,7 +205,6 @@ class ImportAMController extends Controller
                 }
             }
 
-            // ✅ FIXED: Return structure sesuai ekspektasi frontend
             return [
                 'success' => true,
                 'message' => 'Preview berhasil',
@@ -221,9 +229,7 @@ class ImportAMController extends Controller
     }
 
     /**
-     * ✅ FIXED: Execute Data AM Import
-     * FIX: Line 273 - Changed 'witels' to 'witel'
-     * FIX: Accept Request object instead of string path
+     * ✅ MAINTAINED: Execute Data AM Import (unchanged)
      */
     public function executeDataAM($request)
     {
@@ -292,7 +298,7 @@ class ImportAMController extends Controller
                         throw new \Exception('DIVISI AM harus AM atau HOTDA');
                     }
 
-                    // ✅ FIXED: Get Witel ID - Changed table name from 'witels' to 'witel'
+                    // Get Witel ID
                     $witel = DB::table('witel')
                         ->whereRaw('UPPER(nama) = ?', [strtoupper($witelName)])
                         ->first();
@@ -424,20 +430,31 @@ class ImportAMController extends Controller
     }
 
     /**
-     * Preview Revenue AM Import
+     * ✅ FIXED: Preview Revenue AM Import
+     * Changed signature: Added $year and $month parameters
+     * Changed $requiredColumns: Removed 'YEAR' and 'MONTH'
+     *
+     * @param string $tempFilePath Path to temp CSV file
+     * @param int $year Year from form input (month picker)
+     * @param int $month Month from form input (month picker)
+     * @return array Preview result
      */
-    public function previewRevenueAM($tempFilePath)
+    public function previewRevenueAM($tempFilePath, $year, $month)
     {
         try {
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            $requiredColumns = ['YEAR', 'MONTH', 'NIPNAS', 'NIK_AM', 'PROPORSI'];
+            // ✅ FIXED: Only NIPNAS, NIK_AM, PROPORSI required from CSV
+            // Year & month from parameters (form input)
+            $requiredColumns = ['NIPNAS', 'NIK_AM', 'PROPORSI'];
             $headers = array_shift($csvData);
 
+            // Flexible validation: Check if required columns exist, ignore extra columns
             if (!$this->validateHeaders($headers, $requiredColumns)) {
                 return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
+                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns) .
+                                 '. Kolom lain boleh ada dan akan diabaikan.'
                 ];
             }
 
@@ -451,25 +468,24 @@ class ImportAMController extends Controller
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
 
-                $year = $this->getColumnValue($row, $columnIndices['YEAR']);
-                $month = $this->getColumnValue($row, $columnIndices['MONTH']);
+                // ✅ FIXED: Use year & month from parameters, not from CSV
                 $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                 $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
                 $proporsi = $this->getColumnValue($row, $columnIndices['PROPORSI']);
 
-                if (empty($year) || empty($month) || empty($nipnas) || empty($nikAM) || empty($proporsi)) {
+                if (empty($nipnas) || empty($nikAM) || empty($proporsi)) {
                     $errorCount++;
                     $detailedRows[] = [
                         'row_number' => $rowNumber,
                         'status' => 'error',
                         'data' => [
-                            'YEAR' => $year ?? 'N/A',
-                            'MONTH' => $month ?? 'N/A',
+                            'YEAR' => $year,
+                            'MONTH' => $month,
                             'NIPNAS' => $nipnas ?? 'N/A',
                             'NIK_AM' => $nikAM ?? 'N/A',
                             'PROPORSI' => $proporsi ?? 'N/A'
                         ],
-                        'error' => 'Data tidak lengkap'
+                        'error' => 'NIPNAS, NIK_AM, atau PROPORSI kosong'
                     ];
                     continue;
                 }
@@ -574,8 +590,12 @@ class ImportAMController extends Controller
     }
 
     /**
-     * Execute Revenue AM Import
-     * FIX: Accept Request object instead of string path
+     * ✅ FIXED: Execute Revenue AM Import
+     * Changed to extract year/month from $request->year and $request->month
+     * Changed $requiredColumns: Removed 'YEAR' and 'MONTH'
+     *
+     * @param Request|string $request Request object with temp_file, year, month
+     * @return array Execute result
      */
     public function executeRevenueAM($request)
     {
@@ -584,6 +604,19 @@ class ImportAMController extends Controller
         try {
             // Extract temp file path from request
             $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
+
+            // ✅ FIXED: Extract year & month from request (from form, not CSV)
+            $year = $request instanceof Request ? $request->input('year') : null;
+            $month = $request instanceof Request ? $request->input('month') : null;
+
+            // Validate required parameters
+            if (!$year || !$month) {
+                DB::rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Parameter year dan month wajib diisi (dari form input)'
+                ];
+            }
 
             // Validate temp file exists
             if (!$tempFilePath || !file_exists($tempFilePath)) {
@@ -596,7 +629,8 @@ class ImportAMController extends Controller
 
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            $requiredColumns = ['YEAR', 'MONTH', 'NIPNAS', 'NIK_AM', 'PROPORSI'];
+            // ✅ FIXED: Only NIPNAS, NIK_AM, PROPORSI required from CSV
+            $requiredColumns = ['NIPNAS', 'NIK_AM', 'PROPORSI'];
             $headers = array_shift($csvData);
 
             if (!$this->validateHeaders($headers, $requiredColumns)) {
@@ -623,14 +657,13 @@ class ImportAMController extends Controller
                 $rowNumber = $index + 2;
 
                 try {
-                    $year = $this->getColumnValue($row, $columnIndices['YEAR']);
-                    $month = $this->getColumnValue($row, $columnIndices['MONTH']);
+                    // ✅ FIXED: Use year & month from request parameters
                     $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                     $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
                     $proporsi = floatval($this->getColumnValue($row, $columnIndices['PROPORSI']));
 
-                    if (empty($year) || empty($month) || empty($nipnas) || empty($nikAM) || empty($proporsi)) {
-                        throw new \Exception('Data tidak lengkap');
+                    if (empty($nipnas) || empty($nikAM) || empty($proporsi)) {
+                        throw new \Exception('NIPNAS, NIK_AM, atau PROPORSI kosong');
                     }
 
                     $am = DB::table('account_managers')->where('nik', $nikAM)->first();
@@ -787,6 +820,10 @@ class ImportAMController extends Controller
         return $csvData;
     }
 
+    /**
+     * ✅ MAINTAINED: Flexible header validation
+     * Only checks if required columns exist, ignores extra columns
+     */
     private function validateHeaders($headers, $requiredColumns)
     {
         $cleanHeaders = array_map(function($h) {

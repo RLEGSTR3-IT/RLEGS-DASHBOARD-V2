@@ -21,6 +21,19 @@ class AmDashboardController extends Controller
 {
     protected $performanceService;
 
+    // KONSTANTA DIVISI UMUM
+    const DIVISI_DGS_ID = 1; // Government Service
+    const DIVISI_DSS_ID = 2; // SOE/State Service
+    const DIVISI_DPS_ID = 3; // Private Service
+
+    const DIVISI_GOVERNMENT = [1]; // DGS saja
+    const DIVISI_ENTERPRISE = [2, 3]; // DSS + DPS
+
+    const DIVISI_UMUM_MAP = [
+        'GOVERNMENT' => [1], // DGS
+        'ENTERPRISE' => [2, 3] // DSS + DPS
+    ];
+
     public function __construct(AmPerformanceService $performanceService)
     {
         $this->performanceService = $performanceService;
@@ -69,7 +82,7 @@ class AmDashboardController extends Controller
         try {
             $accountManager = AccountManager::with(['witel'])->findOrFail($amId);
 
-            // FIXED: Load divisi dengan fallback
+            // Load divisi dengan fallback
             $divisiList = $accountManager->divisis;
             if ($divisiList->isEmpty() && $accountManager->divisi_id) {
                 $divisiList = collect([Divisi::find($accountManager->divisi_id)]);
@@ -79,8 +92,8 @@ class AmDashboardController extends Controller
             $filters = $this->extractFilters($request, $accountManager, $divisiList);
             $profileData = $this->getProfileData($accountManager, $filters, $divisiList);
 
-            // FIXED: Ranking calculation
-            $rankingData = $this->getRankingDataFixed($amId, $filters, $divisiList);
+            // FIXED: Ranking calculation dengan divisi umum (GOVERNMENT/ENTERPRISE)
+            $rankingData = $this->getRankingDataFixed($amId, $filters, $divisiList, $accountManager);
 
             $cardData = $this->getCardGroupData($amId, $filters);
             $customerData = $this->getCustomerTabData($amId, $filters);
@@ -91,6 +104,7 @@ class AmDashboardController extends Controller
                 'am_id' => $amId,
                 'divisi_count' => $divisiList->count(),
                 'selected_divisi' => $filters['divisi_id'],
+                'selected_divisi_umum' => $filters['divisi_umum'],
                 'customer_count' => $customerData['customers']->count(),
                 'global_rank' => $rankingData['global']['rank'] ?? 'N/A'
             ]);
@@ -121,58 +135,111 @@ class AmDashboardController extends Controller
     }
 
     /**
-     * FIXED: Get Ranking Data - Direct query tanpa service yang bermasalah
+     * FIXED: Get Ranking Data - dengan sistem GOVERNMENT/ENTERPRISE
      */
-    private function getRankingDataFixed($amId, $filters, $divisiList)
+    private function getRankingDataFixed($amId, $filters, $divisiList, $accountManager)
     {
         $currentYear = $filters['tahun'];
         $currentMonth = date('n');
 
-        $accountManager = AccountManager::find($amId);
+        // 1. GLOBAL RANKING - semua AM tanpa filter divisi/witel
+        $globalRanking = $this->calculateGlobalRankingFixed($amId, $currentYear, $currentMonth);
 
-        // 1. GLOBAL RANKING - semua AM
-        $globalRanking = $this->calculateGlobalRankingFixed($amId, $currentYear, $currentMonth, $filters['divisi_id']);
+        // 2. WITEL RANKING - AM dalam witel yang sama tanpa filter divisi
+        $witelRanking = $this->calculateWitelRankingFixed($amId, $accountManager->witel_id, $currentYear, $currentMonth);
 
-        // 2. WITEL RANKING - AM dalam witel yang sama
-        $witelRanking = $this->calculateWitelRankingFixed($amId, $accountManager->witel_id, $currentYear, $currentMonth, $filters['divisi_id']);
+        // 3. DIVISI UMUM RANKING - per GOVERNMENT/ENTERPRISE dalam witel yang sama
+        $divisiUmumRankings = [];
 
-        // 3. DIVISI RANKING - per divisi
-        $divisiRankings = [];
-        foreach ($divisiList as $divisi) {
-            $divisiRankings[$divisi->kode] = $this->calculateDivisiRankingFixed($amId, $divisi->id, $currentYear, $currentMonth);
+        // Cek AM ini punya divisi apa
+        $divisiIds = $divisiList->pluck('id')->toArray();
+        $hasDGS = in_array(self::DIVISI_DGS_ID, $divisiIds);
+        $hasDSS = in_array(self::DIVISI_DSS_ID, $divisiIds);
+        $hasDPS = in_array(self::DIVISI_DPS_ID, $divisiIds);
+        $hasEnterprise = $hasDSS || $hasDPS;
+
+        // Ranking GOVERNMENT (jika AM punya DGS)
+        if ($hasDGS) {
+            $divisiUmumRankings['GOVERNMENT'] = $this->calculateDivisiUmumRanking(
+                $amId,
+                'GOVERNMENT',
+                $accountManager->witel_id,
+                $currentYear,
+                $currentMonth
+            );
         }
+
+        // Ranking ENTERPRISE (jika AM punya DSS atau DPS)
+        if ($hasEnterprise) {
+            $divisiUmumRankings['ENTERPRISE'] = $this->calculateDivisiUmumRanking(
+                $amId,
+                'ENTERPRISE',
+                $accountManager->witel_id,
+                $currentYear,
+                $currentMonth
+            );
+        }
+
+        // Tentukan divisi umum yang aktif untuk ditampilkan
+        $activeDivisiUmum = $this->determineActiveDivisiUmum($filters['divisi_umum'], $hasDGS, $hasEnterprise);
 
         return [
             'global' => $globalRanking,
             'witel' => $witelRanking,
-            'divisi' => $divisiRankings,
+            'divisi_umum' => $divisiUmumRankings,
+            'active_divisi_umum' => $activeDivisiUmum,
+            'has_government' => $hasDGS,
+            'has_enterprise' => $hasEnterprise,
             'period_text' => $this->getPeriodText($filters['period_type'])
         ];
     }
 
     /**
-     * Calculate Global Ranking - FIXED
+     * Tentukan divisi umum mana yang aktif ditampilkan
      */
-    private function calculateGlobalRankingFixed($amId, $tahun, $bulan, $divisiId = null)
+    private function determineActiveDivisiUmum($requestedDivisi, $hasDGS, $hasEnterprise)
     {
-        $query = AmRevenue::where('tahun', $tahun)
-            ->where('bulan', '<=', $bulan);
-
-        if ($divisiId) {
-            $query->where('divisi_id', $divisiId);
+        // Jika user memilih spesifik dan AM punya divisi itu
+        if ($requestedDivisi === 'GOVERNMENT' && $hasDGS) {
+            return 'GOVERNMENT';
+        }
+        if ($requestedDivisi === 'ENTERPRISE' && $hasEnterprise) {
+            return 'ENTERPRISE';
         }
 
-        $rankings = $query->selectRaw('
-                account_manager_id,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target,
+        // Default: tampilkan yang pertama yang dimiliki
+        if ($hasDGS) {
+            return 'GOVERNMENT';
+        }
+        if ($hasEnterprise) {
+            return 'ENTERPRISE';
+        }
+
+        return null;
+    }
+
+    /**
+     * FIXED: Calculate Global Ranking - TANPA filter divisi, INCLUDE semua AM
+     */
+    private function calculateGlobalRankingFixed($amId, $tahun, $bulan)
+    {
+        // Peringkat global: bandingkan SEMUA AM termasuk yang belum punya revenue
+        $rankings = AccountManager::leftJoin('am_revenues', function($join) use ($tahun, $bulan) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $tahun)
+                    ->where('am_revenues.bulan', '<=', $bulan);
+            })
+            ->selectRaw('
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
-                    WHEN SUM(target_revenue) > 0
-                    THEN (SUM(real_revenue) / SUM(target_revenue)) * 100
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('account_manager_id')
+            ->groupBy('account_managers.id')
             ->orderByDesc('achievement_rate')
             ->orderByDesc('total_revenue')
             ->get();
@@ -190,24 +257,22 @@ class AmDashboardController extends Controller
             $previousYear--;
         }
 
-        $previousQuery = AmRevenue::where('tahun', $previousYear)
-            ->where('bulan', '<=', $previousMonth);
-
-        if ($divisiId) {
-            $previousQuery->where('divisi_id', $divisiId);
-        }
-
-        $previousRankings = $previousQuery->selectRaw('
-                account_manager_id,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target,
+        $previousRankings = AccountManager::leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $previousYear)
+                    ->where('am_revenues.bulan', '<=', $previousMonth);
+            })
+            ->selectRaw('
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
-                    WHEN SUM(target_revenue) > 0
-                    THEN (SUM(real_revenue) / SUM(target_revenue)) * 100
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('account_manager_id')
+            ->groupBy('account_managers.id')
             ->orderByDesc('achievement_rate')
             ->orderByDesc('total_revenue')
             ->get();
@@ -231,31 +296,28 @@ class AmDashboardController extends Controller
     }
 
     /**
-     * Calculate Witel Ranking - FIXED
+     * FIXED: Calculate Witel Ranking - TANPA filter divisi, INCLUDE semua AM di witel
      */
-    private function calculateWitelRankingFixed($amId, $witelId, $tahun, $bulan, $divisiId = null)
+    private function calculateWitelRankingFixed($amId, $witelId, $tahun, $bulan)
     {
-        // Join dengan account_managers untuk filter witel
-        $query = AmRevenue::join('account_managers', 'am_revenues.account_manager_id', '=', 'account_managers.id')
-            ->where('account_managers.witel_id', $witelId)
-            ->where('am_revenues.tahun', $tahun)
-            ->where('am_revenues.bulan', '<=', $bulan);
-
-        if ($divisiId) {
-            $query->where('am_revenues.divisi_id', $divisiId);
-        }
-
-        $rankings = $query->selectRaw('
-                am_revenues.account_manager_id,
-                SUM(am_revenues.real_revenue) as total_revenue,
-                SUM(am_revenues.target_revenue) as total_target,
+        // Peringkat witel: bandingkan semua AM di witel yang sama, termasuk yang belum punya revenue
+        $rankings = AccountManager::where('account_managers.witel_id', $witelId)
+            ->leftJoin('am_revenues', function($join) use ($tahun, $bulan) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $tahun)
+                    ->where('am_revenues.bulan', '<=', $bulan);
+            })
+            ->selectRaw('
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
-                    WHEN SUM(am_revenues.target_revenue) > 0
-                    THEN (SUM(am_revenues.real_revenue) / SUM(am_revenues.target_revenue)) * 100
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('am_revenues.account_manager_id')
+            ->groupBy('account_managers.id')
             ->orderByDesc('achievement_rate')
             ->orderByDesc('total_revenue')
             ->get();
@@ -272,26 +334,23 @@ class AmDashboardController extends Controller
             $previousYear--;
         }
 
-        $previousQuery = AmRevenue::join('account_managers', 'am_revenues.account_manager_id', '=', 'account_managers.id')
-            ->where('account_managers.witel_id', $witelId)
-            ->where('am_revenues.tahun', $previousYear)
-            ->where('am_revenues.bulan', '<=', $previousMonth);
-
-        if ($divisiId) {
-            $previousQuery->where('am_revenues.divisi_id', $divisiId);
-        }
-
-        $previousRankings = $previousQuery->selectRaw('
-                am_revenues.account_manager_id,
-                SUM(am_revenues.real_revenue) as total_revenue,
-                SUM(am_revenues.target_revenue) as total_target,
+        $previousRankings = AccountManager::where('account_managers.witel_id', $witelId)
+            ->leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $previousYear)
+                    ->where('am_revenues.bulan', '<=', $previousMonth);
+            })
+            ->selectRaw('
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
-                    WHEN SUM(am_revenues.target_revenue) > 0
-                    THEN (SUM(am_revenues.real_revenue) / SUM(am_revenues.target_revenue)) * 100
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('am_revenues.account_manager_id')
+            ->groupBy('account_managers.id')
             ->orderByDesc('achievement_rate')
             ->orderByDesc('total_revenue')
             ->get();
@@ -318,33 +377,75 @@ class AmDashboardController extends Controller
     }
 
     /**
-     * Calculate Divisi Ranking - FIXED
+     * NEW: Calculate Divisi Umum Ranking (GOVERNMENT atau ENTERPRISE) dalam scope witel
+     * INCLUDE semua AM yang terdaftar di divisi tersebut bahkan yang belum punya revenue
      */
-    private function calculateDivisiRankingFixed($amId, $divisiId, $tahun, $bulan)
+    private function calculateDivisiUmumRanking($amId, $divisiUmum, $witelId, $tahun, $bulan)
     {
-        $rankings = AmRevenue::where('divisi_id', $divisiId)
-            ->where('tahun', $tahun)
-            ->where('bulan', '<=', $bulan)
+        // Tentukan divisi IDs berdasarkan divisi umum
+        $divisiIds = self::DIVISI_UMUM_MAP[$divisiUmum] ?? [];
+
+        if (empty($divisiIds)) {
+            return [
+                'rank' => null,
+                'total' => 0,
+                'status' => 'unknown',
+                'change' => 0,
+                'divisi_umum_name' => $divisiUmum,
+                'percentile' => 0
+            ];
+        }
+
+        // Ambil semua AM di witel yang sama yang punya divisi di kategori ini
+        $amIdsInWitel = DB::table('account_manager_divisi')
+            ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
+            ->where('account_managers.witel_id', $witelId)
+            ->whereIn('account_manager_divisi.divisi_id', $divisiIds)
+            ->distinct()
+            ->pluck('account_manager_divisi.account_manager_id')
+            ->toArray();
+
+        if (empty($amIdsInWitel)) {
+            return [
+                'rank' => null,
+                'total' => 0,
+                'status' => 'unknown',
+                'change' => 0,
+                'divisi_umum_name' => $divisiUmum,
+                'percentile' => 0
+            ];
+        }
+
+        // Hitung total revenue per AM dari divisi-divisi yang relevan saja
+        // INCLUDE AM yang belum punya revenue dengan LEFT JOIN
+        $rankings = AccountManager::whereIn('account_managers.id', $amIdsInWitel)
+            ->leftJoin('am_revenues', function($join) use ($tahun, $bulan, $divisiIds) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $tahun)
+                    ->where('am_revenues.bulan', '<=', $bulan)
+                    ->whereIn('am_revenues.divisi_id', $divisiIds);
+            })
             ->selectRaw('
-                account_manager_id,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target,
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
-                    WHEN SUM(target_revenue) > 0
-                    THEN (SUM(real_revenue) / SUM(target_revenue)) * 100
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('account_manager_id')
+            ->groupBy('account_managers.id')
             ->orderByDesc('achievement_rate')
             ->orderByDesc('total_revenue')
             ->get();
 
+        // Cari posisi AM yang sedang dilihat
         $currentPosition = $rankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
-        // Previous month
+        // Previous month untuk comparison
         $previousMonth = $bulan - 1;
         $previousYear = $tahun;
         if ($previousMonth < 1) {
@@ -352,20 +453,33 @@ class AmDashboardController extends Controller
             $previousYear--;
         }
 
-        $previousRankings = AmRevenue::where('divisi_id', $divisiId)
-            ->where('tahun', $previousYear)
-            ->where('bulan', '<=', $previousMonth)
+        // Ambil AM IDs untuk periode sebelumnya (bisa berbeda karena AM bisa berganti divisi)
+        $previousAmIdsInWitel = DB::table('account_manager_divisi')
+            ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
+            ->where('account_managers.witel_id', $witelId)
+            ->whereIn('account_manager_divisi.divisi_id', $divisiIds)
+            ->distinct()
+            ->pluck('account_manager_divisi.account_manager_id')
+            ->toArray();
+
+        $previousRankings = AccountManager::whereIn('account_managers.id', $previousAmIdsInWitel)
+            ->leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth, $divisiIds) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $previousYear)
+                    ->where('am_revenues.bulan', '<=', $previousMonth)
+                    ->whereIn('am_revenues.divisi_id', $divisiIds);
+            })
             ->selectRaw('
-                account_manager_id,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target,
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
-                    WHEN SUM(target_revenue) > 0
-                    THEN (SUM(real_revenue) / SUM(target_revenue)) * 100
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('account_manager_id')
+            ->groupBy('account_managers.id')
             ->orderByDesc('achievement_rate')
             ->orderByDesc('total_revenue')
             ->get();
@@ -377,16 +491,14 @@ class AmDashboardController extends Controller
         $status = $this->getRankingStatus($currentPosition, $previousPosition);
         $change = $previousPosition !== false ? ($previousPosition - $currentPosition) : 0;
 
-        $divisi = Divisi::find($divisiId);
-
         return [
             'rank' => $currentPosition !== false ? $currentPosition + 1 : null,
             'total' => $rankings->count(),
             'status' => $status,
             'change' => $change,
-            'divisi_name' => $divisi->nama ?? 'N/A',
-            'divisi_kode' => $divisi->kode ?? 'N/A',
-            'percentile' => $currentPosition !== false
+            'divisi_umum_name' => $divisiUmum,
+            'divisi_ids' => $divisiIds,
+            'percentile' => $currentPosition !== false && $rankings->count() > 0
                 ? round((1 - ($currentPosition / $rankings->count())) * 100, 1)
                 : 0
         ];
@@ -415,7 +527,7 @@ class AmDashboardController extends Controller
     }
 
     /**
-     * Extract filters dengan fallback chain
+     * Extract filters dengan fallback chain + divisi_umum
      */
     private function extractFilters(Request $request, $accountManager, $divisiList)
     {
@@ -435,10 +547,25 @@ class AmDashboardController extends Controller
         $tahunFilter = $request->get('tahun', date('Y'));
         $defaultBulanEnd = $tahunFilter < date('Y') ? 12 : date('n');
 
+        // Tentukan default divisi_umum berdasarkan divisi yang dimiliki AM
+        $divisiIds = $divisiList->pluck('id')->toArray();
+        $hasDGS = in_array(self::DIVISI_DGS_ID, $divisiIds);
+        $hasEnterprise = in_array(self::DIVISI_DSS_ID, $divisiIds) || in_array(self::DIVISI_DPS_ID, $divisiIds);
+
+        $defaultDivisiUmum = 'all';
+        if ($hasDGS && !$hasEnterprise) {
+            $defaultDivisiUmum = 'GOVERNMENT';
+        } elseif (!$hasDGS && $hasEnterprise) {
+            $defaultDivisiUmum = 'ENTERPRISE';
+        } elseif ($hasDGS && $hasEnterprise) {
+            $defaultDivisiUmum = 'GOVERNMENT'; // Default ke GOVERNMENT jika multidivisi
+        }
+
         return [
             'period_type' => $request->get('period_type', 'YTD'),
             'tahun' => $tahunFilter,
             'divisi_id' => $request->get('divisi_id', $defaultDivisiId),
+            'divisi_umum' => $request->get('divisi_umum', $defaultDivisiUmum), // NEW: filter divisi umum
             'tipe_revenue' => $request->get('tipe_revenue', 'all'),
             'customer_view_mode' => $request->get('customer_view_mode', 'detail'),
             'analysis_view_mode' => $request->get('analysis_view_mode', 'detail'),
@@ -465,6 +592,35 @@ class AmDashboardController extends Controller
             $primaryDivisi = $divisiList->first();
         }
 
+        // Tentukan divisi umum yang dimiliki
+        $divisiIds = $divisiList->pluck('id')->toArray();
+        $hasDGS = in_array(self::DIVISI_DGS_ID, $divisiIds);
+        $hasDSS = in_array(self::DIVISI_DSS_ID, $divisiIds);
+        $hasDPS = in_array(self::DIVISI_DPS_ID, $divisiIds);
+        $hasEnterprise = $hasDSS || $hasDPS;
+
+        $divisiUmumList = [];
+        if ($hasDGS) {
+            $divisiUmumList[] = [
+                'code' => 'GOVERNMENT',
+                'name' => 'Government',
+                'color' => '#4e73df',
+                'divisi_ids' => [self::DIVISI_DGS_ID]
+            ];
+        }
+        if ($hasEnterprise) {
+            $enterpriseDivisiIds = [];
+            if ($hasDSS) $enterpriseDivisiIds[] = self::DIVISI_DSS_ID;
+            if ($hasDPS) $enterpriseDivisiIds[] = self::DIVISI_DPS_ID;
+
+            $divisiUmumList[] = [
+                'code' => 'ENTERPRISE',
+                'name' => 'Enterprise',
+                'color' => '#1cc88a',
+                'divisi_ids' => $enterpriseDivisiIds
+            ];
+        }
+
         return [
             'nama' => $accountManager->nama,
             'nik' => $accountManager->nik,
@@ -481,10 +637,14 @@ class AmDashboardController extends Controller
                     'color' => $this->getDivisiColor($divisi->kode)
                 ];
             }),
+            'divisi_umum_list' => $divisiUmumList,
             'primary_divisi_id' => $primaryDivisi ? $primaryDivisi->id : null,
             'selected_divisi_id' => $filters['divisi_id'],
+            'selected_divisi_umum' => $filters['divisi_umum'],
             'selected_divisi_name' => $divisiList->where('id', $filters['divisi_id'])->first()->nama ?? 'Semua Divisi',
-            'is_multi_divisi' => $divisiList->count() > 1
+            'is_multi_divisi' => $divisiList->count() > 1,
+            'has_government' => $hasDGS,
+            'has_enterprise' => $hasEnterprise
         ];
     }
 
@@ -808,6 +968,30 @@ class AmDashboardController extends Controller
             $bulanOptions[$i] = $this->getMonthName($i);
         }
 
+        // Tentukan divisi umum yang tersedia
+        $divisiIds = $divisiList->pluck('id')->toArray();
+        $hasDGS = in_array(self::DIVISI_DGS_ID, $divisiIds);
+        $hasDSS = in_array(self::DIVISI_DSS_ID, $divisiIds);
+        $hasDPS = in_array(self::DIVISI_DPS_ID, $divisiIds);
+        $hasEnterprise = $hasDSS || $hasDPS;
+
+        $divisiUmumOptions = [];
+        if ($hasDGS && $hasEnterprise) {
+            $divisiUmumOptions = [
+                'all' => 'Semua Divisi',
+                'GOVERNMENT' => 'Government (DGS)',
+                'ENTERPRISE' => 'Enterprise (DSS + DPS)'
+            ];
+        } elseif ($hasDGS) {
+            $divisiUmumOptions = [
+                'GOVERNMENT' => 'Government (DGS)'
+            ];
+        } elseif ($hasEnterprise) {
+            $divisiUmumOptions = [
+                'ENTERPRISE' => 'Enterprise (DSS + DPS)'
+            ];
+        }
+
         return [
             'period_types' => [
                 'YTD' => 'Year to Date',
@@ -821,6 +1005,7 @@ class AmDashboardController extends Controller
                     'is_primary' => $divisi->pivot->is_primary ?? 0
                 ];
             }),
+            'divisi_umum_options' => $divisiUmumOptions, // NEW
             'tipe_revenues' => [
                 'all' => 'Semua Tipe',
                 'REGULER' => 'Revenue Reguler',
@@ -897,6 +1082,7 @@ class AmDashboardController extends Controller
             'period_type' => 'YTD',
             'tahun' => date('Y'),
             'divisi_id' => null,
+            'divisi_umum' => 'all',
             'tipe_revenue' => 'all',
             'customer_view_mode' => 'detail',
             'analysis_view_mode' => 'detail',
@@ -992,7 +1178,7 @@ class AmDashboardController extends Controller
 
             $filters = $this->extractFilters($request, $accountManager, $divisiList);
 
-            $exportData = $this->prepareExportData($amId, $filters, $divisiList);
+            $exportData = $this->prepareExportData($amId, $filters, $divisiList, $accountManager);
 
             $filename = $this->generateExportFilename($accountManager, $filters);
 
@@ -1023,14 +1209,12 @@ class AmDashboardController extends Controller
     /**
      * Prepare comprehensive export data
      */
-    private function prepareExportData($amId, $filters, $divisiList)
+    private function prepareExportData($amId, $filters, $divisiList, $accountManager)
     {
-        $accountManager = AccountManager::with(['witel'])->find($amId);
-
         return [
             'profile' => $this->getProfileData($accountManager, $filters, $divisiList),
             'summary' => $this->getCardGroupData($amId, $filters),
-            'ranking' => $this->getRankingDataFixed($amId, $filters, $divisiList),
+            'ranking' => $this->getRankingDataFixed($amId, $filters, $divisiList, $accountManager),
             'customer_data' => [
                 'agregat_cc' => $this->getCustomerDataAggregateByCC($amId, $filters),
                 'agregat_bulan' => $this->getCustomerDataAggregateByMonth($amId, $filters),
@@ -1053,8 +1237,8 @@ class AmDashboardController extends Controller
         $amName = str_replace(' ', '_', $accountManager->nama);
         $periodText = strtolower($filters['period_type']);
         $tahun = $filters['tahun'];
-        $divisiText = $filters['divisi_id']
-            ? "_divisi{$filters['divisi_id']}"
+        $divisiText = $filters['divisi_umum'] !== 'all'
+            ? "_{$filters['divisi_umum']}"
             : "_all_divisi";
         $timestamp = date('Y-m-d_H-i-s');
 
@@ -1132,7 +1316,7 @@ class AmDashboardController extends Controller
 
             $filters = $this->extractFilters($request, $accountManager, $divisiList);
 
-            $rankingData = $this->getRankingDataFixed($amId, $filters, $divisiList);
+            $rankingData = $this->getRankingDataFixed($amId, $filters, $divisiList, $accountManager);
 
             return response()->json([
                 'success' => true,
@@ -1280,7 +1464,7 @@ class AmDashboardController extends Controller
                     break;
 
                 case 'ranking':
-                    $data['ranking'] = $this->getRankingDataFixed($amId, $filters, $divisiList);
+                    $data['ranking'] = $this->getRankingDataFixed($amId, $filters, $divisiList, $accountManager);
                     break;
 
                 case 'customers':
@@ -1295,7 +1479,7 @@ class AmDashboardController extends Controller
                 default:
                     $data = [
                         'cards' => $this->getCardGroupData($amId, $filters),
-                        'ranking' => $this->getRankingDataFixed($amId, $filters, $divisiList),
+                        'ranking' => $this->getRankingDataFixed($amId, $filters, $divisiList, $accountManager),
                         'customers' => $this->getCustomerTabData($amId, $filters),
                         'analysis' => $this->getPerformanceAnalysisData($amId, $filters)
                     ];
@@ -1565,6 +1749,11 @@ class AmDashboardController extends Controller
                     'is_primary' => $divisi->pivot->is_primary ?? 0
                 ];
             }),
+            'divisi_umum_check' => [
+                'has_dgs' => in_array(self::DIVISI_DGS_ID, $divisiList->pluck('id')->toArray()),
+                'has_dss' => in_array(self::DIVISI_DSS_ID, $divisiList->pluck('id')->toArray()),
+                'has_dps' => in_array(self::DIVISI_DPS_ID, $divisiList->pluck('id')->toArray()),
+            ],
             'revenue_summary' => [
                 'total_records' => $accountManager->amRevenues->count(),
                 'years' => $accountManager->amRevenues->pluck('tahun')->unique()->sort()->values(),
@@ -1580,7 +1769,7 @@ class AmDashboardController extends Controller
                     ->where('account_manager_id', $id)
                     ->count()
             ],
-            'sample_ranking_calculation' => $this->debugRankingCalculation($id)
+            'sample_ranking_calculation' => $this->debugRankingCalculation($id, $accountManager)
         ];
 
         return response()->json([
@@ -1593,46 +1782,169 @@ class AmDashboardController extends Controller
     /**
      * Debug ranking calculation
      */
-    private function debugRankingCalculation($amId)
+    private function debugRankingCalculation($amId, $accountManager)
     {
         $currentYear = date('Y');
         $currentMonth = date('n');
 
-        $rankings = AmRevenue::where('tahun', $currentYear)
-            ->where('bulan', '<=', $currentMonth)
+        // Global - SEMUA AM termasuk yang belum punya revenue
+        $globalRankings = AccountManager::leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $currentYear)
+                    ->where('am_revenues.bulan', '<=', $currentMonth);
+            })
             ->selectRaw('
-                account_manager_id,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target,
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
-                    WHEN SUM(target_revenue) > 0
-                    THEN (SUM(real_revenue) / SUM(target_revenue)) * 100
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('account_manager_id')
+            ->groupBy('account_managers.id')
             ->orderByDesc('achievement_rate')
             ->orderByDesc('total_revenue')
             ->get();
 
-        $position = $rankings->search(function ($item) use ($amId) {
+        $globalPosition = $globalRankings->search(function ($item) use ($amId) {
             return $item->account_manager_id == $amId;
         });
 
-        $myData = $rankings->get($position);
+        $myGlobalData = $globalRankings->get($globalPosition);
+
+        // Witel - SEMUA AM di witel termasuk yang belum punya revenue
+        $witelRankings = AccountManager::where('account_managers.witel_id', $accountManager->witel_id)
+            ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $currentYear)
+                    ->where('am_revenues.bulan', '<=', $currentMonth);
+            })
+            ->selectRaw('
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
+                CASE
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
+                    ELSE 0
+                END as achievement_rate
+            ')
+            ->groupBy('account_managers.id')
+            ->orderByDesc('achievement_rate')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        $witelPosition = $witelRankings->search(function ($item) use ($amId) {
+            return $item->account_manager_id == $amId;
+        });
+
+        $myWitelData = $witelRankings->get($witelPosition);
+
+        // Divisi Umum
+        $divisiUmumDebug = [];
+        $divisiList = $accountManager->divisis;
+        $divisiIds = $divisiList->pluck('id')->toArray();
+
+        if (in_array(self::DIVISI_DGS_ID, $divisiIds)) {
+            $govAmIds = DB::table('account_manager_divisi')
+                ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
+                ->where('account_managers.witel_id', $accountManager->witel_id)
+                ->whereIn('account_manager_divisi.divisi_id', [1])
+                ->distinct()
+                ->pluck('account_manager_divisi.account_manager_id')
+                ->toArray();
+
+            $govRankings = AccountManager::whereIn('account_managers.id', $govAmIds)
+                ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
+                    $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                        ->where('am_revenues.tahun', '=', $currentYear)
+                        ->where('am_revenues.bulan', '<=', $currentMonth)
+                        ->whereIn('am_revenues.divisi_id', [1]);
+                })
+                ->selectRaw('
+                    account_managers.id as account_manager_id,
+                    COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                    COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
+                    CASE
+                        WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                        THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
+                        ELSE 0
+                    END as achievement_rate
+                ')
+                ->groupBy('account_managers.id')
+                ->orderByDesc('achievement_rate')
+                ->orderByDesc('total_revenue')
+                ->get();
+
+            $govPosition = $govRankings->search(function ($item) use ($amId) {
+                return $item->account_manager_id == $amId;
+            });
+
+            $divisiUmumDebug['GOVERNMENT'] = [
+                'total_ams' => $govRankings->count(),
+                'my_position' => $govPosition !== false ? $govPosition + 1 : null,
+                'competing_am_ids' => $govAmIds
+            ];
+        }
+
+        if (in_array(self::DIVISI_DSS_ID, $divisiIds) || in_array(self::DIVISI_DPS_ID, $divisiIds)) {
+            $entAmIds = DB::table('account_manager_divisi')
+                ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
+                ->where('account_managers.witel_id', $accountManager->witel_id)
+                ->whereIn('account_manager_divisi.divisi_id', [2, 3])
+                ->distinct()
+                ->pluck('account_manager_divisi.account_manager_id')
+                ->toArray();
+
+            $entRankings = AccountManager::whereIn('account_managers.id', $entAmIds)
+                ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
+                    $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                        ->where('am_revenues.tahun', '=', $currentYear)
+                        ->where('am_revenues.bulan', '<=', $currentMonth)
+                        ->whereIn('am_revenues.divisi_id', [2, 3]);
+                })
+                ->selectRaw('
+                    account_managers.id as account_manager_id,
+                    COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                    COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
+                    CASE
+                        WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                        THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
+                        ELSE 0
+                    END as achievement_rate
+                ')
+                ->groupBy('account_managers.id')
+                ->orderByDesc('achievement_rate')
+                ->orderByDesc('total_revenue')
+                ->get();
+
+            $entPosition = $entRankings->search(function ($item) use ($amId) {
+                return $item->account_manager_id == $amId;
+            });
+
+            $divisiUmumDebug['ENTERPRISE'] = [
+                'total_ams' => $entRankings->count(),
+                'my_position' => $entPosition !== false ? $entPosition + 1 : null,
+                'competing_am_ids' => $entAmIds
+            ];
+        }
 
         return [
-            'total_ams' => $rankings->count(),
-            'my_position' => $position !== false ? $position + 1 : null,
-            'my_achievement' => $myData ? round($myData->achievement_rate, 2) : 0,
-            'my_revenue' => $myData ? $myData->total_revenue : 0,
-            'top_5' => $rankings->take(5)->map(function ($item) {
-                return [
-                    'am_id' => $item->account_manager_id,
-                    'achievement' => round($item->achievement_rate, 2),
-                    'revenue' => $item->total_revenue
-                ];
-            })
+            'global' => [
+                'total_ams' => $globalRankings->count(),
+                'my_position' => $globalPosition !== false ? $globalPosition + 1 : null,
+                'my_achievement' => $myGlobalData ? round($myGlobalData->achievement_rate, 2) : 0,
+                'my_revenue' => $myGlobalData ? $myGlobalData->total_revenue : 0,
+            ],
+            'witel' => [
+                'total_ams' => $witelRankings->count(),
+                'my_position' => $witelPosition !== false ? $witelPosition + 1 : null,
+                'my_achievement' => $myWitelData ? round($myWitelData->achievement_rate, 2) : 0,
+                'my_revenue' => $myWitelData ? $myWitelData->total_revenue : 0,
+            ],
+            'divisi_umum' => $divisiUmumDebug
         ];
     }
 

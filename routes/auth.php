@@ -21,11 +21,17 @@ Route::middleware('guest')->group(function () {
     Route::get('search-account-managers', [RegisteredUserController::class, 'searchAccountManagers'])
         ->name('search.account-managers');
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
+    // TODO: Figure this out (get / post (?))
+    Route::get('/am/check-account-available', [RegisteredUserController::class, 'checkAccountAvailable'])
+        ->name('am.check-account-available');
+
+    Route::get('login', [AuthenticatedSessionController::class, 'create']);
+    //     ->middleware('throttle:8,1')
+    //     ->name('login');
+
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:8,1')
         ->name('login');
-
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
@@ -38,6 +44,10 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    Route::get('/csrf-token', function () {
+        return response()->json(['token' => csrf_token()]);
+    })->name('csrf.token');
 });
 
 Route::middleware('auth')->group(function () {

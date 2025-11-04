@@ -11,7 +11,7 @@
     <link href="https://cdn.lineicons.com/5.0/lineicons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
 
     <!-- 1) Font + Global Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,11 +22,13 @@
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 
     @yield('styles')
-
+    <style>[x-cloak]{display:none !important}</style>
 
     <!-- Core JavaScript -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body>
     <div class="wrapper">
@@ -52,7 +54,7 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="" class="sidebar-link">
+                    <a href="{{ route('witel-cc-index') }}" class="sidebar-link">
                         <i class="lni lni-buildings-1"></i><span>CC & Witel</span>
                     </a>
                 </li>
@@ -61,16 +63,7 @@
                         <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
                     </a>
                 </li>
-                {{-- <li class="sidebar-item">
-                    <a href="{{ route('monitoring-LOP') }}" class="sidebar-link">
-                        <i class="lni lni-user-multiple-4"></i><span>Top LOP</span>
-                    </a>
-                </li> --}}
-                {{-- <li class="sidebar-item">
-                    <a href="" class="sidebar-link">
-                        <i class="lni lni-cloud-upload"></i><span>File Management</span>
-                    </a>
-                </li> --}}
+
             </ul>
             <div class="sidebar-footer">
                 <a href="{{ route('profile.index') }}" class="sidebar-link">
@@ -96,6 +89,7 @@
                             <li class="nav-item dropdown ms-1">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="avatar-container me-2">
+                                        <!-- FIX: check auth before this? cause using `user()?` is maybe not be the best practice? idk -->
                                         @if(Auth::user()->profile_image)
                                             <img src="{{ asset('storage/' . Auth::user()->profile_image) }}" alt="{{ Auth::user()->name }}">
                                         @else

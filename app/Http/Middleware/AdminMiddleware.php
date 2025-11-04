@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
+use Illuminate\Support\Facades\Log;
+
 class AdminMiddleware
 {
     /**
@@ -31,6 +33,9 @@ class AdminMiddleware
                 ], 403);
             }
 
+
+            Log::info("AdminMiddleware - redirect to dashboard about to begin");
+
             // For regular web requests
             return redirect()->route('dashboard')
                 ->with('error', 'Akses ditolak. Fitur ini hanya untuk Administrator.');
@@ -39,3 +44,4 @@ class AdminMiddleware
         return $next($request);
     }
 }
+

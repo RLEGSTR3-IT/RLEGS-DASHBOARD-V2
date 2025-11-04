@@ -740,6 +740,7 @@
     color: #991b1b;
 }
 
+/* Month Badge */
 .month-badge {
     display: inline-block;
     padding: 6px 14px;
@@ -936,7 +937,7 @@
 }
 
 .chart-canvas-container {
-    height: 450px;
+    height: 420px;
     width: 100%;
 }
 
@@ -1064,10 +1065,17 @@
 
     .profile-avatar-container {
         margin-right: 0;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
     }
 
     .profile-meta {
+        justify-content: center;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .meta-item {
         justify-content: center;
     }
 
@@ -1119,6 +1127,11 @@
 
     .bootstrap-select {
         width: 100% !important;
+    }
+
+    .view-mode-btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .chart-canvas-container {

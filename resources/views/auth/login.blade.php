@@ -190,6 +190,30 @@
   </div>
 
   <script>
+    // CSRF Token refresh
+    (async function () {
+      async function refreshCsrf() {
+        try {
+          const res = await fetch('{{ route('csrf.token') }}', { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const { token } = await res.json();
+          // update meta
+          const meta = document.querySelector('meta[name="csrf-token"]');
+          if (meta) meta.setAttribute('content', token);
+          // update all hidden _token inputs
+          document.querySelectorAll('input[name="_token"]').forEach(i => { i.value = token; });
+        } catch (_) {}
+      }
+
+      // Refresh when the tab regains focus (common 419 trigger)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshCsrf();
+      });
+
+      // Also refresh on a timer (every 5 minutes)
+      setInterval(refreshCsrf, 5 * 60 * 1000);
+    })();
+
     document.addEventListener('DOMContentLoaded', function() {
       // captcha
       // if (typeof grecaptcha === 'undefined') {

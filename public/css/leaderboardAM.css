@@ -6,7 +6,7 @@
     --telkom-red-subtle: rgba(234, 29, 37, 0.08);
     --telkom-red-soft: rgba(234, 29, 37, 0.04);
     --telkom-red-ultra-soft: rgba(234, 29, 37, 0.02);
-    
+
     /* Enhanced Neutral Palette */
     --white: #ffffff;
     --gray-25: #fdfdfd;
@@ -20,12 +20,12 @@
     --gray-700: #374151;
     --gray-800: #1f2937;
     --gray-900: #111827;
-    
+
     /* Soft Backgrounds - Made Transparent */
     --background-primary: transparent;
     --background-card: transparent;
     --background-card-hover: rgba(255, 255, 255, 0.5);
-    
+
     /* Status Colors - Muted */
     --success: #059669;
     --success-light: rgba(5, 150, 105, 0.1);
@@ -33,7 +33,7 @@
     --warning-light: rgba(217, 119, 6, 0.1);
     --error: #dc2626;
     --error-light: rgba(220, 38, 38, 0.1);
-    
+
     /* Subtle Shadows */
     --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
@@ -42,12 +42,12 @@
     --shadow-xl: 0 12px 24px -6px rgba(0, 0, 0, 0.08), 0 6px 12px -4px rgba(0, 0, 0, 0.05);
     --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
     --shadow-card-hover: 0 4px 16px -2px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
-    
+
     /* Subtle Gradients */
     --gradient-red-soft: linear-gradient(135deg, rgba(234, 29, 37, 0.9) 0%, rgba(196, 30, 36, 0.95) 100%);
     --gradient-background: transparent;
     --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
-    
+
     /* Border Radius */
     --radius-xs: 4px;
     --radius-sm: 6px;
@@ -55,7 +55,7 @@
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-2xl: 20px;
-    
+
     /* Smooth Transitions */
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -298,11 +298,18 @@
     margin-right: 6px;
 }
 
-/* Enhanced Search and Filter Area - MAJOR IMPROVEMENTS */
+
+/* ====================================================================
+   CSS PATCH - FILTER LAYOUT FIX ONLY
+   Tambahkan CSS ini di BAWAH leaderboardAM.css yang asli
+   Atau replace bagian .search-filter-container sampai .filter-group
+   ==================================================================== */
+
+/* Enhanced Search and Filter Area - FIXED HORIZONTAL LAYOUT */
 .search-filter-container {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(260px, 1fr)) !important;
-    gap: 16px;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 16px !important;
     margin-bottom: 25px;
     width: 100%;
     background: linear-gradient(135deg, var(--white) 0%, rgba(249, 250, 251, 0.95) 100%);
@@ -325,7 +332,9 @@
     border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
 }
 
+/* Search box - full width di baris pertama */
 .search-box {
+    width: 100% !important;
     display: flex;
     align-items: stretch;
 }
@@ -383,31 +392,94 @@
 }
 
 .search-input,
-.bootstrap-select > .dropdown-toggle{
-  height: 48px !important;
+.bootstrap-select > .dropdown-toggle {
+    height: 48px !important;
 }
 
+/* Filter area - baris kedua, semua filter sejajar horizontal */
 .filter-area {
-    display: contents !important;
-    align-items: stretch;
-    justify-content: flex-end;
-    position: relative;
+    width: 100% !important;
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    flex-wrap: wrap !important;
 }
 
-/* Enhanced Filter Cards Layout */
+/* Filter selects wrapper */
 .filter-selects {
-    display: contents !important;
-    grid-template-columns: repeat(4, minmax(260px, 1fr));
-    gap: 16px;
-    width: 100%;
-    align-items: stretch;
+    display: flex !important;
+    gap: 16px !important;
+    width: 100% !important;
+    align-items: stretch !important;
+    flex-wrap: wrap !important;
 }
 
+/* Setiap filter group - 5 kolom dengan lebar yang sama */
 .filter-group {
-    width: 100%;
+    flex: 1 1 calc(20% - 13px) !important; /* 5 kolom, 16px gap */
+    min-width: 180px !important;
+    max-width: 280px !important;
     position: relative;
     display: flex;
     align-items: stretch;
+}
+
+/* Pastikan bootstrap-select memenuhi parent */
+.filter-group .bootstrap-select {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1600px) {
+    .filter-group {
+        flex: 1 1 calc(25% - 12px) !important; /* 4 kolom */
+        min-width: 200px !important;
+    }
+}
+
+@media (max-width: 1400px) {
+    .filter-group {
+        flex: 1 1 calc(33.333% - 11px) !important; /* 3 kolom */
+        min-width: 220px !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .filter-group {
+        flex: 1 1 calc(50% - 8px) !important; /* 2 kolom */
+        min-width: 240px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-filter-container {
+        padding: 20px;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .search-box {
+        flex: none;
+        width: 100%;
+    }
+
+    .filter-area {
+        width: 100%;
+    }
+
+    .filter-selects {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .filter-group {
+        flex: 1 1 100% !important; /* 1 kolom di mobile */
+        min-width: 0 !important;
+        max-width: none !important;
+    }
 }
 
 /* Enhanced Filter Card Styling */
@@ -444,7 +516,7 @@
     box-sizing: border-box !important;
     display: flex !important;
     align-items: center !important;
-    
+
     /* Custom modern styling */
     height: 48px !important;
     width: 100% !important;
@@ -485,7 +557,7 @@
 .filter-group .bootstrap-select {
   width: 100% !important;
   flex: 1 1 100%;
-  min-width: 260px !important;       
+  min-width: 260px !important;
 }
 
 .bootstrap-select > .dropdown-toggle{
@@ -645,7 +717,7 @@
 
 /* Enhanced Search Box */
 .bootstrap-select .bs-searchbox .form-control {
-    margin: 8px 0 4px 0 !important; 
+    margin: 8px 0 4px 0 !important;
     width: 100% !important;
     float: none !important;
     border: 2px solid var(--gray-300) !important;
@@ -810,7 +882,7 @@
 
 .am-card:hover .am-name,
 .am-card:hover .revenue-value {
-  color: var(--gray-800) !important;   
+  color: var(--gray-800) !important;
 }
 
 .am-avatar{
@@ -1065,7 +1137,7 @@ body {
 }
 
 @media (max-width: 1200px) {
-    
+
     .filter-selects {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
@@ -1081,7 +1153,7 @@ body {
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
+
     .filter-selects {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1148,3 +1220,4 @@ body {
         justify-content: center;
     }
 }
+

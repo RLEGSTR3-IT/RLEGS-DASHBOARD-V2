@@ -44,3 +44,4 @@ class EnsureUserHasRequiredData
         return $next($request);
     }
 }
+

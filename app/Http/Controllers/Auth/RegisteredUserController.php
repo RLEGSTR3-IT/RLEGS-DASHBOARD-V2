@@ -34,6 +34,7 @@ class RegisteredUserController extends Controller
 
             // Mengambil data Witel untuk dropdown
             $witels = Witel::select('id', 'nama')->get();
+            Log::info("Registrate", ['witels' => $witels]);
 
             // Periksa jika tidak ada Account Manager/Witel, tampilkan pesan
             $noAccountManagers = $accountManagers->isEmpty();
@@ -90,6 +91,14 @@ class RegisteredUserController extends Controller
                     'admin_code' => ['required', 'string']
                 ];
             } elseif ($request->role === 'account_manager') {
+                // NOTE: maybe temp
+                if ($request->account_manager_id === null) {
+                    Log::warning('Registration failed: Selected AM already has an account');
+                    return back()->withErrors([
+                        'account_manager_id' => 'Nama ini telah terdaftar pada akun lain.'
+                    ])->withInput();
+                }
+
                 // Periksa apakah ada account manager di database
                 $accountManagersExist = AccountManager::count() > 0;
 
@@ -110,7 +119,8 @@ class RegisteredUserController extends Controller
 
                 if ($witelsExist) {
                     $roleSpecificRules = [
-                        'witel_id' => ['required', 'exists:witel,id']
+                        'witel_id' => ['required', 'exists:witel,id'],
+                        'witel_code' => ['required', 'string']
                     ];
                 } else {
                     Log::warning('Registration failed: No witel available');
@@ -133,12 +143,27 @@ class RegisteredUserController extends Controller
                     }
                 });
             }
+
             // Validasi khusus untuk komparasi NIK AM
             elseif ($request->role === 'account_manager') {
                 $validator->after(function ($validator) use ($request) {
                     $accountManager = AccountManager::findOrFail($request->account_manager_id);
                     if ($request->nik !== $accountManager->nik) {
                         $validator->errors()->add('account_manager_nik', 'NIK tidak sesuai dengan Account Manager yang dipilih');
+                    }
+                });
+            }
+
+            // Validasi khusus untuk kode witel
+            else {
+                $validator->after(function ($validator) use ($request) {
+                    // NOTE: the order of this array is important to keep it as is
+                    $witel_codes = ["bali", "jatim_barat", "jatim_timur", "nusa_tenggara", "semarang_jateng_utara", "solo_jateng_timur", "suramadu", "yogya_jateng_selatan"];
+
+                    $hash = config("auth.witel_{$witel_codes[$request->witel_id - 1]}_code_hash");
+
+                    if (!Hash::check($request->witel_code, $hash)) {
+                        $validator->errors()->add('witel_code', 'Kode witel tidak valid.');
                     }
                 });
             }
@@ -159,6 +184,7 @@ class RegisteredUserController extends Controller
                 //'account_manager_nik' => null,
                 'witel_id' => null,
                 'admin_code' => null,
+                'witel_code' => null,
             ];
 
             // Proses untuk admin
@@ -186,6 +212,8 @@ class RegisteredUserController extends Controller
                     $witel = Witel::findOrFail($request->witel_id);
                     $userData['name'] = "Support Witel " . $witel->nama;
                     $userData['witel_id'] = $witel->id;
+                    // NOTE: wut??
+                    $userData['witel_code'] = $request->witel_code;
                 } catch (Exception $e) {
                     Log::error('Witel not found', [
                         'witel_id' => $request->witel_id,
@@ -218,7 +246,7 @@ class RegisteredUserController extends Controller
             $user = User::create($userData);
 
             // automatically verify admin email upon creation
-            if ($request->role === 'admin') {
+            if ($request->role === 'admin' || $request->role === 'witel') {
                 $user->markEmailAsVerified();
             }
 
@@ -233,7 +261,24 @@ class RegisteredUserController extends Controller
             Log::info('$user in RegUseCont', [$user]);
             Auth::login($user);
 
-            return redirect()->route('verification.notice');
+            if (Auth::check()) {
+                //request()->session()->regenerate();
+                $request->session()->regenerate();
+
+                Log::info('Manually logged in user.', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+
+                return redirect()->route('verification.notice');
+            }
+
+            Log::error('Failed to log in user manually.', ['email' => $user->email]);
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Gagal mengautentikasi, silahkan log in ulang']);
 
             //return redirect(route('login', absolute: false))->with('success', 'Pendaftaran berhasil! Silakan login dengan akun yang telah Anda buat.');
         } catch (Exception $e) {
@@ -261,8 +306,6 @@ class RegisteredUserController extends Controller
                 ->limit(10)
                 ->get(['id', 'nama']);
 
-            // TODO: Fetch users table to see if account manager id has a user record, if so append a disclaimer saying this AM already has an account
-
             return response()->json($accountManagers);
         } catch (Exception $e) {
             Log::error('Error searching account managers', [
@@ -273,6 +316,32 @@ class RegisteredUserController extends Controller
             return response()->json([
                 'error' => 'Terjadi kesalahan saat mencari data Account Manager'
             ], 500);
+        }
+    }
+
+    // TODO: Fetch users table to see if account manager id has a user record, if so append a disclaimer saying this AM already has an account
+    public function checkAccountAvailable(Request $request)
+    {
+        try {
+            $selectedAm = (int) $request->query('account_manager_id');
+
+            if (!$selectedAm) {
+                return response()->json(['error' => 'account_manager_id_missing'], 422);
+            }
+
+            $userExists = User::where('account_manager_id', $selectedAm)->exists();
+
+            if ($userExists) {
+                return response()->json([
+                    'registered' => true,
+                    'message' => 'Nama ini telah terdaftar pada akun lain.',
+                ], 409);
+            }
+
+            return response()->json(['registered' => false], 200);
+        } catch (Exception $e) {
+            // NOTE: don't know about this
+            return back()->withErrors(['account_manager_id' => $e])->withInput();
         }
     }
 }

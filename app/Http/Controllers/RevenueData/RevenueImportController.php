@@ -7,619 +7,462 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
+/**
+ * RevenueImportController - Main Import Router
+ *
+ * FIXED VERSION - 2025-11-03
+ *
+ * ✅ FIXED: Pass year & month to ImportAMController->previewRevenueAM()
+ * ✅ FIXED: Pass year & month to ImportAMController->executeRevenueAM()
+ * ✅ FIXED: Validation untuk revenue_am (year & month dari form, bukan CSV)
+ * ✅ MAINTAINED: Semua fungsi existing (downloadTemplate, validateImport, executeImport, cleanup, dll)
+ *
+ * CHANGES FROM PREVIOUS VERSION:
+ * - Line 106-110: Added year/month validation for revenue_am
+ * - Line 133-136: Save year/month to session for revenue_am
+ * - Line 154: Pass year & month params to previewRevenueAM()
+ * - Line 273: Pass year & month params from session to executeRevenueAM()
+ * - Line 369: Improved legacy import for revenue_am with year/month
+ * - ALL OTHER METHODS: Unchanged
+ *
+ * KEY FLOW:
+ * 1. Frontend sends: file + year + month (from month picker)
+ * 2. Preview: Save to session, pass to ImportAMController
+ * 3. Execute: Load from session, pass to ImportAMController
+ * 4. ImportAMController: Use params, not from CSV columns
+ */
 class RevenueImportController extends Controller
 {
     /**
-     * Main import handler - routes to specific import method
+     * STEP 1: Preview Import - Check for duplicates
+     * ✅ FIXED: Added year/month validation & passing for revenue_am
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function import(Request $request)
+    public function previewImport(Request $request)
     {
-        // Validate basic request
-        $validator = Validator::make($request->all(), [
-            'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-            'file' => 'required|file|mimes:csv,txt,xlsx|max:10240', // Max 10MB
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $importType = $request->import_type;
-        $startTime = now();
-
-        // Route to appropriate import method based on type
         try {
-            $result = null;
+            // Validate import_type
+            $validator = Validator::make($request->all(), [
+                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
+                'file' => 'required|file|mimes:csv,txt|max:10240'
+            ]);
 
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $importType = $request->import_type;
+            $file = $request->file('file');
+
+            Log::info("Preview Import started", [
+                'type' => $importType,
+                'filename' => $file->getClientOriginalName(),
+                'filesize' => $file->getSize()
+            ]);
+
+            // Additional validation for revenue imports
+            if (in_array($importType, ['revenue_cc', 'revenue_am'])) {
+                $additionalRules = $this->getAdditionalValidationRules($importType);
+
+                $additionalValidator = Validator::make($request->all(), $additionalRules);
+                if ($additionalValidator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validasi parameter tambahan gagal',
+                        'errors' => $additionalValidator->errors()
+                    ], 422);
+                }
+            }
+
+            // Store file temporarily with unique session ID
+            $sessionId = uniqid('import_', true);
+            $tempPath = storage_path('app/temp_imports');
+
+            if (!file_exists($tempPath)) {
+                mkdir($tempPath, 0755, true);
+            }
+
+            $tempFilename = $sessionId . '_' . $file->getClientOriginalName();
+            $tempFullPath = $tempPath . '/' . $tempFilename;
+            $file->move($tempPath, $tempFilename);
+
+            // Route to specific preview handler
+            $previewResult = null;
             switch ($importType) {
                 case 'data_cc':
-                    $result = $this->importDataCC($request);
+                    $controller = new ImportCCController();
+                    $previewResult = $controller->previewDataCC($tempFullPath);
                     break;
 
                 case 'data_am':
-                    $result = $this->importDataAM($request);
+                    $controller = new ImportAMController();
+                    $previewResult = $controller->previewDataAM($tempFullPath);
                     break;
 
                 case 'revenue_cc':
                     $controller = new ImportCCController();
-                    $result = $controller->importRevenueCC($request);
+                    $previewResult = $controller->previewRevenueCC(
+                        $tempFullPath,
+                        $request->divisi_id,
+                        $request->jenis_data,
+                        $request->year,
+                        $request->month
+                    );
                     break;
 
                 case 'revenue_am':
+                    // ✅ FIXED: Pass year & month from form to preview
                     $controller = new ImportAMController();
-                    $result = $controller->importRevenueMapping($request);
+                    $previewResult = $controller->previewRevenueAM(
+                        $tempFullPath,
+                        $request->year,
+                        $request->month
+                    );
                     break;
 
                 default:
                     return response()->json([
                         'success' => false,
-                        'message' => 'Tipe import tidak valid'
+                        'message' => 'Tipe import tidak dikenali'
                     ], 400);
             }
 
-            // Format standardized result with popup data
-            return $this->formatImportResult($result, $importType, $startTime);
+            if (!$previewResult['success']) {
+                // Clean up temp file on error
+                if (file_exists($tempFullPath)) {
+                    unlink($tempFullPath);
+                }
+                return response()->json($previewResult);
+            }
+
+            // ✅ FIXED: Store session data WITH additional params
+            $sessionData = [
+                'import_type' => $importType,
+                'temp_file' => $tempFullPath,
+                'original_filename' => $file->getClientOriginalName(),
+                'created_at' => now()->toISOString()
+            ];
+
+            // ✅ FIXED: Save additional params to session (year, month, divisi_id, jenis_data)
+            if ($importType === 'revenue_cc') {
+                $sessionData['additional_params'] = [
+                    'divisi_id' => $request->divisi_id,
+                    'jenis_data' => $request->jenis_data,
+                    'year' => $request->year,
+                    'month' => $request->month
+                ];
+            } elseif ($importType === 'revenue_am') {
+                // ✅ FIXED: Save year/month for revenue_am
+                $sessionData['additional_params'] = [
+                    'year' => $request->year,
+                    'month' => $request->month
+                ];
+            }
+
+            Cache::put($sessionId, $sessionData, now()->addHours(2));
+
+            // Prepare response
+            $previewResult['session_id'] = $sessionId;
+            $previewResult['expires_at'] = now()->addHours(2)->toISOString();
+
+            Log::info("Preview Import completed", [
+                'type' => $importType,
+                'session_id' => $sessionId,
+                'additional_params' => $sessionData['additional_params'] ?? null,
+                'preview_result' => [
+                    'total_rows' => $previewResult['data']['summary']['total_rows'] ?? 0,
+                    'new_count' => $previewResult['data']['summary']['new_count'] ?? 0,
+                    'update_count' => $previewResult['data']['summary']['update_count'] ?? 0
+                ]
+            ]);
+
+            return response()->json($previewResult);
 
         } catch (\Exception $e) {
-            Log::error("Import Error [{$importType}]: " . $e->getMessage());
+            Log::error("Preview Import error: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat import',
-                'error' => $e->getMessage(),
-                'import_type' => $importType,
-                'import_time' => $startTime->format('Y-m-d H:i:s'),
-                'duration' => now()->diffInSeconds($startTime) . ' detik'
+                'message' => 'Terjadi kesalahan saat preview import: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Format import result untuk popup
-     * ENHANCED: Tambahkan informasi tambahan untuk card ke-4
+     * STEP 2: Execute Import - Process with user confirmation
+     * ✅ FIXED: Merge additional_params from session to request (including year/month for revenue_am)
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    private function formatImportResult($result, $importType, $startTime)
+    public function executeImport(Request $request)
     {
-        // Convert result to array instead of calling getData()
-        $originalData = is_array($result) ? $result : (array) $result;
+        try {
+            // Validate session
+            $validator = Validator::make($request->all(), [
+                'session_id' => 'required|string',
+                'confirmed_updates' => 'array',
+                'confirmed_updates.*' => 'string',
+                'skip_updates' => 'array',
+                'skip_updates.*' => 'string'
+            ]);
 
-        // Calculate duration
-        $duration = now()->diffInSeconds($startTime);
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-        // Get import type label
-        $importTypeLabels = [
-            'data_cc' => 'Data Corporate Customer',
-            'data_am' => 'Data Account Manager',
-            'revenue_cc' => 'Revenue Corporate Customer',
-            'revenue_am' => 'Revenue Mapping Account Manager'
-        ];
+            $sessionId = $request->session_id;
+            $sessionData = Cache::get($sessionId);
 
-        // Add metadata for popup display
-        $formattedResult = array_merge($originalData, [
-            'import_type' => $importType,
-            'import_type_label' => $importTypeLabels[$importType] ?? $importType,
-            'import_time' => $startTime->format('Y-m-d H:i:s'),
-            'duration' => $duration . ' detik',
-            'timestamp' => time()
-        ]);
+            if (!$sessionData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session tidak valid atau sudah expired. Silakan upload ulang file.'
+                ], 400);
+            }
 
-        // Add summary message for popup
-        if ($originalData['success']) {
-            $stats = $originalData['statistics'];
-            $successRate = $stats['total_rows'] > 0
-                ? round(($stats['success_count'] / $stats['total_rows']) * 100, 2)
-                : 0;
+            $importType = $sessionData['import_type'];
+            $tempFile = $sessionData['temp_file'];
 
-            // ENHANCED: Prepare summary details dengan 4 cards
-            $summaryDetails = [
-                [
-                    'label' => 'Total Baris',
-                    'value' => $stats['total_rows'],
-                    'icon' => 'file-text',
-                    'color' => 'info'
-                ],
-                [
-                    'label' => 'Berhasil',
-                    'value' => $stats['success_count'],
-                    'icon' => 'check-circle',
-                    'color' => 'success'
-                ],
-                [
-                    'label' => 'Gagal',
-                    'value' => $stats['failed_count'],
-                    'icon' => 'x-circle',
-                    'color' => 'danger'
-                ]
-            ];
+            // Validate temp file
+            if (empty($tempFile)) {
+                Cache::forget($sessionId);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Path file temporary tidak valid. Silakan upload ulang.'
+                ], 400);
+            }
 
-            // ENHANCED: Add card ke-4 based on import type
+            if (!file_exists($tempFile)) {
+                Cache::forget($sessionId);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File temporary tidak ditemukan. Silakan upload ulang.'
+                ], 400);
+            }
+
+            Log::info("Execute Import started", [
+                'type' => $importType,
+                'session_id' => $sessionId,
+                'temp_file' => $tempFile,
+                'confirmed_updates' => count($request->confirmed_updates ?? []),
+                'skip_updates' => count($request->skip_updates ?? [])
+            ]);
+
+            // Prepare request
+            $importRequest = new Request();
+            $importRequest->merge([
+                'temp_file' => $tempFile,
+                'confirmed_updates' => $request->confirmed_updates ?? [],
+                'skip_updates' => $request->skip_updates ?? []
+            ]);
+
+            // ✅ FIXED: Merge additional params from session (year, month, divisi_id, jenis_data)
+            if (!empty($sessionData['additional_params'])) {
+                $importRequest->merge($sessionData['additional_params']);
+
+                Log::info("Merged additional params to request", [
+                    'params' => $sessionData['additional_params']
+                ]);
+            }
+
+            // Validate importRequest has temp_file
+            if (!$importRequest->has('temp_file') || empty($importRequest->input('temp_file'))) {
+                Cache::forget($sessionId);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Parameter temp_file tidak valid dalam request.'
+                ], 400);
+            }
+
+            // Route to specific execute handler
+            $executeResult = null;
+            switch ($importType) {
+                case 'data_cc':
+                    $controller = new ImportCCController();
+                    $executeResult = $controller->executeDataCC($importRequest);
+                    break;
+
+                case 'data_am':
+                    $controller = new ImportAMController();
+                    $executeResult = $controller->executeDataAM($importRequest);
+                    break;
+
+                case 'revenue_cc':
+                    $controller = new ImportCCController();
+                    $executeResult = $controller->executeRevenueCC($importRequest);
+                    break;
+
+                case 'revenue_am':
+                    // ✅ FIXED: Year & month sudah ada di $importRequest dari session merge
+                    $controller = new ImportAMController();
+                    $executeResult = $controller->executeRevenueAM($importRequest);
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tipe import tidak dikenali'
+                    ], 400);
+            }
+
+            // Clean up temp file and cache
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+            Cache::forget($sessionId);
+
+            Log::info("Execute Import completed", [
+                'type' => $importType,
+                'session_id' => $sessionId,
+                'result' => $executeResult
+            ]);
+
+            return response()->json($executeResult);
+
+        } catch (\Exception $e) {
+            Log::error("Execute Import error: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Legacy single-step import (maintained for backward compatibility)
+     * ✅ FIXED: Added year/month handling for revenue_am
+     */
+    public function import(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
+                'file' => 'required|file|mimes:csv,txt|max:10240'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $importType = $request->import_type;
+            $file = $request->file('file');
+
+            // Additional validation for revenue imports
             if (in_array($importType, ['revenue_cc', 'revenue_am'])) {
-                // Untuk revenue, tampilkan total revenue yang ditambahkan
-                $totalRevenue = $stats['total_revenue_added'] ?? 0;
-                $summaryDetails[] = [
-                    'label' => 'Total Revenue',
-                    'value' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
-                    'icon' => 'dollar-sign',
-                    'color' => 'primary'
-                ];
-            } else {
-                // Untuk data CC/AM, tampilkan skipped count
-                if (isset($stats['skipped_count']) && $stats['skipped_count'] > 0) {
-                    $summaryDetails[] = [
-                        'label' => 'Diskip',
-                        'value' => $stats['skipped_count'],
-                        'icon' => 'alert-circle',
-                        'color' => 'warning'
-                    ];
-                } else {
-                    // Jika tidak ada skipped, tampilkan data type info
-                    $summaryDetails[] = [
-                        'label' => 'Jenis Data',
-                        'value' => $importTypeLabels[$importType],
-                        'icon' => 'database',
-                        'color' => 'secondary'
-                    ];
+                $additionalRules = $this->getAdditionalValidationRules($importType);
+                $additionalValidator = Validator::make($request->all(), $additionalRules);
+
+                if ($additionalValidator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validasi parameter tambahan gagal',
+                        'errors' => $additionalValidator->errors()
+                    ], 422);
                 }
             }
 
-            $formattedResult['summary'] = [
-                'title' => 'Import Berhasil!',
-                'success_rate' => $successRate,
-                'details' => $summaryDetails
-            ];
-
-            // Add warning message if there are failures
-            if ($stats['failed_count'] > 0 || (isset($stats['skipped_count']) && $stats['skipped_count'] > 0)) {
-                $formattedResult['summary']['warning'] = 'Beberapa data gagal diimport. Silakan unduh log error untuk detail.';
-            }
-        } else {
-            $formattedResult['summary'] = [
-                'title' => 'Import Gagal!',
-                'message' => $originalData['message']
-            ];
-        }
-
-        return response()->json($formattedResult, $originalData['success'] ? 200 : 500);
-    }
-
-    /**
-     * Import Data CC (General Corporate Customer)
-     * Hanya menyimpan NAMA dan NIPNAS ke tabel corporate_customers
-     * ENHANCED: Tambahkan statistik total_data_added
-     */
-    private function importDataCC(Request $request)
-    {
-        try {
-            DB::beginTransaction();
-
-            $file = $request->file('file');
-            $csvData = $this->parseCsvFile($file);
-
-            $statistics = [
-                'total_rows' => 0,
-                'success_count' => 0,
-                'failed_count' => 0,
-                'failed_rows' => [],
-                'total_data_added' => 0  // ENHANCED: Track jumlah data yang ditambahkan
-            ];
-
-            // Validate required columns
-            $requiredColumns = ['STANDARD_NAME', 'NIPNAS'];
-            $headers = array_shift($csvData); // Get headers
-
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
-                throw new \Exception('File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns));
+            // Create temp file
+            $tempPath = storage_path('app/temp_imports');
+            if (!file_exists($tempPath)) {
+                mkdir($tempPath, 0755, true);
             }
 
-            // Get column indices
-            $columnIndices = $this->getColumnIndices($headers, [
-                'STANDARD_NAME', 'NIPNAS'
+            $tempFilename = uniqid('import_') . '_' . $file->getClientOriginalName();
+            $tempFullPath = $tempPath . '/' . $tempFilename;
+            $file->move($tempPath, $tempFilename);
+
+            // Prepare request
+            $importRequest = new Request();
+            $importRequest->merge([
+                'temp_file' => $tempFullPath
             ]);
 
-            $statistics['total_rows'] = count($csvData);
-
-            // Process each row
-            foreach ($csvData as $index => $row) {
-                $rowNumber = $index + 2; // +2 karena index dimulai dari 0 dan ada header
-
-                try {
-                    $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
-                    $namaCC = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
-
-                    // Validate required fields
-                    if (empty($nipnas) || empty($namaCC)) {
-                        throw new \Exception('NIPNAS atau Nama CC kosong');
-                    }
-
-                    // Validate NIPNAS format (numeric)
-                    if (!is_numeric($nipnas)) {
-                        throw new \Exception('NIPNAS harus berupa angka');
-                    }
-
-                    // Check if CC already exists
-                    $existingCC = DB::table('corporate_customers')
-                        ->where('nipnas', $nipnas)
-                        ->first();
-
-                    if ($existingCC) {
-                        // Update existing CC
-                        DB::table('corporate_customers')
-                            ->where('nipnas', $nipnas)
-                            ->update([
-                                'nama' => $namaCC,
-                                'updated_at' => now()
-                            ]);
-                    } else {
-                        // Insert new CC
-                        DB::table('corporate_customers')->insert([
-                            'nipnas' => $nipnas,
-                            'nama' => $namaCC,
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]);
-
-                        $statistics['total_data_added']++; // ENHANCED: Increment counter
-                    }
-
-                    $statistics['success_count']++;
-
-                } catch (\Exception $e) {
-                    $statistics['failed_count']++;
-                    $statistics['failed_rows'][] = [
-                        'row_number' => $rowNumber,
-                        'nipnas' => $nipnas ?? 'N/A',
-                        'nama_cc' => $namaCC ?? 'N/A',
-                        'error' => $e->getMessage()
-                    ];
-                }
+            // ✅ FIXED: Merge params based on import type
+            if ($importType === 'revenue_cc') {
+                $importRequest->merge([
+                    'divisi_id' => $request->divisi_id,
+                    'jenis_data' => $request->jenis_data,
+                    'year' => $request->year,
+                    'month' => $request->month
+                ]);
+            } elseif ($importType === 'revenue_am') {
+                // ✅ FIXED: Add year/month for revenue_am
+                $importRequest->merge([
+                    'year' => $request->year,
+                    'month' => $request->month
+                ]);
             }
 
-            DB::commit();
+            // Execute import
+            $result = null;
+            switch ($importType) {
+                case 'data_cc':
+                    $controller = new ImportCCController();
+                    $result = $controller->executeDataCC($importRequest);
+                    break;
 
-            $errorLogPath = null;
-            if ($statistics['failed_count'] > 0) {
-                $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'data_cc');
+                case 'data_am':
+                    $controller = new ImportAMController();
+                    $result = $controller->executeDataAM($importRequest);
+                    break;
+
+                case 'revenue_cc':
+                    $controller = new ImportCCController();
+                    $result = $controller->executeRevenueCC($importRequest);
+                    break;
+
+                case 'revenue_am':
+                    $controller = new ImportAMController();
+                    $result = $controller->executeRevenueAM($importRequest);
+                    break;
             }
 
-            return [
-                'success' => true,
-                'message' => 'Import Data CC selesai',
-                'statistics' => [
-                    'total_rows' => $statistics['total_rows'],
-                    'success_count' => $statistics['success_count'],
-                    'failed_count' => $statistics['failed_count'],
-                    'total_data_added' => $statistics['total_data_added']  // ENHANCED
-                ],
-                'error_log_path' => $errorLogPath
-            ];
+            // Clean up
+            if (file_exists($tempFullPath)) {
+                unlink($tempFullPath);
+            }
+
+            return response()->json($result);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Import Data CC Error: ' . $e->getMessage());
-
-            return [
+            Log::error('Import error: ' . $e->getMessage());
+            return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage(),
-                'statistics' => [
-                    'total_rows' => 0,
-                    'success_count' => 0,
-                    'failed_count' => 0,
-                    'total_data_added' => 0
-                ]
-            ];
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * Import Data AM (Account Manager)
-     * ENHANCED: Tambahkan statistik total_data_added
+     * Legacy validate import (for backward compatibility)
      */
-    private function importDataAM(Request $request)
+    public function validateImport(Request $request)
     {
-        try {
-            DB::beginTransaction();
-
-            $file = $request->file('file');
-            $csvData = $this->parseCsvFile($file);
-
-            $statistics = [
-                'total_rows' => 0,
-                'success_count' => 0,
-                'failed_count' => 0,
-                'failed_rows' => [],
-                'total_data_added' => 0  // ENHANCED: Track jumlah data yang ditambahkan
-            ];
-
-            // Validate required columns
-            $requiredColumns = ['NIK', 'NAMA_AM', 'WITEL', 'ROLE', 'DIVISI'];
-            $headers = array_shift($csvData);
-
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
-                throw new \Exception('File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns));
-            }
-
-            // Get column indices
-            $columnIndices = $this->getColumnIndices($headers, [
-                'NIK', 'NAMA_AM', 'WITEL', 'ROLE', 'DIVISI', 'TELDA'
-            ]);
-
-            $statistics['total_rows'] = count($csvData);
-
-            // Process each row
-            foreach ($csvData as $index => $row) {
-                $rowNumber = $index + 2;
-
-                try {
-                    $nik = $this->getColumnValue($row, $columnIndices['NIK']);
-                    $namaAM = $this->getColumnValue($row, $columnIndices['NAMA_AM']);
-                    $witelName = $this->getColumnValue($row, $columnIndices['WITEL']);
-                    $role = strtoupper($this->getColumnValue($row, $columnIndices['ROLE']));
-
-                    // Validate required fields
-                    if (empty($nik) || empty($namaAM) || empty($witelName) || empty($role)) {
-                        throw new \Exception('NIK, Nama AM, Witel, atau Role kosong');
-                    }
-
-                    // Validate role
-                    if (!in_array($role, ['AM', 'HOTDA'])) {
-                        throw new \Exception('Role harus AM atau HOTDA');
-                    }
-
-                    // Find witel
-                    $witel = DB::table('witel')
-                        ->where('nama', 'LIKE', "%{$witelName}%")
-                        ->first();
-
-                    if (!$witel) {
-                        throw new \Exception("Witel '{$witelName}' tidak ditemukan");
-                    }
-
-                    // Handle TELDA (optional, for HOTDA)
-                    $teldaId = null;
-                    $teldaName = $this->getColumnValue($row, $columnIndices['TELDA']);
-                    if (!empty($teldaName) && $role === 'HOTDA') {
-                        $telda = DB::table('witel')
-                            ->where('nama', 'LIKE', "%{$teldaName}%")
-                            ->first();
-
-                        if ($telda) {
-                            $teldaId = $telda->id;
-                        }
-                    }
-
-                    // Check if AM already exists
-                    $existingAM = DB::table('account_managers')
-                        ->where('nik', $nik)
-                        ->first();
-
-                    $amId = null;
-
-                    if ($existingAM) {
-                        // Update existing AM
-                        DB::table('account_managers')
-                            ->where('nik', $nik)
-                            ->update([
-                                'nama' => $namaAM,
-                                'witel_id' => $witel->id,
-                                'role' => $role,
-                                'telda_id' => $teldaId,
-                                'updated_at' => now()
-                            ]);
-
-                        $amId = $existingAM->id;
-                    } else {
-                        // Insert new AM
-                        $amId = DB::table('account_managers')->insertGetId([
-                            'nik' => $nik,
-                            'nama' => $namaAM,
-                            'witel_id' => $witel->id,
-                            'role' => $role,
-                            'telda_id' => $teldaId,
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]);
-
-                        $statistics['total_data_added']++; // ENHANCED: Increment counter
-                    }
-
-                    // Handle divisi mapping (account_manager_divisi)
-                    $divisiName = $this->getColumnValue($row, $columnIndices['DIVISI']);
-
-                    if (!empty($divisiName)) {
-                        // Support multiple divisi separated by comma
-                        $divisiList = explode(',', $divisiName);
-
-                        // Clear existing mappings for this AM
-                        DB::table('account_manager_divisi')
-                            ->where('account_manager_id', $amId)
-                            ->delete();
-
-                        foreach ($divisiList as $idx => $divName) {
-                            $divName = trim($divName);
-
-                            // Find divisi by name or code (DGS/DSS/DPS)
-                            $divisi = DB::table('divisi')
-                                ->where('nama', 'LIKE', "%{$divName}%")
-                                ->orWhere('kode', 'LIKE', "%{$divName}%")
-                                ->first();
-
-                            if ($divisi) {
-                                // First divisi is primary
-                                $isPrimary = ($idx === 0) ? 1 : 0;
-
-                                DB::table('account_manager_divisi')->insert([
-                                    'account_manager_id' => $amId,
-                                    'divisi_id' => $divisi->id,
-                                    'is_primary' => $isPrimary,
-                                    'created_at' => now(),
-                                    'updated_at' => now()
-                                ]);
-                            }
-                        }
-                    }
-
-                    $statistics['success_count']++;
-
-                } catch (\Exception $e) {
-                    $statistics['failed_count']++;
-                    $statistics['failed_rows'][] = [
-                        'row_number' => $rowNumber,
-                        'nik' => $nik ?? 'N/A',
-                        'nama_am' => $namaAM ?? 'N/A',
-                        'error' => $e->getMessage()
-                    ];
-                }
-            }
-
-            DB::commit();
-
-            $errorLogPath = null;
-            if ($statistics['failed_count'] > 0) {
-                $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'data_am');
-            }
-
-            return [
-                'success' => true,
-                'message' => 'Import Data AM selesai',
-                'statistics' => [
-                    'total_rows' => $statistics['total_rows'],
-                    'success_count' => $statistics['success_count'],
-                    'failed_count' => $statistics['failed_count'],
-                    'total_data_added' => $statistics['total_data_added']  // ENHANCED
-                ],
-                'error_log_path' => $errorLogPath
-            ];
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Import Data AM Error: ' . $e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage(),
-                'statistics' => [
-                    'total_rows' => 0,
-                    'success_count' => 0,
-                    'failed_count' => 0,
-                    'total_data_added' => 0
-                ]
-            ];
-        }
-    }
-
-    /**
-     * Parse CSV file to array
-     */
-    private function parseCsvFile($file)
-    {
-        $csvData = [];
-        $handle = fopen($file->getRealPath(), 'r');
-
-        while (($row = fgetcsv($handle, 0, ',')) !== false) {
-            $csvData[] = $row;
-        }
-
-        fclose($handle);
-
-        return $csvData;
-    }
-
-    /**
-     * Validate if CSV has required columns
-     */
-    private function validateHeaders($headers, $requiredColumns)
-    {
-        foreach ($requiredColumns as $column) {
-            if (!in_array($column, $headers)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Get column indices from headers
-     */
-    private function getColumnIndices($headers, $columns)
-    {
-        $indices = [];
-        foreach ($columns as $column) {
-            $index = array_search($column, $headers);
-            $indices[$column] = $index !== false ? $index : null;
-        }
-        return $indices;
-    }
-
-    /**
-     * Get column value safely
-     */
-    private function getColumnValue($row, $index)
-    {
-        return $index !== null && isset($row[$index]) ? trim($row[$index]) : null;
-    }
-
-    /**
-     * Generate error log CSV file
-     */
-    private function generateErrorLog($failedRows, $type)
-    {
-        if (empty($failedRows)) {
-            return null;
-        }
-
-        $filename = 'error_log_' . $type . '_' . time() . '.csv';
-        $filepath = storage_path('app/public/import_logs/' . $filename);
-
-        // Create directory if not exists
-        if (!file_exists(dirname($filepath))) {
-            mkdir(dirname($filepath), 0755, true);
-        }
-
-        $handle = fopen($filepath, 'w');
-
-        // Write headers based on type
-        if ($type === 'data_cc') {
-            fputcsv($handle, ['Baris', 'NIPNAS', 'Nama CC', 'Error']);
-        } elseif ($type === 'data_am') {
-            fputcsv($handle, ['Baris', 'NIK', 'Nama AM', 'Error']);
-        } else {
-            fputcsv($handle, ['Baris', 'Data', 'Error']);
-        }
-
-        // Write failed rows
-        foreach ($failedRows as $row) {
-            if ($type === 'data_cc') {
-                fputcsv($handle, [
-                    $row['row_number'],
-                    $row['nipnas'],
-                    $row['nama_cc'],
-                    $row['error']
-                ]);
-            } elseif ($type === 'data_am') {
-                fputcsv($handle, [
-                    $row['row_number'],
-                    $row['nik'],
-                    $row['nama_am'],
-                    $row['error']
-                ]);
-            } else {
-                fputcsv($handle, [
-                    $row['row_number'],
-                    json_encode($row),
-                    $row['error']
-                ]);
-            }
-        }
-
-        fclose($handle);
-
-        return asset('storage/import_logs/' . $filename);
+        // Redirect to preview
+        return $this->previewImport($request);
     }
 
     /**
@@ -627,7 +470,7 @@ class RevenueImportController extends Controller
      */
     public function downloadErrorLog($filename)
     {
-        $filepath = storage_path('app/public/import_logs/' . $filename);
+        $filepath = public_path('storage/import_logs/' . $filename);
 
         if (!file_exists($filepath)) {
             return response()->json([
@@ -637,5 +480,120 @@ class RevenueImportController extends Controller
         }
 
         return response()->download($filepath);
+    }
+
+    /**
+     * Get import history
+     */
+    public function getImportHistory()
+    {
+        try {
+            $logPath = public_path('storage/import_logs');
+
+            if (!file_exists($logPath)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => []
+                ]);
+            }
+
+            $files = array_diff(scandir($logPath), ['.', '..']);
+            $history = [];
+
+            foreach ($files as $file) {
+                if (pathinfo($file, PATHINFO_EXTENSION) === 'csv') {
+                    $history[] = [
+                        'filename' => $file,
+                        'created_at' => date('Y-m-d H:i:s', filemtime($logPath . '/' . $file)),
+                        'download_url' => route('revenue.download.error.log', ['filename' => $file])
+                    ];
+                }
+            }
+
+            // Sort by newest first
+            usort($history, function($a, $b) {
+                return strtotime($b['created_at']) - strtotime($a['created_at']);
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $history
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil history: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get additional validation rules based on import type
+     * ✅ FIXED: Added year/month validation for revenue_am
+     */
+    private function getAdditionalValidationRules($importType)
+    {
+        $rules = [];
+
+        if ($importType === 'revenue_cc') {
+            $rules['divisi_id'] = 'required|exists:divisi,id';
+            $rules['jenis_data'] = 'required|in:revenue,target';
+            $rules['year'] = 'required|integer|min:2020|max:2100';
+            $rules['month'] = 'required|integer|min:1|max:12';
+        }
+
+        // ✅ FIXED: Add validation for revenue_am
+        if ($importType === 'revenue_am') {
+            $rules['year'] = 'required|integer|min:2020|max:2100';
+            $rules['month'] = 'required|integer|min:1|max:12';
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Cleanup old temp files (can be called by cron job)
+     */
+    public function cleanupTempFiles()
+    {
+        try {
+            $tempPath = storage_path('app/temp_imports');
+
+            if (!file_exists($tempPath)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No temp directory found',
+                    'deleted_count' => 0
+                ]);
+            }
+
+            $files = array_diff(scandir($tempPath), ['.', '..']);
+            $deletedCount = 0;
+            $olderThan = now()->subHours(3);
+
+            foreach ($files as $file) {
+                $filepath = $tempPath . '/' . $file;
+                $fileTime = filemtime($filepath);
+
+                if ($fileTime < $olderThan->timestamp) {
+                    unlink($filepath);
+                    $deletedCount++;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Cleaned up {$deletedCount} old temp files",
+                'deleted_count' => $deletedCount
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Cleanup temp files error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error during cleanup: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

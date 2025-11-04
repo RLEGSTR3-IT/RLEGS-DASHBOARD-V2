@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WitelPerformController;
+use App\Http\Controllers\CCWitelPerformController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Overview\DashboardController;
 use App\Http\Controllers\Overview\AmDashboardController;
@@ -11,7 +14,7 @@ use App\Http\Controllers\RevenueData\RevenueDataController;
 use App\Http\Controllers\RevenueData\RevenueImportController;
 use App\Http\Controllers\RevenueData\ImportCCController;
 use App\Http\Controllers\RevenueData\ImportAMController;
-
+use App\Http\Controllers\LeaderboardAMController;
 
 // Laravel Core
 use Illuminate\Support\Facades\Route;
@@ -32,6 +35,11 @@ use App\Models\CorporateCustomer;
 |--------------------------------------------------------------------------
 | Web Routes - RLEGS Dashboard V2
 |--------------------------------------------------------------------------
+|
+| UPDATED: 2025-10-31
+| ✅ FIXED: Route leaderboard - simplified, no duplicate
+| ✅ FIXED: Revenue data dengan middleware 'admin'
+| ✅ MAINTAINED: Semua fungsi existing routes
 */
 
 // ===== BASIC ROUTES =====
@@ -39,10 +47,7 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-Route::get('/logout', function () {
-    Auth::logout();
-    return redirect('/');
-})->name('logout');
+Route::get('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('guest.logout');
 
 // ===== AUTH ROUTES =====
 Route::post('/reset-password', [NewPasswordController::class, 'store'])
@@ -57,11 +62,28 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
     ->middleware('guest')
     ->name('search.account-managers');
 
-    // ===== MAIN DASHBOARD ROUTE (CONDITIONAL RENDERING) =====
+// ===== AUTHENTICATED ROUTES =====
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    // ===== MAIN DASHBOARD ROUTE =====
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // ===== SIDEBAR ROUTES =====
+    Route::view('/revenue', 'revenueData')->name('revenue.index');
+
+    // Witel + CC Performance Routes
+    Route::get('/witel-perform', [WitelPerformController::class, 'index'])->name('witel.perform');
+    Route::get('/treg3', [CCWitelPerformController::class, 'index'])->name('witel-cc-index');
+
+    // Leaderboard Route
+    Route::get('/leaderboard', [LeaderboardAMController::class, 'index'])->name('leaderboard');
 
     // ===== DASHBOARD API ROUTES =====
     Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        // CC + Witel data fetch
+        Route::get('/trend-data', [CCWitelPerformController::class, 'fetchTrendData']);
+        Route::get('/witel-performance-data', [CCWitelPerformController::class, 'fetchWitelPerformanceData']);
+        Route::get('/customers-leaderboard', [CCWitelPerformController::class, 'fetchOverallCustomersLeaderboard']);
         Route::get('tab-data', [DashboardController::class, 'getTabData'])->name('tab-data');
         Route::get('export', [DashboardController::class, 'export'])->name('export');
         Route::get('chart-data', [DashboardController::class, 'getChartData'])->name('chart-data');
@@ -74,6 +96,9 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
         Route::get('am-customers', [DashboardController::class, 'getAmCustomers'])->name('am-customers');
         Route::get('am-export', [DashboardController::class, 'exportAm'])->name('am-export');
     });
+
+    // ===== LEADERBOARD AM ROUTES =====
+    Route::get('leaderboard/am-category/{id}', [LeaderboardAMController::class, 'getAMCategory'])->name('leaderboard.am-category');
 
     // ===== ACCOUNT MANAGER ROUTES =====
     Route::prefix('account-manager')->name('account-manager.')->group(function () {
@@ -134,41 +159,27 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
 
     // ===== CORPORATE CUSTOMER ROUTES =====
     Route::prefix('corporate-customer')->name('corporate-customer.')->group(function () {
-        // Main detail page
         Route::get('{id}', [CcDashboardController::class, 'show'])
             ->name('show')
             ->where('id', '[0-9]+');
 
-        // AJAX endpoints (placeholder untuk future features)
-        Route::get('{id}/tab-data', function($id) {
-            return response()->json([
-                'message' => 'CC tab data endpoint - coming soon',
-                'cc_id' => $id
-            ]);
-        })->name('tab-data')->where('id', '[0-9]+');
+        Route::get('{id}/tab-data', [CcDashboardController::class, 'getTabData'])
+            ->name('tab-data')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/card-data', function($id) {
-            return response()->json([
-                'message' => 'CC card data endpoint - coming soon',
-                'cc_id' => $id
-            ]);
-        })->name('card-data')->where('id', '[0-9]+');
+        Route::get('{id}/card-data', [CcDashboardController::class, 'getCardData'])
+            ->name('card-data')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/chart-data', function($id) {
-            return response()->json([
-                'message' => 'CC chart data endpoint - coming soon',
-                'cc_id' => $id
-            ]);
-        })->name('chart-data')->where('id', '[0-9]+');
+        Route::get('{id}/chart-data', [CcDashboardController::class, 'getChartData'])
+            ->name('chart-data')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/export', function($id) {
-            return response()->json([
-                'message' => 'CC export endpoint - coming soon',
-                'cc_id' => $id
-            ]);
-        })->name('export')->where('id', '[0-9]+');
+        Route::get('{id}/export', [CcDashboardController::class, 'export'])
+            ->name('export')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/info', function($id) {
+        Route::get('{id}/info', function ($id) {
             $customer = CorporateCustomer::findOrFail($id);
             return response()->json([
                 'success' => true,
@@ -179,48 +190,41 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
                 ]
             ]);
         })->name('info')->where('id', '[0-9]+');
+
+        Route::get('{id}/revenue-history', [CcDashboardController::class, 'getRevenueHistory'])
+            ->name('revenue-history')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/account-managers', [CcDashboardController::class, 'getAccountManagers'])
+            ->name('account-managers')
+            ->where('id', '[0-9]+');
     });
 
-    // ===== WITEL ROUTES (UPDATED) =====
+    // ===== WITEL ROUTES =====
     Route::prefix('witel')->name('witel.')->group(function () {
-        // Main detail page
         Route::get('{id}', [WitelDashboardController::class, 'show'])
             ->name('show')
             ->where('id', '[0-9]+');
 
-        // AJAX endpoints (placeholder untuk future features)
-        Route::get('{id}/tab-data', function($id) {
-            return response()->json([
-                'message' => 'Witel tab data endpoint - coming soon',
-                'witel_id' => $id
-            ]);
-        })->name('tab-data')->where('id', '[0-9]+');
+        Route::get('{id}/tab-data', [WitelDashboardController::class, 'getTabData'])
+            ->name('tab-data')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/card-data', function($id) {
-            return response()->json([
-                'message' => 'Witel card data endpoint - coming soon',
-                'witel_id' => $id
-            ]);
-        })->name('card-data')->where('id', '[0-9]+');
+        Route::get('{id}/card-data', [WitelDashboardController::class, 'getCardData'])
+            ->name('card-data')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/chart-data', function($id) {
-            return response()->json([
-                'message' => 'Witel chart data endpoint - coming soon',
-                'witel_id' => $id
-            ]);
-        })->name('chart-data')->where('id', '[0-9]+');
+        Route::get('{id}/chart-data', [WitelDashboardController::class, 'getChartData'])
+            ->name('chart-data')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/export', function($id) {
-            return response()->json([
-                'message' => 'Witel export endpoint - coming soon',
-                'witel_id' => $id
-            ]);
-        })->name('export')->where('id', '[0-9]+');
+        Route::get('{id}/export', [WitelDashboardController::class, 'export'])
+            ->name('export')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/info', function($id) {
+        Route::get('{id}/info', function ($id) {
             $witel = Witel::findOrFail($id);
 
-            // Count AMs in this witel
             $totalAM = AccountManager::where('witel_id', $id)
                 ->where('role', 'AM')
                 ->count();
@@ -241,36 +245,47 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
             ]);
         })->name('info')->where('id', '[0-9]+');
 
-        Route::get('{id}/performance-summary', function($id) {
-            return response()->json([
-                'message' => 'Witel performance summary - coming soon',
-                'witel_id' => $id
-            ]);
-        })->name('performance-summary')->where('id', '[0-9]+');
+        Route::get('{id}/performance-summary', [WitelDashboardController::class, 'getPerformanceSummary'])
+            ->name('performance-summary')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/top-ams', function($id) {
-            return response()->json([
-                'message' => 'Witel top AMs - coming soon',
-                'witel_id' => $id
-            ]);
-        })->name('top-ams')->where('id', '[0-9]+');
+        Route::get('{id}/top-ams', [WitelDashboardController::class, 'getTopAms'])
+            ->name('top-ams')
+            ->where('id', '[0-9]+');
 
-        Route::get('{id}/top-customers', function($id) {
-            return response()->json([
-                'message' => 'Witel top customers - coming soon',
-                'witel_id' => $id
-            ]);
-        })->name('top-customers')->where('id', '[0-9]+');
+        Route::get('{id}/top-customers', [WitelDashboardController::class, 'getTopCustomers'])
+            ->name('top-customers')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/revenue-trend', [WitelDashboardController::class, 'getRevenueTrend'])
+            ->name('revenue-trend')
+            ->where('id', '[0-9]+');
     });
 
     // ===== SEGMENT ROUTES =====
-    Route::get('segment/{id}', [DashboardController::class, 'showSegment'])
-        ->name('segment.show')
-        ->where('id', '[0-9]+');
+    Route::prefix('segment')->name('segment.')->group(function () {
+        Route::get('{id}', [DashboardController::class, 'showSegment'])
+            ->name('show')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/data', [DashboardController::class, 'getSegmentData'])
+            ->name('data')
+            ->where('id', '[0-9]+');
+
+        Route::get('{id}/customers', [DashboardController::class, 'getSegmentCustomers'])
+            ->name('customers')
+            ->where('id', '[0-9]+');
+    });
+
+    // ===== WITEL PERFORM ROUTES =====
+    Route::post('/witel-perform/update-charts', [WitelPerformController::class, 'updateCharts'])->name('witel.update-charts');
+    Route::post('/witel-perform/filter-by-divisi', [WitelPerformController::class, 'filterByDivisi'])->name('witel.filter-by-divisi');
+    Route::post('/witel-perform/filter-by-witel', [WitelPerformController::class, 'filterByWitel'])->name('witel.filter-by-witel');
+    Route::post('/witel-perform/filter-by-regional', [WitelPerformController::class, 'filterByRegional'])->name('witel.filter-by-regional');
 
     // ===== GENERAL API ROUTES =====
     Route::prefix('api')->name('api.')->group(function () {
-        Route::get('divisi', function() {
+        Route::get('divisi', function () {
             return response()->json(
                 Divisi::select('id', 'nama', 'kode')
                     ->orderBy('nama')
@@ -278,24 +293,40 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
             );
         })->name('divisi');
 
-        Route::get('witels', function() {
+        Route::get('witel', function () {
             return response()->json(
                 Witel::select('id', 'nama')
                     ->orderBy('nama')
                     ->get()
             );
+        })->name('witel');
+
+        Route::get('witels', function () {
+            return redirect()->route('api.witel');
         })->name('witels');
 
-        Route::get('segments', function() {
+        Route::get('witels', function () {
+            return redirect()->route('api.witel');
+        })->name('witels');
+
+        Route::get('segments', function () {
             return response()->json(
-                Segment::select('id', 'lsegment_ho')
-                    ->distinct()
+                Segment::select('id', 'lsegment_ho', 'ssegment_ho', 'divisi_id')
                     ->orderBy('lsegment_ho')
                     ->get()
             );
         })->name('segments');
 
-        Route::get('revenue-sources', function() {
+        Route::get('segments-by-divisi/{divisi_id}', function ($divisi_id) {
+            return response()->json(
+                Segment::select('id', 'lsegment_ho', 'ssegment_ho')
+                    ->where('divisi_id', $divisi_id)
+                    ->orderBy('lsegment_ho')
+                    ->get()
+            );
+        })->name('segments-by-divisi');
+
+        Route::get('revenue-sources', function () {
             return response()->json([
                 'all' => 'Semua Source',
                 'HO' => 'HO Revenue',
@@ -303,7 +334,7 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
             ]);
         })->name('revenue-sources');
 
-        Route::get('tipe-revenues', function() {
+        Route::get('tipe-revenues', function () {
             return response()->json([
                 'all' => 'Semua Tipe',
                 'REGULER' => 'Revenue Reguler',
@@ -311,14 +342,15 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
             ]);
         })->name('tipe-revenues');
 
-        Route::get('period-types', function() {
+        Route::get('period-types', function () {
             return response()->json([
                 'YTD' => 'Year to Date',
-                'MTD' => 'Month to Date'
+                'MTD' => 'Month to Date',
+                'QTD' => 'Quarter to Date'
             ]);
         })->name('period-types');
 
-        Route::get('available-years', function() {
+        Route::get('available-years', function () {
             try {
                 $years = CcRevenue::distinct()
                     ->orderBy('tahun', 'desc')
@@ -351,7 +383,32 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
             }
         })->name('available-years');
 
-        Route::get('health', function() {
+        Route::get('available-months/{year}', function ($year) {
+            try {
+                $months = CcRevenue::where('tahun', $year)
+                    ->distinct()
+                    ->orderBy('bulan', 'asc')
+                    ->pluck('bulan')
+                    ->filter()
+                    ->values()
+                    ->toArray();
+
+                return response()->json([
+                    'success' => true,
+                    'months' => $months,
+                    'year' => $year
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to get available months', ['error' => $e->getMessage()]);
+                return response()->json([
+                    'success' => false,
+                    'months' => [],
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        })->name('available-months');
+
+        Route::get('health', function () {
             try {
                 DB::connection()->getPdo();
                 $dbStatus = 'connected';
@@ -368,7 +425,7 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
             ]);
         })->name('health');
 
-        Route::get('user-info', function() {
+        Route::get('user-info', function () {
             $user = Auth::user();
             return response()->json([
                 'id' => $user->id,
@@ -381,38 +438,83 @@ Route::get('/search-account-managers', [RegisteredUserController::class, 'search
                     'can_export' => in_array($user->role, ['admin', 'witel_support', 'account_manager']),
                     'can_view_all_data' => $user->role === 'admin',
                     'can_view_witel_data' => in_array($user->role, ['admin', 'witel_support']),
-                    'can_view_am_data' => in_array($user->role, ['admin', 'account_manager'])
+                    'can_view_am_data' => in_array($user->role, ['admin', 'account_manager']),
+                    'can_import_data' => in_array($user->role, ['admin']),
+                    'can_delete_data' => in_array($user->role, ['admin']),
+                    'can_edit_data' => in_array($user->role, ['admin', 'witel_support'])
                 ]
             ]);
         })->name('user-info');
+
+        Route::get('dashboard-stats', function () {
+            try {
+                $currentYear = date('Y');
+                $currentMonth = date('n');
+
+                $stats = [
+                    'total_cc' => CorporateCustomer::count(),
+                    'total_am' => AccountManager::count(),
+                    'total_witel' => Witel::count(),
+                    'total_divisi' => Divisi::count(),
+                    'revenue_ytd' => CcRevenue::where('tahun', $currentYear)->sum('real_revenue'),
+                    'target_ytd' => CcRevenue::where('tahun', $currentYear)->sum('target_revenue'),
+                    'revenue_mtd' => CcRevenue::where('tahun', $currentYear)
+                        ->where('bulan', $currentMonth)
+                        ->sum('real_revenue'),
+                    'target_mtd' => CcRevenue::where('tahun', $currentYear)
+                        ->where('bulan', $currentMonth)
+                        ->sum('target_revenue')
+                ];
+
+                $stats['achievement_ytd'] = $stats['target_ytd'] > 0
+                    ? round(($stats['revenue_ytd'] / $stats['target_ytd']) * 100, 2)
+                    : 0;
+
+                $stats['achievement_mtd'] = $stats['target_mtd'] > 0
+                    ? round(($stats['revenue_mtd'] / $stats['target_mtd']) * 100, 2)
+                    : 0;
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $stats
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        })->name('dashboard-stats');
     });
 
     // ===== LEGACY EXPORT COMPATIBILITY =====
-    Route::get('export', function() {
+    Route::get('export', function () {
         return redirect()->route('dashboard.export', request()->all());
     })->name('export');
 
     // ===== PROFILE ROUTES =====
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class,'index'])->name('profile.index');
-    Route::patch('/profile', [ProfileController::class,'update'])->name('profile.update');
-    Route::delete('/profile/photo', [ProfileController::class,'removePhoto'])->name('profile.remove-photo');
-    Route::put('/profile/password', [ProfileController::class,'updatePassword'])->name('profile.password');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.remove-photo');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::post('/email/verification-notification', function () {
         request()->user()->sendEmailVerificationNotification();
         return back()->with('verification-link-sent', true);
     })->middleware(['throttle:6,1'])->name('verification.send');
-});
-
 
     // ===== SIDEBAR ROUTES =====
-    Route::get('/leaderboard', function() {
-        return view('leaderboardAM');
-    })->name('leaderboard');
+    Route::get('/treg3', function () {
+        return view('treg3.index');
+    })->name('dashboard.treg3');
 
-    // ===== REVENUE DATA ROUTES (EXTENDED WITH CRUD) =====
-    Route::prefix('revenue-data')->name('revenue.')->group(function () {
+    Route::get('/witel-perform', function () {
+        return view('performansi.witel');
+    })->name('witel.perform');
+
+    // ===== REVENUE DATA ROUTES (ADMIN ONLY) =====
+    Route::middleware('admin')->prefix('revenue-data')->name('revenue.')->group(function () {
+
         // Main Revenue Data Page
         Route::get('/', [RevenueDataController::class, 'index'])->name('data');
 
@@ -441,6 +543,7 @@ Route::middleware('auth')->group(function () {
         Route::get('data-am/{id}', [RevenueDataController::class, 'showDataAM'])->name('api.show-data-am');
         Route::put('data-am/{id}', [RevenueDataController::class, 'updateDataAM'])->name('api.update-data-am');
         Route::delete('data-am/{id}', [RevenueDataController::class, 'deleteDataAM'])->name('api.delete-data-am');
+        Route::post('data-am', [RevenueDataController::class, 'createDataAM'])->name('api.create-data-am');
         Route::post('data-am/{id}/change-password', [RevenueDataController::class, 'changePasswordAM'])->name('api.change-password-am');
         Route::post('bulk-delete-data-am', [RevenueDataController::class, 'bulkDeleteDataAM'])->name('api.bulk-delete-data-am');
         Route::post('bulk-delete-all-data-am', [RevenueDataController::class, 'bulkDeleteAllDataAM'])->name('api.bulk-delete-all-data-am');
@@ -449,28 +552,50 @@ Route::middleware('auth')->group(function () {
         Route::get('data-cc/{id}', [RevenueDataController::class, 'showDataCC'])->name('api.show-data-cc');
         Route::put('data-cc/{id}', [RevenueDataController::class, 'updateDataCC'])->name('api.update-data-cc');
         Route::delete('data-cc/{id}', [RevenueDataController::class, 'deleteDataCC'])->name('api.delete-data-cc');
+        Route::post('data-cc', [RevenueDataController::class, 'createDataCC'])->name('api.create-data-cc');
         Route::post('bulk-delete-data-cc', [RevenueDataController::class, 'bulkDeleteDataCC'])->name('api.bulk-delete-data-cc');
         Route::post('bulk-delete-all-data-cc', [RevenueDataController::class, 'bulkDeleteAllDataCC'])->name('api.bulk-delete-all-data-cc');
 
         // ===== IMPORT ROUTES =====
+        Route::post('import/preview', [RevenueImportController::class, 'previewImport'])->name('import.preview');
+        Route::post('import/execute', [RevenueImportController::class, 'executeImport'])->name('import.execute');
         Route::post('import', [RevenueImportController::class, 'import'])->name('import');
-        Route::post('import-revenue-cc', [ImportCCController::class, 'importRevenueCC'])->name('import.cc');
+        Route::post('import-data-cc', [RevenueImportController::class, 'import'])->name('import.data-cc');
+        Route::post('import-data-am', [RevenueImportController::class, 'import'])->name('import.data-am');
+        Route::post('import-revenue-cc', [RevenueImportController::class, 'import'])->name('import.revenue-cc');
+        Route::post('import-revenue-am', [RevenueImportController::class, 'import'])->name('import.revenue-am');
+
+        // Template downloads
+        Route::get('template/data-cc', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'data-cc')->name('template.data-cc');
+        Route::get('template/data-am', [ImportAMController::class, 'downloadTemplate'])->defaults('type', 'data-am')->name('template.data-am');
+        Route::get('template/revenue-cc-dgs', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'revenue-cc-dgs')->name('template.revenue-cc-dgs');
+        Route::get('template/revenue-cc-dps', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'revenue-cc-dps')->name('template.revenue-cc-dps');
+        Route::get('template/revenue-am', [ImportAMController::class, 'downloadTemplate'])->defaults('type', 'revenue-am')->name('template.revenue-am');
+
+        Route::get('template/{type}', function ($type) {
+            if (in_array($type, ['data-cc', 'revenue-cc-dgs', 'revenue-cc-dps'])) {
+                $controller = new ImportCCController();
+                return $controller->downloadTemplate($type);
+            } elseif (in_array($type, ['data-am', 'revenue-am'])) {
+                $controller = new ImportAMController();
+                return $controller->downloadTemplate($type);
+            }
+            return response()->json(['error' => 'Template not found'], 404);
+        })->name('template');
+
         Route::get('download-error-log/{filename}', [RevenueImportController::class, 'downloadErrorLog'])->name('download.error.log');
+        Route::get('import-history', [RevenueImportController::class, 'getImportHistory'])->name('import.history');
+        Route::post('validate-import', [RevenueImportController::class, 'validateImport'])->name('validate-import');
     });
 
     // Legacy route for backward compatibility
-    Route::get('/revenue', function() {
+    Route::get('/revenue', function () {
+        if (Auth::user()->role !== 'admin') {
+            return redirect()->route('dashboard')->with('error', 'Akses ditolak. Halaman ini hanya untuk Admin.');
+        }
         return redirect()->route('revenue.data');
     })->name('revenue.index');
-
-    Route::get('/treg3', function() {
-        return view('treg3.index');
-    })->name('dashboard.treg3');
-
-    Route::get('/witel-perform', function() {
-        return view('performansi.witel');
-    })->name('witel.perform');
-
+}); // End of auth middleware
 
 // ===== UTILITY ROUTES =====
 Route::get('health-check', function () {
@@ -499,8 +624,8 @@ Route::get('health-check', function () {
 
 // ===== DEBUG ROUTES (DEVELOPMENT ONLY) =====
 if (app()->environment('local')) {
-    Route::get('debug/routes', function() {
-        $routes = collect(Route::getRoutes())->map(function($route) {
+    Route::get('debug/routes', function () {
+        $routes = collect(Route::getRoutes())->map(function ($route) {
             return [
                 'method' => implode('|', $route->methods()),
                 'uri' => $route->uri(),
@@ -515,7 +640,7 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.routes');
 
-    Route::get('debug/user', function() {
+    Route::get('debug/user', function () {
         $user = Auth::user();
 
         if (!$user) {
@@ -561,7 +686,36 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.user');
 
-    Route::get('debug/witel-routes', function() {
+    Route::get('debug/leaderboard', function () {
+        return response()->json([
+            'main_route' => 'GET /leaderboard',
+            'route_name' => 'leaderboard',
+            'description' => 'Leaderboard AM dengan filter lengkap (periode, witel, divisi, kategori, jenis revenue)',
+            'example_url' => url('/leaderboard'),
+            'available_filters' => [
+                'search' => 'Search by nama AM',
+                'witel_filter[]' => 'Array of witel IDs',
+                'divisi_filter[]' => 'Array of divisi IDs (1=DGS, 2=DSS, 3=DPS)',
+                'category_filter[]' => 'Array: enterprise, government, multi',
+                'revenue_type_filter[]' => 'Array: Reguler, NGTMA, Kombinasi',
+                'period' => 'year_to_date, current_month, custom',
+                'start_date' => 'Y-m-d format (for custom period)',
+                'end_date' => 'Y-m-d format (for custom period)',
+                'per_page' => 'Items per page (default: 10)'
+            ],
+            'category_logic' => [
+                'enterprise' => 'AM dengan DPS/DSS saja (tanpa DGS)',
+                'government' => 'AM dengan DGS saja',
+                'multi' => 'AM dengan DGS + (DPS/DSS)'
+            ],
+            'ranking_basis' => 'Total Real Revenue (descending)',
+            'ajax_endpoints' => [
+                'am_category' => 'GET /leaderboard/am-category/{id}'
+            ]
+        ]);
+    })->name('debug.leaderboard');
+
+    Route::get('debug/witel-routes', function () {
         return response()->json([
             'main_route' => 'GET /witel/{id}',
             'description' => 'Witel detail page with revenue data from CC and AM sources',
@@ -569,34 +723,19 @@ if (app()->environment('local')) {
             'available_endpoints' => [
                 'detail' => '/witel/{id}',
                 'info' => '/witel/{id}/info',
-                'tab_data' => '/witel/{id}/tab-data (placeholder)',
-                'card_data' => '/witel/{id}/card-data (placeholder)',
-                'chart_data' => '/witel/{id}/chart-data (placeholder)',
-                'export' => '/witel/{id}/export (placeholder)',
-                'performance_summary' => '/witel/{id}/performance-summary (placeholder)',
-                'top_ams' => '/witel/{id}/top-ams (placeholder)',
-                'top_customers' => '/witel/{id}/top-customers (placeholder)'
-            ],
-            'filters_available' => [
-                'tahun' => 'Year filter',
-                'tipe_revenue' => 'Revenue type (REGULER/NGTMA)',
-                'revenue_source' => 'Revenue source (HO/BILL)',
-                'revenue_view_mode' => 'View mode (detail/agregat_bulan)',
-                'granularity' => 'Data granularity (account_manager/divisi/corporate_customer)',
-                'role_filter' => 'AM role filter (all/AM/HOTDA)',
-                'chart_tahun' => 'Chart year',
-                'chart_display' => 'Chart display mode (combination/revenue/achievement)'
-            ],
-            'revenue_logic' => [
-                'DPS' => 'Uses witel_bill_id from cc_revenues',
-                'DGS_DSS' => 'Uses witel_ho_id from cc_revenues',
-                'AM_Revenue' => 'Uses witel_id from am_revenues',
-                'combined' => 'Total = CC Revenue + AM Revenue'
+                'tab_data' => '/witel/{id}/tab-data',
+                'card_data' => '/witel/{id}/card-data',
+                'chart_data' => '/witel/{id}/chart-data',
+                'export' => '/witel/{id}/export',
+                'performance_summary' => '/witel/{id}/performance-summary',
+                'top_ams' => '/witel/{id}/top-ams',
+                'top_customers' => '/witel/{id}/top-customers',
+                'revenue_trend' => '/witel/{id}/revenue-trend'
             ]
         ]);
     })->name('debug.witel-routes');
 
-    Route::get('debug/cc-routes', function() {
+    Route::get('debug/cc-routes', function () {
         return response()->json([
             'main_route' => 'GET /corporate-customer/{id}',
             'description' => 'Corporate Customer detail page with revenue data and analysis',
@@ -604,28 +743,22 @@ if (app()->environment('local')) {
             'available_endpoints' => [
                 'detail' => '/corporate-customer/{id}',
                 'info' => '/corporate-customer/{id}/info',
-                'tab_data' => '/corporate-customer/{id}/tab-data (placeholder)',
-                'card_data' => '/corporate-customer/{id}/card-data (placeholder)',
-                'chart_data' => '/corporate-customer/{id}/chart-data (placeholder)',
-                'export' => '/corporate-customer/{id}/export (placeholder)'
-            ],
-            'filters_available' => [
-                'tahun' => 'Year filter',
-                'tipe_revenue' => 'Revenue type (REGULER/NGTMA)',
-                'revenue_source' => 'Revenue source (HO/BILL)',
-                'revenue_view_mode' => 'View mode (detail/agregat_bulan)',
-                'granularity' => 'Data granularity (divisi/segment/account_manager)',
-                'chart_tahun' => 'Chart year',
-                'chart_display' => 'Chart display mode (combination/revenue/achievement)'
+                'tab_data' => '/corporate-customer/{id}/tab-data',
+                'card_data' => '/corporate-customer/{id}/card-data',
+                'chart_data' => '/corporate-customer/{id}/chart-data',
+                'export' => '/corporate-customer/{id}/export',
+                'revenue_history' => '/corporate-customer/{id}/revenue-history',
+                'account_managers' => '/corporate-customer/{id}/account-managers'
             ]
         ]);
     })->name('debug.cc-routes');
 
-    Route::get('debug/am-routes', function() {
+    Route::get('debug/am-routes', function () {
         return response()->json([
             'main_routes' => [
-                'dashboard_am' => 'GET /dashboard (when logged in as AM)',
-                'detail_am_from_leaderboard' => 'GET /account-manager/{id}'
+                'dashboard_am' => 'GET /dashboard', // (when logged in as AM)
+                'detail_am_from_leaderboard' => 'GET /account-manager/{id}',
+                'leaderboard' => 'GET /leaderboard'
             ],
             'ajax_endpoints' => [
                 'tab_data' => 'GET /account-manager/{id}/tab-data',
@@ -645,7 +778,54 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.am-routes');
 
-    Route::get('debug/database', function() {
+    Route::get('debug/import-routes', function () {
+        return response()->json([
+            'two_step_import' => [
+                'step_1_preview' => 'POST /revenue-data/import/preview',
+                'step_2_execute' => 'POST /revenue-data/import/execute'
+            ],
+            'legacy_single_step' => 'POST /revenue-data/import',
+            'description' => '2-step process with preview and confirmation for duplicate handling',
+            'access_control' => 'Admin only - non-admin redirected to dashboard',
+            'import_types' => [
+                'data_cc' => 'Import Data Corporate Customer',
+                'data_am' => 'Import Data Account Manager',
+                'revenue_cc' => 'Import Revenue Corporate Customer',
+                'revenue_am' => 'Import Revenue AM Mapping'
+            ],
+            'direct_endpoints' => [
+                'data_cc' => 'POST /revenue-data/import-data-cc',
+                'data_am' => 'POST /revenue-data/import-data-am',
+                'revenue_cc' => 'POST /revenue-data/import-revenue-cc',
+                'revenue_am' => 'POST /revenue-data/import-revenue-am'
+            ],
+            'template_downloads' => [
+                'data_cc' => 'GET /revenue-data/template/data-cc',
+                'data_am' => 'GET /revenue-data/template/data-am',
+                'revenue_cc_dgs' => 'GET /revenue-data/template/revenue-cc-dgs',
+                'revenue_cc_dps' => 'GET /revenue-data/template/revenue-cc-dps',
+                'revenue_am' => 'GET /revenue-data/template/revenue-am'
+            ],
+            'additional_endpoints' => [
+                'download_error_log' => 'GET /revenue-data/download-error-log/{filename}',
+                'import_history' => 'GET /revenue-data/import-history',
+                'validate_import' => 'POST /revenue-data/validate-import (legacy)'
+            ],
+            'preview_parameters' => [
+                'file' => 'CSV file to import (required)',
+                'import_type' => 'Type of import: data_cc|data_am|revenue_cc|revenue_am (required)',
+                'divisi_id' => 'Division ID (required for revenue_cc)',
+                'jenis_data' => 'Data type: revenue|target (required for revenue_cc)'
+            ],
+            'execute_parameters' => [
+                'session_id' => 'Session ID from preview response (required)',
+                'confirmed_updates' => 'Array of IDs to update (optional)',
+                'skip_updates' => 'Array of IDs to skip (optional)'
+            ]
+        ]);
+    })->name('debug.import-routes');
+
+    Route::get('debug/database', function () {
         try {
             $stats = [
                 'account_managers' => AccountManager::count(),
@@ -680,7 +860,67 @@ if (app()->environment('local')) {
             ], 500);
         }
     })->name('debug.database');
+
+    Route::get('debug/import-test', function () {
+        return view('debug.import-test');
+    })->name('debug.import-test');
+
+    Route::get('debug/table-names', function () {
+        try {
+            $tables = DB::select('SHOW TABLES');
+            $dbName = DB::getDatabaseName();
+
+            $tableNames = array_map(function ($table) use ($dbName) {
+                $key = "Tables_in_{$dbName}";
+                return $table->$key;
+            }, $tables);
+
+            return response()->json([
+                'status' => 'success',
+                'database' => $dbName,
+                'total_tables' => count($tableNames),
+                'tables' => $tableNames,
+                'check' => [
+                    'has_witel' => in_array('witel', $tableNames),
+                    'has_witels' => in_array('witels', $tableNames),
+                    'correct_table_name' => in_array('witel', $tableNames) ? 'witel' : 'witels'
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    })->name('debug.table-names');
+
+    Route::get('debug/role-access', function () {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+
+        return response()->json([
+            'user' => [
+                'name' => $user->name,
+                'role' => $user->role
+            ],
+            'access_rights' => [
+                'can_access_revenue_data' => $user->role === 'admin',
+                'can_view_leaderboard' => true,
+                'can_view_dashboard' => true,
+                'redirect_if_not_admin' => $user->role !== 'admin' ? route('dashboard') : null
+            ],
+            'available_routes' => [
+                'dashboard' => route('dashboard'),
+                'leaderboard' => route('leaderboard'),
+                'revenue_data' => $user->role === 'admin' ? route('revenue.data') : 'ACCESS DENIED'
+            ]
+        ]);
+    })->name('debug.role-access');
 }
+Route::get('/treg3', [CCWitelPerformController::class, 'index'])->name('witel-cc-index');
 
 // ===== FALLBACK =====
 Route::fallback(function () {
@@ -689,6 +929,7 @@ Route::fallback(function () {
             'error' => 'Route not found',
             'available_routes' => [
                 'dashboard' => route('dashboard'),
+                'leaderboard' => route('leaderboard'),
                 'health_check' => route('health-check')
             ]
         ], 404);
@@ -697,4 +938,5 @@ Route::fallback(function () {
     return view('errors.404');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
+

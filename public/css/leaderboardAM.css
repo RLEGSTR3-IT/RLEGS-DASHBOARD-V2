@@ -1107,6 +1107,24 @@ body {
   line-height: calc(var(--ctrl-h) - 2px) !important; /* border 2px */
 }
 
+/* Samakan tampilan item terpilih dengan list biasa (tanpa bar merah) */
+.bootstrap-select .dropdown-menu > .active > a,
+.bootstrap-select .dropdown-menu > .selected > a {
+  background: transparent !important;
+  color: var(--gray-700) !important;
+  font-weight: 500 !important;
+}
+
+/* Tetap kasih efek saat hover/focus */
+.bootstrap-select .dropdown-menu > li > a:hover,
+.bootstrap-select .dropdown-menu > li > a:focus,
+.bootstrap-select .dropdown-menu > .active > a:hover,
+.bootstrap-select .dropdown-menu > .selected > a:hover {
+  color: var(--telkom-red) !important;
+  background: linear-gradient(135deg, var(--telkom-red-soft) 0%, var(--telkom-red-ultra-soft) 100%) !important;
+  transform: translateX(3px) !important;
+}
+
 
 /* Responsive - HANYA untuk mobile/tablet kecil */
 @media (max-width: 1200px) {
@@ -1191,3 +1209,4 @@ body {
         white-space: nowrap !important;
     }
 }
+

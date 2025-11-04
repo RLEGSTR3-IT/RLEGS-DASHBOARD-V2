@@ -118,8 +118,7 @@
                         title="Metode Ranking"
                         data-width="100%"
                         data-live-search="true"              
-                        data-live-search-placeholder="Cari metode..."  <!-- opsional -->
-                        data-size="6"                         <!-- konsisten dengan yang lain -->
+                        data-size="6"                        
                         >
                         <option value="revenue"     {{ request('ranking_method', 'revenue') == 'revenue' ? 'selected' : '' }}>Revenue Tertinggi</option>
                         <option value="achievement" {{ request('ranking_method') == 'achievement' ? 'selected' : '' }}>Achievement Tertinggi</option>

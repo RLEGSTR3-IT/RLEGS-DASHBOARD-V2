@@ -9,7 +9,7 @@
     ];
 @endphp
 
-<div class="witel-layout-card shadow-sm border-gray-200 bg-white h-full flex flex-col" id="top-customers-card">
+<div class="witel-layout-card border-gray-200 bg-white h-full flex flex-col" id="top-customers-card">
     {{-- Card Header --}}
     <div class="flex witel-layout-card-header pb-0 border-b border-gray-200 flex-shrink-0">
         <div class="header-top-row flex items-start justify-between gap-3 mb-4">

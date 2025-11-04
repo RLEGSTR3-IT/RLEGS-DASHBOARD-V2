@@ -218,7 +218,6 @@ class ImportAMController extends Controller
                     'rows' => $detailedRows
                 ]
             ];
-
         } catch (\Exception $e) {
             Log::error('Preview Data AM Error: ' . $e->getMessage());
             return [
@@ -373,7 +372,6 @@ class ImportAMController extends Controller
                     }
 
                     $statistics['success_count']++;
-
                 } catch (\Exception $e) {
                     $statistics['failed_count']++;
                     $statistics['failed_rows'][] = [
@@ -412,7 +410,6 @@ class ImportAMController extends Controller
                 ],
                 'error_log_path' => $errorLogPath
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Import Data AM Error: ' . $e->getMessage());
@@ -454,7 +451,7 @@ class ImportAMController extends Controller
                 return [
                     'success' => false,
                     'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns) .
-                                 '. Kolom lain boleh ada dan akan diabaikan.'
+                        '. Kolom lain boleh ada dan akan diabaikan.'
                 ];
             }
 
@@ -579,7 +576,6 @@ class ImportAMController extends Controller
                     'rows' => $detailedRows
                 ]
             ];
-
         } catch (\Exception $e) {
             Log::error('Preview Revenue AM Error: ' . $e->getMessage());
             return [
@@ -733,7 +729,6 @@ class ImportAMController extends Controller
                     }
 
                     $statistics['success_count']++;
-
                 } catch (\Exception $e) {
                     $statistics['failed_count']++;
                     $statistics['failed_rows'][] = [
@@ -774,7 +769,6 @@ class ImportAMController extends Controller
                 ],
                 'error_log_path' => $errorLogPath
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Import Revenue AM Error: ' . $e->getMessage());
@@ -826,7 +820,7 @@ class ImportAMController extends Controller
      */
     private function validateHeaders($headers, $requiredColumns)
     {
-        $cleanHeaders = array_map(function($h) {
+        $cleanHeaders = array_map(function ($h) {
             return strtoupper(trim($h));
         }, $headers);
 
@@ -843,7 +837,7 @@ class ImportAMController extends Controller
     {
         $indices = [];
 
-        $cleanHeaders = array_map(function($h) {
+        $cleanHeaders = array_map(function ($h) {
             return strtoupper(trim($h));
         }, $headers);
 
@@ -901,3 +895,4 @@ class ImportAMController extends Controller
         return asset('storage/import_logs/' . $filename);
     }
 }
+

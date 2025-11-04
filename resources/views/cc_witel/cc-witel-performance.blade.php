@@ -18,15 +18,6 @@
                   <h1 class="header-title">Dashboard Performansi CC & Witel</h1>
                   <p class="header-subtitle">Monitoring dan Analisis Performa Revenue CC dan Witel</p>
               </div>
-
-              {{-- Right side with the button --}}
-              <div class="header-actions">
-                  <button class="export-btn">
-                      {{-- Make sure you have Font Awesome included in your project for this icon to appear --}}
-                      <i class="fas fa-download"></i>
-                      <span>Export Data</span>
-                  </button>
-              </div>
           </div>
       </div>
 

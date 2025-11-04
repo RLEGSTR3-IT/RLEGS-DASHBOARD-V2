@@ -25,7 +25,7 @@
 
     <div class="witel-performance-layout">
         {{-- Witel Leaderboard --}}
-        <div class="witel-list-pane witel-layout-card shadow-sm border-gray-200">
+        <div class="witel-list-pane witel-layout-card border-gray-200">
             {{-- The card header now contains BOTH title and filters --}}
             <div class="witel-layout-card-header pb-4">
                 <div class="header-top-row">
@@ -96,7 +96,7 @@
 
         {{-- Customer Detail --}}
         <div class="witel-detail-pane">
-            <div class="witel-layout-card shadow-sm border-gray-200">
+            <div class="witel-layout-card border-gray-200">
                 <div class="customer-detail-header py-2 p-0">
                      <h2 id="witel-detail-name" class="py-2 truncate">Loading...</h2>
                      <p class="pt-2 m-0" id="witel-detail-subheading">Customer Leaderboard</p>

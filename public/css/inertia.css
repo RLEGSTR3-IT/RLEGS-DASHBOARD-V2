@@ -114,15 +114,6 @@ body {
     padding: 2rem;
 }
 
-/* The main white card container */
-.header-block {
-    background-color: #ffffff;
-    border-radius: 8px; /* Rounded corners */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-    padding: 24px 32px; /* Inner spacing */
-    border-top: 4px solid #d90429; /* The key red top border */
-}
-
 /* Flexbox container to align items */
 .header-content {
     display: flex;

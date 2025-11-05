@@ -1629,6 +1629,56 @@ button:focus,
     gap:14px;
     grid-template-columns: repeat(3, minmax(0,1fr));
 }
+/* ===== Divisi Pill tanpa warna background ===== */
+
+/* Default tampilan: teks biasa */
+.divisi-pill {
+  background: transparent;          /* hilangkan warna */
+  color: var(--gray-800);           /* teks abu tua agar kontras */
+  border: 1px solid var(--gray-300);/* opsional: garis tipis */
+  padding: 4px 10px;
+  border-radius: var(--radius-lg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Hilangkan semua warna dari varian badge */
+.divisi-pill.badge-dgs,
+.divisi-pill.badge-dps,
+.divisi-pill.badge-dss,
+.divisi-pill.badge-des,
+.divisi-pill.badge-all {
+  background: transparent !important;
+  color: var(--gray-800) !important;
+  border-color: var(--gray-300) !important;
+}
+
+/* === Top AM: tampilkan divisi sebagai teks biasa === */
+.performance-section #content-account-manager .divisi-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.performance-section #content-account-manager .divisi-pill {
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+
+  /* biarkan pewarisan font dari tabel */
+  color: inherit !important;
+  font: inherit !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  line-height: 1.5;
+}
+
 
 @media (max-width: 992px){
   .am-legend-grid{ 

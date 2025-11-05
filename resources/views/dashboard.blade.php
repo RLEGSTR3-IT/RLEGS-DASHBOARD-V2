@@ -250,14 +250,44 @@
                                     <td>
                                         <div class="divisi-pills">
                                             @if(!empty($am->divisi_list) && $am->divisi_list !== 'N/A')
-                                                @foreach(explode(', ', $am->divisi_list) as $divisi)
-                                                <span class="divisi-pill badge-{{ strtolower(str_replace(' ', '-', $divisi)) }}">{{ $divisi }}</span>
-                                                @endforeach
+                                            @php
+                                                // Pecah robust: boleh ada/tiada spasi setelah koma
+                                                $divs = preg_split('/\s*,\s*/', $am->divisi_list, -1, PREG_SPLIT_NO_EMPTY);
+
+                                                // Peta alias -> kelas CSS yang tersedia
+                                                $alias = [
+                                                'government-service' => 'dgs',
+                                                'govt-service'       => 'dgs',
+                                                'gs'                 => 'dgs',
+                                                'dgs'                => 'dgs',
+
+                                                'digital-platform-service' => 'dps',
+                                                'platform-service'         => 'dps',
+                                                'dps'                      => 'dps',
+
+                                                'digital-solution-service' => 'dss',
+                                                'solution-service'         => 'dss',
+                                                'dss'                      => 'dss',
+
+                                                'digital-enterprise-service' => 'des',
+                                                'enterprise-service'         => 'des',
+                                                'des'                        => 'des',
+                                                ];
+                                            @endphp
+
+                                            @foreach($divs as $divisi)
+                                                @php
+                                                $key = \Illuminate\Support\Str::slug($divisi);   // "Government Service" -> "government-service"
+                                                $code = $alias[$key] ?? 'all';                   // fallback "all"
+                                                @endphp
+                                                <span class="divisi-pill badge-{{ $code }}">{{ $divisi }}</span>
+                                            @endforeach
                                             @else
-                                                <span class="text-muted">-</span>
+                                            <span class="text-muted">-</span>
                                             @endif
                                         </div>
                                     </td>
+
                                     <td class="text-end">Rp {{ number_format($am->total_revenue ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-end">Rp {{ number_format($am->total_target ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-end">

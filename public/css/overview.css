@@ -1679,6 +1679,111 @@ button:focus,
   line-height: 1.5;
 }
 
+/* ===== CUSTOM TOOLTIP (MUNCUL SAAT HOVER) ===== */
+/* ===== TOOLTIP KHUSUS BADGE (hanya muncul saat ada data-tooltip) ===== */
+.status-badge { position: relative; cursor: pointer; }
+
+/* tampilkan tooltip HANYA jika atribut data-tooltip ada */
+.status-badge[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;               /* putih */
+  color: var(--gray-800);         /* default */
+  border: 1px solid var(--gray-300);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  min-width: max-content;
+  box-shadow: 0 4px 10px rgba(0,0,0,.08);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 100;
+}
+.status-badge[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  bottom: 115%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #fff;         /* segitiga putih */
+  opacity: 0; transition: opacity .2s ease;
+}
+
+/* muncul saat hover */
+.status-badge:hover[data-tooltip]::after,
+.status-badge:hover[data-tooltip]::before { opacity: 1; }
+
+/* warna teks/border sesuai kategori */
+.bg-success-soft:hover[data-tooltip]::after { color: var(--success-dark); border-color: var(--success); }
+.bg-warning-soft:hover[data-tooltip]::after { color: var(--warning-dark); border-color: var(--warning); }
+.bg-danger-soft:hover[data-tooltip]::after  { color: var(--error-dark);   border-color: var(--error); }
+
+/* benar-benar nonaktifkan tooltip Bootstrap (hitam) */
+.tooltip { display: none !important; opacity: 0 !important; visibility: hidden !important; }
+
+/* 1) Izinkan tooltip keluar secara vertikal dari wrapper tabel */
+.table-container .table-responsive{
+  overflow-y: visible !important;   /* biar pseudo-element tooltip tidak terpotong ke atas */
+  /* tetap biarkan horizontal scroll dari bootstrap */
+}
+
+/* 2) Pastikan tooltip berada di atas header sticky */
+.table-modern thead th{ z-index: 5; }
+.status-badge[data-tooltip]::after,
+.status-badge[data-tooltip]::before{ z-index: 9999; }
+
+/* 3) Fallback: untuk baris pertama, tampilkan tooltip di BAWAH badge */
+.table-modern tbody tr:first-child .status-badge[data-tooltip]::after{
+  bottom: auto;
+  top: 125%;               /* pindah ke bawah */
+}
+.table-modern tbody tr:first-child .status-badge[data-tooltip]::before{
+  bottom: auto;
+  top: 115%;
+  border-color: transparent transparent #fff transparent; /* segitiga ke bawah */
+}
+
+/* ==== biar konten & tooltip boleh melewati tepi kanan card ==== */
+.performance-section,
+.performance-section .tab-content,
+.performance-section .table-container,
+.performance-section .table-responsive {
+  overflow: visible !important;
+}
+
+/* Tab bar juga jangan menggunting konten yang keluar */
+.performance-tabs {
+  overflow: visible !important;
+}
+
+/* Tooltip default (sudah ada), tambah varian flip ke kiri saat dekat tepi kanan */
+.status-badge.tooltip-left[data-tooltip]::after{
+  left: auto;
+  right: 0;             /* tempel ke sisi kanan badge */
+  transform: none;
+}
+.status-badge.tooltip-left[data-tooltip]::before{
+  left: auto;
+  right: 14px;
+  bottom: 115%;
+  border-color: transparent transparent #fff transparent;
+}
+
+/* Bonus: kalau sel berada di 2 kolom paling kanan, paksa flip kiri via CSS saja */
+.table-modern tbody td:nth-last-child(-n+2) .status-badge[data-tooltip]::after{
+  left: auto; right: 0; transform: none;
+}
+.table-modern tbody td:nth-last-child(-n+2) .status-badge[data-tooltip]::before{
+  left: auto; right: 14px;
+}
+
 
 @media (max-width: 992px){
   .am-legend-grid{ 
@@ -1763,3 +1868,4 @@ button:focus,
     padding-bottom: 52px; 
   }
 }
+

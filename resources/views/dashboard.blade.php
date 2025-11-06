@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
           position: 'left',
           beginAtZero: true,
           grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: { 
+          ticks: {
             color: '#6b7280',
             callback: v => v.toLocaleString('id-ID'),
             font: { size: 11 }
@@ -578,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
           beginAtZero: true,
           suggestedMax: 120,
           grid: { drawOnChartArea: false },
-          ticks: { 
+          ticks: {
             color: '#6b7280',
             callback: v => `${v}%`,
             font: { size: 11 }

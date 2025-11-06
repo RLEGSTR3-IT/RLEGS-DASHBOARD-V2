@@ -1,6 +1,7 @@
 @php
     $currentYear = date('Y');
     $currentMonth = date('n');
+    $currentMonthLabel = date('F');
     $startYear = 2020;
     $divisions = [
         ['id' => 3, 'code' => 'DPS', 'name' => 'DPS (Private)', 'icon' => 'fa-building'],
@@ -27,41 +28,87 @@
             </div>
             <div id="witel-filters" class="top-cust-filter-container filters-form">
                  {{-- Mode Filter --}}
-                <div>
-                    <label for="top-cust-mode" class="text-sm">Range:</label>
-                    <select id="top-cust-mode" class="filter-input">
-                        <option value="ytd" selected>YTD</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="annual">Annual</option>
-                    </select>
+                <div class="flex items-center gap-2">
+                    <label for="top-cust-mode">Range:</label>
+                    <div class="custom-select-wrapper inline-block" data-select-id="top-cust-mode">
+
+                        <input type="hidden" class="custom-select-input" id="top-cust-mode"
+                               value="ytd">
+
+                        <button type="button" class="custom-select-trigger" id="top-cust-mode">
+                            <span class="custom-select-label">YTD</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            <div class="custom-select-option selected" data-value="ytd">YTD</div>
+                            <div class="custom-select-option" data-value="monthly">Monthly</div>
+                            <div class="custom-select-option" data-value="annual">Annual</div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Year Filter (Conditional) --}}
-                <div id="top-cust-year-filter">
-                    <label for="top-cust-year" class="text-sm">Year:</label>
-                    <select id="top-cust-year" class="filter-input">
-                        @for ($y = $currentYear; $y >= $startYear; $y--)
-                        <option value="{{ $y }}" {{ $y == $currentYear ? 'selected' : '' }}>{{ $y }}</option>
-                        @endfor
-                    </select>
+                <div id="top-cust-year-filter" class="flex items-center gap-2" style="display: none;">
+                    <label for="top-cust-year">Year:</label>
+                    <div class="custom-select-wrapper inline-block" data-select-id="top-cust-year">
+
+                        <input type="hidden" class="custom-select-input" id="top-cust-year"
+                               value="{{ $currentYear }}">
+
+                        <button type="button" class="custom-select-trigger" id="top-cust-year">
+                            <span class="custom-select-label">{{ $currentYear }}</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            @for ($y = $currentYear; $y >= $startYear; $y--)
+                                <div class="custom-select-option {{ $y == $currentYear ? 'selected' : '' }}"
+                                    data-value="{{ $y }}">
+                                    {{ $y }}
+                                </div>
+                            @endfor
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Month Filter (Conditional) --}}
-                <div id="top-cust-month-filter">
-                    <label for="top-cust-month" class="text-sm">Month:</label>
-                    <select id="top-cust-month" class="filter-input">
-                        @foreach (['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Des'] as $i => $m)
-                        <option value="{{ $i + 1 }}" {{ ($i + 1) == $currentMonth ? 'selected' : '' }}>{{ $m }}</option>
-                        @endforeach
-                    </select>
+                <div id="top-cust-month-filter" class="flex items-center gap-2" style="display: none;">
+                    <label for="top-cust-month">Month:</label>
+                    <div class="custom-select-wrapper inline-block" data-select-id="top-cust-month">
+
+                        <input type="hidden" class="custom-select-input" id="top-cust-month"
+                               value="{{ $currentMonth }}">
+
+                        <button type="button" class="custom-select-trigger" id="top-cust-month">
+                            <span class="custom-select-label">{{ $currentMonthLabel }}</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            @foreach (['January','February','March','April','May','June','July','August','September','October','November','December'] as $i => $m)
+                                <div class="custom-select-option {{ ($i + 1) == $currentMonth ? 'selected' : '' }}"
+                                    data-value="{{ $i + 1 }}">
+                                    {{ $m }}
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="text-xs text-gray-600 mr-2" for="top-cust-source">Source:</label>
-                    <select id="top-cust-source" class="filter-input border rounded-lg px-2 py-1 text-xs w-28">
-                        <option value="reguler" selected>REGULER</option>
-                        <option value="ngtma">NGTMA</option>
-                    </select>
+                <div class="flex items-center gap-2">
+                    <label for="top-cust-source">Source:</label>
+                    <div class="custom-select-wrapper inline-block" data-select-id="top-cust-source">
+
+                        <input type="hidden" class="custom-select-input" id="top-cust-source"
+                               value="reguler">
+
+                        <button type="button" class="custom-select-trigger" id="top-cust-source">
+                            <span class="custom-select-label">REGULER</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            <div class="custom-select-option selected" data-value="reguler">REGULER</div>
+                            <div class="custom-select-option" data-value="ngtma">NGTMA</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -86,7 +133,7 @@
         <div class="flex-1 overflow-y-auto px-6 pb-6">
             <div id="top-cust-loading" class="placeholder-text">Loading...</div>
             <div id="top-cust-error" class="placeholder-text error" style="display: none;"></div>
-            <div id="top-cust-list-container" class="space-y-3 pt-3">
+            <div id="top-cust-list-container" class="space-y-3 py-3">
                 {{-- Customer rows and other messages will be injected here --}}
             </div>
         </div>
@@ -128,7 +175,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
+    const currentMonth = {{ $currentMonth }};
 
     // --- STATE & DOM ---
     const divisionMapping = {
@@ -168,6 +215,103 @@ document.addEventListener('DOMContentLoaded', function () {
         template: document.getElementById('top-cust-row-template'),
     };
 
+    // NOTE: JS for custom select elements
+    function initializeAllCustomSelects() {
+        const wrappers = document.querySelectorAll('.custom-select-wrapper');
+
+        wrappers.forEach(wrapper => {
+            const hiddenInput = wrapper.querySelector('.custom-select-input');
+            const trigger = wrapper.querySelector('.custom-select-trigger');
+            const label = trigger.querySelector('.custom-select-label');
+            const panel = wrapper.querySelector('.custom-select-panel');
+            const options = panel.querySelectorAll('.custom-select-option');
+
+            let hiddenParent = wrapper.closest('[style*="display: none"]');
+            let originalParentStyle = null;
+            if (hiddenParent) {
+                originalParentStyle = hiddenParent.style.cssText;
+
+                // Temporarily make it "visible" but off-screen and invisible
+                // so we can measure its contents.
+                hiddenParent.style.cssText = 'display: block !important; visibility: hidden; position: absolute; top: -9999px; left: -9999px; z-index: -1;';
+            }
+
+            const originalPanelStyle = panel.style.cssText;
+            panel.style.cssText = 'display: block !important; visibility: hidden; opacity: 0;';
+
+            const panelWidth = panel.offsetWidth;
+
+            panel.style.cssText = originalPanelStyle;
+            if (hiddenParent) {
+                hiddenParent.style.cssText = originalParentStyle;
+            }
+
+            wrapper.style.minWidth = `${panelWidth}px`;
+
+            // Toggle panel when trigger is clicked
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent click from bubbling to document
+                // Close all *other* open selects
+                closeAllSelects(wrapper);
+
+                wrapper.classList.toggle('open');
+            });
+
+            // Handle option selection
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    const selectedValue = option.dataset.value;
+
+                    hiddenInput.value = selectedValue;
+
+                    // *** THIS IS THE MOST IMPORTANT PART ***
+                    // Fire a 'change' event on the hidden input.
+                    // The existing filter logic (fetchData, etc.)
+                    // will hear this event and run automatically.
+                    hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                    wrapper.classList.remove('open');
+                });
+            });
+
+            hiddenInput.addEventListener('change', () => {
+                const newValue = hiddenInput.value;
+                let newLabel = '';
+
+                // Find the option text that matches the new value
+                options.forEach(option => {
+                    if (option.dataset.value == newValue) {
+                        option.classList.add('selected');
+                        newLabel = option.textContent;
+                    } else {
+                        option.classList.remove('selected');
+                    }
+                });
+
+                // Update the trigger's text
+                if (label && newLabel) {
+                    label.textContent = newLabel;
+                }
+            });
+        });
+
+        document.addEventListener('click', () => {
+            closeAllSelects();
+        });
+    }
+
+    /**
+     * Helper to close all open selects, except for the one just clicked.
+     */
+    function closeAllSelects(exceptThisOne = null) {
+        const allWrappers = document.querySelectorAll('.custom-select-wrapper');
+        allWrappers.forEach(wrapper => {
+            if (wrapper !== exceptThisOne) {
+                wrapper.classList.remove('open');
+            }
+        });
+    }
+
     // --- HELPER FUNCTION (formatIDRCompact - unchanged) ---
     const formatIDRCompact = (num, flag="compact") => {
         if (num === null || num === undefined) return "—";
@@ -189,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateHeaderText() {
         const year = state.year;
-        const monthName = dom.monthSelect.options[state.month - 1].text;
+        const monthName = document.querySelector(`.custom-select-wrapper[data-select-id="witel-month"] .custom-select-option[data-value="${state.month}"]`).textContent.trim();
         let subtitleText = '';
 
         if (state.mode === 'ytd') {
@@ -231,12 +375,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // 2. Fetch from API
         try {
+            console.log('wut');
             updateHeaderText();
+            console.log('header text updated');
             const response = await fetch(url, { signal: currentAbortController.signal });
             if (!response.ok) throw new Error('Failed to fetch data.');
+            console.log('response is a ok');
 
             const customers = await response.json();
             dataCache[cacheKey] = customers; // Store in cache
+            console.log('huh');
             renderCustomerList(filterCustomers(customers));
 
         } catch (err) {
@@ -244,6 +392,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log('Fetch aborted');
                 return; // Don't show error if aborted
             }
+            console.log('Error alert!');
             dom.error.textContent = `Error: ${err.message}`;
             dom.error.style.display = 'block';
         } finally {
@@ -387,12 +536,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             // Ensure state matches dropdown if switching FROM YTD
             else {
+                // state.year = dom.yearSelect.value;
+                // state.month = dom.monthSelect.value;
                 state.year = dom.yearSelect.value;
                 state.month = dom.monthSelect.value;
             }
-             // Always update UI selections to match state
+
+            // Always update UI selections to match state
             dom.yearSelect.value = state.year;
             dom.monthSelect.value = state.month;
+
+            dom.yearSelect.dispatchEvent(new Event('change'));
+            dom.monthSelect.dispatchEvent(new Event('change'));
 
             updateHeaderText();
             updateFilterVisibility();
@@ -446,6 +601,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Initial fetch
         fetchTopCustomers();
+
+        // initializeAllCustomSelects();
     }
 
     setupEventListeners()

@@ -14,6 +14,12 @@
 
     <link rel="stylesheet" href="{{ asset('css/ccwitel.css') }}">
 </head>
+
+@php
+    $defaultMonth = now()->month;
+    $defaultLabel = now()->format('F');
+@endphp
+
 <body class="bg-gray-100 p-8">
     <div class="trend-revenue-card">
         <div class="trend-card-header">
@@ -25,7 +31,6 @@
                     <div>
                         <h2 class="header-title">
                             Revenue Trend
-                            <i class="fas fa-chart-line text-green-600"></i>
                         </h2>
                         <p id="header-subtitle" class="header-subtitle">
                             Revenue performance
@@ -41,11 +46,21 @@
             <div class="filters-form">
                 {{-- Time Range Selector --}}
                 <div>
-                    <label for="time_range">Range:</label>
-                    <select id="time_range">
-                        <option value="ytd">YTD</option>
-                        <option value="n_year">N Year</option>
-                    </select>
+                    <label for="range">Range:</label>
+                    <div class="custom-select-wrapper inline-block" data-select-id="time-range">
+
+                        <input type="hidden" class="custom-select-input" id="time-range"
+                               value="ytd">
+
+                        <button type="button" class="custom-select-trigger" id="range-trigger">
+                            <span class="custom-select-label">YTD</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            <div class="custom-select-option selected" data-value="ytd">YTD</div>
+                            <div class="custom-select-option" data-value="n_year">N Year</div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- N-Year Stepper --}}
@@ -57,42 +72,87 @@
 
                 {{-- Start Month Selector --}}
                 <div id="start-month-controls" style="display: none;">
-                    <label for="start_month">Start Month:</label>
-                    <select id="start_month">
-                        @foreach ($months as $date)
-                            <option value="{{ $date->month }}">{{ $date->format('F') }}</option>
-                        @endforeach
-                    </select>
+                    <label for="start-month-trigger">Start Month:</label>
+
+                    <div class="custom-select-wrapper inline-block" data-select-id="start-month">
+
+                        <input type="hidden" class="custom-select-input"
+                               id="start-month"
+                               value="{{ $defaultMonth }}">
+
+                        <button type="button" class="custom-select-trigger" id="start-month-trigger">
+                            <span class="custom-select-label">{{ $defaultLabel }}</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            @foreach ($months as $date)
+                                <div class="custom-select-option {{ $date->month == $defaultMonth ? 'selected' : '' }}"
+                                     data-value="{{ $date->month }}">
+                                    {{ $date->format('F') }}
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Division Filter --}}
                 <div>
                     <label for="division">Division:</label>
-                    <select id="division">
-                        <option value="All">All Division</option>
-                        <option value="DPS">DPS</option>
-                        <option value="DSS">DSS</option>
-                        <option value="DGS">DGS</option>
-                    </select>
+                    <div class="custom-select-wrapper inline-block" data-select-id="division">
+
+                        <input type="hidden" class="custom-select-input" id="division"
+                               value="All">
+
+                        <button type="button" class="custom-select-trigger" id="division-trigger">
+                            <span class="custom-select-label">All Division</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            <div class="custom-select-option selected" data-value="All">All Division</div>
+                            <div class="custom-select-option" data-value="DPS">DPS</div>
+                            <div class="custom-select-option" data-value="DSS">DSS</div>
+                            <div class="custom-select-option" data-value="DGS">DGS</div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Source Filter --}}
                 <div>
                     <label for="source">Source:</label>
-                    <select id="source">
-                        <option value="reguler">REGULER</option>
-                        <option value="ngtma">NGTMA</option>
-                    </select>
+                    <div class="custom-select-wrapper inline-block" data-select-id="source">
+
+                        <input type="hidden" class="custom-select-input" id="source"
+                               value="reguler">
+
+                        <button type="button" class="custom-select-trigger" id="trigger">
+                            <span class="custom-select-label">REGULER</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            <div class="custom-select-option selected" data-value="reguler">REGULER</div>
+                            <div class="custom-select-option" data-value="ngtma">NGTMA</div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- View Filter --}}
                 <div>
-                    <label for="view_mode">View:</label>
-                    <select id="view_mode">
-                        <option value="revenue_and_achievement">Revenue & Achievement</option>
-                        <option value="revenue_only">Revenue Only</option>
-                        <option value="achievement_only">Achievement Only</option>
-                    </select>
+                    <label for="view">View:</label>
+                    <div class="custom-select-wrapper inline-block" data-select-id="view">
+
+                        <input type="hidden" class="custom-select-input" id="view"
+                               value="revenue_and_achievement">
+
+                        <button type="button" class="custom-select-trigger" id="trigger">
+                            <span class="custom-select-label">Revenue & Achievement</span>
+                        </button>
+
+                        <div class="custom-select-panel">
+                            <div class="custom-select-option selected" data-value="revenue_and_achievement">Revenue & Achievement</div>
+                            <div class="custom-select-option" data-value="revenue_only">Revenue Only</div>
+                            <div class="custom-select-option" data-value="achievement_only">Achievement Only</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -127,16 +187,16 @@
             let revenueChart = null; // To hold the Chart.js instance
 
             const dom = {
-                timeRange: document.getElementById('time_range'),
+                timeRange: document.getElementById('time-range'),
                 nYearControls: document.getElementById('n-year-controls'),
                 nYearLabel: document.getElementById('n-year-label'),
                 nYearDecrement: document.getElementById('n-year-decrement'),
                 nYearIncrement: document.getElementById('n-year-increment'),
                 startMonthControls: document.getElementById('start-month-controls'),
-                startMonth: document.getElementById('start_month'),
+                startMonth: document.getElementById('start-month'),
                 division: document.getElementById('division'),
                 source: document.getElementById('source'),
-                viewMode: document.getElementById('view_mode'),
+                viewMode: document.getElementById('view'),
                 chartError: document.getElementById('chart-error'),
                 loadingOverlay: document.querySelector('.loading-overlay'),
                 chartCanvas: document.getElementById('revenueChart'),
@@ -144,6 +204,103 @@
                 headerDateRange: document.getElementById('header-date-range'),
                 chartCanvas: document.getElementById('revenueChart'),
             };
+
+            // NOTE: JS for custome select elements
+            function initializeAllCustomSelects() {
+                const wrappers = document.querySelectorAll('.custom-select-wrapper');
+
+                wrappers.forEach(wrapper => {
+                    const hiddenInput = wrapper.querySelector('.custom-select-input');
+                    const trigger = wrapper.querySelector('.custom-select-trigger');
+                    const label = trigger.querySelector('.custom-select-label');
+                    const panel = wrapper.querySelector('.custom-select-panel');
+                    const options = panel.querySelectorAll('.custom-select-option');
+
+                    let hiddenParent = wrapper.closest('[style*="display: none"]');
+                    let originalParentStyle = null;
+                    if (hiddenParent) {
+                        originalParentStyle = hiddenParent.style.cssText;
+
+                        // Temporarily make it "visible" but off-screen and invisible
+                        // so we can measure its contents.
+                        hiddenParent.style.cssText = 'display: block !important; visibility: hidden; position: absolute; top: -9999px; left: -9999px; z-index: -1;';
+                    }
+
+                    const originalPanelStyle = panel.style.cssText;
+                    panel.style.cssText = 'display: block !important; visibility: hidden; opacity: 0;';
+
+                    const panelWidth = panel.offsetWidth;
+
+                    panel.style.cssText = originalPanelStyle;
+                    if (hiddenParent) {
+                        hiddenParent.style.cssText = originalParentStyle;
+                    }
+
+                    wrapper.style.minWidth = `${panelWidth}px`;
+
+                    // Toggle panel when trigger is clicked
+                    trigger.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent click from bubbling to document
+                        // Close all *other* open selects
+                        closeAllSelects(wrapper);
+
+                        wrapper.classList.toggle('open');
+                    });
+
+                    // Handle option selection
+                    options.forEach(option => {
+                        option.addEventListener('click', () => {
+                            const selectedValue = option.dataset.value;
+
+                            hiddenInput.value = selectedValue;
+
+                            // *** THIS IS THE MOST IMPORTANT PART ***
+                            // Fire a 'change' event on the hidden input.
+                            // The existing filter logic (fetchData, etc.)
+                            // will hear this event and run automatically.
+                            hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                            wrapper.classList.remove('open');
+                        });
+                    });
+
+                    hiddenInput.addEventListener('change', () => {
+                        const newValue = hiddenInput.value;
+                        let newLabel = '';
+
+                        // Find the option text that matches the new value
+                        options.forEach(option => {
+                            if (option.dataset.value == newValue) {
+                                option.classList.add('selected');
+                                newLabel = option.textContent;
+                            } else {
+                                option.classList.remove('selected');
+                            }
+                        });
+
+                        // Update the trigger's text
+                        if (label && newLabel) {
+                            label.textContent = newLabel;
+                        }
+                    });
+                });
+
+                document.addEventListener('click', () => {
+                    closeAllSelects();
+                });
+            }
+
+            /**
+             * Helper to close all open selects, except for the one just clicked.
+             */
+            function closeAllSelects(exceptThisOne = null) {
+                const allWrappers = document.querySelectorAll('.custom-select-wrapper');
+                allWrappers.forEach(wrapper => {
+                    if (wrapper !== exceptThisOne) {
+                        wrapper.classList.remove('open');
+                    }
+                });
+            }
 
             // --- DATA FETCHING & CACHING ---
             async function fetchData(startDate, endDate) {
@@ -456,6 +613,7 @@
             dom.startMonth.value = state.startMonth;
             setupEventListeners();
             updateDashboard(); // Initial data load (YTD)
+            initializeAllCustomSelects();
         });
     </script>
     @endpush

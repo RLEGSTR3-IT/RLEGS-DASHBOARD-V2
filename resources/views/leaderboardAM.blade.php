@@ -7,95 +7,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="{{ asset('css/leaderboardAM.css') }}">
-<style>
-    /* Pagination styling to match screenshot */
-    .pagination-wrapper {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 30px;
-        padding: 20px 0;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    .pagination-info {
-        color: #6b7280;
-        font-size: 14px;
-    }
-
-    .pagination-controls {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .pagination-controls .page-link {
-        min-width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #e5e7eb;
-        background: white;
-        color: #374151;
-        border-radius: 6px;
-        cursor: pointer;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        font-weight: 500;
-        font-size: 14px;
-    }
-
-    .pagination-controls .page-link:hover:not(.active):not(.disabled) {
-        background: #f9fafb;
-        border-color: #d1d5db;
-    }
-
-    .pagination-controls .page-link.active {
-        background: #dc2626;
-        color: white;
-        border-color: #dc2626;
-    }
-
-    .pagination-controls .page-link.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    .per-page-section {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .per-page-section label {
-        color: #6b7280;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-    .per-page-section select {
-        padding: 8px 32px 8px 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        background: white;
-        cursor: pointer;
-        font-size: 14px;
-        color: #374151;
-    }
-
-    /* Clickable card */
-    .am-card {
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .am-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-</style>
 @endsection
 
 @section('content')
@@ -200,10 +111,18 @@
 
                     <!-- NEW: Ranking Method Filter -->
                     <div class="filter-group">
-                        <select class="selectpicker" id="filterSelect5" name="ranking_method" title="Metode Ranking" data-width="100%">
-                            <option value="revenue" {{ request('ranking_method', 'revenue') == 'revenue' ? 'selected' : '' }}>Revenue Tertinggi</option>
-                            <option value="achievement" {{ request('ranking_method') == 'achievement' ? 'selected' : '' }}>Achievement Tertinggi</option>
-                            <option value="combined" {{ request('ranking_method') == 'combined' ? 'selected' : '' }}>Kombinasi (50-50)</option>
+                        <select
+                        class="selectpicker"
+                        id="filterSelect5"
+                        name="ranking_method"
+                        title="Metode Ranking"
+                        data-width="100%"
+                        data-live-search="true"              
+                        data-size="6"                        
+                        >
+                        <option value="revenue"     {{ request('ranking_method', 'revenue') == 'revenue' ? 'selected' : '' }}>Revenue Tertinggi</option>
+                        <option value="achievement" {{ request('ranking_method') == 'achievement' ? 'selected' : '' }}>Achievement Tertinggi</option>
+                        <option value="combined"    {{ request('ranking_method') == 'combined' ? 'selected' : '' }}>Kombinasi (50-50)</option>
                         </select>
                     </div>
                 </div>
@@ -214,7 +133,6 @@
         <input type="hidden" name="period" id="periodInput" value="{{ request('period', 'year_to_date') }}">
         <input type="hidden" name="start_date" id="startDateInput" value="{{ request('start_date') }}">
         <input type="hidden" name="end_date" id="endDateInput" value="{{ request('end_date') }}">
-        <input type="hidden" name="per_page" id="perPageInput" value="{{ request('per_page', 10) }}">
     </form>
 
     <!-- Enhanced Leaderboard AM Cards - REAL DATA -->
@@ -319,12 +237,16 @@
             <!-- Per Page Selection -->
             <div class="per-page-section">
                 <label for="perPage">Baris</label>
-                <select id="perPage" class="per-page-select" onchange="changePerPage(this.value)">
-                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
-                    <option value="75" {{ request('per_page') == 75 ? 'selected' : '' }}>75</option>
-                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                <select id="perPage"
+                        name="per_page"
+                        form="filterForm"                     {{-- penting: asosiasikan ke form --}}
+                        class="per-page-select"
+                        onchange="document.getElementById('filterForm').submit()">  {{-- submit pasti --}}
+                    <option value="10"  {{ (int)request('per_page', 10) === 10  ? 'selected' : '' }}>10</option>
+                    <option value="25"  {{ (int)request('per_page') === 25      ? 'selected' : '' }}>25</option>
+                    <option value="50"  {{ (int)request('per_page') === 50      ? 'selected' : '' }}>50</option>
+                    <option value="75"  {{ (int)request('per_page') === 75      ? 'selected' : '' }}>75</option>
+                    <option value="100" {{ (int)request('per_page') === 100     ? 'selected' : '' }}>100</option>
                 </select>
             </div>
 
@@ -365,11 +287,6 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script>
-// Change per page function
-function changePerPage(value) {
-    document.getElementById('perPageInput').value = value;
-    document.getElementById('filterForm').submit();
-}
 
 $(document).ready(function() {
     // Inisialisasi Bootstrap Select
@@ -480,6 +397,8 @@ $(document).ready(function() {
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
+    $('.selectpicker').selectpicker('setStyle','', 'refresh');
+
 });
 </script>
 @endsection

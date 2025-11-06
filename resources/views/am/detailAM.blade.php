@@ -5,29 +5,6 @@
 @section('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <link rel="stylesheet" href="{{ asset('css/detailAM.css') }}">
-<style>
-    /* Division Pill Styling - Inline Override */
-    .divisi-pill.dgs {
-        background: rgba(191, 143, 0, 0.12);
-        color: #bf8f00;
-        border: 1px solid rgba(191, 143, 0, 0.3);
-    }
-    .divisi-pill.dps {
-        background: rgba(0, 112, 192, 0.12);
-        color: #0070c0;
-        border: 1px solid rgba(0, 112, 192, 0.3);
-    }
-    .divisi-pill.dss {
-        background: rgba(32, 55, 100, 0.12);
-        color: #203764;
-        border: 1px solid rgba(32, 55, 100, 0.3);
-    }
-    .divisi-pill.des {
-        background: rgba(13, 90, 219, 0.12);
-        color: #0d5adb;
-        border: 1px solid rgba(13, 90, 219, 0.3);
-    }
-</style>
 @endsection
 
 @section('content')
@@ -156,7 +133,6 @@
                             {{ $globalRanking['rank'] ?? 'N/A' }} dari {{ $globalRanking['total'] }}
                         </div>
                         @php $badge = $getBadgeInfo($globalRanking['status'], $globalRanking['change']); @endphp
-                        <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
                     @if($globalRanking['change'] != 0)
                         <div class="rank-badge {{ $badge['class'] }}">
@@ -179,7 +155,6 @@
                             {{ $witelRanking['rank'] ?? 'N/A' }} dari {{ $witelRanking['total'] }}
                         </div>
                         @php $badge = $getBadgeInfo($witelRanking['status'], $witelRanking['change']); @endphp
-                        <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
                     @if($witelRanking['change'] != 0)
                         <div class="rank-badge {{ $badge['class'] }}">
@@ -217,7 +192,7 @@
                                     <div class="ranking-value">
                                         {{ $ranking['rank'] ?? 'N/A' }} dari {{ $ranking['total'] ?? 0 }}
                                     </div>
-                                    <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
+                                    {{-- <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span> --}}
                                 </div>
                                 @if(($ranking['change'] ?? 0) != 0)
                                     <div class="rank-badge {{ $badge['class'] }}">

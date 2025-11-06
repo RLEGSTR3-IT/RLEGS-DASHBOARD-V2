@@ -106,7 +106,8 @@ class AmDashboardController extends Controller
                 'selected_divisi' => $filters['divisi_id'],
                 'selected_divisi_umum' => $filters['divisi_umum'],
                 'customer_count' => $customerData['customers']->count(),
-                'global_rank' => $rankingData['global']['rank'] ?? 'N/A'
+                'global_rank' => $rankingData['global']['rank'] ?? 'N/A',
+                'total_ams_in_global' => $rankingData['global']['total'] ?? 'N/A'
             ]);
 
             return view('am.detailAM', compact(
@@ -136,16 +137,17 @@ class AmDashboardController extends Controller
 
     /**
      * FIXED: Get Ranking Data - dengan sistem GOVERNMENT/ENTERPRISE
+     * CRITICAL FIX: Properly count unique AMs and exclude HOTDA
      */
     private function getRankingDataFixed($amId, $filters, $divisiList, $accountManager)
     {
         $currentYear = $filters['tahun'];
         $currentMonth = date('n');
 
-        // 1. GLOBAL RANKING - semua AM tanpa filter divisi/witel
+        // 1. GLOBAL RANKING - semua AM tanpa filter divisi/witel (EXCLUDE HOTDA)
         $globalRanking = $this->calculateGlobalRankingFixed($amId, $currentYear, $currentMonth);
 
-        // 2. WITEL RANKING - AM dalam witel yang sama tanpa filter divisi
+        // 2. WITEL RANKING - AM dalam witel yang sama tanpa filter divisi (EXCLUDE HOTDA)
         $witelRanking = $this->calculateWitelRankingFixed($amId, $accountManager->witel_id, $currentYear, $currentMonth);
 
         // 3. DIVISI UMUM RANKING - per GOVERNMENT/ENTERPRISE dalam witel yang sama
@@ -219,18 +221,25 @@ class AmDashboardController extends Controller
     }
 
     /**
-     * FIXED: Calculate Global Ranking - TANPA filter divisi, INCLUDE semua AM
+     * 🔧 FIXED: Calculate Global Ranking - EXCLUDE HOTDA, COUNT UNIQUE AMS
+     *
+     * CRITICAL FIXES:
+     * 1. Add WHERE role = 'AM' to exclude HOTDA
+     * 2. Ensure groupBy account_managers.id prevents duplicate counting
+     * 3. Match leaderboard calculation logic exactly
      */
     private function calculateGlobalRankingFixed($amId, $tahun, $bulan)
     {
-        // Peringkat global: bandingkan SEMUA AM termasuk yang belum punya revenue
-        $rankings = AccountManager::leftJoin('am_revenues', function($join) use ($tahun, $bulan) {
+        // Peringkat global: bandingkan SEMUA AM (exclude HOTDA) termasuk yang belum punya revenue
+        $rankings = AccountManager::where('account_managers.role', '=', 'AM') // ✅ CRITICAL: EXCLUDE HOTDA
+            ->leftJoin('am_revenues', function($join) use ($tahun, $bulan) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $tahun)
                     ->where('am_revenues.bulan', '<=', $bulan);
             })
             ->selectRaw('
                 account_managers.id as account_manager_id,
+                account_managers.nama as am_name,
                 COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
                 COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
@@ -239,10 +248,18 @@ class AmDashboardController extends Controller
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
+            ->groupBy('account_managers.id', 'account_managers.nama') // ✅ CRITICAL: Group by ID ensures unique AM
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY SORT: Revenue (matching leaderboard default)
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY SORT: Achievement
             ->get();
+
+        // Debug log untuk memverifikasi jumlah AM yang dihitung
+        Log::debug('Global Ranking Calculation', [
+            'total_ams_counted' => $rankings->count(),
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'searching_for_am_id' => $amId
+        ]);
 
         // Find current AM position
         $currentPosition = $rankings->search(function ($item) use ($amId) {
@@ -257,84 +274,7 @@ class AmDashboardController extends Controller
             $previousYear--;
         }
 
-        $previousRankings = AccountManager::leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth) {
-                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
-                    ->where('am_revenues.tahun', '=', $previousYear)
-                    ->where('am_revenues.bulan', '<=', $previousMonth);
-            })
-            ->selectRaw('
-                account_managers.id as account_manager_id,
-                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
-                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
-                CASE
-                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
-                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
-                    ELSE 0
-                END as achievement_rate
-            ')
-            ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
-            ->get();
-
-        $previousPosition = $previousRankings->search(function ($item) use ($amId) {
-            return $item->account_manager_id == $amId;
-        });
-
-        $status = $this->getRankingStatus($currentPosition, $previousPosition);
-        $change = $previousPosition !== false ? ($previousPosition - $currentPosition) : 0;
-
-        return [
-            'rank' => $currentPosition !== false ? $currentPosition + 1 : null,
-            'total' => $rankings->count(),
-            'status' => $status,
-            'change' => $change,
-            'percentile' => $currentPosition !== false
-                ? round((1 - ($currentPosition / $rankings->count())) * 100, 1)
-                : 0
-        ];
-    }
-
-    /**
-     * FIXED: Calculate Witel Ranking - TANPA filter divisi, INCLUDE semua AM di witel
-     */
-    private function calculateWitelRankingFixed($amId, $witelId, $tahun, $bulan)
-    {
-        // Peringkat witel: bandingkan semua AM di witel yang sama, termasuk yang belum punya revenue
-        $rankings = AccountManager::where('account_managers.witel_id', $witelId)
-            ->leftJoin('am_revenues', function($join) use ($tahun, $bulan) {
-                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
-                    ->where('am_revenues.tahun', '=', $tahun)
-                    ->where('am_revenues.bulan', '<=', $bulan);
-            })
-            ->selectRaw('
-                account_managers.id as account_manager_id,
-                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
-                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
-                CASE
-                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
-                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
-                    ELSE 0
-                END as achievement_rate
-            ')
-            ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
-            ->get();
-
-        $currentPosition = $rankings->search(function ($item) use ($amId) {
-            return $item->account_manager_id == $amId;
-        });
-
-        // Previous month
-        $previousMonth = $bulan - 1;
-        $previousYear = $tahun;
-        if ($previousMonth < 1) {
-            $previousMonth = 12;
-            $previousYear--;
-        }
-
-        $previousRankings = AccountManager::where('account_managers.witel_id', $witelId)
+        $previousRankings = AccountManager::where('account_managers.role', '=', 'AM') // ✅ EXCLUDE HOTDA
             ->leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $previousYear)
@@ -351,8 +291,88 @@ class AmDashboardController extends Controller
                 END as achievement_rate
             ')
             ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY SORT: Revenue
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY SORT: Achievement
+            ->get();
+
+        $previousPosition = $previousRankings->search(function ($item) use ($amId) {
+            return $item->account_manager_id == $amId;
+        });
+
+        $status = $this->getRankingStatus($currentPosition, $previousPosition);
+        $change = $previousPosition !== false ? ($previousPosition - $currentPosition) : 0;
+
+        return [
+            'rank' => $currentPosition !== false ? $currentPosition + 1 : null,
+            'total' => $rankings->count(), // ✅ This should now be 99, not 134
+            'status' => $status,
+            'change' => $change,
+            'percentile' => $currentPosition !== false
+                ? round((1 - ($currentPosition / $rankings->count())) * 100, 1)
+                : 0
+        ];
+    }
+
+    /**
+     * 🔧 FIXED: Calculate Witel Ranking - EXCLUDE HOTDA, COUNT UNIQUE AMS
+     */
+    private function calculateWitelRankingFixed($amId, $witelId, $tahun, $bulan)
+    {
+        // Peringkat witel: bandingkan semua AM (exclude HOTDA) di witel yang sama
+        $rankings = AccountManager::where('account_managers.witel_id', $witelId)
+            ->where('account_managers.role', '=', 'AM') // ✅ CRITICAL: EXCLUDE HOTDA
+            ->leftJoin('am_revenues', function($join) use ($tahun, $bulan) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $tahun)
+                    ->where('am_revenues.bulan', '<=', $bulan);
+            })
+            ->selectRaw('
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
+                CASE
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
+                    ELSE 0
+                END as achievement_rate
+            ')
+            ->groupBy('account_managers.id') // ✅ Ensure unique AM
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY SORT: Revenue (matching leaderboard)
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY SORT: Achievement
+            ->get();
+
+        $currentPosition = $rankings->search(function ($item) use ($amId) {
+            return $item->account_manager_id == $amId;
+        });
+
+        // Previous month
+        $previousMonth = $bulan - 1;
+        $previousYear = $tahun;
+        if ($previousMonth < 1) {
+            $previousMonth = 12;
+            $previousYear--;
+        }
+
+        $previousRankings = AccountManager::where('account_managers.witel_id', $witelId)
+            ->where('account_managers.role', '=', 'AM') // ✅ EXCLUDE HOTDA
+            ->leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth) {
+                $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
+                    ->where('am_revenues.tahun', '=', $previousYear)
+                    ->where('am_revenues.bulan', '<=', $previousMonth);
+            })
+            ->selectRaw('
+                account_managers.id as account_manager_id,
+                COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
+                COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
+                CASE
+                    WHEN COALESCE(SUM(am_revenues.target_revenue), 0) > 0
+                    THEN (COALESCE(SUM(am_revenues.real_revenue), 0) / COALESCE(SUM(am_revenues.target_revenue), 1)) * 100
+                    ELSE 0
+                END as achievement_rate
+            ')
+            ->groupBy('account_managers.id')
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY SORT: Revenue
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY SORT: Achievement
             ->get();
 
         $previousPosition = $previousRankings->search(function ($item) use ($amId) {
@@ -377,8 +397,9 @@ class AmDashboardController extends Controller
     }
 
     /**
-     * NEW: Calculate Divisi Umum Ranking (GOVERNMENT atau ENTERPRISE) dalam scope witel
+     * 🔧 FIXED: Calculate Divisi Umum Ranking (GOVERNMENT atau ENTERPRISE) dalam scope witel
      * INCLUDE semua AM yang terdaftar di divisi tersebut bahkan yang belum punya revenue
+     * CRITICAL FIX: Exclude HOTDA from all calculations
      */
     private function calculateDivisiUmumRanking($amId, $divisiUmum, $witelId, $tahun, $bulan)
     {
@@ -396,10 +417,11 @@ class AmDashboardController extends Controller
             ];
         }
 
-        // Ambil semua AM di witel yang sama yang punya divisi di kategori ini
+        // Ambil semua AM (exclude HOTDA) di witel yang sama yang punya divisi di kategori ini
         $amIdsInWitel = DB::table('account_manager_divisi')
             ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
             ->where('account_managers.witel_id', $witelId)
+            ->where('account_managers.role', '=', 'AM') // ✅ CRITICAL: EXCLUDE HOTDA
             ->whereIn('account_manager_divisi.divisi_id', $divisiIds)
             ->distinct()
             ->pluck('account_manager_divisi.account_manager_id')
@@ -419,6 +441,7 @@ class AmDashboardController extends Controller
         // Hitung total revenue per AM dari divisi-divisi yang relevan saja
         // INCLUDE AM yang belum punya revenue dengan LEFT JOIN
         $rankings = AccountManager::whereIn('account_managers.id', $amIdsInWitel)
+            ->where('account_managers.role', '=', 'AM') // ✅ Double-check EXCLUDE HOTDA
             ->leftJoin('am_revenues', function($join) use ($tahun, $bulan, $divisiIds) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $tahun)
@@ -436,8 +459,8 @@ class AmDashboardController extends Controller
                 END as achievement_rate
             ')
             ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY SORT: Revenue (matching leaderboard)
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY SORT: Achievement
             ->get();
 
         // Cari posisi AM yang sedang dilihat
@@ -457,12 +480,14 @@ class AmDashboardController extends Controller
         $previousAmIdsInWitel = DB::table('account_manager_divisi')
             ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
             ->where('account_managers.witel_id', $witelId)
+            ->where('account_managers.role', '=', 'AM') // ✅ EXCLUDE HOTDA
             ->whereIn('account_manager_divisi.divisi_id', $divisiIds)
             ->distinct()
             ->pluck('account_manager_divisi.account_manager_id')
             ->toArray();
 
         $previousRankings = AccountManager::whereIn('account_managers.id', $previousAmIdsInWitel)
+            ->where('account_managers.role', '=', 'AM') // ✅ EXCLUDE HOTDA
             ->leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth, $divisiIds) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $previousYear)
@@ -480,8 +505,8 @@ class AmDashboardController extends Controller
                 END as achievement_rate
             ')
             ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY SORT: Revenue
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY SORT: Achievement
             ->get();
 
         $previousPosition = $previousRankings->search(function ($item) use ($amId) {
@@ -1787,14 +1812,16 @@ class AmDashboardController extends Controller
         $currentYear = date('Y');
         $currentMonth = date('n');
 
-        // Global - SEMUA AM termasuk yang belum punya revenue
-        $globalRankings = AccountManager::leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
+        // Global - SEMUA AM (exclude HOTDA) termasuk yang belum punya revenue
+        $globalRankings = AccountManager::where('account_managers.role', '=', 'AM')
+            ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $currentYear)
                     ->where('am_revenues.bulan', '<=', $currentMonth);
             })
             ->selectRaw('
                 account_managers.id as account_manager_id,
+                account_managers.nama as am_name,
                 COALESCE(SUM(am_revenues.real_revenue), 0) as total_revenue,
                 COALESCE(SUM(am_revenues.target_revenue), 0) as total_target,
                 CASE
@@ -1803,9 +1830,9 @@ class AmDashboardController extends Controller
                     ELSE 0
                 END as achievement_rate
             ')
-            ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
+            ->groupBy('account_managers.id', 'account_managers.nama')
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY: Revenue (matching leaderboard)
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY: Achievement
             ->get();
 
         $globalPosition = $globalRankings->search(function ($item) use ($amId) {
@@ -1814,8 +1841,9 @@ class AmDashboardController extends Controller
 
         $myGlobalData = $globalRankings->get($globalPosition);
 
-        // Witel - SEMUA AM di witel termasuk yang belum punya revenue
+        // Witel - SEMUA AM (exclude HOTDA) di witel termasuk yang belum punya revenue
         $witelRankings = AccountManager::where('account_managers.witel_id', $accountManager->witel_id)
+            ->where('account_managers.role', '=', 'AM')
             ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $currentYear)
@@ -1832,8 +1860,8 @@ class AmDashboardController extends Controller
                 END as achievement_rate
             ')
             ->groupBy('account_managers.id')
-            ->orderByDesc('achievement_rate')
-            ->orderByDesc('total_revenue')
+            ->orderByDesc('total_revenue')      // ✅ PRIMARY: Revenue
+            ->orderByDesc('achievement_rate')   // ✅ SECONDARY: Achievement
             ->get();
 
         $witelPosition = $witelRankings->search(function ($item) use ($amId) {
@@ -1851,12 +1879,14 @@ class AmDashboardController extends Controller
             $govAmIds = DB::table('account_manager_divisi')
                 ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
                 ->where('account_managers.witel_id', $accountManager->witel_id)
+                ->where('account_managers.role', '=', 'AM')
                 ->whereIn('account_manager_divisi.divisi_id', [1])
                 ->distinct()
                 ->pluck('account_manager_divisi.account_manager_id')
                 ->toArray();
 
             $govRankings = AccountManager::whereIn('account_managers.id', $govAmIds)
+                ->where('account_managers.role', '=', 'AM')
                 ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
                     $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                         ->where('am_revenues.tahun', '=', $currentYear)
@@ -1874,8 +1904,8 @@ class AmDashboardController extends Controller
                     END as achievement_rate
                 ')
                 ->groupBy('account_managers.id')
-                ->orderByDesc('achievement_rate')
-                ->orderByDesc('total_revenue')
+                ->orderByDesc('total_revenue')      // ✅ PRIMARY: Revenue
+                ->orderByDesc('achievement_rate')   // ✅ SECONDARY: Achievement
                 ->get();
 
             $govPosition = $govRankings->search(function ($item) use ($amId) {
@@ -1893,12 +1923,14 @@ class AmDashboardController extends Controller
             $entAmIds = DB::table('account_manager_divisi')
                 ->join('account_managers', 'account_manager_divisi.account_manager_id', '=', 'account_managers.id')
                 ->where('account_managers.witel_id', $accountManager->witel_id)
+                ->where('account_managers.role', '=', 'AM')
                 ->whereIn('account_manager_divisi.divisi_id', [2, 3])
                 ->distinct()
                 ->pluck('account_manager_divisi.account_manager_id')
                 ->toArray();
 
             $entRankings = AccountManager::whereIn('account_managers.id', $entAmIds)
+                ->where('account_managers.role', '=', 'AM')
                 ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
                     $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                         ->where('am_revenues.tahun', '=', $currentYear)
@@ -1916,8 +1948,8 @@ class AmDashboardController extends Controller
                     END as achievement_rate
                 ')
                 ->groupBy('account_managers.id')
-                ->orderByDesc('achievement_rate')
-                ->orderByDesc('total_revenue')
+                ->orderByDesc('total_revenue')      // ✅ PRIMARY: Revenue
+                ->orderByDesc('achievement_rate')   // ✅ SECONDARY: Achievement
                 ->get();
 
             $entPosition = $entRankings->search(function ($item) use ($amId) {
@@ -1937,6 +1969,7 @@ class AmDashboardController extends Controller
                 'my_position' => $globalPosition !== false ? $globalPosition + 1 : null,
                 'my_achievement' => $myGlobalData ? round($myGlobalData->achievement_rate, 2) : 0,
                 'my_revenue' => $myGlobalData ? $myGlobalData->total_revenue : 0,
+                'my_name' => $myGlobalData ? $myGlobalData->am_name : 'N/A'
             ],
             'witel' => [
                 'total_ams' => $witelRankings->count(),

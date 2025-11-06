@@ -195,10 +195,24 @@
                                     <td class="text-end">Rp {{ number_format($customer->total_revenue ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-end">Rp {{ number_format($customer->total_target ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-end">
-                                        <span class="status-badge bg-{{ $customer->achievement_color ?? 'secondary' }}-soft">
-                                            {{ number_format($customer->achievement_rate ?? 0, 2) }}%
+                                        @php
+                                            $rate = $customer->achievement_rate ?? 0;
+                                            if ($rate >= 100) {
+                                                $color = 'success';
+                                                $tooltip = 'Excellent: Target tercapai dengan baik!';
+                                            } elseif ($rate >= 80) {
+                                                $color = 'warning';
+                                                $tooltip = 'Good: Mendekati target, perlu sedikit peningkatan';
+                                            } else {
+                                                $color = 'danger';
+                                                $tooltip = 'Poor: Perlu peningkatan signifikan';
+                                            }
+                                        @endphp
+                                        <span class="status-badge bg-{{ $color }}-soft" data-tooltip="{{ $tooltip }}">
+                                            {{ number_format($rate, 2) }}%
                                         </span>
                                     </td>
+
                                     <td>
                                         <a href="{{ $customer->detail_url ?? route('corporate-customer.show', $customer->id) }}"
                                            class="btn btn-sm btn-primary">Detail</a>
@@ -250,14 +264,44 @@
                                     <td>
                                         <div class="divisi-pills">
                                             @if(!empty($am->divisi_list) && $am->divisi_list !== 'N/A')
-                                                @foreach(explode(', ', $am->divisi_list) as $divisi)
-                                                <span class="divisi-pill badge-{{ strtolower(str_replace(' ', '-', $divisi)) }}">{{ $divisi }}</span>
-                                                @endforeach
+                                            @php
+                                                // Pecah robust: boleh ada/tiada spasi setelah koma
+                                                $divs = preg_split('/\s*,\s*/', $am->divisi_list, -1, PREG_SPLIT_NO_EMPTY);
+
+                                                // Peta alias -> kelas CSS yang tersedia
+                                                $alias = [
+                                                'government-service' => 'dgs',
+                                                'govt-service'       => 'dgs',
+                                                'gs'                 => 'dgs',
+                                                'dgs'                => 'dgs',
+
+                                                'digital-platform-service' => 'dps',
+                                                'platform-service'         => 'dps',
+                                                'dps'                      => 'dps',
+
+                                                'digital-solution-service' => 'dss',
+                                                'solution-service'         => 'dss',
+                                                'dss'                      => 'dss',
+
+                                                'digital-enterprise-service' => 'des',
+                                                'enterprise-service'         => 'des',
+                                                'des'                        => 'des',
+                                                ];
+                                            @endphp
+
+                                            @foreach($divs as $divisi)
+                                                @php
+                                                $key = \Illuminate\Support\Str::slug($divisi);   // "Government Service" -> "government-service"
+                                                $code = $alias[$key] ?? 'all';                   // fallback "all"
+                                                @endphp
+                                                <span class="divisi-pill badge-{{ $code }}">{{ $divisi }}</span>
+                                            @endforeach
                                             @else
-                                                <span class="text-muted">-</span>
+                                            <span class="text-muted">-</span>
                                             @endif
                                         </div>
                                     </td>
+
                                     <td class="text-end">Rp {{ number_format($am->total_revenue ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-end">Rp {{ number_format($am->total_target ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-end">
@@ -924,20 +968,20 @@ $(document).ready(function() {
                 break;
 
             case 'segment':
-                row += `
-                    <td>${item.lsegment_ho || item.nama || 'N/A'}</td>
-                    <td>${(item.divisi && item.divisi.nama) || item.divisi_nama || 'N/A'}</td>
-                    <td class="text-center">${formatNumber(item.total_customers || 0)}</td>
-                    <td class="text-end">Rp ${formatCurrency(item.total_revenue || 0)}</td>
-                    <td class="text-end">Rp ${formatCurrency(item.total_target || 0)}</td>
-                    <td class="text-end">
-                        <span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">
-                            ${(parseFloat(item.achievement_rate) || 0).toFixed(2)}%
-                        </span>
-                    </td>
-                    <td><a href="${detailUrl}"></a></td>
-                `;
-                break;
+            row += `
+                <td>${item.lsegment_ho || item.nama || 'N/A'}</td>
+                <td>${(item.divisi && item.divisi.nama) || item.divisi_nama || 'N/A'}</td>
+                <td class="text-center">${formatNumber(item.total_customers || 0)}</td>
+                <td class="text-end">Rp ${formatCurrency(item.total_revenue || 0)}</td>
+                <td class="text-end">Rp ${formatCurrency(item.total_target || 0)}</td>
+                <td class="text-end">
+                <span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">
+                    ${(parseFloat(item.achievement_rate) || 0).toFixed(2)}%
+                </span>
+                </td>
+            `;
+            break;
+
 
             default:
                 console.error('Unknown tab type:', tabType);
@@ -1193,20 +1237,49 @@ $(document).ready(function() {
     // =====================================
     // TOOLTIPS
     // =====================================
-    $(document).on('mouseenter', '.status-badge', function() {
-        const achievement = parseFloat($(this).text());
-        let tooltipText = 'Achievement Rate';
+    // TOOLTIPS: isi via atribut data-tooltip saat hover + auto-flip cerdas
+    $(document).off('mouseenter.statusBadge mouseleave.statusBadge');
 
-        if (achievement >= 100) {
-            tooltipText = 'Excellent: Target tercapai dengan baik!';
-        } else if (achievement >= 80) {
-            tooltipText = 'Good: Mendekati target, perlu sedikit peningkatan';
-        } else {
-            tooltipText = 'Poor: Perlu peningkatan signifikan';
-        }
+    $(document).on('mouseenter.statusBadge', '.status-badge', function () {
+    const $el = $(this);
+    const raw = ($el.text() || '').replace('%','');
+    const val = parseFloat(raw);
+    let msg = 'Achievement Rate';
+    if (!isNaN(val)) {
+        if (val >= 100) msg = 'Excellent: Target tercapai dengan baik!';
+        else if (val >= 80) msg = 'Good: Mendekati target, perlu sedikit peningkatan';
+        else msg = 'Poor: Perlu peningkatan signifikan';
+    }
+    $el.attr('data-tooltip', msg);
 
-        $(this).attr('title', tooltipText).tooltip('show');
+    // ====== AUTO-FLIP: bandingkan dengan tepi bawah thead yang sticky ======
+    const rect = this.getBoundingClientRect();
+    const table = this.closest('table');
+    const thead = table ? table.querySelector('thead') : null;
+    const headBottom = thead ? thead.getBoundingClientRect().bottom : 0;
+
+    // kalau jarak ke tepi atas viewport kecil ATAU berada di dekat bawah thead -> flip ke bawah
+    const nearTop = rect.top < 140;                 // lebih toleran dari 72
+    const underStickyHead = rect.top < (headBottom + 12);
+
+    // Secara default, tooltip turun di tab AJAX
+    const tabPane = this.closest('.tab-pane');
+    const forceBottomInAjax = tabPane && ['content-account-manager','content-witel','content-segment']
+        .includes(tabPane.id);
+
+    $el.toggleClass('tooltip-bottom', (nearTop || underStickyHead || forceBottomInAjax));
+
+    // Jika mepet tepi kanan, geser anchor ke kiri
+    const rightOverflow = (rect.left + 260) > window.innerWidth; // 260 ~ max-width tooltip
+    $el.toggleClass('tooltip-left', rightOverflow);
+    }).on('mouseleave.statusBadge', '.status-badge', function () {
+    $(this).removeAttr('data-tooltip').removeClass('tooltip-bottom tooltip-left');
     });
+
+
+    
+
+
 
     // =====================================
     // DEBUGGING HELPERS (Development mode)

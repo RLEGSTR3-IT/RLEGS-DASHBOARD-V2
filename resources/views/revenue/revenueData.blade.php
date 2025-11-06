@@ -544,6 +544,15 @@
             display: none;
         }
 
+        /* ✨ TELDA Field - Conditional Display */
+        #editDataAMTeldaWrapper {
+            transition: all 0.3s ease;
+        }
+
+        #editDataAMTeldaWrapper.hidden {
+            display: none;
+        }
+
         /* ==========================================
            ✨ PREVIEW MODAL - FIXED COLORS (MERAH SEMUA)
            ========================================== */
@@ -567,15 +576,15 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            color: white; /* ✅ TEXT PUTIH */
+            color: white;
         }
 
         #previewModal .modal-title i {
-            color: white; /* ✅ ICON PUTIH */
+            color: white;
         }
 
         #previewModal .btn-close {
-            filter: brightness(0) invert(1); /* ✅ CLOSE BUTTON PUTIH */
+            filter: brightness(0) invert(1);
             opacity: 0.8;
         }
 
@@ -611,10 +620,10 @@
         }
 
         /* ✅ SEMUA MERAH dengan intensitas berbeda */
-        .preview-card.new .icon { color: #dc3545; } /* Merah terang */
-        .preview-card.update .icon { color: #c82333; } /* Merah sedang */
-        .preview-card.conflict .icon { color: #a71d2a; } /* Merah gelap */
-        .preview-card.skip .icon { color: #6c757d; } /* Abu-abu */
+        .preview-card.new .icon { color: #dc3545; }
+        .preview-card.update .icon { color: #c82333; }
+        .preview-card.conflict .icon { color: #a71d2a; }
+        .preview-card.skip .icon { color: #6c757d; }
 
         .preview-card h3 {
             font-size: 2rem;
@@ -635,7 +644,7 @@
             gap: 1rem;
             margin-bottom: 1.5rem;
             padding: 1rem;
-            background: #fff5f5; /* Merah sangat muda */
+            background: #fff5f5;
             border-radius: 8px;
             align-items: center;
             border-left: 4px solid #dc3545;
@@ -643,7 +652,7 @@
 
         .preview-actions i {
             font-size: 1.25rem;
-            color: #dc3545; /* Icon merah */
+            color: #dc3545;
         }
 
         .preview-actions .btn-group {
@@ -695,7 +704,7 @@
             font-weight: 600;
             text-align: left;
             border: none;
-            color: white; /* ✅ TEXT PUTIH */
+            color: white;
         }
 
         .preview-table tbody tr {
@@ -704,7 +713,7 @@
         }
 
         .preview-table tbody tr:hover {
-            background: #fff5f5; /* Hover merah muda */
+            background: #fff5f5;
         }
 
         .preview-table tbody td {
@@ -722,17 +731,17 @@
         }
 
         .status-badge.new {
-            background: #ffd6d9; /* Merah muda */
-            color: #a71d2a; /* Text merah gelap */
+            background: #ffd6d9;
+            color: #a71d2a;
         }
 
         .status-badge.update {
-            background: #ffe6e8; /* Merah sangat muda */
+            background: #ffe6e8;
             color: #c82333;
         }
 
         .status-badge.conflict {
-            background: #dc3545; /* Merah */
+            background: #dc3545;
             color: white;
         }
 
@@ -789,7 +798,7 @@
             width: 3rem;
             height: 3rem;
             border-width: 0.3rem;
-            color: #dc3545; /* Spinner merah */
+            color: #dc3545;
         }
 
         .loading-spinner p {
@@ -1051,18 +1060,18 @@
                 <thead>
                     <tr>
                         <th style="width: 48px; min-width: 48px; text-align: center;"><input type="checkbox" id="selectAllAM"></th>
-                        <th>Nama AM</th>
-                        <th>Corporate Customer</th>
-                        <th class="text-end">Target Revenue</th>
-                        <th class="text-end">
+                        <th style="width: auto;">Nama AM</th>
+                        <th style="width: auto;">Corporate Customer</th>
+                        <th class="text-end" style="width: 140px;">Target Revenue</th>
+                        <th class="text-end" style="width: 140px;">
                             Revenue
                             <i class="fa-regular fa-circle-question ms-1 text-muted"
                                data-bs-toggle="tooltip"
                                title="Nilai revenue mengikuti mode (AM/HOTDA)."></i>
                         </th>
-                        <th class="text-end">Achievement</th>
-                        <th>Bulan</th>
-                        <th class="hotda-col" style="display: none;">TELDA</th>
+                        <th class="text-end" style="width: 100px;">Achievement</th>
+                        <th style="width: 100px;">Bulan</th>
+                        <th class="telda-col" style="width: auto;">TELDA</th>
                         <th class="text-center" style="width: 150px; min-width: 150px;">Aksi</th>
                     </tr>
                 </thead>
@@ -1241,7 +1250,7 @@
           </button>
         </div>
 
-        <!-- ✅ FORM 1: Data CC - COMPACT (HAPUS TOMBOL TUTUP) -->
+        <!-- ✅ FORM 1: Data CC -->
         <div id="imp-data-cc" class="imp-panel active">
             <div class="alert alert-info" style="margin-bottom: 1.5rem;">
                 <div class="d-flex align-items-start gap-2">
@@ -1279,7 +1288,7 @@
             </form>
         </div>
 
-        <!-- ✅ FORM 2: Data AM - COMPACT (HAPUS TOMBOL TUTUP) -->
+        <!-- ✅ FORM 2: Data AM -->
         <div id="imp-data-am" class="imp-panel">
             <div class="alert alert-info" style="margin-bottom: 1.5rem;">
                 <div class="d-flex align-items-start gap-2">
@@ -1318,9 +1327,8 @@
             </form>
         </div>
 
-        <!-- ✅ FORM 3: Revenue CC (WITH MONTH PICKER) - COMPACT (HAPUS TOMBOL TUTUP) -->
+        <!-- ✅ FORM 3: Revenue CC -->
         <div id="imp-rev-cc" class="imp-panel">
-            <!-- Collapsible Instructions -->
             <div class="alert alert-info" style="cursor: pointer; margin-bottom: 1rem;" data-bs-toggle="collapse" data-bs-target="#infoRevCC">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -1364,7 +1372,6 @@
                 <input type="hidden" name="import_type" value="revenue_cc">
 
                 <div class="row gx-3 gy-3">
-                    <!-- ⭐ MONTH PICKER -->
                     <div class="col-md-4">
                         <label class="form-label">
                             <i class="fa-solid fa-calendar-days"></i>
@@ -1375,7 +1382,6 @@
                         <input type="hidden" name="year" id="import-cc-year">
                     </div>
 
-                    <!-- FILE UPLOAD -->
                     <div class="col-md-4">
                         <label class="form-label">
                             <i class="fa-solid fa-file-csv"></i>
@@ -1392,7 +1398,6 @@
                         </small>
                     </div>
 
-                    <!-- DIVISI -->
                     <div class="col-md-4">
                         <div class="filter-group">
                             <label class="form-label">
@@ -1405,7 +1410,6 @@
                         </div>
                     </div>
 
-                    <!-- JENIS DATA -->
                     <div class="col-md-12">
                         <label class="form-label">
                             <i class="fa-solid fa-tag"></i>
@@ -1428,9 +1432,8 @@
             </form>
         </div>
 
-        <!-- ✅ FORM 4: Revenue AM (WITH MONTH PICKER) - COMPACT (HAPUS TOMBOL TUTUP) -->
+        <!-- ✅ FORM 4: Revenue AM -->
         <div id="imp-rev-map" class="imp-panel">
-            <!-- Collapsible Instructions -->
             <div class="alert alert-info" style="cursor: pointer; margin-bottom: 1rem;" data-bs-toggle="collapse" data-bs-target="#infoRevAM">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -1467,7 +1470,6 @@
                 <input type="hidden" name="import_type" value="revenue_am">
 
                 <div class="row gx-3 gy-3">
-                    <!-- ⭐ MONTH PICKER -->
                     <div class="col-md-6">
                         <label class="form-label">
                             <i class="fa-solid fa-calendar-days"></i>
@@ -1478,7 +1480,6 @@
                         <input type="hidden" name="year" id="import-am-year">
                     </div>
 
-                    <!-- FILE UPLOAD -->
                     <div class="col-md-6">
                         <label class="form-label">
                             <i class="fa-solid fa-file-csv"></i>
@@ -1500,14 +1501,12 @@
         </div>
 
       </div>
-
-      <!-- ✅ HAPUS FOOTER (tombol Tutup dihapus) -->
     </div>
   </div>
 </div>
 
 <!-- ==========================================
-     ✨ PREVIEW MODAL - FIXED COLORS (MERAH)
+     ✨ PREVIEW MODAL
      ========================================== -->
 <div class="modal fade" id="previewModal" tabindex="-1">
     <div class="modal-dialog">
@@ -1520,12 +1519,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- Summary Cards -->
-                <div class="preview-summary" id="previewSummary">
-                    <!-- Filled dynamically via JS -->
-                </div>
+                <div class="preview-summary" id="previewSummary"></div>
 
-                <!-- Actions -->
                 <div class="preview-actions">
                     <i class="fa-solid fa-info-circle"></i>
                     <div style="flex: 1;">
@@ -1547,7 +1542,6 @@
                     </div>
                 </div>
 
-                <!-- Preview Table -->
                 <div class="preview-table-container">
                     <table class="preview-table table">
                         <thead>
@@ -1560,9 +1554,7 @@
                                 <th>Nilai</th>
                             </tr>
                         </thead>
-                        <tbody id="previewTableBody">
-                            <!-- Filled dynamically via JS -->
-                        </tbody>
+                        <tbody id="previewTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -1595,9 +1587,7 @@
                 <h5 class="modal-title">Hasil Import</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="resultModalBody">
-                <!-- Content will be populated by JavaScript -->
-            </div>
+            <div class="modal-body" id="resultModalBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 <a href="#" class="btn btn-primary" id="btnDownloadErrorLog" style="display: none;" target="_blank">
@@ -1609,7 +1599,7 @@
 </div>
 
 <!-- ========================================
-     EDIT MODALS (PRESERVED - NO CHANGES)
+     ✅ EDIT MODALS - IMPROVED
      ======================================== -->
 <!-- Modal Edit Revenue CC -->
 <div class="modal fade" id="modalEditRevenueCC" tabindex="-1">
@@ -1681,7 +1671,7 @@
     </div>
 </div>
 
-<!-- Modal Edit Data AM -->
+<!-- ✅ IMPROVED: Modal Edit Data AM with Conditional Tabs & Fields -->
 <div class="modal fade" id="modalEditDataAM" tabindex="-1" aria-labelledby="modalEditDataAMLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1690,8 +1680,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Bootstrap Tabs -->
-                <ul class="nav nav-tabs mb-3" role="tablist" id="editDataAMTabs">
+                <!-- ✅ CONDITIONAL: Tabs only if registered -->
+                <ul class="nav nav-tabs mb-3" role="tablist" id="editDataAMTabs" style="display: none;">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active"
                                 id="tab-edit-data-tab"
@@ -1751,7 +1741,14 @@
                                 <label class="form-label">Witel</label>
                                 <select class="form-select" id="editDataAMWitel" required>
                                     <option value="">Pilih Witel</option>
-                                    <!-- Options loaded dynamically -->
+                                </select>
+                            </div>
+
+                            <!-- ✅ CONDITIONAL: TELDA field (only for HOTDA) -->
+                            <div class="mb-3" id="editDataAMTeldaWrapper">
+                                <label class="form-label">TELDA</label>
+                                <select class="form-select" id="editDataAMTelda">
+                                    <option value="">Pilih TELDA</option>
                                 </select>
                             </div>
 
@@ -1762,10 +1759,7 @@
                                     <i class="fa-solid fa-info-circle me-1"></i>
                                     Klik button untuk memilih divisi (bisa pilih lebih dari satu)
                                 </small>
-                                <div class="divisi-button-group" id="divisiButtonGroup">
-                                    <!-- Buttons will be populated dynamically -->
-                                </div>
-                                <!-- Hidden inputs for form submission -->
+                                <div class="divisi-button-group" id="divisiButtonGroup"></div>
                                 <div class="divisi-hidden-container" id="divisiHiddenInputs"></div>
                             </div>
 
@@ -1775,7 +1769,7 @@
                         </form>
                     </div>
 
-                    <!-- Tab 2: Change Password -->
+                    <!-- Tab 2: Change Password (only if registered) -->
                     <div class="tab-pane fade"
                          id="tab-change-password"
                          role="tabpanel"
@@ -1859,6 +1853,9 @@ $(document).ready(function() {
 
   // Store divisi data globally for modal
   let allDivisiData = [];
+
+  // Store TELDA data globally for modal
+  let allTeldaData = [];
 
   // ✨ NEW: Preview Import State
   let previewData = null;
@@ -2329,20 +2326,143 @@ $(document).ready(function() {
   })();
 
   // ========================================
-  // SEGMENT SELECT CUSTOM UI
+  // ✅ FIX #1: BUILD SEGMENT DROPDOWN UI + INTERACTIONS
   // ========================================
-  (function initSegmentSelect() {
+  function buildSegmentUI(segments) {
+    const nativeSelect = document.getElementById('filter-segment');
+    const segTabs = document.getElementById('segTabs');
+    const segPanels = document.getElementById('segPanels');
+
+    if (!nativeSelect || !segTabs || !segPanels) return;
+
+    // Clear existing content
+    segTabs.innerHTML = '';
+    segPanels.innerHTML = '';
+
+    // Group segments by divisi
+    const groupedSegments = {};
+    segments.forEach(segment => {
+      const raw = (segment.divisi_kode || segment.divisi || '').toString().trim().toUpperCase();
+      const divisiKode = raw || 'OTHER';
+
+      if (!groupedSegments[divisiKode]) groupedSegments[divisiKode] = [];
+      groupedSegments[divisiKode].push(segment);
+
+      // Add to native select
+      const option = document.createElement('option');
+      option.value = segment.id;
+      option.textContent = segment.lsegment_ho;
+      nativeSelect.appendChild(option);
+    });
+
+    // Define tab order
+    const ORDER = ['DPS', 'DSS', 'DGS', 'DES'];
+    const keys = Object.keys(groupedSegments);
+    const mainDivisi = keys.filter(k => k && k.toUpperCase() !== 'OTHER');
+    const divisiList = [
+      ...ORDER.filter(code => mainDivisi.includes(code)),
+      ...mainDivisi.filter(code => !ORDER.includes(code)).sort()
+    ];
+
+    let firstTab = true;
+    let firstDivisiName = null;
+
+    // Handle case where only OTHER exists
+    if (divisiList.length === 0 && groupedSegments['OTHER']?.length) {
+      divisiList.push('SEGMENT');
+      groupedSegments['SEGMENT'] = [];
+    }
+
+    // Build tabs and panels
+    divisiList.forEach(divisi => {
+      if (firstTab) firstDivisiName = divisi;
+
+      // Create tab button
+      const tabBtn = document.createElement('button');
+      tabBtn.className = `seg-tab${firstTab ? ' active' : ''}`;
+      tabBtn.dataset.tab = divisi;
+      tabBtn.setAttribute('role', 'tab');
+      tabBtn.setAttribute('aria-selected', firstTab ? 'true' : 'false');
+      tabBtn.textContent = divisi;
+      segTabs.appendChild(tabBtn);
+
+      // Create panel
+      const panel = document.createElement('div');
+      panel.className = `seg-panel${firstTab ? ' active' : ''}`;
+      panel.dataset.panel = divisi;
+      panel.setAttribute('role', 'tabpanel');
+
+      // "Semua Segment" option
+      const allOption = document.createElement('button');
+      allOption.className = 'seg-option all';
+      allOption.dataset.value = 'all';
+      allOption.textContent = 'Semua Segment';
+      panel.appendChild(allOption);
+
+      // Add segment options for this divisi
+      (groupedSegments[divisi] || []).forEach(segment => {
+        const optionBtn = document.createElement('button');
+        optionBtn.className = 'seg-option';
+        optionBtn.dataset.value = segment.id;
+        optionBtn.textContent = segment.lsegment_ho;
+        panel.appendChild(optionBtn);
+      });
+
+      segPanels.appendChild(panel);
+      firstTab = false;
+    });
+
+    // Insert OTHER items into first panel (without creating OTHER tab)
+    const otherItems = groupedSegments['OTHER'];
+    if (firstDivisiName && Array.isArray(otherItems) && otherItems.length) {
+      const firstPanel = segPanels.querySelector(`.seg-panel[data-panel="${firstDivisiName}"]`);
+      if (firstPanel) {
+        otherItems.forEach(segment => {
+          const optionBtn = document.createElement('button');
+          optionBtn.className = 'seg-option';
+          optionBtn.dataset.value = segment.id;
+          optionBtn.textContent = segment.lsegment_ho;
+          firstPanel.appendChild(optionBtn);
+        });
+      }
+    }
+
+    // Initialize interactions
+    initSegmentSelectInteractions();
+  }
+
+  function initSegmentSelectInteractions() {
     const segSelect = document.getElementById('segSelect');
     if (!segSelect) return;
 
     const nativeSelect = document.getElementById('filter-segment');
+    const triggerBtn = segSelect.querySelector('.seg-select__btn');
+    const labelSpan = segSelect.querySelector('.seg-select__label');
+
+    // Get elements after UI is built
     const segTabs = segSelect.querySelectorAll('.seg-tab');
     const segPanels = segSelect.querySelectorAll('.seg-panel');
     const segOptions = segSelect.querySelectorAll('.seg-option');
 
+    // Toggle menu
+    triggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      segSelect.classList.toggle('open');
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!segSelect.contains(e.target)) {
+        segSelect.classList.remove('open');
+      }
+    });
+
+    // Tab switching
     segTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
+      tab.addEventListener('click', (e) => {
+        e.stopPropagation();
         const targetPanel = tab.dataset.tab;
+
         segTabs.forEach(t => {
           t.classList.remove('active');
           t.setAttribute('aria-selected', 'false');
@@ -2350,22 +2470,43 @@ $(document).ready(function() {
         tab.classList.add('active');
         tab.setAttribute('aria-selected', 'true');
 
-        segPanels.forEach(panel => {
-          panel.classList.remove('active');
-        });
+        segPanels.forEach(panel => panel.classList.remove('active'));
         const activePanel = segSelect.querySelector(`.seg-panel[data-panel="${targetPanel}"]`);
         if (activePanel) activePanel.classList.add('active');
       });
     });
 
+    // Option selection
     segOptions.forEach(option => {
       option.addEventListener('click', () => {
         const value = option.dataset.value;
+        const label = option.textContent.trim();
+
+        // Update native select
         nativeSelect.value = value;
         nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+        // Update label
+        labelSpan.textContent = label;
+
+        // Update visual state
+        segOptions.forEach(opt => opt.removeAttribute('aria-selected'));
+        option.setAttribute('aria-selected', 'true');
+
+        // Apply styling based on selection
+        if (value === 'all') {
+          segSelect.classList.add('is-all-selected');
+          segSelect.classList.remove('has-value');
+        } else {
+          segSelect.classList.remove('is-all-selected');
+          segSelect.classList.add('has-value');
+        }
+
+        // Close dropdown
+        setTimeout(() => segSelect.classList.remove('open'), 150);
       });
     });
-  })();
+  }
 
   // ========================================
   // CUSTOM SELECT ENHANCEMENT
@@ -2699,11 +2840,21 @@ $(document).ready(function() {
           divisiImport.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
         });
 
-        const segmentSelect = $('#filter-segment');
-        response.segments.forEach(function(segment) {
-          segmentSelect.append(`<option value="${segment.id}">${segment.lsegment_ho}</option>`);
-        });
+        // Store globally for modals
+        allDivisiData = response.divisions;
+        initDivisiButtonGroup();
 
+        // ✅ FIX #1: Build Segment UI and init interactions
+        if (response.segments && response.segments.length > 0) {
+          buildSegmentUI(response.segments);
+        }
+
+        // Store TELDA data globally
+        if (response.teldas) {
+          allTeldaData = response.teldas;
+        }
+
+        // Populate edit modal selects
         const editWitelSelect = $('#editDataAMWitel');
         editWitelSelect.empty();
         editWitelSelect.append('<option value="">Pilih Witel</option>');
@@ -2711,8 +2862,14 @@ $(document).ready(function() {
           editWitelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
         });
 
-        allDivisiData = response.divisions;
-        initDivisiButtonGroup();
+        const editTeldaSelect = $('#editDataAMTelda');
+        editTeldaSelect.empty();
+        editTeldaSelect.append('<option value="">Pilih TELDA</option>');
+        if (response.teldas) {
+          response.teldas.forEach(function(telda) {
+            editTeldaSelect.append(`<option value="${telda.id}">${telda.nama}</option>`);
+          });
+        }
 
         enhanceFilterBar();
         enhanceModalDivisi();
@@ -2849,7 +3006,9 @@ $(document).ready(function() {
       const divisiKode = item.divisi_kode || item.divisi || '-';
       const divisiDisplay = divisiKode !== '-' ? divisiKode.substring(0, 3).toUpperCase() : '-';
       const divisiClass = divisiDisplay !== '-' ? `badge-div ${divisiDisplay.toLowerCase()}` : '';
-      const teldaDisplay = item.telda_nama || '-';
+
+      // ✅ FIX #2: TELDA display - show "-" for AM, actual value for HOTDA
+      const teldaDisplay = role === 'HOTDA' ? (item.telda_nama || '-') : '-';
       const achievementPercent = item.achievement ? parseFloat(item.achievement).toFixed(2) : '0.00';
 
       const row = `
@@ -2867,7 +3026,7 @@ $(document).ready(function() {
           <td class="text-end">${formatCurrency(item.real_revenue)}</td>
           <td class="text-end">${achievementPercent}%</td>
           <td>${item.bulan_display}</td>
-          <td class="hotda-col" style="${role === 'HOTDA' ? '' : 'display: none;'}">${teldaDisplay}</td>
+          <td class="telda-col">${teldaDisplay}</td>
           <td class="text-center">
             <div class="action-buttons">
               <button class="btn btn-sm btn-warning" onclick="editRevenueAM(${item.id})" title="Edit">
@@ -3124,17 +3283,15 @@ $(document).ready(function() {
     loadData();
   });
 
+  // ✅ FIX #2: AM Mode Toggle with TELDA Column Visibility
   $('.am-btn[data-mode]').click(function() {
     $('.am-btn[data-mode]').removeClass('active');
     $(this).addClass('active');
     const mode = $(this).data('mode');
     currentFilters.role = mode;
 
-    if (mode === 'HOTDA') {
-      $('.hotda-col').show();
-    } else {
-      $('.hotda-col').hide();
-    }
+    // ✅ TELDA column always visible (data will show "-" for AM role)
+    // No need to hide/show column anymore
 
     currentPage = 1;
     loadData();
@@ -3154,8 +3311,7 @@ $(document).ready(function() {
     $(`#${target}`).addClass('active');
   });
 
-  // ✅ CRITICAL FIX: Form submissions - extract year/month manually!
-  // Data CC & Data AM - tidak butuh periode
+  // Form submissions
   $('#formDataCC, #formDataAM').submit(function(e) {
     e.preventDefault();
     currentFormData = new FormData($(this)[0]);
@@ -3165,21 +3321,17 @@ $(document).ready(function() {
     handleImportPreview(currentFormData, currentImportType);
   });
 
-  // ✅ Revenue CC - butuh periode + divisi + jenis_data
   $('#formRevenueCC').submit(function(e) {
     e.preventDefault();
 
-    // ✅ AMBIL FormData dari form
     currentFormData = new FormData($(this)[0]);
     currentImportType = currentFormData.get('import_type');
 
-    // ✅ EXTRACT year & month dari hidden inputs (CRITICAL!)
     const year = $('#import-cc-year').val();
     const month = $('#import-cc-month').val();
     const divisi = $('#divisiImport').val();
     const jenisData = $('select[name="jenis_data"]', $(this)).val();
 
-    // ✅ VALIDASI
     if (!year || !month) {
       alert('❌ Pilih Periode terlebih dahulu!');
       return;
@@ -3195,7 +3347,6 @@ $(document).ready(function() {
       return;
     }
 
-    // ✅ APPEND year & month ke FormData
     currentFormData.set('year', year);
     currentFormData.set('month', month);
 
@@ -3210,24 +3361,20 @@ $(document).ready(function() {
     handleImportPreview(currentFormData, currentImportType);
   });
 
-  // ✅ Revenue AM - butuh periode
   $('#formRevenueAM').submit(function(e) {
     e.preventDefault();
 
     currentFormData = new FormData($(this)[0]);
     currentImportType = currentFormData.get('import_type');
 
-    // ✅ EXTRACT year & month dari hidden inputs
     const year = $('#import-am-year').val();
     const month = $('#import-am-month').val();
 
-    // ✅ VALIDASI
     if (!year || !month) {
       alert('❌ Pilih Periode terlebih dahulu!');
       return;
     }
 
-    // ✅ APPEND year & month ke FormData
     currentFormData.set('year', year);
     currentFormData.set('month', month);
 
@@ -3241,7 +3388,6 @@ $(document).ready(function() {
   });
 
   function handleImportPreview(formData, importType) {
-    // ✅ DEBUG: Print all FormData entries
     console.log('📤 Sending to /import/preview:');
     for (let [key, value] of formData.entries()) {
       if (value instanceof File) {
@@ -3672,6 +3818,7 @@ $(document).ready(function() {
     });
   };
 
+  // ✅ FIX #3: IMPROVED Edit Data AM with Conditional Logic
   window.editDataAM = function(id) {
     $.ajax({
       url: `/revenue-data/data-am/${id}`,
@@ -3680,24 +3827,42 @@ $(document).ready(function() {
         if (response.success) {
           const data = response.data;
 
+          // Set basic fields
           $('#editDataAMId').val(data.id);
           $('#changePasswordAMId').val(data.id);
           $('#editDataAMNama').val(data.nama);
           $('#editDataAMNik').val(data.nik);
           $('#editDataAMRole').val(data.role);
           $('#editDataAMWitel').val(data.witel_id);
+          $('#editDataAMTelda').val(data.telda_id || '');
 
+          // Set divisi button group
           const divisiIds = data.divisi.map(d => d.id);
           setSelectedDivisi(divisiIds);
 
+          // ✅ Show/hide TELDA field based on role
+          toggleTeldaField(data.role);
+
+          // ✅ Show/hide tabs based on registration status
+          const tabsNav = document.getElementById('editDataAMTabs');
+          if (data.is_registered) {
+            tabsNav.style.display = 'flex';
+          } else {
+            tabsNav.style.display = 'none';
+          }
+
+          // Show modal
           const modal = new bootstrap.Modal(document.getElementById('modalEditDataAM'));
           modal.show();
 
-          const firstTab = document.querySelector('#tab-edit-data-tab');
-          if (firstTab) {
-            const bsTab = new bootstrap.Tab(firstTab);
-            bsTab.show();
-          }
+          // ✅ Ensure first tab is active
+          setTimeout(() => {
+            const firstTab = document.querySelector('#tab-edit-data-tab');
+            if (firstTab && data.is_registered) {
+              const bsTab = new bootstrap.Tab(firstTab);
+              bsTab.show();
+            }
+          }, 100);
         } else {
           alert('Error: ' + response.message);
         }
@@ -3707,6 +3872,24 @@ $(document).ready(function() {
       }
     });
   };
+
+  // ✅ Helper: Toggle TELDA field visibility
+  function toggleTeldaField(role) {
+    const teldaWrapper = document.getElementById('editDataAMTeldaWrapper');
+    if (role === 'HOTDA') {
+      teldaWrapper.classList.remove('hidden');
+      teldaWrapper.style.display = 'block';
+    } else {
+      teldaWrapper.classList.add('hidden');
+      teldaWrapper.style.display = 'none';
+    }
+  }
+
+  // ✅ Event listener: Role change triggers TELDA visibility
+  $('#editDataAMRole').on('change', function() {
+    const role = $(this).val();
+    toggleTeldaField(role);
+  });
 
   window.deleteDataAM = function(id) {
     if (!confirm('Hapus Data AM ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
@@ -3854,6 +4037,7 @@ $(document).ready(function() {
       nik: $('#editDataAMNik').val(),
       role: $('#editDataAMRole').val(),
       witel_id: $('#editDataAMWitel').val(),
+      telda_id: $('#editDataAMTelda').val() || null,
       divisi_ids: selectedDivisi
     };
 

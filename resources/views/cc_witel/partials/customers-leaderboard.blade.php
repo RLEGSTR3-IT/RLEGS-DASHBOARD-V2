@@ -19,7 +19,7 @@
                      <i class="fas fa-trophy"></i>
                 </div>
                 <div>
-                    <h2 id="top-cust-title" class="header-title text-lg font-bold text-gray-900">Overall Customers Leaderboard</h2>
+                    <h2 id="top-cust-title" class="header-title text-lg font-bold text-gray-900">Leaderboard Corporate Customers</h2>
                     <p id="top-cust-subtitle" class="header-subtitle text-sm text-gray-500">
                         Peringkat Revenue Pelanggan (YTD)
                         <span id="top-cust-source-label">- REGULER</span>

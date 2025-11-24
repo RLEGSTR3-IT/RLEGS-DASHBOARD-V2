@@ -139,9 +139,9 @@ class CCWitelPerformController extends Controller
         //    ->get();
 
         $customersQuery = DB::table('cc_revenues')
-            ->select('nama_cc', DB::raw('SUM(real_revenue) as total_revenue'), DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'))
+            ->select('corporate_customer_id as cc_id', 'nama_cc', DB::raw('SUM(real_revenue) as total_revenue'), DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'))
             ->where('tipe_revenue', $dbSource)
-            ->groupBy('witel_id', 'nama_cc')
+            ->groupBy('witel_id', 'cc_id', 'nama_cc')
             ->orderBy('witel_id')
             ->orderByDesc('total_revenue');
         $this->applyDateFilters($customersQuery, $mode, $year, $month);
@@ -215,7 +215,9 @@ class CCWitelPerformController extends Controller
             // 4. Query Top Customers
             $topCustomers = DB::table('cc_revenues as cr')
                 ->select(
+                    'cr.corporate_customer_id',
                     'cr.nama_cc',
+                    "cr.$witelIdColumn",
                     DB::raw('SUM(cr.real_revenue) as total_revenue'),
                     DB::raw('SUM(cr.target_revenue) as target_revenue'),
                     'w.nama as witel_name' // Select Witel name
@@ -224,7 +226,8 @@ class CCWitelPerformController extends Controller
                 ->where('cr.tipe_revenue', $dbSource)
                 ->where('cr.divisi_id', $divisionId)
                 ->whereNotNull('cr.nama_cc')      // Ensure customer name exists
-                ->groupBy('cr.nama_cc', 'w.nama') // Group by customer and witel name
+                ->whereNotNull('cr.corporate_customer_id')
+                ->groupBy('cr.corporate_customer_id', 'cr.nama_cc', 'w.nama', "cr.$witelIdColumn") // Group by customer and witel name
                 ->orderByDesc('total_revenue');
             $this->applyDateFilters($topCustomers, $mode, $year, $month);
 

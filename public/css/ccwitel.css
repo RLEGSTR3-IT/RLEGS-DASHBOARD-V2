@@ -337,13 +337,21 @@ body {
     border-bottom: 1px solid #f0f0f0;
 }
 
-#witel-detail-name {
+#witel-cc-leaderboard-loading {
     font-size: 1.125rem; /* lg */
     font-weight: 700; /* bold */
     color: #1f2937; /* gray-800 */
     text-align: center;
     margin-bottom: 12px;
 }
+
+#witel-detail-name {
+    font-size: 1.125rem; /* lg */
+    font-weight: 700; /* bold */
+    color: #1f2937; /* gray-800 */
+    text-align: center;
+}
+
 #witel-detail-subheading {
     border-top: 1px solid #f0f0f0; /* Separator */
     font-size: 0.875rem; /* sm */
@@ -623,6 +631,25 @@ body {
 
 .customer-list-row:last-child {
     border-bottom: none; /* No border on the last item */
+}
+
+/* hover for redirects */
+#witel-detail-name:hover,
+#witel_name:hover,
+#cc-leaderboard-name:hover,
+#cc-leaderboard-witel:hover,
+#cc_name:hover {
+    /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); */ /* Slightly more pronounced shadow */
+    cursor: pointer;
+    color: rgba(255, 0, 0, 0.8);
+}
+
+/* NOTE: selected for customers list is not needed actually */
+.customer-list-row.selected {
+    border-color: #ff3b42;
+    background-color: #fff; /* Keep it white to match the arrow */
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.1);
+    z-index: 10;
 }
 
 /* Left side: Rank + Name */

@@ -23,6 +23,8 @@
 <body class="bg-gray-100 p-8">
     {{-- TODO: --}}
     {{-- make em responsive --}}
+    {{-- so for some reason, changing one filter casues other filters event listeners to be triggered which makes fetching data happen on all event changes, in this case, 3 times fetching for changing 1 filter. absolute madness (design flaw tbh) --}}
+    {{-- make it so user can click to a CC in the CC leaderboard list that will redirect them to the cc detail page --}}
 
     <div class="witel-performance-layout">
         {{-- Witel Leaderboard --}}
@@ -34,10 +36,10 @@
                         <i class="fas fa-building" id="witel-title-icon"></i>
                         <div>
                             <h2 class="header-title" id="header-title">
-                                <p>Witel Achievement – {{ $currentYear }}</p>
+                                <p class="mb-0">Witel Achievement</p>
                             </h2>
-                            <p id="header-subtitle" class="header-subtitle">
-                                Performansi beserta leaderboard pelanggan tiap witel
+                            <p id="wp-header-subtitle" class="header-subtitle">
+                                Performansi Beserta Leaderboard Pelanggan Tiap Witel ({{ $currentYear }}) - REGULER
                             </p>
                         </div>
                     </div>
@@ -147,8 +149,11 @@
         {{-- Customer Detail --}}
         <div class="witel-detail-pane">
             <div class="witel-layout-card border-gray-200">
-                <div class="customer-detail-header py-2 p-0">
-                     <h2 id="witel-detail-name" class="py-2 truncate">Loading...</h2>
+                <div class="customer-detail-header py-2 p-0 text-center">
+                     <h2 id="witel-cc-leaderboard-loading" class="py-2 truncate">Loading...</h2>
+                     <h2 class="py-2 truncate inline-block w-auto">
+                            <span id="witel-detail-name" style="display: none;"></span>
+                    </h2>
                      <p class="pt-2 m-0" id="witel-detail-subheading">Customer Leaderboard</p>
                 </div>
 
@@ -182,7 +187,7 @@
                 <div class="flex justify-between items-center mb-3">
                     <div class="witel-card-name-group">
                         <div data-el="status-dot" class="witel-status-dot"></div>
-                        <span data-el="witel-name" class="font-semibold text-gray-900"></span>
+                        <span id="witel_name" data-el="witel-name" class="font-semibold text-gray-900"></span>
                     </div>
                     <div class="text-right">
                         <div data-el="revenue"></div>
@@ -202,9 +207,10 @@
 
     <template id="customer-row-template">
         <li class="customer-list-row">
+            {{-- TODO: add on click listener for this --}}
             <div class="customer-info">
                 <div data-el="rank-badge"></div>
-                <span data-el="customer-name" class="truncate"></span>
+                <span id="cc_name" data-el="customer-name" class="truncate"></span>
             </div>
             <div class="customer-stats">
                 <span data-el="percentage"></span>
@@ -232,11 +238,14 @@
 
             const dom = {
                 // Left Pane
-                title: document.getElementById('header-title'),
+                subtitle: document.getElementById('wp-header-subtitle'),
                 totalRevenue: document.getElementById('witel-total-revenue'),
                 loading: document.getElementById('witel-loading'),
                 error: document.getElementById('witel-error'),
+
+                // list containers
                 listContainer: document.getElementById('witel-list-container'),
+                customerList: document.getElementById('witel-customer-list'),
 
                 witelTemplate: document.getElementById('witel-row-template'),
                 customerTemplate: document.getElementById('customer-row-template'),
@@ -251,11 +260,10 @@
 
                 // Right Pane
                 detailName: document.getElementById('witel-detail-name'),
+                detailTitleLoading: document.getElementById('witel-cc-leaderboard-loading'),
                 detailSubheading: document.getElementById('witel-detail-subheading'),
                 detailEmpty: document.getElementById('witel-detail-empty'),
                 detailContent: document.getElementById('witel-detail-content'),
-                customerList: document.getElementById('witel-customer-list'),
-
             };
 
             // NOTE: JS for custom select elements
@@ -411,7 +419,12 @@
                 const customers = witel.customers;
 
                 // Update UI
+                dom.detailTitleLoading.style.display = 'none';
+
+                dom.detailName.style.display = 'inline-block'
                 dom.detailName.textContent = witelName;
+                dom.detailName.dataset.witelId = witelId;
+
                 dom.customerList.innerHTML = ''; // Clear old list
 
                 if (customers.length === 0) {
@@ -423,7 +436,7 @@
                     const rankClasses = ['rank-gold', 'rank-silver', 'rank-bronze'];
 
                     customers.forEach((row, i) => {
-                        const li = dom.customerTemplate.content.cloneNode(true);
+                        const li = dom.customerTemplate.content.cloneNode(true).firstElementChild;
                         const val = Number(row.total_revenue) || 0;
                         const pct = total > 0 ? (val / total) * 100 : 0;
                         const rank = i + 1;
@@ -436,6 +449,11 @@
                         li.querySelector('[data-el="customer-name"]').textContent = row.nama_cc || 'N/A';
                         li.querySelector('[data-el="percentage"]').textContent = `${pct.toFixed(1)}%`;
                         li.querySelector('[data-el="revenue"]').textContent = `Rp${formatIDRCompact(val)}`;
+
+                        const ccNameEl = li.querySelector('#cc_name');
+                        // event listener dataset
+                        ccNameEl.dataset.ccId = row.cc_id;
+                        ccNameEl.dataset.ccName = row.nama_cc;
 
                         dom.customerList.appendChild(li);
                     });
@@ -460,6 +478,7 @@
 
                     // temp cause I don't know how else would I do this and am too lazy to figure out a better way
                     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
                     let mode = 'YTD';
                     switch (state.mode) {
                         case 'ytd':
@@ -489,6 +508,9 @@
                     card.dataset.witelId = witel.id;
                     card.dataset.witelName = witel.name;
 
+                    // redirect dataset
+                    card.querySelector('#witel_name').dataset.witelId = witel.id;
+
                     dom.listContainer.appendChild(card);
                 });
 
@@ -514,17 +536,17 @@
                 const year = state.year;
                 const monthName = document.querySelector(`.custom-select-wrapper[data-select-id="witel-month"] .custom-select-option[data-value="${state.month}"]`).textContent.trim();
 
-                let title = `Witel Achievement (${year})`;
+                let subtitle = `Performansi beserta leaderboard pelanggan tiap witel (${year}) - ${(state.source === 'ngtma' ? 'NGTMA' : 'REGULER')}`
                 let totalRevLabel = `Total Revenue (${year})`;
                 if (state.mode === 'ytd') {
-                    title = `Witel Achievement (YTD ${monthName} ${year})`;
+                    subtitle = `Performansi beserta leaderboard pelanggan tiap witel (YTD ${monthName} ${year}) - ${(state.source === 'ngtma' ? 'NGTMA' : 'REGULER')}`
                     totalRevLabel = `Total Revenue s/d ${monthName} ${year}`;
                 } else if (state.mode === 'monthly') {
-                    title = `Witel Achievement (${monthName} ${year})`;
+                    subtitle = `Performansi beserta leaderboard pelanggan tiap witel (${monthName} ${year}) - ${(state.source === 'ngtma' ? 'NGTMA' : 'REGULER')}`
                     totalRevLabel = `Total Revenue (${monthName} ${year})`;
                 }
 
-                dom.title.innerHTML = `<p>${title}</p>`;
+                dom.subtitle.textContent = `${subtitle}`;
                 dom.totalRevenue.innerHTML = `${totalRevLabel}<span class="font-semibold text-gray-900">: Loading...</span>`;
 
                 try {
@@ -594,21 +616,25 @@
 
                     updateFilterVisibility();
                     clearDetailPane();
+                    // console.log("fetch from modeFilter");
                     fetchPerformanceData();
                 });
 
                 dom.yearSelect.addEventListener('change', (e) => {
                     state.year = e.target.value;
+                    // console.log("fetch from yearSelect");
                     fetchPerformanceData(); // Refetch
                 });
 
                 dom.monthSelect.addEventListener('change', (e) => {
                     state.month = e.target.value;
+                    // console.log("fetch from monthSelect");
                     fetchPerformanceData(); // Refetch
                 });
 
                 dom.sourceFilter.addEventListener('change', (e) => {
                     state.source = e.target.value;
+                    // console.log("fetch from sourceFilter");
                     fetchPerformanceData(); // Refetch
                 });
 
@@ -622,6 +648,8 @@
                     // If already selected, do nothing
                     if (witelId == state.activeWitelId) return;
 
+                    const witelDetailName = dom.witelDetailName
+
                     // Remove 'selected' from old card
                     const oldCard = dom.listContainer.querySelector('.witel-card.selected');
                     oldCard?.classList.remove('selected');
@@ -634,12 +662,39 @@
                     renderCustomerList(witelId, witelName);
                 });
 
+                dom.listContainer.addEventListener('click', (e) => {
+                    const card = e.target.closest('#witel_name');
+                    if (!card) return;
+
+                    const witelId = card.dataset.witelId;
+
+                    window.location.href = "{{ url('/witel')}}" + "/" + witelId;
+                });
+
+                dom.customerList.addEventListener('click', (e) => {
+                    const card = e.target.closest('#cc_name');
+                    if (!card) return;
+
+                    const ccId = card.dataset.ccId;
+
+                    window.location.href = "{{ url('/corporate-customer')}}" + "/" + ccId;
+                });
+
+                dom.detailName.addEventListener('click', (e) => {
+                    const el = e.target;
+                    if (!el) return;
+
+                    const witelId = el.dataset.witelId;
+
+                    window.location.href = "{{ url('/witel')}}" + "/" + witelId;
+                });
             }
 
             // --- INITIAL LOAD ---
             // initializeAllCustomSelects();
             updateFilterVisibility();
             setupEventListeners();
+            // console.log("initial fetch");
             fetchPerformanceData();
         });
     </script>

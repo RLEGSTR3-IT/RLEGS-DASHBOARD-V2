@@ -496,7 +496,7 @@
                 // Update the subtitle based on the division and time range
                 const divisionText = state.division === 'All' ? 'all divisions' : state.division;
                 const timeFrameText = state.timeRange === 'ytd' ? `(YTD ${new Date().getFullYear()})` : `(Custom Range)`;
-                dom.headerSubtitle.textContent = `Revenue performance across ${divisionText} ${timeFrameText}`;
+                dom.headerSubtitle.textContent = `Revenue performance across ${divisionText} ${timeFrameText} - ${state.source === 'ngtma' ? 'NGTMA' : 'REGULER'}`;
 
                 // Update the date range display
                 const endText = endDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });

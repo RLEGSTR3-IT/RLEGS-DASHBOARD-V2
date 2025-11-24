@@ -19,7 +19,7 @@
                      <i class="fas fa-trophy"></i>
                 </div>
                 <div>
-                    <h2 id="top-cust-title" class="header-title text-lg font-bold text-gray-900">Leaderboard Corporate Customers</h2>
+                    <h2 id="top-cust-title" class="header-title text-lg font-bold text-gray-900">Corporate Customers Leaderboard</h2>
                     <p id="top-cust-subtitle" class="header-subtitle text-sm text-gray-500">
                         Peringkat Revenue Pelanggan (YTD)
                         <span id="top-cust-source-label">- REGULER</span>
@@ -149,8 +149,8 @@
             <i data-el="icon" class="division-icon fas h-4 w-4 flex-shrink-0"></i> {{-- Division Icon --}}
 
             <div class="customer-text-details min-w-0 flex-1">
-                <div data-el="name" class="font-medium text-sm text-gray-900 truncate"></div>
-                <div data-el="witel" class="text-xs text-gray-500 truncate"></div>
+                <div id="cc-leaderboard-name" data-el="name" class="font-medium text-sm text-gray-900 truncate"></div>
+                <div id="cc-leaderboard-witel" data-el="witel" class="text-xs text-gray-500 truncate"></div>
             </div>
         </div>
 
@@ -375,16 +375,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // 2. Fetch from API
         try {
-            console.log('wut');
             updateHeaderText();
-            console.log('header text updated');
             const response = await fetch(url, { signal: currentAbortController.signal });
             if (!response.ok) throw new Error('Failed to fetch data.');
-            console.log('response is a ok');
 
             const customers = await response.json();
             dataCache[cacheKey] = customers; // Store in cache
-            console.log('huh');
             renderCustomerList(filterCustomers(customers));
 
         } catch (err) {
@@ -392,7 +388,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log('Fetch aborted');
                 return; // Don't show error if aborted
             }
-            console.log('Error alert!');
             dom.error.textContent = `Error: ${err.message}`;
             dom.error.style.display = 'block';
         } finally {
@@ -431,11 +426,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const divisionInfo = divisionMapping[state.divisionId];
         const isSearching = !!state.searchTerm;
 
+        // TODO: add the event listener for thir leaderboard
+
         customers.forEach((customer, idx) => {
             const row = dom.template.content.cloneNode(true);
 
+            nameCard = row.querySelector('#cc-leaderboard-name');
+            witelCard = row.querySelector('#cc-leaderboard-witel');
+
             let rank, rankClass;
             const originalRank = dataCache[`${state.source}:${state.divisionId}:${state.mode}:${state.year}:${state.month}`].findIndex(c => c.nama_cc === customer.nama_cc) + 1;
+
+            nameCard.dataset.cc_id = customer.corporate_customer_id;
+            witelCard.dataset.witel_id = customer.witel_ho_id != null ? customer.witel_ho_id : customer.witel_bill_id;
 
             if (isSearching) {
                 rank = originalRank > 0 ? originalRank : '?';
@@ -570,6 +573,24 @@ document.addEventListener('DOMContentLoaded', function () {
             state.searchTerm = '';
             dom.searchBar.value = '';
             fetchTopCustomers();
+        });
+
+        dom.listContainer.addEventListener('click', (e) => {
+            const card = e.target.closest('#cc-leaderboard-name');
+            if (!card) return;
+
+            const ccId = card.dataset.cc_id;
+
+            window.location.href = "{{ url('/corporate-customer')}}" + "/" + ccId;
+        });
+
+        dom.listContainer.addEventListener('click', (e) => {
+            const card = e.target.closest('#cc-leaderboard-witel');
+            if (!card) return;
+
+            const witelId = card.dataset.witel_id;
+
+            window.location.href = "{{ url('/witel')}}" + "/" + witelId;
         });
 
         let searchTimeout;

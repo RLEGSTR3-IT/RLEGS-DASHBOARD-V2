@@ -16,7 +16,7 @@ class LeaderboardAMController extends Controller
         $divisiFilter = $request->input('divisi_filter', []);
         $categoryFilter = $request->input('category_filter', []);
         $revenueTypeFilter = $request->input('revenue_type_filter', []);
-        $rankingMethod = $request->input('ranking_method', 'revenue'); // NEW: revenue, achievement, combined
+        $rankingMethod = $request->input('ranking_method', 'revenue');
         $period = $request->input('period', 'year_to_date');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
@@ -70,30 +70,21 @@ class LeaderboardAMController extends Controller
         ));
     }
 
-    /**
-     * Apply ranking based on selected method
-     */
     private function applyRanking($results, $method)
     {
         switch ($method) {
             case 'achievement':
-                // Sort by achievement rate (descending)
                 $sorted = $results->sortByDesc('achievement_rate')->values();
                 break;
 
             case 'combined':
-                // Combined score: 50% revenue weight + 50% achievement weight
                 $sorted = $results->map(function ($item) use ($results) {
-                    // Normalize revenue (0-100 scale based on max revenue)
                     $maxRevenue = $results->max('total_revenue');
                     $revenueScore = $maxRevenue > 0
                         ? ($item->total_revenue / $maxRevenue) * 100
                         : 0;
 
-                    // Achievement is already in percentage
                     $achievementScore = $item->achievement_rate;
-
-                    // Combined score (50-50 weight)
                     $item->combined_score = ($revenueScore * 0.5) + ($achievementScore * 0.5);
 
                     return $item;
@@ -102,12 +93,10 @@ class LeaderboardAMController extends Controller
 
             case 'revenue':
             default:
-                // Sort by total revenue (descending)
                 $sorted = $results->sortByDesc('total_revenue')->values();
                 break;
         }
 
-        // Add ranking to all results
         return $sorted->map(function ($item, $index) {
             $item->rank = $index + 1;
             return $item;
@@ -147,7 +136,6 @@ class LeaderboardAMController extends Controller
                         'end_year' => $end->year
                     ];
                 }
-                // Fallback to YTD if custom dates not provided
                 return $this->calculateDateRange('year_to_date');
 
             default:
@@ -163,6 +151,8 @@ class LeaderboardAMController extends Controller
                 'am.nama',
                 'am.nik',
                 'w.nama as witel_name',
+                // ⭐ TAMBAHKAN SELECT UNTUK PROFILE_IMAGE
+                'u.profile_image',
                 DB::raw('GROUP_CONCAT(DISTINCT d.kode ORDER BY d.kode SEPARATOR ", ") as divisi_list'),
                 DB::raw('COUNT(DISTINCT amd.divisi_id) as divisi_count'),
                 DB::raw('COALESCE(SUM(ar.real_revenue), 0) as total_revenue'),
@@ -170,31 +160,32 @@ class LeaderboardAMController extends Controller
                 DB::raw('ROUND(COALESCE((SUM(ar.real_revenue) / NULLIF(SUM(ar.target_revenue), 0)) * 100, 0), 2) as achievement_rate')
             )
             ->join('witel as w', 'am.witel_id', '=', 'w.id')
+            // ⭐ JOIN DENGAN TABEL USERS UNTUK AMBIL PROFILE_IMAGE
+            ->leftJoin('users as u', function($join) {
+                $join->on('am.id', '=', 'u.account_manager_id')
+                     ->where('u.role', '=', 'account_manager');
+            })
             ->leftJoin('account_manager_divisi as amd', 'am.id', '=', 'amd.account_manager_id')
             ->leftJoin('divisi as d', 'amd.divisi_id', '=', 'd.id')
             ->leftJoin('am_revenues as ar', function($join) use ($dateRange) {
                 $join->on('am.id', '=', 'ar.account_manager_id')
                     ->where(function($query) use ($dateRange) {
-                        // Same year range
                         if ($dateRange['start_year'] == $dateRange['end_year']) {
                             $query->where('ar.tahun', '=', $dateRange['start_year'])
                                   ->whereBetween('ar.bulan', [$dateRange['start_month'], $dateRange['end_month']]);
                         } else {
-                            // Cross-year range
                             $query->where(function($q) use ($dateRange) {
-                                // Start year months
                                 $q->where('ar.tahun', '=', $dateRange['start_year'])
                                   ->where('ar.bulan', '>=', $dateRange['start_month']);
                             })->orWhere(function($q) use ($dateRange) {
-                                // End year months
                                 $q->where('ar.tahun', '=', $dateRange['end_year'])
                                   ->where('ar.bulan', '<=', $dateRange['end_month']);
                             });
                         }
                     });
             })
-            ->where('am.role', '=', 'AM') // Exclude HOTDA
-            ->groupBy('am.id', 'am.nama', 'am.nik', 'w.nama');
+            ->where('am.role', '=', 'AM')
+            ->groupBy('am.id', 'am.nama', 'am.nik', 'w.nama', 'u.profile_image'); // ⭐ TAMBAHKAN u.profile_image di GROUP BY
 
         // Apply search filter
         if (!empty($search)) {
@@ -216,13 +207,12 @@ class LeaderboardAMController extends Controller
             });
         }
 
-        // Apply category filter (Enterprise, Government, Multi)
+        // Apply category filter
         if (!empty($categoryFilter) && is_array($categoryFilter)) {
             $query->where(function($q) use ($categoryFilter) {
                 foreach ($categoryFilter as $category) {
                     switch ($category) {
                         case 'enterprise':
-                            // Enterprise: DPS (id=3) and/or DSS (id=2), but NOT DGS (id=1)
                             $q->orWhereExists(function($subQ) {
                                 $subQ->select(DB::raw(1))
                                      ->from('account_manager_divisi as amd_ent')
@@ -238,7 +228,6 @@ class LeaderboardAMController extends Controller
                             break;
 
                         case 'government':
-                            // Government: Only DGS (id=1), no other divisi
                             $q->orWhereExists(function($subQ) {
                                 $subQ->select(DB::raw(1))
                                      ->from('account_manager_divisi as amd_gov')
@@ -250,7 +239,6 @@ class LeaderboardAMController extends Controller
                             break;
 
                         case 'multi':
-                            // Multi: Has DGS + (DPS and/or DSS)
                             $q->orWhereExists(function($subQ) {
                                 $subQ->select(DB::raw(1))
                                      ->from('account_manager_divisi as amd_multi')
@@ -280,7 +268,6 @@ class LeaderboardAMController extends Controller
             $hasNGTMA = in_array('NGTMA', $revenueTypeFilter);
             $hasKombinasi = in_array('Kombinasi', $revenueTypeFilter);
 
-            // If Kombinasi is selected, show all
             if (!$hasKombinasi) {
                 $query->whereExists(function($q) use ($dateRange, $hasReguler, $hasNGTMA) {
                     $q->select(DB::raw(1))
@@ -305,18 +292,15 @@ class LeaderboardAMController extends Controller
                       })
                       ->whereRaw('ar2.account_manager_id = am.id');
 
-                    // Filter by revenue type
                     if ($hasReguler && !$hasNGTMA) {
                         $q->where('ccr.tipe_revenue', '=', 'REGULER');
                     } elseif ($hasNGTMA && !$hasReguler) {
                         $q->where('ccr.tipe_revenue', '=', 'NGTMA');
                     }
-                    // If both selected, don't filter by tipe_revenue
                 });
             }
         }
 
-        // Note: Sorting will be done in applyRanking method based on ranking_method
         return $query;
     }
 
@@ -332,7 +316,6 @@ class LeaderboardAMController extends Controller
         $hasDSS = in_array(2, $divisiIds);
         $divisiCount = count($divisiIds);
 
-        // Multi: DGS + (DPS and/or DSS)
         if ($hasDGS && ($hasDPS || $hasDSS)) {
             return response()->json([
                 'category' => 'multi',
@@ -340,7 +323,6 @@ class LeaderboardAMController extends Controller
             ]);
         }
 
-        // Government: Only DGS
         if ($hasDGS && $divisiCount == 1) {
             return response()->json([
                 'category' => 'government',
@@ -348,7 +330,6 @@ class LeaderboardAMController extends Controller
             ]);
         }
 
-        // Enterprise: DPS and/or DSS (no DGS)
         if (($hasDPS || $hasDSS) && !$hasDGS) {
             return response()->json([
                 'category' => 'enterprise',

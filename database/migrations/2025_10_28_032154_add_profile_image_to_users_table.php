@@ -8,15 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('profile_image')->nullable()->after('email');
-        });
+        // Cek dulu apakah kolom sudah ada
+        if (!Schema::hasColumn('users', 'profile_image')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('profile_image')->nullable()->after('email');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('profile_image');
-        });
+        if (Schema::hasColumn('users', 'profile_image')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('profile_image');
+            });
+        }
     }
 };

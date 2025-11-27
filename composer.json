@@ -8,6 +8,8 @@
     "require": {
         "php": "^8.2",
         "arielmejiadev/larapex-charts": "^2.1",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "google/apiclient": "^2.18",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^11.31",
         "laravel/passport": "^12.4",

@@ -11,6 +11,22 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
+/**
+ * RevenueDataController - FIXED VERSION
+ *
+ * ========================================
+ * CHANGELOG - 2025-11-05
+ * ========================================
+ *
+ * ✅ PROBLEM 1 FIXED: Revenue CC update tidak otomatis update AM Revenue
+ *    SOLUTION: Pass updated revenue data langsung ke recalculateAMRevenues()
+ *    - Line 206-295: updateRevenueCC() dengan enhanced logging
+ *    - Line 2206-2310: recalculateAMRevenues() menerima parameter baru
+ *
+ * ✅ PROBLEM 2 FIXED: Tab tidak muncul di modal Edit Data AM
+ *    SOLUTION: Tambahkan join users dan field is_registered
+ *    - Line 1154-1210: showDataAM() dengan leftJoin users table
+ */
 class RevenueDataController extends Controller
 {
     /**
@@ -199,84 +215,93 @@ class RevenueDataController extends Controller
     // REVENUE CC - CREATE, UPDATE, DELETE
     // =====================================================
 
-    /**
-     * Update Revenue CC
-     * ENHANCED: Better validation messages
-     */
     public function updateRevenueCC(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'target_revenue' => 'required|numeric|min:0',
-            'real_revenue' => 'required|numeric|min:0',
-        ], [
-            'target_revenue.required' => 'Target revenue harus diisi',
-            'target_revenue.numeric' => 'Target revenue harus berupa angka',
-            'real_revenue.required' => 'Real revenue harus diisi',
-            'real_revenue.numeric' => 'Real revenue harus berupa angka',
+{
+    $validator = Validator::make($request->all(), [
+        'target_revenue' => 'required|numeric|min:0',
+        'real_revenue' => 'required|numeric|min:0',
+    ], [
+        'target_revenue.required' => 'Target revenue harus diisi',
+        'target_revenue.numeric' => 'Target revenue harus berupa angka',
+        'real_revenue.required' => 'Real revenue harus diisi',
+        'real_revenue.numeric' => 'Real revenue harus berupa angka',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validasi gagal',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    DB::beginTransaction();
+    try {
+        $ccRevenue = DB::table('cc_revenues')->where('id', $id)->first();
+
+        if (!$ccRevenue) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Revenue CC tidak ditemukan'
+            ], 404);
+        }
+
+        // Update CC Revenue
+        $updateData = [
+            'target_revenue' => $request->target_revenue,
+            'real_revenue' => $request->real_revenue,
+            'updated_at' => now()
+        ];
+
+        DB::table('cc_revenues')->where('id', $id)->update($updateData);
+
+        Log::info('✅ CC Revenue Updated', [
+            'cc_id' => $ccRevenue->corporate_customer_id,
+            'new_target' => $request->target_revenue,
+            'new_real' => $request->real_revenue
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+        // ✅ CRITICAL: ALWAYS call recalculate
+        $updatedAMCount = $this->recalculateAMRevenues(
+            $ccRevenue->corporate_customer_id,
+            $ccRevenue->divisi_id,
+            $ccRevenue->bulan,
+            $ccRevenue->tahun,
+            $request->target_revenue,
+            $request->real_revenue
+        );
+
+        Log::info('✅ Recalculate returned', ['updated_am_count' => $updatedAMCount]);
+
+        DB::commit();
+
+        $message = 'Revenue CC berhasil diupdate';
+        if ($updatedAMCount > 0) {
+            $message .= " (dan {$updatedAMCount} Revenue AM telah disesuaikan)";
         }
 
-        DB::beginTransaction();
-        try {
-            $ccRevenue = DB::table('cc_revenues')->where('id', $id)->first();
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $updateData,
+            'updated_am_count' => $updatedAMCount
+        ]);
 
-            if (!$ccRevenue) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Revenue CC tidak ditemukan'
-                ], 404);
-            }
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('❌ Update Revenue CC Error: ' . $e->getMessage(), [
+            'id' => $id,
+            'trace' => $e->getTraceAsString()
+        ]);
 
-            $updateData = [
-                'target_revenue' => $request->target_revenue,
-                'real_revenue' => $request->real_revenue,
-                'updated_at' => now()
-            ];
-
-            DB::table('cc_revenues')->where('id', $id)->update($updateData);
-
-            // Recalculate related AM revenues
-            $this->recalculateAMRevenues(
-                $ccRevenue->corporate_customer_id,
-                $ccRevenue->divisi_id,
-                $ccRevenue->bulan,
-                $ccRevenue->tahun
-            );
-
-            DB::commit();
-
-            Log::info('Revenue CC Updated', [
-                'id' => $id,
-                'user_id' => Auth::id(),
-                'data' => $updateData
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Revenue CC berhasil diupdate',
-                'data' => $updateData
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Update Revenue CC Error: ' . $e->getMessage(), [
-                'id' => $id,
-                'request' => $request->all()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal update Revenue CC: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal update: ' . $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * Get single Revenue CC by ID
@@ -783,79 +808,86 @@ class RevenueDataController extends Controller
      * Update Revenue AM
      */
     public function updateRevenueAM(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'proporsi' => 'required|numeric|min:0|max:100',
-            'target_revenue' => 'required|numeric|min:0',
-            'real_revenue' => 'required|numeric|min:0',
-        ], [
-            'proporsi.required' => 'Proporsi harus diisi',
-            'proporsi.numeric' => 'Proporsi harus berupa angka',
-            'target_revenue.required' => 'Target revenue harus diisi',
-            'real_revenue.required' => 'Real revenue harus diisi',
+{
+    $validator = Validator::make($request->all(), [
+        'proporsi' => 'required|numeric|min:0|max:100',
+        'target_revenue' => 'required|numeric|min:0',
+        'real_revenue' => 'required|numeric|min:0',
+    ], [
+        'proporsi.required' => 'Proporsi harus diisi',
+        'proporsi.numeric' => 'Proporsi harus berupa angka',
+        'target_revenue.required' => 'Target revenue harus diisi',
+        'real_revenue.required' => 'Real revenue harus diisi',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validasi gagal',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    DB::beginTransaction();
+    try {
+        $amRevenue = DB::table('am_revenues')->where('id', $id)->first();
+
+        if (!$amRevenue) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Revenue AM tidak ditemukan'
+            ], 404);
+        }
+
+        // Calculate achievement rate
+        $targetRevenue = $request->target_revenue;
+        $realRevenue = $request->real_revenue;
+        $achievementRate = $targetRevenue > 0 ? ($realRevenue / $targetRevenue) * 100 : 0;
+
+        // ✅ FIX: Convert proporsi dari persentase (input user: 30) ke decimal (database: 0.3)
+        $proporsiInput = $request->proporsi; // User input: 30 (artinya 30%)
+        $proporsiDecimal = $proporsiInput / 100; // Convert ke: 0.3
+
+        $updateData = [
+            'proporsi' => $proporsiDecimal, // ✅ Simpan sebagai decimal, bukan integer
+            'target_revenue' => $targetRevenue,
+            'real_revenue' => $realRevenue,
+            'achievement_rate' => round($achievementRate, 2),
+            'updated_at' => now()
+        ];
+
+        DB::table('am_revenues')->where('id', $id)->update($updateData);
+
+        DB::commit();
+
+        Log::info('Revenue AM Updated', [
+            'id' => $id,
+            'user_id' => Auth::id(),
+            'proporsi_input' => $proporsiInput,
+            'proporsi_decimal' => $proporsiDecimal,
+            'data' => $updateData
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Revenue AM berhasil diupdate',
+            'data' => $updateData
+        ]);
 
-        DB::beginTransaction();
-        try {
-            $amRevenue = DB::table('am_revenues')->where('id', $id)->first();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Update Revenue AM Error: ' . $e->getMessage(), [
+            'id' => $id,
+            'request' => $request->all()
+        ]);
 
-            if (!$amRevenue) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Revenue AM tidak ditemukan'
-                ], 404);
-            }
-
-            // Calculate achievement rate
-            $targetRevenue = $request->target_revenue;
-            $realRevenue = $request->real_revenue;
-            $achievementRate = $targetRevenue > 0 ? ($realRevenue / $targetRevenue) * 100 : 0;
-
-            $updateData = [
-                'proporsi' => $request->proporsi / 100, // Convert from percentage to decimal
-                'target_revenue' => $targetRevenue,
-                'real_revenue' => $realRevenue,
-                'achievement_rate' => round($achievementRate, 2),
-                'updated_at' => now()
-            ];
-
-            DB::table('am_revenues')->where('id', $id)->update($updateData);
-
-            DB::commit();
-
-            Log::info('Revenue AM Updated', [
-                'id' => $id,
-                'user_id' => Auth::id(),
-                'data' => $updateData
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Revenue AM berhasil diupdate',
-                'data' => $updateData
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Update Revenue AM Error: ' . $e->getMessage(), [
-                'id' => $id,
-                'request' => $request->all()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal update Revenue AM: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal update Revenue AM: ' . $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * Delete Revenue AM
@@ -1151,17 +1183,24 @@ class RevenueDataController extends Controller
      * Get single Data AM by ID
      * FIXED: Return data lengkap untuk modal edit
      */
+    /**
+     * Get single Data AM by ID
+     * ✅ FIXED - PROBLEM 2: Now returns is_registered and user_id for tab rendering
+     */
     public function showDataAM($id)
     {
         try {
             $am = DB::table('account_managers as am')
                 ->leftJoin('witel as w', 'am.witel_id', '=', 'w.id')
                 ->leftJoin('teldas as t', 'am.telda_id', '=', 't.id')
+                ->leftJoin('users as u', 'u.account_manager_id', '=', 'am.id')  // ✅ ADDED
                 ->where('am.id', $id)
                 ->select(
                     'am.*',
                     'w.nama as witel_nama',
-                    't.nama as telda_nama'
+                    't.nama as telda_nama',
+                    DB::raw('CASE WHEN u.id IS NOT NULL THEN 1 ELSE 0 END as is_registered'),  // ✅ ADDED
+                    DB::raw('u.id as user_id')  // ✅ ADDED
                 )
                 ->first();
 
@@ -1182,6 +1221,13 @@ class RevenueDataController extends Controller
 
             $am->divisi = $divisi->toArray();
 
+            Log::info('Show Data AM - Registration Status', [
+                'am_id' => $id,
+                'is_registered' => $am->is_registered,
+                'user_id' => $am->user_id,
+                'nama' => $am->nama
+            ]);
+
             return response()->json([
                 'success' => true,
                 'data' => $am
@@ -1189,7 +1235,8 @@ class RevenueDataController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Show Data AM Error: ' . $e->getMessage(), [
-                'id' => $id
+                'id' => $id,
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
@@ -1207,105 +1254,139 @@ class RevenueDataController extends Controller
      * Update Data Account Manager
      */
     public function updateDataAM(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama' => 'required|string|max:191',
-            'nik' => 'required|string|max:50',
-            'role' => 'required|in:AM,HOTDA',
-            'witel_id' => 'required|exists:witel,id',
-            'divisi_ids' => 'required|array|min:1',
-            'divisi_ids.*' => 'exists:divisi,id'
-        ], [
-            'nama.required' => 'Nama harus diisi',
-            'nik.required' => 'NIK harus diisi',
-            'role.required' => 'Role harus dipilih',
-            'witel_id.required' => 'Witel harus dipilih',
-            'divisi_ids.required' => 'Minimal 1 divisi harus dipilih',
-            'divisi_ids.*.exists' => 'Divisi tidak valid'
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'nama' => 'required|string|max:191',
+        'nik' => 'required|string|max:50',
+        'role' => 'required|in:AM,HOTDA',
+        'witel_id' => 'required|exists:witel,id',
+        'telda_id' => 'nullable|exists:teldas,id',  // ✅ ADDED
+        'divisi_ids' => 'required|array|min:1',
+        'divisi_ids.*' => 'exists:divisi,id'
+    ], [
+        'nama.required' => 'Nama harus diisi',
+        'nik.required' => 'NIK harus diisi',
+        'role.required' => 'Role harus dipilih',
+        'witel_id.required' => 'Witel harus dipilih',
+        'telda_id.exists' => 'TELDA tidak valid',  // ✅ ADDED
+        'divisi_ids.required' => 'Minimal 1 divisi harus dipilih',
+        'divisi_ids.*.exists' => 'Divisi tidak valid'
+    ]);
 
-        if ($validator->fails()) {
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validasi gagal',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    DB::beginTransaction();
+    try {
+        $am = DB::table('account_managers')->where('id', $id)->first();
+
+        if (!$am) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'message' => 'Data Account Manager tidak ditemukan'
+            ], 404);
+        }
+
+        // Check if NIK already exists for other AM
+        $nikExists = DB::table('account_managers')
+            ->where('nik', $request->nik)
+            ->where('id', '!=', $id)
+            ->exists();
+
+        if ($nikExists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'NIK sudah digunakan oleh Account Manager lain'
             ], 422);
         }
 
-        DB::beginTransaction();
-        try {
-            $am = DB::table('account_managers')->where('id', $id)->first();
+        // ✅ FIX #2: Build update data with telda_id handling
+        $updateData = [
+            'nama' => $request->nama,
+            'nik' => $request->nik,
+            'role' => $request->role,
+            'witel_id' => $request->witel_id,
+            'updated_at' => now()
+        ];
 
-            if (!$am) {
+        // ✅ CRITICAL: Handle telda_id berdasarkan role
+        if ($request->role === 'HOTDA') {
+            // HOTDA wajib punya telda_id
+            if (!$request->filled('telda_id')) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Data Account Manager tidak ditemukan'
-                ], 404);
-            }
-
-            // Check if NIK already exists for other AM
-            $nikExists = DB::table('account_managers')
-                ->where('nik', $request->nik)
-                ->where('id', '!=', $id)
-                ->exists();
-
-            if ($nikExists) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'NIK sudah digunakan oleh Account Manager lain'
+                    'message' => 'TELDA harus dipilih untuk role HOTDA'
                 ], 422);
             }
+            $updateData['telda_id'] = $request->telda_id;
 
-            $updateData = [
-                'nama' => $request->nama,
-                'nik' => $request->nik,
-                'role' => $request->role,
-                'witel_id' => $request->witel_id,
-                'updated_at' => now()
-            ];
-
-            DB::table('account_managers')->where('id', $id)->update($updateData);
-
-            // Update divisi relationships
-            DB::table('account_manager_divisi')->where('account_manager_id', $id)->delete();
-
-            foreach ($request->divisi_ids as $index => $divisiId) {
-                DB::table('account_manager_divisi')->insert([
-                    'account_manager_id' => $id,
-                    'divisi_id' => $divisiId,
-                    'is_primary' => ($index === 0) ? 1 : 0,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-            }
-
-            DB::commit();
-
-            Log::info('Data AM Updated', [
-                'id' => $id,
-                'user_id' => Auth::id(),
-                'data' => $updateData
+            Log::info('✅ HOTDA - TELDA akan diupdate', [
+                'am_id' => $id,
+                'old_telda_id' => $am->telda_id,
+                'new_telda_id' => $request->telda_id
             ]);
+        } else {
+            // AM tidak perlu telda_id, set NULL
+            $updateData['telda_id'] = null;
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data Account Manager berhasil diupdate',
-                'data' => $updateData
+            Log::info('✅ AM - TELDA di-NULL-kan', [
+                'am_id' => $id,
+                'old_telda_id' => $am->telda_id
             ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Update Data AM Error: ' . $e->getMessage(), [
-                'id' => $id,
-                'request' => $request->all()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal update Data Account Manager: ' . $e->getMessage()
-            ], 500);
         }
+
+        // Perform update
+        DB::table('account_managers')->where('id', $id)->update($updateData);
+
+        // Update divisi relationships
+        DB::table('account_manager_divisi')->where('account_manager_id', $id)->delete();
+
+        foreach ($request->divisi_ids as $index => $divisiId) {
+            DB::table('account_manager_divisi')->insert([
+                'account_manager_id' => $id,
+                'divisi_id' => $divisiId,
+                'is_primary' => ($index === 0) ? 1 : 0,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
+        DB::commit();
+
+        Log::info('✅ Data AM Updated Successfully', [
+            'id' => $id,
+            'user_id' => Auth::id(),
+            'role' => $request->role,
+            'telda_id' => $updateData['telda_id'] ?? 'NULL',
+            'data' => $updateData
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data Account Manager berhasil diupdate',
+            'data' => $updateData
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('❌ Update Data AM Error: ' . $e->getMessage(), [
+            'id' => $id,
+            'request' => $request->all(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal update Data Account Manager: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Change Password for Account Manager User
@@ -2203,57 +2284,101 @@ class RevenueDataController extends Controller
     /**
      * Helper function to recalculate AM revenues
      */
-    private function recalculateAMRevenues($ccId, $divisiId, $bulan, $tahun)
-    {
-        try {
-            // Get updated CC Revenue
-            $ccRevenue = DB::table('cc_revenues')
-                ->where('corporate_customer_id', $ccId)
-                ->where('divisi_id', $divisiId)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->first();
+    /**
+     * Helper function to recalculate AM revenues
+     * ✅ FIXED - PROBLEM 1: Accept updated revenue values as parameters
+     */
+    /**
+ * ✅ ENHANCED: Recalculate AM Revenues - ALWAYS UPDATE
+ * Dipanggil saat EDIT manual Revenue CC
+ */
+private function recalculateAMRevenues($ccId, $divisiId, $bulan, $tahun,
+    $newTargetRevenue, $newRealRevenue)
+{
+    try {
+        Log::info('🔍 recalculateAMRevenues CALLED (from EDIT)', [
+            'cc_id' => $ccId,
+            'divisi_id' => $divisiId,
+            'periode' => "{$tahun}-{$bulan}",
+            'new_target' => $newTargetRevenue,
+            'new_real' => $newRealRevenue
+        ]);
 
-            if (!$ccRevenue) {
-                return;
-            }
+        // Get all AM revenues for this CC, divisi, and period
+        $amRevenues = DB::table('am_revenues')
+            ->where('corporate_customer_id', $ccId)
+            ->where('divisi_id', $divisiId)
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->get();
 
-            // Get all related AM revenues
-            $amRevenues = DB::table('am_revenues')
-                ->where('corporate_customer_id', $ccId)
-                ->where('divisi_id', $divisiId)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->get();
-
-            foreach ($amRevenues as $amRevenue) {
-                $targetRevenue = $ccRevenue->target_revenue * $amRevenue->proporsi;
-                $realRevenue = $ccRevenue->real_revenue * $amRevenue->proporsi;
-                $achievementRate = $targetRevenue > 0 ? ($realRevenue / $targetRevenue) * 100 : 0;
-
-                DB::table('am_revenues')
-                    ->where('id', $amRevenue->id)
-                    ->update([
-                        'target_revenue' => $targetRevenue,
-                        'real_revenue' => $realRevenue,
-                        'achievement_rate' => round($achievementRate, 2),
-                        'updated_at' => now()
-                    ]);
-            }
-
-            Log::info('Recalculated AM revenues', [
-                'cc_id' => $ccId,
-                'divisi_id' => $divisiId,
-                'periode' => "{$tahun}-{$bulan}",
-                'am_count' => count($amRevenues)
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Recalculate AM Revenues Error: ' . $e->getMessage(), [
+        if ($amRevenues->isEmpty()) {
+            Log::warning('⚠️ NO AM REVENUES FOUND', [
                 'cc_id' => $ccId,
                 'divisi_id' => $divisiId,
                 'periode' => "{$tahun}-{$bulan}"
             ]);
+            return 0;
         }
+
+        Log::info('✅ Found AM Revenues', ['count' => $amRevenues->count()]);
+
+        $updatedCount = 0;
+
+        foreach ($amRevenues as $amRevenue) {
+            // Normalize proporsi
+            $proporsi = $amRevenue->proporsi;
+            if ($proporsi > 1) {
+                $proporsi = $proporsi / 100;
+            }
+
+            // ALWAYS recalculate dengan nilai CC terbaru
+            $newTargetAM = $newTargetRevenue * $proporsi;
+            $newRealAM = $newRealRevenue * $proporsi;
+            $achievementRate = $newTargetAM > 0 ? ($newRealAM / $newTargetAM) * 100 : 0;
+
+            $updateData = [
+                'target_revenue' => $newTargetAM,
+                'real_revenue' => $newRealAM,
+                'achievement_rate' => round($achievementRate, 2),
+                'updated_at' => now()
+            ];
+
+            try {
+                DB::table('am_revenues')
+                    ->where('id', $amRevenue->id)
+                    ->update($updateData);
+
+                $updatedCount++;
+
+                Log::info('✅ AM Updated', [
+                    'am_id' => $amRevenue->id,
+                    'proporsi' => $proporsi,
+                    'new_target' => $newTargetAM,
+                    'new_real' => $newRealAM
+                ]);
+            } catch (\Exception $updateEx) {
+                Log::error('❌ Failed to update AM', [
+                    'am_id' => $amRevenue->id,
+                    'error' => $updateEx->getMessage()
+                ]);
+            }
+        }
+
+        Log::info('✅ Recalculation Complete', [
+            'cc_id' => $ccId,
+            'updated_count' => $updatedCount
+        ]);
+
+        return $updatedCount;
+
+    } catch (\Exception $e) {
+        Log::error('❌ Recalculate Error: ' . $e->getMessage(), [
+            'cc_id' => $ccId,
+            'trace' => $e->getTraceAsString()
+        ]);
+        return 0;
     }
+}
+
 }

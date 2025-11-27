@@ -118,10 +118,25 @@
                     return ['class' => 'neutral', 'icon' => 'lni-minus', 'text' => 'Tetap'];
                 }
             };
+
+            // Determine category for leaderboard filter
+            $getCategoryFilter = function() use ($hasGovernment, $hasEnterprise, $divisiCount) {
+                if ($divisiCount > 1 && $hasGovernment && $hasEnterprise) {
+                    // Multi divisi - use active divisi umum
+                    return null; // Will be determined per card
+                } elseif ($hasGovernment && !$hasEnterprise) {
+                    return 'government';
+                } elseif ($hasEnterprise && !$hasGovernment) {
+                    return 'enterprise';
+                }
+                return null;
+            };
+
+            $categoryFilter = $getCategoryFilter();
         @endphp
 
         <div class="row">
-            <!-- Card 1: Global Ranking -->
+            <!-- Card 1: Global Ranking - CLICKABLE -->
             <div class="col-md-4 mb-3">
                 <a href="{{ route('leaderboard') }}" class="ranking-card global">
                     <div class="ranking-icon">
@@ -133,6 +148,7 @@
                             {{ $globalRanking['rank'] ?? 'N/A' }} dari {{ $globalRanking['total'] }}
                         </div>
                         @php $badge = $getBadgeInfo($globalRanking['status'], $globalRanking['change']); @endphp
+                        <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
                     @if($globalRanking['change'] != 0)
                         <div class="rank-badge {{ $badge['class'] }}">
@@ -143,9 +159,9 @@
                 </a>
             </div>
 
-            <!-- Card 2: Witel Ranking -->
+            <!-- Card 2: Witel Ranking - NOW CLICKABLE -->
             <div class="col-md-4 mb-3">
-                <div class="ranking-card witel">
+                <a href="{{ route('leaderboard') }}?witel_filter%5B%5D={{ $accountManager->witel_id }}" class="ranking-card witel">
                     <div class="ranking-icon">
                         <img src="{{ asset('img/' . $getIcon($witelRanking['rank'])) }}" alt="Peringkat" width="36" height="36">
                     </div>
@@ -155,6 +171,7 @@
                             {{ $witelRanking['rank'] ?? 'N/A' }} dari {{ $witelRanking['total'] }}
                         </div>
                         @php $badge = $getBadgeInfo($witelRanking['status'], $witelRanking['change']); @endphp
+                        <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
                     @if($witelRanking['change'] != 0)
                         <div class="rank-badge {{ $badge['class'] }}">
@@ -162,15 +179,17 @@
                             {{ $badge['text'] }}
                         </div>
                     @endif
-                </div>
+                </a>
             </div>
 
-            <!-- Card 3: Division Ranking (Divisi Umum) -->
+            <!-- Card 3: Division Ranking (Divisi Umum) - NOW CLICKABLE -->
             <div class="col-md-4 mb-3">
                 <div class="division-rankings-container">
                     @if(count($divisiUmumRankings) > 0 && $activeDivisiUmum)
                         @php
                             $ranking = $divisiUmumRankings[$activeDivisiUmum] ?? null;
+                            // Convert GOVERNMENT/ENTERPRISE to lowercase for leaderboard filter
+                            $categoryForLeaderboard = strtolower($activeDivisiUmum);
                         @endphp
 
                         @if($ranking)
@@ -178,7 +197,7 @@
                                 $badge = $getBadgeInfo($ranking['status'] ?? 'tetap', $ranking['change'] ?? 0);
                             @endphp
 
-                            <div class="ranking-card division division-rank-card" data-divisi-umum="{{ $activeDivisiUmum }}">
+                            <a href="{{ route('leaderboard') }}?category_filter%5B%5D={{ $categoryForLeaderboard }}" class="ranking-card division division-rank-card" data-divisi-umum="{{ $activeDivisiUmum }}">
                                 <div class="ranking-icon">
                                     <img src="{{ asset('img/' . $getIcon($ranking['rank'])) }}" alt="Peringkat" width="36" height="36">
                                 </div>
@@ -192,7 +211,7 @@
                                     <div class="ranking-value">
                                         {{ $ranking['rank'] ?? 'N/A' }} dari {{ $ranking['total'] ?? 0 }}
                                     </div>
-                                    {{-- <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span> --}}
+                                    <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                                 </div>
                                 @if(($ranking['change'] ?? 0) != 0)
                                     <div class="rank-badge {{ $badge['class'] }}">
@@ -200,7 +219,7 @@
                                         {{ $badge['text'] }}
                                     </div>
                                 @endif
-                            </div>
+                            </a>
                         @else
                             <div class="ranking-card division">
                                 <div class="ranking-icon">

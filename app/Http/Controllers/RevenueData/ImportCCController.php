@@ -7,27 +7,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-/**
- * ImportCCController - Corporate Customer Import Handler
- *
- * FIXED VERSION - 2025-10-31 23:58
- *
- * ✅ FIXED: Support TARGET_REVENUE (untuk jenis_data='target')
- * ✅ FIXED: Support REVENUE_SOLD/REVENUE_BILL (untuk jenis_data='revenue')
- * ✅ LOGIC:
- *    - jenis_data='revenue' → DPS: REVENUE_BILL, DGS/DSS: REVENUE_SOLD
- *    - jenis_data='target' → Semua divisi: TARGET_REVENUE
- */
+
 class ImportCCController extends Controller
 {
     /**
-     * Download Template CSV
+     * ✅ MAINTAINED: Download Template CSV
      */
     public function downloadTemplate($type)
     {
         $templates = [
+            // Data CC Template
             'data-cc' => [
                 'filename' => 'template_data_cc.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME'],
@@ -36,6 +28,8 @@ class ImportCCController extends Controller
                     ['76590002', 'PEMKOT SEMARANG']
                 ]
             ],
+
+            // DGS Real Revenue (Sold)
             'revenue-cc-dgs-real' => [
                 'filename' => 'template_revenue_cc_dgs_real.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
@@ -43,6 +37,17 @@ class ImportCCController extends Controller
                     ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '195000000', 'HO']
                 ]
             ],
+
+            // DSS Real Revenue (Sold)
+            'revenue-cc-dss-real' => [
+                'filename' => 'template_revenue_cc_dss_real.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '250000000', 'HO']
+                ]
+            ],
+
+            // DPS Real Revenue (Bill)
             'revenue-cc-dps-real' => [
                 'filename' => 'template_revenue_cc_dps_real.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'REVENUE_BILL', 'SOURCE_DATA'],
@@ -50,26 +55,79 @@ class ImportCCController extends Controller
                     ['76590021', 'PT TELKOMSEL', 'RETAIL & MEDIA SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '920000000', 'BILL']
                 ]
             ],
-            'revenue-cc-target' => [
-                'filename' => 'template_revenue_cc_target.csv',
+
+            // DGS Target Revenue
+            'revenue-cc-dgs-target' => [
+                'filename' => 'template_revenue_cc_dgs_target.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '200000000', 'HO']
                 ]
             ],
+
+            // DSS Target Revenue
+            'revenue-cc-dss-target' => [
+                'filename' => 'template_revenue_cc_dss_target.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '270000000', 'HO']
+                ]
+            ],
+
+            // DPS Target Revenue
             'revenue-cc-dps-target' => [
                 'filename' => 'template_revenue_cc_dps_target.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'TARGET_REVENUE', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590021', 'PT TELKOMSEL', 'RETAIL & MEDIA SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '950000000', 'BILL']
                 ]
+            ],
+
+            // Aliases for backward compatibility
+            'revenue-cc-dgs' => [
+                'filename' => 'template_revenue_cc_dgs_real.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '195000000', 'HO']
+                ]
+            ],
+
+            'revenue-cc-dss' => [
+                'filename' => 'template_revenue_cc_dss_real.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '250000000', 'HO']
+                ]
+            ],
+
+            'revenue-cc-dps' => [
+                'filename' => 'template_revenue_cc_dps_real.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'REVENUE_BILL', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590021', 'PT TELKOMSEL', 'RETAIL & MEDIA SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '920000000', 'BILL']
+                ]
+            ],
+
+            // Generic target template
+            'revenue-cc-target' => [
+                'filename' => 'template_revenue_cc_target.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '200000000', 'HO']
+                ]
             ]
         ];
 
         if (!isset($templates[$type])) {
+            Log::warning('Template not found', [
+                'requested_type' => $type,
+                'available_types' => array_keys($templates)
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Template type not found'
+                'message' => 'Template type not found',
+                'available_types' => array_keys($templates)
             ], 404);
         }
 
@@ -92,7 +150,7 @@ class ImportCCController extends Controller
     }
 
     /**
-     * Preview Data CC Import
+     * ✅ MAINTAINED: Preview Data CC Import
      */
     public function previewDataCC($tempFilePath)
     {
@@ -188,7 +246,7 @@ class ImportCCController extends Controller
     }
 
     /**
-     * Execute Data CC Import
+     * ✅ MAINTAINED: Execute Data CC Import
      */
     public function executeDataCC($request)
     {
@@ -318,7 +376,7 @@ class ImportCCController extends Controller
     }
 
     /**
-     * Preview Revenue CC Import
+     * ✅ MAINTAINED: Preview Revenue CC Import
      */
     public function previewRevenueCC($tempFilePath, $divisiId, $jenisData, $year = null, $month = null)
     {
@@ -334,11 +392,10 @@ class ImportCCController extends Controller
                 ];
             }
 
-            // ✅ REQUIRED COLUMNS BASED ON jenis_data
+            // Required columns based on jenis_data
             $requiredColumns = ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO'];
 
             if (strtolower($jenisData) === 'target') {
-                // Target revenue: semua divisi pakai TARGET_REVENUE
                 $requiredColumns[] = 'TARGET_REVENUE';
                 if ($divisi->kode === 'DPS') {
                     $requiredColumns[] = 'WITEL_BILL';
@@ -346,7 +403,6 @@ class ImportCCController extends Controller
                     $requiredColumns[] = 'WITEL_HO';
                 }
             } else {
-                // Real revenue: DPS pakai REVENUE_BILL, DGS/DSS pakai REVENUE_SOLD
                 if ($divisi->kode === 'DPS') {
                     $requiredColumns[] = 'WITEL_BILL';
                     $requiredColumns[] = 'REVENUE_BILL';
@@ -478,12 +534,16 @@ class ImportCCController extends Controller
     }
 
     /**
-     * ✅ FIXED: Execute Revenue CC Import
-     * - jenis_data='revenue': DPS→REVENUE_BILL, DGS/DSS→REVENUE_SOLD
-     * - jenis_data='target': Semua divisi→TARGET_REVENUE
+     * ✅ ENHANCED: Execute Revenue CC Import
+     * Now calls recalculateAMRevenuesForCC with OLD and NEW values
      */
     public function executeRevenueCC($request)
     {
+        Log::info('🚀 executeRevenueCC STARTED', [
+            'request_type' => get_class($request),
+            'has_temp_file' => $request instanceof Request ? $request->has('temp_file') : 'not a Request object'
+        ]);
+
         DB::beginTransaction();
 
         try {
@@ -491,11 +551,10 @@ class ImportCCController extends Controller
             $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
             $divisiId = $request instanceof Request ? $request->input('divisi_id') : null;
             $jenisData = $request instanceof Request ? $request->input('jenis_data') : null;
-
-            // TAHUN & BULAN DARI FORM
             $year = $request instanceof Request ? $request->input('year') : null;
             $month = $request instanceof Request ? $request->input('month') : null;
 
+            // Validation
             if (!$tempFilePath || !file_exists($tempFilePath)) {
                 DB::rollBack();
                 return [
@@ -508,7 +567,7 @@ class ImportCCController extends Controller
                 DB::rollBack();
                 return [
                     'success' => false,
-                    'message' => 'Parameter tidak lengkap (divisi_id, jenis_data, year, month diperlukan)'
+                    'message' => 'Parameter tidak lengkap: divisi_id, jenis_data, year, dan month diperlukan'
                 ];
             }
 
@@ -524,10 +583,9 @@ class ImportCCController extends Controller
                 ];
             }
 
-            // ✅ Required columns based on jenis_data
+            // Required columns based on jenis_data
             $requiredColumns = ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO'];
 
-            // ✅ LOGIC: jenis_data='target' → TARGET_REVENUE, jenis_data='revenue' → REVENUE_SOLD/REVENUE_BILL
             if (strtolower($jenisData) === 'target') {
                 $requiredColumns[] = 'TARGET_REVENUE';
                 $revenueColumn = 'TARGET_REVENUE';
@@ -541,7 +599,7 @@ class ImportCCController extends Controller
                 }
             }
 
-            // WITEL logic tetap sama
+            // WITEL logic
             if ($divisi->kode === 'DPS') {
                 $requiredColumns[] = 'WITEL_BILL';
                 $witelColumn = 'WITEL_BILL';
@@ -564,12 +622,21 @@ class ImportCCController extends Controller
 
             $columnIndices = $this->getColumnIndices($headers, $requiredColumns);
 
+            Log::info('📋 CSV parsed successfully, starting to process rows', [
+                'total_rows' => count($csvData),
+                'divisi_id' => $divisiId,
+                'jenis_data' => $jenisData,
+                'year' => $year,
+                'month' => $month
+            ]);
+
             $statistics = [
                 'total_rows' => count($csvData),
                 'success_count' => 0,
                 'failed_count' => 0,
                 'updated_count' => 0,
                 'inserted_count' => 0,
+                'am_revenues_recalculated' => 0,
                 'failed_rows' => []
             ];
 
@@ -652,8 +719,25 @@ class ImportCCController extends Controller
                         ->where('bulan', $month)
                         ->first();
 
+                    // ✅ CRITICAL: Store OLD values BEFORE update
+                    $oldTargetRevenue = 0;
+                    $oldRealRevenue = 0;
+
                     if ($existingRevenue) {
-                        // Update existing
+                        $oldTargetRevenue = $existingRevenue->target_revenue;
+                        $oldRealRevenue = $existingRevenue->real_revenue;
+
+                        Log::info('💾 Found existing CC Revenue, preparing to update', [
+                            'cc_id' => $cc->id,
+                            'cc_name' => $cc->nama,
+                            'existing_revenue_id' => $existingRevenue->id,
+                            'OLD_target' => $oldTargetRevenue,
+                            'OLD_real' => $oldRealRevenue,
+                            'NEW_revenue_from_csv' => $revenue,
+                            'jenis_data' => $jenisData
+                        ]);
+
+                        // CONDITIONAL UPDATE based on jenis_data
                         if (strtolower($jenisData) === 'target') {
                             $dataToSave['target_revenue'] = $revenue;
                             $dataToSave['real_revenue'] = $existingRevenue->real_revenue;
@@ -667,6 +751,38 @@ class ImportCCController extends Controller
                             ->update($dataToSave);
 
                         $statistics['updated_count']++;
+
+                        // ✅ DEBUG: Log parameters before calling recalculation
+                        Log::info('📞 About to call recalculateAMRevenuesForCC', [
+                            'cc_id' => $cc->id,
+                            'divisi_id' => $divisiId,
+                            'month' => $month,
+                            'year' => $year,
+                            'old_target' => $oldTargetRevenue,
+                            'old_real' => $oldRealRevenue,
+                            'new_target' => $dataToSave['target_revenue'],
+                            'new_real' => $dataToSave['real_revenue'],
+                            'jenis_data' => $jenisData
+                        ]);
+
+                        // ✅ CRITICAL FIX: Pass OLD and NEW values for smart comparison
+                        $amRecalculated = $this->recalculateAMRevenuesForCC(
+                            $cc->id,
+                            $divisiId,
+                            $month,
+                            $year,
+                            $oldTargetRevenue,  // OLD target
+                            $oldRealRevenue,    // OLD real
+                            $dataToSave['target_revenue'],  // NEW target
+                            $dataToSave['real_revenue']     // NEW real
+                        );
+
+                        Log::info('📞 recalculateAMRevenuesForCC returned', [
+                            'am_recalculated' => $amRecalculated
+                        ]);
+
+                        $statistics['am_revenues_recalculated'] += $amRecalculated;
+
                     } else {
                         // Insert new
                         if (strtolower($jenisData) === 'target') {
@@ -681,6 +797,37 @@ class ImportCCController extends Controller
                         DB::table('cc_revenues')->insert($dataToSave);
 
                         $statistics['inserted_count']++;
+
+                        // ✅ DEBUG: Log parameters before calling recalculation
+                        Log::info('📞 About to call recalculateAMRevenuesForCC (NEW DATA)', [
+                            'cc_id' => $cc->id,
+                            'divisi_id' => $divisiId,
+                            'month' => $month,
+                            'year' => $year,
+                            'old_target' => 0,
+                            'old_real' => 0,
+                            'new_target' => $dataToSave['target_revenue'],
+                            'new_real' => $dataToSave['real_revenue'],
+                            'jenis_data' => $jenisData
+                        ]);
+
+                        // Recalculate for new data (old values = 0)
+                        $amRecalculated = $this->recalculateAMRevenuesForCC(
+                            $cc->id,
+                            $divisiId,
+                            $month,
+                            $year,
+                            0,  // OLD target = 0
+                            0,  // OLD real = 0
+                            $dataToSave['target_revenue'],  // NEW target
+                            $dataToSave['real_revenue']     // NEW real
+                        );
+
+                        Log::info('📞 recalculateAMRevenuesForCC returned (NEW DATA)', [
+                            'am_recalculated' => $amRecalculated
+                        ]);
+
+                        $statistics['am_revenues_recalculated'] += $amRecalculated;
                     }
 
                     $statistics['success_count']++;
@@ -702,14 +849,31 @@ class ImportCCController extends Controller
                 $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'revenue_cc');
             }
 
+            // ENHANCED MESSAGE with AM recalculation info
             $message = 'Import Revenue CC selesai';
-            if ($statistics['updated_count'] > 0 && $statistics['inserted_count'] > 0) {
-                $message .= " ({$statistics['updated_count']} data di-update, {$statistics['inserted_count']} data baru)";
-            } elseif ($statistics['updated_count'] > 0) {
-                $message .= " ({$statistics['updated_count']} data di-update)";
-            } elseif ($statistics['inserted_count'] > 0) {
-                $message .= " ({$statistics['inserted_count']} data baru)";
+            $messageParts = [];
+
+            if ($statistics['updated_count'] > 0) {
+                $messageParts[] = "{$statistics['updated_count']} data di-update";
             }
+            if ($statistics['inserted_count'] > 0) {
+                $messageParts[] = "{$statistics['inserted_count']} data baru";
+            }
+            if ($statistics['am_revenues_recalculated'] > 0) {
+                $messageParts[] = "{$statistics['am_revenues_recalculated']} AM revenues recalculated";
+            }
+
+            if (!empty($messageParts)) {
+                $message .= " (" . implode(', ', $messageParts) . ")";
+            }
+
+            Log::info('Import Revenue CC Completed', [
+                'statistics' => $statistics,
+                'divisi_id' => $divisiId,
+                'jenis_data' => $jenisData,
+                'periode' => "{$year}-{$month}",
+                'user_id' => Auth::id()
+            ]);
 
             return [
                 'success' => true,
@@ -719,14 +883,17 @@ class ImportCCController extends Controller
                     'success_count' => $statistics['success_count'],
                     'failed_count' => $statistics['failed_count'],
                     'updated_count' => $statistics['updated_count'],
-                    'inserted_count' => $statistics['inserted_count']
+                    'inserted_count' => $statistics['inserted_count'],
+                    'am_revenues_recalculated' => $statistics['am_revenues_recalculated']
                 ],
                 'error_log_path' => $errorLogPath
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Import Revenue CC Error: ' . $e->getMessage());
+            Log::error('Import Revenue CC Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return [
                 'success' => false,
@@ -742,6 +909,9 @@ class ImportCCController extends Controller
 
     // ==================== HELPER METHODS ====================
 
+    /**
+     * ✅ MAINTAINED: Parse CSV file from file path
+     */
     private function parseCsvFileFromPath($filepath)
     {
         $csvData = [];
@@ -755,6 +925,9 @@ class ImportCCController extends Controller
         return $csvData;
     }
 
+    /**
+     * ✅ MAINTAINED: Validate CSV headers
+     */
     private function validateHeaders($headers, $requiredColumns)
     {
         $cleanHeaders = array_map(function($h) {
@@ -771,6 +944,9 @@ class ImportCCController extends Controller
         return true;
     }
 
+    /**
+     * ✅ MAINTAINED: Get column indices mapping
+     */
     private function getColumnIndices($headers, $columns)
     {
         $indices = [];
@@ -789,11 +965,17 @@ class ImportCCController extends Controller
         return $indices;
     }
 
+    /**
+     * ✅ MAINTAINED: Get column value safely
+     */
     private function getColumnValue($row, $index)
     {
         return $index !== null && isset($row[$index]) ? trim($row[$index]) : null;
     }
 
+    /**
+     * ✅ MAINTAINED: Generate error log CSV
+     */
     private function generateErrorLog($failedRows, $type)
     {
         if (empty($failedRows)) {
@@ -822,4 +1004,129 @@ class ImportCCController extends Controller
         fclose($handle);
         return asset('storage/import_logs/' . $filename);
     }
+
+        /**
+     * ✅ ENHANCED: Recalculate AM Revenues - ALWAYS UPDATE
+     *
+     * SIMPLE LOGIC: Always recalculate ALL fields with NEW values
+     * - No complex detection needed
+     * - Always sync AM with CC values
+     * - Proportional calculation applied to both target and real
+     *
+     * @param int $ccId Corporate Customer ID
+     * @param int $divisiId Divisi ID
+     * @param int $bulan Month
+     * @param int $tahun Year
+     * @param float $oldTargetRevenue OLD target revenue (for logging only)
+     * @param float $oldRealRevenue OLD real revenue (for logging only)
+     * @param float $newTargetRevenue NEW target revenue (will be applied)
+     * @param float $newRealRevenue NEW real revenue (will be applied)
+     * @return int Number of AM revenues recalculated
+     */
+    private function recalculateAMRevenuesForCC($ccId, $divisiId, $bulan, $tahun,
+        $oldTargetRevenue, $oldRealRevenue, $newTargetRevenue, $newRealRevenue)
+    {
+        try {
+            Log::info('🔍 recalculateAMRevenuesForCC CALLED', [
+                'cc_id' => $ccId,
+                'divisi_id' => $divisiId,
+                'periode' => "{$tahun}-{$bulan}",
+                'new_target' => $newTargetRevenue,
+                'new_real' => $newRealRevenue
+            ]);
+
+            // Get all AM revenues for this CC, divisi, and period
+            $amRevenues = DB::table('am_revenues')
+                ->where('corporate_customer_id', $ccId)
+                ->where('divisi_id', $divisiId)
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->get();
+
+            if ($amRevenues->isEmpty()) {
+                Log::warning('⚠️ NO AM REVENUES FOUND', [
+                    'cc_id' => $ccId,
+                    'divisi_id' => $divisiId,
+                    'periode' => "{$tahun}-{$bulan}"
+                ]);
+                return 0;
+            }
+
+            Log::info('✅ Found AM Revenues', ['count' => $amRevenues->count()]);
+
+            $updatedCount = 0;
+
+            foreach ($amRevenues as $amRevenue) {
+                // Normalize proporsi
+                $proporsi = $amRevenue->proporsi;
+                if ($proporsi > 1) {
+                    $proporsi = $proporsi / 100;
+                }
+
+                // ALWAYS recalculate dengan nilai CC terbaru
+                $newTargetAM = $newTargetRevenue * $proporsi;
+                $newRealAM = $newRealRevenue * $proporsi;
+                $achievementRate = $newTargetAM > 0 ? ($newRealAM / $newTargetAM) * 100 : 0;
+
+                $updateData = [
+                    'target_revenue' => $newTargetAM,
+                    'real_revenue' => $newRealAM,
+                    'achievement_rate' => round($achievementRate, 2),
+                    'updated_at' => now()
+                ];
+
+                try {
+                    DB::table('am_revenues')
+                        ->where('id', $amRevenue->id)
+                        ->update($updateData);
+
+                    $updatedCount++;
+
+                    Log::info('✅ AM Updated', [
+                        'am_id' => $amRevenue->id,
+                        'proporsi' => $proporsi,
+                        'new_target' => $newTargetAM,
+                        'new_real' => $newRealAM
+                    ]);
+                } catch (\Exception $updateEx) {
+                    Log::error('❌ Failed to update AM', [
+                        'am_id' => $amRevenue->id,
+                        'error' => $updateEx->getMessage()
+                    ]);
+                }
+            }
+
+            Log::info('✅ Recalculation Complete', [
+                'cc_id' => $ccId,
+                'updated_count' => $updatedCount
+            ]);
+
+            return $updatedCount;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Recalculate Error: ' . $e->getMessage(), [
+                'cc_id' => $ccId,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 0;
+        }
+    }
+
+/**
+ * ============================================================
+ * END OF METHOD
+ * ============================================================
+ *
+ * SETELAH PASTE:
+ * 1. Save file
+ * 2. Run: php artisan config:clear
+ * 3. Run: php artisan cache:clear
+ * 4. Test import Revenue CC
+ *
+ * Expected result:
+ * "Import Revenue CC selesai (1 data di-update, 2 AM revenues recalculated)"
+ *
+ * ============================================================
+ */
+
 }

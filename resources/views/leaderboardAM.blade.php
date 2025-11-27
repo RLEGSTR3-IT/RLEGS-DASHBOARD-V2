@@ -117,8 +117,8 @@
                         name="ranking_method"
                         title="Metode Ranking"
                         data-width="100%"
-                        data-live-search="true"              
-                        data-size="6"                        
+                        data-live-search="true"
+                        data-size="6"
                         >
                         <option value="revenue"     {{ request('ranking_method', 'revenue') == 'revenue' ? 'selected' : '' }}>Revenue Tertinggi</option>
                         <option value="achievement" {{ request('ranking_method') == 'achievement' ? 'selected' : '' }}>Achievement Tertinggi</option>
@@ -146,9 +146,10 @@
             {{-- FOTO PROFIL + MAHKOTA --}}
             <div class="am-avatar">
                 <img
-                    src="{{ asset('img/profile.png') }}"
+                    src="{{ $am->profile_image ? asset('storage/' . $am->profile_image) : asset('img/profile.png') }}"
                     class="am-profile-pic"
                     alt="{{ $am->nama }}"
+                    onerror="this.src='{{ asset('img/profile.png') }}'"
                 >
                 @if($am->rank <= 3)
                 <span class="rank-crown rank-{{ $am->rank }}">
@@ -156,6 +157,7 @@
                 </span>
                 @endif
             </div>
+
 
             {{-- Info AM --}}
             <div class="am-info">

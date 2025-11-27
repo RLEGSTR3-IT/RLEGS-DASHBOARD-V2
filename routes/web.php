@@ -15,6 +15,11 @@ use App\Http\Controllers\RevenueData\RevenueImportController;
 use App\Http\Controllers\RevenueData\ImportCCController;
 use App\Http\Controllers\RevenueData\ImportAMController;
 use App\Http\Controllers\LeaderboardAMController;
+use App\Http\Controllers\HighFive\HighFiveController;
+use App\Http\Controllers\HighFive\HighFiveAMPerformanceController;
+use App\Http\Controllers\HighFive\HighFiveProductPerformanceController;
+use App\Http\Controllers\HighFive\HighFiveReportController;
+use App\Http\Controllers\HighFive\HighFiveSettingsController;
 
 // Laravel Core
 use Illuminate\Support\Facades\Route;
@@ -36,10 +41,10 @@ use App\Models\CorporateCustomer;
 | Web Routes - RLEGS Dashboard V2
 |--------------------------------------------------------------------------
 |
-| UPDATED: 2025-10-31
-| ✅ FIXED: Route leaderboard - simplified, no duplicate
-| ✅ FIXED: Revenue data dengan middleware 'admin'
-| ✅ MAINTAINED: Semua fungsi existing routes
+| UPDATED: 2025-11-26
+| ✅ REVISED: High Five RLEGS TR3 routes with snapshot architecture
+| ✅ MAINTAINED: All existing routes
+| ✅ ADDED: New modal management routes
 */
 
 // ===== BASIC ROUTES =====
@@ -77,6 +82,54 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Leaderboard Route
     Route::get('/leaderboard', [LeaderboardAMController::class, 'index'])->name('leaderboard');
+
+    // ===== HIGH FIVE RLEGS TR3 ROUTES (✅ UPDATED & ENHANCED) =====
+    Route::prefix('high-five')->name('high-five.')->group(function () {
+
+        // ===== MAIN DASHBOARD =====
+        Route::get('/', [HighFiveController::class, 'index'])->name('index');
+
+        // ===== SNAPSHOT MANAGEMENT (🆕 NEW ARCHITECTURE) =====
+        Route::get('/snapshots', [HighFiveController::class, 'getSnapshots'])->name('snapshots');
+        Route::get('/latest-snapshots', [HighFiveController::class, 'getLatestSnapshots'])->name('latest-snapshots');
+
+        // ===== LINK MANAGEMENT (FOR MODAL) =====
+        Route::get('/available-links', [HighFiveSettingsController::class, 'getAvailableLinks'])->name('available-links');
+        Route::post('/fetch-manual', [HighFiveSettingsController::class, 'fetchWithCustomDate'])->name('fetch-manual');
+
+        // ===== PERFORMANCE ANALYSIS (🔄 UPDATED: Now uses snapshot_1_id, snapshot_2_id) =====
+        // Tab 1: AM Level Performance
+        Route::get('/am-performance', [HighFiveAMPerformanceController::class, 'getAMPerformance'])->name('am-performance');
+
+        // Tab 2: Product Level Performance
+        Route::get('/product-performance', [HighFiveProductPerformanceController::class, 'getProductPerformance'])->name('product-performance');
+
+        // ===== REPORT GENERATION (🔄 UPDATED: Now uses snapshot_1_id, snapshot_2_id) =====
+        Route::get('/report/download', [HighFiveReportController::class, 'downloadReport'])->name('report.download');
+        Route::get('/report/preview', [HighFiveReportController::class, 'previewReport'])->name('report.preview');
+
+        // ===== SETTINGS ROUTES (ADMIN ONLY - 🆕 ENHANCED) =====
+        Route::prefix('settings')->name('settings.')->group(function () {
+
+            // Main settings page (if you have a settings view)
+            Route::get('/', [HighFiveSettingsController::class, 'index'])->name('index');
+
+            // CRUD Operations for Dataset Links
+            Route::post('/store', [HighFiveSettingsController::class, 'store'])->name('store');
+            Route::put('/update/{id}', [HighFiveSettingsController::class, 'update'])->name('update');
+            Route::delete('/delete/{id}', [HighFiveSettingsController::class, 'destroy'])->name('delete');
+
+            // Fetch Operations
+            Route::post('/fetch-now/{id}', [HighFiveSettingsController::class, 'fetchNow'])->name('fetch-now');
+            Route::get('/history/{id}', [HighFiveSettingsController::class, 'history'])->name('history');
+            Route::post('/retry-snapshot/{id}', [HighFiveSettingsController::class, 'retrySnapshot'])->name('retry-snapshot');
+        });
+
+        // ===== DEPRECATED ROUTES (Kept for backward compatibility) =====
+        Route::post('/dataset/store', [HighFiveController::class, 'storeDataset'])->name('dataset.store');
+        Route::get('/dataset/by-divisi', [HighFiveController::class, 'getDatasetsByDivisi'])->name('dataset.by-divisi');
+        Route::delete('/dataset/{id}', [HighFiveController::class, 'deleteDataset'])->name('dataset.delete');
+    });
 
     // ===== DASHBOARD API ROUTES =====
     Route::prefix('dashboard')->name('dashboard.')->group(function () {
@@ -305,10 +358,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return redirect()->route('api.witel');
         })->name('witels');
 
-        Route::get('witels', function () {
-            return redirect()->route('api.witel');
-        })->name('witels');
-
         Route::get('segments', function () {
             return response()->json(
                 Segment::select('id', 'lsegment_ho', 'ssegment_ho', 'divisi_id')
@@ -504,10 +553,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 
     // ===== SIDEBAR ROUTES =====
-    Route::get('/treg3', function () {
-        return view('treg3.index');
-    })->name('dashboard.treg3');
-
     Route::get('/witel-perform', function () {
         return view('performansi.witel');
     })->name('witel.perform');
@@ -568,8 +613,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Template downloads
         Route::get('template/data-cc', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'data-cc')->name('template.data-cc');
         Route::get('template/data-am', [ImportAMController::class, 'downloadTemplate'])->defaults('type', 'data-am')->name('template.data-am');
-        Route::get('template/revenue-cc-dgs', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'revenue-cc-dgs')->name('template.revenue-cc-dgs');
-        Route::get('template/revenue-cc-dps', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'revenue-cc-dps')->name('template.revenue-cc-dps');
+        Route::get('template/revenue-cc-dgs-real', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'revenue-cc-dgs')->name('template.revenue-cc-dgs');
+        Route::get('template/revenue-cc-dps-real', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'revenue-cc-dps')->name('template.revenue-cc-dps');
         Route::get('template/revenue-am', [ImportAMController::class, 'downloadTemplate'])->defaults('type', 'revenue-am')->name('template.revenue-am');
 
         Route::get('template/{type}', function ($type) {
@@ -919,8 +964,114 @@ if (app()->environment('local')) {
             ]
         ]);
     })->name('debug.role-access');
+
+    // 🆕 Debug High Five Routes (UPDATED & ENHANCED)
+    Route::get('debug/high-five', function () {
+        return response()->json([
+            'main_route' => 'GET /high-five',
+            'route_name' => 'high-five.index',
+            'description' => 'High Five RLEGS TR3 - Monitoring Performa Mingguan AM dan Produk High Five (🔄 REVISED: Now uses snapshot architecture)',
+            'example_url' => url('/high-five'),
+            'architecture_change' => [
+                'old_system' => 'Direct Google Sheets API fetch on every request',
+                'new_system' => 'Snapshot-based: Fetch → Store in DB → Analyze from DB',
+                'benefits' => [
+                    'No repeated Google Sheets API calls',
+                    'Historical data tracking',
+                    'Faster analysis',
+                    'Data versioning'
+                ]
+            ],
+            'available_endpoints' => [
+                'dashboard' => [
+                    'index' => 'GET /high-five',
+                    'get_snapshots' => 'GET /high-five/snapshots?divisi_id={id}',
+                    'get_latest_snapshots' => 'GET /high-five/latest-snapshots?divisi_id={id}',
+                    'get_available_links' => 'GET /high-five/available-links',
+                    'fetch_manual' => 'POST /high-five/fetch-manual'
+                ],
+                'settings' => [
+                    'index' => 'GET /high-five/settings',
+                    'store' => 'POST /high-five/settings/store',
+                    'update' => 'PUT /high-five/settings/update/{id}',
+                    'delete' => 'DELETE /high-five/settings/delete/{id}',
+                    'fetch_now' => 'POST /high-five/settings/fetch-now/{id}',
+                    'history' => 'GET /high-five/settings/history/{id}',
+                    'retry_snapshot' => 'POST /high-five/settings/retry-snapshot/{id}'
+                ],
+                'analysis' => [
+                    'am_performance' => 'GET /high-five/am-performance?snapshot_1_id={id1}&snapshot_2_id={id2}',
+                    'product_performance' => 'GET /high-five/product-performance?snapshot_1_id={id1}&snapshot_2_id={id2}'
+                ],
+                'reports' => [
+                    'download' => 'GET /high-five/report/download?snapshot_1_id={id1}&snapshot_2_id={id2}',
+                    'preview' => 'GET /high-five/report/preview?snapshot_1_id={id1}&snapshot_2_id={id2}'
+                ],
+                'deprecated' => [
+                    'store_dataset' => 'POST /high-five/dataset/store (kept for backward compatibility)',
+                    'get_datasets_by_divisi' => 'GET /high-five/dataset/by-divisi (kept for backward compatibility)',
+                    'delete_dataset' => 'DELETE /high-five/dataset/{id} (kept for backward compatibility)'
+                ]
+            ],
+            'workflow' => [
+                'step_1_settings' => 'Add dataset link in modal (from dashboard)',
+                'step_2_fetch' => 'System fetches data from Google Sheets → Stores as snapshot',
+                'step_3_user' => 'User selects 2 snapshots → Compares performance',
+                'step_4_report' => 'Generate PDF report with insights'
+            ],
+            'database_tables' => [
+                'dataset_links' => 'Stores Google Sheets links per divisi',
+                'spreadsheet_snapshots' => 'Stores fetched data with metadata'
+            ],
+            'features' => [
+                'modal_management' => 'Kelola Link Spreadsheet modal with CRUD',
+                'snapshot_management' => 'Historical data tracking',
+                'benchmarking' => 'Compare 2 snapshots (minggu ini vs minggu lalu)',
+                'am_level_analysis' => 'Performa per Account Manager dengan leaderboard',
+                'product_level_analysis' => 'Performa per produk per Corporate Customer',
+                'witel_summary' => 'Average per witel calculation',
+                'progress_bars' => 'Visual progress bars in tables',
+                'pdf_report' => 'Generate laporan profesional dalam format PDF',
+                'auto_date_calculation' => 'Smart last Friday detection',
+                'manual_date_override' => 'User can specify custom dates'
+            ],
+            'ui_improvements' => [
+                '4_cards_horizontal' => 'Analysis cards dalam 1 baris',
+                'tab_inactive_on_empty' => 'Tab tidak aktif saat belum load data',
+                'solid_white_alerts' => 'Alert dengan background solid white',
+                'red_table_headers' => 'Table header dengan gradient merah',
+                'progress_bar_cells' => 'Progress bar di setiap cell tabel',
+                'accordion_leaderboard' => 'Leaderboard collapsible',
+                'witel_filter' => 'Filter witel untuk product level',
+                'empty_customer_handling' => 'Default value untuk customer kosong'
+            ],
+            'required_columns_in_spreadsheet' => [
+                'CUSTOMER_NAME',
+                'WITEL',
+                'AM',
+                'PRODUCT',
+                'NILAI',
+                'Progress',
+                'Result',
+                'ID LOP MyTens',
+                '% Progress',
+                '% Results'
+            ],
+            'progress_mapping' => [
+                '1. Visit' => '25%',
+                '2. Input MyTens' => '50%',
+                '3. Presentasi Layanan' => '75%',
+                '4. Submit SPH' => '100%'
+            ],
+            'result_mapping' => [
+                '1. Lose' => '0%',
+                '2. Prospect' => '0%',
+                '3. Negotiation' => '50%',
+                '4. Win' => '100%'
+            ]
+        ]);
+    })->name('debug.high-five');
 }
-Route::get('/treg3', [CCWitelPerformController::class, 'index'])->name('witel-cc-index');
 
 // ===== FALLBACK =====
 Route::fallback(function () {
@@ -930,6 +1081,7 @@ Route::fallback(function () {
             'available_routes' => [
                 'dashboard' => route('dashboard'),
                 'leaderboard' => route('leaderboard'),
+                'high_five' => route('high-five.index'),
                 'health_check' => route('health-check')
             ]
         ], 404);
@@ -939,4 +1091,3 @@ Route::fallback(function () {
 });
 
 require __DIR__ . '/auth.php';
-

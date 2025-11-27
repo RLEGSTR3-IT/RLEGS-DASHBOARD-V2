@@ -29,6 +29,428 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Mobile Responsive Styles -->
+    <style>
+        /* Avatar styling */
+        .avatar-container {
+            width: 35px;
+            height: 35px;
+            overflow: hidden;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        /* ========== SIDEBAR MOBILE RESPONSIVE ========== */
+        @media (max-width: 1024px) {
+            /* CRITICAL: Override external CSS - Force hide sidebar by default */
+            body aside#sidebar,
+            body #sidebar,
+            aside#sidebar,
+            #sidebar {
+                position: fixed !important;
+                top: 0 !important;
+                left: -280px !important;
+                width: 280px !important;
+                height: 100vh !important;
+                z-index: 1040 !important;
+                transition: left 0.3s ease-in-out !important;
+                box-shadow: 2px 0 15px rgba(0,0,0,0.1) !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                display: block !important;
+                visibility: visible !important;
+                transform: translateX(0) !important;
+                margin-left: 0 !important;
+                background: white !important;
+                border-right: 1px solid #e9ecef !important;
+            }
+
+            /* CRITICAL: Show sidebar when active - ULTRA HIGH specificity */
+            body aside#sidebar.show,
+            body #sidebar.show,
+            aside#sidebar.show,
+            #sidebar.show {
+                left: 0 !important;
+                transform: translateX(0) !important;
+                margin-left: 0 !important;
+            }
+
+            /* OVERRIDE: Disable external sidebar toggle behavior */
+            body.toggle-sidebar aside#sidebar,
+            body.toggle-sidebar #sidebar {
+                left: -280px !important;
+            }
+
+            body.toggle-sidebar aside#sidebar.show,
+            body.toggle-sidebar #sidebar.show {
+                left: 0 !important;
+            }
+
+            /* Sidebar header styling */
+            #sidebar .d-flex,
+            aside#sidebar .d-flex {
+                padding: 15px !important;
+                display: flex !important;
+                align-items: center !important;
+                background: transparent !important;
+            }
+
+            #sidebar .sidebar-logo,
+            aside#sidebar .sidebar-logo {
+                margin-left: 10px !important;
+                display: block !important;
+                opacity: 1 !important;
+            }
+
+            #sidebar .sidebar-logo a,
+            aside#sidebar .sidebar-logo a {
+                font-weight: 600 !important;
+                font-size: 18px !important;
+                text-decoration: none !important;
+                display: block !important;
+            }
+
+            /* CRITICAL: Force logo button to not toggle external sidebar */
+            #sidebar #toggle-btn,
+            aside#sidebar #toggle-btn {
+                pointer-events: none !important;
+                cursor: default !important;
+            }
+
+            /* Sidebar navigation - FORCE SHOW TEXT */
+            #sidebar .sidebar-nav,
+            aside#sidebar .sidebar-nav {
+                list-style: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+
+            #sidebar .sidebar-item,
+            aside#sidebar .sidebar-item {
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            #sidebar .sidebar-link,
+            aside#sidebar .sidebar-link {
+                display: flex !important;
+                align-items: center !important;
+                padding: 15px 20px !important;
+                text-decoration: none !important;
+                transition: all 0.2s ease !important;
+                text-align: left !important;
+                justify-content: flex-start !important;
+                position: relative !important;
+                width: 100% !important;
+                border-radius: 8px !important;
+                margin: 4px 8px !important;
+                width: calc(100% - 16px) !important;
+            }
+
+            /* Hover effect sama kayak desktop */
+            #sidebar .sidebar-link:hover,
+            aside#sidebar .sidebar-link:hover {
+                background: rgba(220, 53, 69, 0.1) !important;
+                color: #dc3545 !important;
+                transform: translateX(5px) !important;
+            }
+
+            /* Active state */
+            #sidebar .sidebar-link.active,
+            aside#sidebar .sidebar-link.active {
+                background: rgba(220, 53, 69, 0.15) !important;
+                color: #dc3545 !important;
+                font-weight: 600 !important;
+            }
+
+            #sidebar .sidebar-link i,
+            aside#sidebar .sidebar-link i {
+                margin-right: 12px !important;
+                width: 20px !important;
+                text-align: center !important;
+                font-size: 18px !important;
+                flex-shrink: 0 !important;
+                display: inline-block !important;
+            }
+
+            /* ULTRA CRITICAL: FORCE SHOW TEXT - Override external CSS */
+            #sidebar .sidebar-link span,
+            aside#sidebar .sidebar-link span,
+            body #sidebar .sidebar-link span,
+            body aside#sidebar .sidebar-link span {
+                display: inline-block !important;
+                text-align: left !important;
+                flex-grow: 1 !important;
+                font-weight: 400 !important;
+                font-size: 15px !important;
+                white-space: nowrap !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                width: auto !important;
+                min-width: 150px !important;
+                max-width: none !important;
+                overflow: visible !important;
+                transition: none !important;
+                padding-left: 0 !important;
+                margin-left: 0 !important;
+            }
+
+            /* Force parent container to show overflow */
+            #sidebar .sidebar-link,
+            aside#sidebar .sidebar-link,
+            body #sidebar .sidebar-link,
+            body aside#sidebar .sidebar-link {
+                overflow: visible !important;
+            }
+
+            #sidebar .sidebar-nav,
+            aside#sidebar .sidebar-nav,
+            body #sidebar .sidebar-nav,
+            body aside#sidebar .sidebar-nav {
+                overflow: visible !important;
+            }
+
+            #sidebar .sidebar-item,
+            aside#sidebar .sidebar-item,
+            body #sidebar .sidebar-item,
+            body aside#sidebar .sidebar-item {
+                overflow: visible !important;
+            }
+
+            /* Footer styling */
+            #sidebar .sidebar-footer,
+            aside#sidebar .sidebar-footer {
+                margin-top: auto !important;
+            }
+
+            #sidebar .sidebar-footer .sidebar-link,
+            aside#sidebar .sidebar-footer .sidebar-link {
+                padding: 15px 20px !important;
+            }
+
+            #sidebar .sidebar-footer .sidebar-link span,
+            aside#sidebar .sidebar-footer .sidebar-link span {
+                display: inline-block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            /* Disable hover expand on mobile */
+            #sidebar:hover,
+            aside#sidebar:hover {
+                width: 280px !important;
+            }
+
+            /* Overlay for when sidebar is open */
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0,0,0,0.5);
+                z-index: 1035;
+                display: none;
+                backdrop-filter: blur(2px);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            /* Force wrapper to not accommodate sidebar */
+            .wrapper {
+                display: flex !important;
+                padding-left: 0 !important;
+                margin-left: 0 !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+                overflow-x: hidden !important;
+            }
+
+            /* Force main content to take full viewport width */
+            .main {
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+                min-width: 100vw !important;
+                flex: 1 !important;
+                position: relative !important;
+                padding-top: 10px !important;
+            }
+
+            /* Fixed navbar with hamburger */
+            .navbar {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+                z-index: 1030 !important;
+                height: 60px !important;
+                padding: 0 10px !important;
+                margin: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                background: white !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+                border-bottom: 1px solid #e9ecef !important;
+            }
+
+            /* Hamburger menu button */
+            .mobile-menu-btn {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 40px !important;
+                height: 40px !important;
+                border: none !important;
+                background: #dc3545 !important;
+                color: white !important;
+                border-radius: 8px !important;
+                font-size: 16px !important;
+                cursor: pointer !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .mobile-menu-btn:hover {
+                background: #bb2d3b !important;
+                transform: scale(1.05) !important;
+            }
+
+            .mobile-menu-btn:active {
+                background: #a02834 !important;
+            }
+
+            /* Navbar content */
+            .navbar .container-fluid {
+                padding: 0 !important;
+                width: 100% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+
+            /* Left side with hamburger */
+            .navbar-left {
+                display: flex !important;
+                align-items: center !important;
+                gap: 12px !important;
+            }
+
+            /* Right side with profile */
+            .navbar-right {
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            /* Profile dropdown mobile */
+            .nav-item.dropdown .nav-link {
+                padding: 6px 10px !important;
+                border-radius: 20px !important;
+                transition: background 0.2s ease !important;
+                color: #2d3748 !important;
+                text-decoration: none !important;
+            }
+
+            .nav-item.dropdown .nav-link:hover {
+                background: #f8f9fa !important;
+            }
+
+            /* Avatar container mobile */
+            .avatar-container {
+                width: 32px !important;
+                height: 32px !important;
+                margin-right: 6px !important;
+            }
+
+            /* Profile name */
+            .nav-link span {
+                font-size: 14px !important;
+                font-weight: 500 !important;
+                color: #2d3748 !important;
+            }
+
+            /* Dropdown menu mobile */
+            .dropdown-menu {
+                right: 0 !important;
+                left: auto !important;
+                margin-top: 8px !important;
+                border: none !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                border-radius: 8px !important;
+                min-width: 180px !important;
+            }
+
+            /* Brand/Logo mobile - simpler */
+            .navbar-brand {
+                font-size: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .navbar-brand img {
+                display: inline-block !important;
+            }
+
+            /* Body and HTML adjustments */
+            body {
+                overflow-x: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                padding-top: 60px !important;
+            }
+
+            html {
+                overflow-x: hidden !important;
+            }
+
+            /* Hide original navbar elements that might interfere */
+            .navbar-toggler {
+                display: none !important;
+            }
+
+            .navbar-collapse {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand {
+                font-size: 1.0rem !important;
+            }
+
+            #sidebar {
+                width: 260px !important;
+            }
+
+            .avatar-container {
+                width: 30px !important;
+                height: 30px !important;
+            }
+
+            .nav-link span {
+                font-size: 13px !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="wrapper">
@@ -39,7 +461,7 @@
                     <img src="{{ asset('img/twiyh.png') }}" class="avatar rounded-circle" alt="Logo" width="35" height="35" style="margin-left: 1px">
                 </button>
                 <div class="sidebar-logo">
-                    <a href="#">RLEGS</a>
+                    <a href="#">RLEGS TR3</a>
                 </div>
             </div>
             <ul class="sidebar-nav">
@@ -129,10 +551,52 @@
 
     <!-- Mobile Responsive JavaScript -->
     <script>
+        // Global flag to prevent multiple navbar creation
+        let mobileNavbarCreated = false;
+        let isTogglingInProgress = false;
+
+        // Set initial sidebar position for mobile
+        function initializeSidebarPosition() {
+            if (window.innerWidth <= 1024) {
+                const sidebar = document.querySelector('#sidebar');
+                if (sidebar) {
+                    // Remove any external classes that might interfere
+                    document.body.classList.remove('toggle-sidebar');
+                    sidebar.classList.remove('expanded', 'collapsed');
+
+                    // Force initial position
+                    sidebar.style.left = '-280px';
+                    sidebar.style.position = 'fixed';
+                    sidebar.style.zIndex = '1040';
+                    sidebar.style.width = '280px';
+                    sidebar.style.transition = 'left 0.3s ease-in-out';
+
+                    // Disable external toggle button on mobile
+                    const toggleBtn = sidebar.querySelector('#toggle-btn');
+                    if (toggleBtn) {
+                        toggleBtn.style.pointerEvents = 'none';
+                        toggleBtn.style.cursor = 'default';
+
+                        // Remove any external event listeners
+                        toggleBtn.onclick = null;
+                        const newToggleBtn = toggleBtn.cloneNode(true);
+                        toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+                    }
+
+                    console.log('Initial sidebar position set'); // Debug
+                }
+            }
+        }
+
         // Mobile responsive enhancements
         document.addEventListener('DOMContentLoaded', function() {
-            // Create mobile navbar structure
-            createMobileNavbar();
+            // Set initial position first
+            initializeSidebarPosition();
+
+            // Create mobile navbar structure ONCE
+            if (!mobileNavbarCreated) {
+                createMobileNavbar();
+            }
 
             // Initialize sidebar dropdowns
             initializeSidebarDropdowns();
@@ -146,7 +610,7 @@
 
             // Prevent horizontal scroll on mobile
             function preventHorizontalScroll() {
-                if (window.innerWidth <= 768) {
+                if (window.innerWidth <= 1024) {
                     document.body.style.overflowX = 'hidden';
                     const wrapper = document.querySelector('.wrapper');
                     if (wrapper) {
@@ -164,9 +628,11 @@
             preventHorizontalScroll();
             window.addEventListener('resize', function() {
                 preventHorizontalScroll();
-                if (window.innerWidth > 768) {
+                if (window.innerWidth > 1024) {
                     hideMobileElements();
-                } else {
+                    mobileNavbarCreated = false; // Reset flag
+                } else if (!mobileNavbarCreated) {
+                    // Only create if not already created
                     createMobileNavbar();
                     initializeSidebarDropdowns();
                 }
@@ -234,7 +700,11 @@
 
         // Create mobile navbar structure
         function createMobileNavbar() {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024 && !mobileNavbarCreated) {
+                console.log('Creating mobile navbar...'); // Debug
+
+                mobileNavbarCreated = true; // Set flag
+
                 let navbar = document.querySelector('.navbar');
 
                 if (!navbar) {
@@ -250,7 +720,7 @@
                     navbar.appendChild(containerFluid);
                 }
 
-                // Clear existing content
+                // Clear existing content only once
                 containerFluid.innerHTML = '';
 
                 // Create left side (hamburger + brand)
@@ -261,16 +731,22 @@
                 const hamburgerBtn = document.createElement('button');
                 hamburgerBtn.className = 'mobile-menu-btn';
                 hamburgerBtn.innerHTML = '<i class="fas fa-bars"></i>';
-                hamburgerBtn.onclick = toggleSidebar;
+                hamburgerBtn.setAttribute('type', 'button');
+                hamburgerBtn.setAttribute('aria-label', 'Toggle navigation');
 
-                // Brand
-                const brand = document.createElement('a');
-                brand.className = 'navbar-brand';
-                brand.href = '#';
-                brand.textContent = 'RLEGS Dashboard';
+                // IMPORTANT: Use addEventListener instead of onclick
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Hamburger clicked via addEventListener!'); // Debug
+                    toggleSidebar();
+                });
+
+                // Brand - NO LOGO, keep it clean
+                // Removed to avoid too many Telkom logos
 
                 navbarLeft.appendChild(hamburgerBtn);
-                navbarLeft.appendChild(brand);
+                // Logo removed - cleaner navbar
 
                 // Create right side (profile)
                 const navbarRight = document.createElement('div');
@@ -289,7 +765,14 @@
                     <ul class="dropdown-menu" aria-labelledby="profileDropdown">
                         <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ route('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}" class="m-0">
+                                @csrf
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </li>
                     </ul>
                 `;
 
@@ -301,6 +784,11 @@
 
                 // Create overlay for sidebar
                 createSidebarOverlay();
+
+                console.log('Mobile navbar created successfully!'); // Debug
+            } else if (window.innerWidth > 1024 && mobileNavbarCreated) {
+                // Reset flag when switching to desktop
+                mobileNavbarCreated = false;
             }
         }
 
@@ -310,36 +798,131 @@
             if (!overlay) {
                 overlay = document.createElement('div');
                 overlay.className = 'sidebar-overlay';
-                overlay.onclick = closeSidebar;
+                overlay.addEventListener('click', function(e) {
+                    console.log('Overlay clicked!'); // Debug
+                    closeSidebar();
+                });
                 document.body.appendChild(overlay);
+                console.log('Overlay created!'); // Debug
             }
         }
 
         // Toggle sidebar function
         function toggleSidebar() {
+            // Prevent multiple rapid clicks
+            if (isTogglingInProgress) {
+                console.log('Toggle already in progress, ignoring...'); // Debug
+                return;
+            }
+
+            isTogglingInProgress = true;
+
+            console.log('Toggle sidebar clicked!'); // Debug
             const sidebar = document.querySelector('#sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
 
+            console.log('Sidebar:', sidebar); // Debug
+            console.log('Overlay:', overlay); // Debug
+
             if (sidebar && overlay) {
                 const isOpen = sidebar.classList.contains('show');
+                console.log('Is open:', isOpen); // Debug
 
                 if (isOpen) {
                     closeSidebar();
                 } else {
                     openSidebar();
                 }
+            } else {
+                console.error('Sidebar or overlay not found!');
             }
+
+            // Reset flag after animation completes
+            setTimeout(() => {
+                isTogglingInProgress = false;
+            }, 350);
         }
 
         // Open sidebar
         function openSidebar() {
+            console.log('Opening sidebar...'); // Debug
             const sidebar = document.querySelector('#sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
 
             if (sidebar && overlay) {
+                // Add class
                 sidebar.classList.add('show');
                 overlay.classList.add('show');
+
+                // NUCLEAR: Use setProperty with 'important' priority
+                sidebar.style.setProperty('left', '0px', 'important');
+                sidebar.style.setProperty('position', 'fixed', 'important');
+                sidebar.style.setProperty('transform', 'translateX(0)', 'important');
+                sidebar.style.setProperty('z-index', '1040', 'important');
+                sidebar.style.setProperty('width', '280px', 'important');
+                sidebar.style.setProperty('overflow', 'visible', 'important');
+                sidebar.style.setProperty('overflow-x', 'visible', 'important');
+                sidebar.style.setProperty('overflow-y', 'auto', 'important');
+
+                // Force nav and items overflow
+                const sidebarNav = sidebar.querySelector('.sidebar-nav');
+                if (sidebarNav) {
+                    sidebarNav.style.setProperty('overflow', 'visible', 'important');
+                }
+
+                const sidebarItems = sidebar.querySelectorAll('.sidebar-item');
+                sidebarItems.forEach(item => {
+                    item.style.setProperty('overflow', 'visible', 'important');
+                    item.style.setProperty('margin', '0', 'important');
+                    item.style.setProperty('padding', '0', 'important');
+                });
+
+                // NUCLEAR: Force show all text spans with setProperty
+                const allSpans = sidebar.querySelectorAll('.sidebar-link span');
+                allSpans.forEach(span => {
+                    span.style.setProperty('display', 'inline-block', 'important');
+                    span.style.setProperty('opacity', '1', 'important');
+                    span.style.setProperty('visibility', 'visible', 'important');
+                    span.style.setProperty('width', 'auto', 'important');
+                    span.style.setProperty('min-width', '150px', 'important');
+                    span.style.setProperty('max-width', 'none', 'important');
+                    span.style.setProperty('overflow', 'visible', 'important');
+                    span.style.setProperty('white-space', 'nowrap', 'important');
+                    span.style.setProperty('transition', 'none', 'important');
+                    span.style.setProperty('margin-left', '12px', 'important');
+                    span.style.setProperty('padding-left', '0', 'important');
+                    span.style.setProperty('font-size', '15px', 'important');
+                    span.style.setProperty('font-weight', '400', 'important');
+                });
+
+                // Force all sidebar links overflow
+                const allLinks = sidebar.querySelectorAll('.sidebar-link');
+                allLinks.forEach(link => {
+                    link.style.setProperty('overflow', 'visible', 'important');
+                    link.style.setProperty('display', 'flex', 'important');
+                    link.style.setProperty('align-items', 'center', 'important');
+                });
+
+                // Force show logo text
+                const logoText = sidebar.querySelector('.sidebar-logo');
+                if (logoText) {
+                    logoText.style.setProperty('display', 'block', 'important');
+                    logoText.style.setProperty('opacity', '1', 'important');
+                    logoText.style.setProperty('visibility', 'visible', 'important');
+                }
+
                 document.body.style.overflow = 'hidden';
+
+                console.log('Sidebar opened, classes:', sidebar.className);
+                console.log('Text spans forced visible:', allSpans.length);
+
+                // Debug: Log actual HTML content
+                if (allSpans.length > 0) {
+                    const firstSpan = allSpans[0];
+                    console.log('First span HTML:', firstSpan.outerHTML);
+                    console.log('First span text content:', firstSpan.textContent);
+                    console.log('First span computed width:', window.getComputedStyle(firstSpan).width);
+                }
 
                 // Re-initialize dropdown functionality when sidebar opens
                 initializeSidebarDropdowns();
@@ -348,7 +931,7 @@
                 const sidebarLinks = sidebar.querySelectorAll('.sidebar-link:not(.has-dropdown)');
                 sidebarLinks.forEach(link => {
                     link.addEventListener('click', function() {
-                        if (window.innerWidth <= 768) {
+                        if (window.innerWidth <= 1024) {
                             setTimeout(() => {
                                 closeSidebar();
                             }, 200);
@@ -360,13 +943,20 @@
 
         // Close sidebar
         function closeSidebar() {
+            console.log('Closing sidebar...'); // Debug
             const sidebar = document.querySelector('#sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
 
             if (sidebar && overlay) {
                 sidebar.classList.remove('show');
                 overlay.classList.remove('show');
+
+                // Reset inline styles
+                sidebar.style.left = '-280px';
+
                 document.body.style.overflow = '';
+
+                console.log('Sidebar closed'); // Debug
             }
         }
 
@@ -387,7 +977,7 @@
 
         // Handle clicks outside sidebar to close it
         document.addEventListener('click', function(event) {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 const sidebar = document.querySelector('#sidebar');
                 const hamburger = document.querySelector('.mobile-menu-btn');
 
@@ -413,7 +1003,7 @@
         });
 
         function handleSwipe() {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 const swipeDistance = touchEndX - touchStartX;
                 const sidebar = document.querySelector('#sidebar');
 
@@ -432,7 +1022,7 @@
         // Adjust viewport for better mobile rendering
         function adjustViewportForMobile() {
             const viewport = document.querySelector('meta[name=viewport]');
-            if (viewport && window.innerWidth <= 768) {
+            if (viewport && window.innerWidth <= 1024) {
                 viewport.setAttribute('content',
                     'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
                 );
@@ -474,7 +1064,7 @@
             // Fix for mobile dropdown menu positioning
             document.addEventListener('show.bs.dropdown', function (e) {
                 const dropdown = e.target.closest('.dropdown');
-                if (dropdown && window.innerWidth <= 768) {
+                if (dropdown && window.innerWidth <= 1024) {
                     setTimeout(function() {
                         const menu = dropdown.querySelector('.dropdown-menu');
                         if (menu) {
@@ -496,75 +1086,19 @@
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {
                 // Recalculate layout after resize
-                if (window.innerWidth <= 768) {
+                if (window.innerWidth <= 1024 && !mobileNavbarCreated) {
                     createMobileNavbar();
                     initializeSidebarDropdowns();
-                } else {
+                } else if (window.innerWidth > 1024) {
                     hideMobileElements();
+                    mobileNavbarCreated = false;
                 }
             }, 150);
         });
 
-        // Focus management for sidebar
-        function manageFocus() {
-            const sidebar = document.querySelector('#sidebar');
-            if (!sidebar) return;
-
-            const firstFocusableElement = sidebar.querySelector('a, button');
-            const lastFocusableElement = sidebar.querySelector('.sidebar-footer .sidebar-link:last-child');
-
-            if (sidebar.classList.contains('show')) {
-                if (firstFocusableElement) {
-                    firstFocusableElement.focus();
-                }
-
-                // Trap focus within sidebar
-                sidebar.addEventListener('keydown', function(e) {
-                    if (e.key === 'Tab') {
-                        if (e.shiftKey) {
-                            if (document.activeElement === firstFocusableElement) {
-                                if (lastFocusableElement) {
-                                    lastFocusableElement.focus();
-                                    e.preventDefault();
-                                }
-                            }
-                        } else {
-                            if (document.activeElement === lastFocusableElement) {
-                                if (firstFocusableElement) {
-                                    firstFocusableElement.focus();
-                                    e.preventDefault();
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        // Smooth animations for sidebar transitions
-        function addSmoothTransitions() {
-            const sidebar = document.querySelector('#sidebar');
-            if (sidebar && window.innerWidth <= 768) {
-                sidebar.style.transition = 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-
-                // Add bounce effect when opening
-                sidebar.addEventListener('transitionend', function() {
-                    if (sidebar.classList.contains('show')) {
-                        sidebar.style.transform = 'translateX(2px)';
-                        setTimeout(() => {
-                            sidebar.style.transform = 'translateX(0)';
-                        }, 100);
-                    }
-                });
-            }
-        }
-
-        // Initialize smooth transitions
-        addSmoothTransitions();
-
         // Optimize for mobile performance
         function optimizeForMobile() {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 // Reduce animation complexity on mobile
                 document.body.classList.add('mobile-optimized');
 
@@ -584,42 +1118,17 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
                 initializeSidebarDropdowns();
-                createMobileNavbar();
-                addSmoothTransitions();
-                manageFocus();
+                if (!mobileNavbarCreated) {
+                    createMobileNavbar();
+                }
             });
         } else {
             initializeSidebarDropdowns();
-            createMobileNavbar();
-            addSmoothTransitions();
-            manageFocus();
+            if (!mobileNavbarCreated) {
+                createMobileNavbar();
+            }
         }
-
-        // Debug function for mobile testing
-        function debugMobile() {
-            console.log('Screen width:', window.innerWidth);
-            console.log('Sidebar visible:', document.querySelector('#sidebar')?.classList.contains('show'));
-            console.log('Mobile navbar created:', !!document.querySelector('.mobile-menu-btn'));
-            console.log('Dropdowns initialized:', document.querySelectorAll('#sidebar .sidebar-link.has-dropdown').length);
-        }
-
-        // Expose debug function globally for testing
-        window.debugMobile = debugMobile;
-
-        // Clean up function
-        function cleanup() {
-            // Remove event listeners when not needed
-            window.removeEventListener('resize', preventHorizontalScroll);
-            document.removeEventListener('touchstart', function() {});
-            document.removeEventListener('touchend', function() {});
-        }
-
-        // Service worker registration for offline functionality (optional)
-        if ('serviceWorker' in navigator && window.innerWidth <= 768) {
-            navigator.serviceWorker.register('/sw.js').catch(function(error) {
-                console.log('ServiceWorker registration failed:', error);
-            });
-        }
+        
     </script>
 
     @yield('scripts')

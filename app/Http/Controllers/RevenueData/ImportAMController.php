@@ -12,32 +12,28 @@ use Carbon\Carbon;
 /**
  * ImportAMController - Account Manager Import Handler
  *
- * FIXED VERSION - 2025-11-03
+ * FIXED VERSION - 2025-11-10
  *
- * ✅ FIXED: Revenue AM tidak perlu kolom YEAR & MONTH di CSV (ambil dari parameter)
+ * ✅ FIXED: Column mapping untuk Data AM - support NIK dan NIK_AM
+ * ✅ FIXED: Column mapping untuk Revenue AM - sudah benar (NIK_AM)
  * ✅ FIXED: Flexible column handling - abaikan kolom extra di CSV
- * ✅ FIXED: previewRevenueAM() signature: ($tempFilePath, $year, $month)
- * ✅ FIXED: executeRevenueAM() ambil year/month dari $request->year & $request->month
- * ✅ MAINTAINED: Semua fungsi existing (Data AM, template, helper methods)
+ * ✅ FIXED: Year & Month dari form input (bukan dari CSV)
  *
  * CHANGELOG:
- * - Line 439: Changed $requiredColumns from ['YEAR', 'MONTH', 'NIPNAS', 'NIK_AM', 'PROPORSI']
- *             to ['NIPNAS', 'NIK_AM', 'PROPORSI']
- * - Line 437: Added parameters $year, $month to previewRevenueAM()
- * - Line 461-462: Use $year, $month from parameters instead of CSV
- * - Line 530: Added parameters to executeRevenueAM() signature
- * - Line 532-544: Extract year/month from request, validate them
- * - Line 564: Changed $requiredColumns (same as preview)
- * - Line 598-599: Use $year, $month from request parameters
- * - ALL OTHER METHODS: Unchanged (Data AM, downloadTemplate, helpers)
+ * - Line 96-97: Changed requiredColumns untuk Data AM dari ['NIK', ...]
+ *               menjadi ['NIK_AM', ...] untuk match dengan Excel
+ * - Line 103: Updated getColumnIndices untuk support both 'NIK' and 'NIK_AM'
+ * - Line 117-118: Updated getColumnValue untuk ambil NIK_AM (bukan NIK)
+ * - Line 252: Updated requiredColumns untuk executeDataAM
+ * - Line 278: Updated getColumnValue untuk ambil NIK_AM
+ * - Revenue AM functions: Already correct (using NIK_AM)
  *
  * KEY FEATURES:
- * ✅ Data AM: Hanya validasi kolom WAJIB (NIK, NAMA AM, WITEL AM, DIVISI AM)
- * ✅ Revenue AM: Hanya validasi kolom WAJIB (NIPNAS, NIK_AM, PROPORSI)
+ * ✅ Data AM: Support NIK_AM column name (match dengan Excel screenshot)
+ * ✅ Revenue AM: Sudah benar menggunakan NIK_AM
+ * ✅ Backward compatible: Masih support kolom 'NIK' jika ada
+ * ✅ Flexible Columns: Kolom extra di CSV diabaikan
  * ✅ Year & Month: Dari form input (month picker), BUKAN dari CSV
- * ✅ Flexible Columns: Kolom extra di CSV diabaikan (tidak error)
- * ✅ Header matching: case-insensitive + trim
- * ✅ Preview + Execute pattern with duplicate detection
  */
 class ImportAMController extends Controller
 {
@@ -49,7 +45,8 @@ class ImportAMController extends Controller
         $templates = [
             'data-am' => [
                 'filename' => 'template_data_am.csv',
-                'headers' => ['NIK', 'NAMA AM', 'PROPORSI', 'WITEL AM', 'NIPNAS', 'DIVISI AM', 'DIVISI', 'TELDA'],
+                // ✅ FIXED: Changed NIK to NIK_AM to match Excel format
+                'headers' => ['NIK_AM', 'NAMA AM', 'PROPORSI', 'WITEL AM', 'NIPNAS', 'DIVISI AM', 'DIVISI', 'TELDA'],
                 'sample' => [
                     ['123456', 'John Doe', '1', 'BALI', '76590001', 'AM', 'DGS', ''],
                     ['789012', 'Jane Smith', '1', 'JATIM BARAT', '19669082', 'HOTDA', 'DSS', 'TELKOM DAERAH BOJONEGORO'],
@@ -93,31 +90,30 @@ class ImportAMController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Preview Data AM Import (unchanged)
+     * ✅ FIXED: Preview Data AM Import
+     * Changed to support NIK_AM column name (backward compatible with NIK)
      */
     public function previewDataAM($tempFilePath)
     {
         try {
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            // Kolom WAJIB (harus ada)
-            $requiredColumns = ['NIK', 'NAMA AM', 'WITEL AM', 'DIVISI AM'];
-
-            // Kolom OPSIONAL (boleh tidak ada)
+            // ✅ FIXED: Changed NIK to NIK_AM (primary), but still support NIK (fallback)
+            $requiredColumns = ['NIK_AM', 'NAMA AM', 'WITEL AM', 'DIVISI AM'];
             $optionalColumns = ['PROPORSI', 'NIPNAS', 'DIVISI', 'TELDA'];
 
             $headers = array_shift($csvData);
 
-            // Validasi kolom wajib
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
+            // ✅ FIXED: Flexible validation - support both NIK_AM and NIK
+            if (!$this->validateHeadersFlexible($headers, ['NIK_AM', 'NIK'], ['NAMA AM', 'WITEL AM', 'DIVISI AM'])) {
                 return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
+                    'message' => 'File tidak memiliki kolom yang diperlukan. Pastikan ada kolom: NIK_AM (atau NIK), NAMA AM, WITEL AM, DIVISI AM'
                 ];
             }
 
             // Get indices untuk kolom wajib + opsional
-            $allColumns = array_merge($requiredColumns, $optionalColumns);
+            $allColumns = array_merge($requiredColumns, $optionalColumns, ['NIK']); // Add NIK as fallback
             $columnIndices = $this->getColumnIndices($headers, $allColumns);
 
             $newCount = 0;
@@ -128,8 +124,9 @@ class ImportAMController extends Controller
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
 
-                // Ambil nilai kolom wajib
-                $nik = $this->getColumnValue($row, $columnIndices['NIK']);
+                // ✅ FIXED: Try NIK_AM first, then fallback to NIK
+                $nik = $this->getColumnValue($row, $columnIndices['NIK_AM'])
+                    ?? $this->getColumnValue($row, $columnIndices['NIK']);
                 $namaAM = $this->getColumnValue($row, $columnIndices['NAMA AM']);
                 $divisiAM = strtoupper(trim($this->getColumnValue($row, $columnIndices['DIVISI AM'])));
 
@@ -140,12 +137,12 @@ class ImportAMController extends Controller
                         'row_number' => $rowNumber,
                         'status' => 'error',
                         'data' => [
-                            'NIK' => $nik ?? 'N/A',
+                            'NIK_AM' => $nik ?? 'N/A',
                             'NAMA_AM' => $namaAM ?? 'N/A',
                             'ROLE' => $divisiAM ?? 'N/A',
                             'WITEL' => $this->getColumnValue($row, $columnIndices['WITEL AM']) ?? 'N/A'
                         ],
-                        'error' => 'NIK, NAMA AM, atau DIVISI AM kosong'
+                        'error' => 'NIK_AM, NAMA AM, atau DIVISI AM kosong'
                     ];
                     continue;
                 }
@@ -157,7 +154,7 @@ class ImportAMController extends Controller
                         'row_number' => $rowNumber,
                         'status' => 'error',
                         'data' => [
-                            'NIK' => $nik,
+                            'NIK_AM' => $nik,
                             'NAMA_AM' => $namaAM,
                             'ROLE' => $divisiAM,
                             'WITEL' => $this->getColumnValue($row, $columnIndices['WITEL AM']) ?? 'N/A'
@@ -178,7 +175,7 @@ class ImportAMController extends Controller
                         'row_number' => $rowNumber,
                         'status' => 'update',
                         'data' => [
-                            'NIK' => $nik,
+                            'NIK_AM' => $nik,
                             'NAMA_AM' => $namaAM,
                             'ROLE' => $divisiAM,
                             'WITEL' => $this->getColumnValue($row, $columnIndices['WITEL AM']) ?? 'N/A',
@@ -195,7 +192,7 @@ class ImportAMController extends Controller
                         'row_number' => $rowNumber,
                         'status' => 'new',
                         'data' => [
-                            'NIK' => $nik,
+                            'NIK_AM' => $nik,
                             'NAMA_AM' => $namaAM,
                             'ROLE' => $divisiAM,
                             'WITEL' => $this->getColumnValue($row, $columnIndices['WITEL AM']) ?? 'N/A',
@@ -228,7 +225,8 @@ class ImportAMController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Execute Data AM Import (unchanged)
+     * ✅ FIXED: Execute Data AM Import
+     * Changed to support NIK_AM column name (backward compatible with NIK)
      */
     public function executeDataAM($request)
     {
@@ -249,16 +247,18 @@ class ImportAMController extends Controller
 
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            $requiredColumns = ['NIK', 'NAMA AM', 'WITEL AM', 'DIVISI AM'];
-            $optionalColumns = ['PROPORSI', 'NIPNAS', 'DIVISI', 'TELDA'];
+            // ✅ FIXED: Changed NIK to NIK_AM (primary)
+            $requiredColumns = ['NIK_AM', 'NAMA AM', 'WITEL AM', 'DIVISI AM'];
+            $optionalColumns = ['PROPORSI', 'NIPNAS', 'DIVISI', 'TELDA', 'NIK']; // NIK as fallback
 
             $headers = array_shift($csvData);
 
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
+            // ✅ FIXED: Flexible validation
+            if (!$this->validateHeadersFlexible($headers, ['NIK_AM', 'NIK'], ['NAMA AM', 'WITEL AM', 'DIVISI AM'])) {
                 DB::rollBack();
                 return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
+                    'message' => 'File tidak memiliki kolom yang diperlukan. Pastikan ada kolom: NIK_AM (atau NIK), NAMA AM, WITEL AM, DIVISI AM'
                 ];
             }
 
@@ -278,7 +278,9 @@ class ImportAMController extends Controller
                 $rowNumber = $index + 2;
 
                 try {
-                    $nik = $this->getColumnValue($row, $columnIndices['NIK']);
+                    // ✅ FIXED: Try NIK_AM first, then fallback to NIK
+                    $nik = $this->getColumnValue($row, $columnIndices['NIK_AM'])
+                        ?? $this->getColumnValue($row, $columnIndices['NIK']);
                     $namaAM = $this->getColumnValue($row, $columnIndices['NAMA AM']);
                     $witelName = $this->getColumnValue($row, $columnIndices['WITEL AM']);
                     $divisiAM = strtoupper(trim($this->getColumnValue($row, $columnIndices['DIVISI AM'])));
@@ -289,7 +291,7 @@ class ImportAMController extends Controller
                     $teldaName = $this->getColumnValue($row, $columnIndices['TELDA']);
 
                     if (empty($nik) || empty($namaAM) || empty($witelName) || empty($divisiAM)) {
-                        throw new \Exception('NIK, NAMA AM, WITEL AM, atau DIVISI AM kosong');
+                        throw new \Exception('NIK_AM, NAMA AM, WITEL AM, atau DIVISI AM kosong');
                     }
 
                     // Validasi DIVISI AM
@@ -428,25 +430,17 @@ class ImportAMController extends Controller
 
     /**
      * ✅ FIXED: Preview Revenue AM Import
-     * Changed signature: Added $year and $month parameters
-     * Changed $requiredColumns: Removed 'YEAR' and 'MONTH'
-     *
-     * @param string $tempFilePath Path to temp CSV file
-     * @param int $year Year from form input (month picker)
-     * @param int $month Month from form input (month picker)
-     * @return array Preview result
+     * Already correct - using NIK_AM column
      */
     public function previewRevenueAM($tempFilePath, $year, $month)
     {
         try {
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            // ✅ FIXED: Only NIPNAS, NIK_AM, PROPORSI required from CSV
-            // Year & month from parameters (form input)
+            // ✅ Already correct: NIK_AM for Revenue AM
             $requiredColumns = ['NIPNAS', 'NIK_AM', 'PROPORSI'];
             $headers = array_shift($csvData);
 
-            // Flexible validation: Check if required columns exist, ignore extra columns
             if (!$this->validateHeaders($headers, $requiredColumns)) {
                 return [
                     'success' => false,
@@ -465,7 +459,6 @@ class ImportAMController extends Controller
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
 
-                // ✅ FIXED: Use year & month from parameters, not from CSV
                 $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                 $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
                 $proporsi = $this->getColumnValue($row, $columnIndices['PROPORSI']);
@@ -587,25 +580,17 @@ class ImportAMController extends Controller
 
     /**
      * ✅ FIXED: Execute Revenue AM Import
-     * Changed to extract year/month from $request->year and $request->month
-     * Changed $requiredColumns: Removed 'YEAR' and 'MONTH'
-     *
-     * @param Request|string $request Request object with temp_file, year, month
-     * @return array Execute result
+     * Already correct - using NIK_AM column
      */
     public function executeRevenueAM($request)
     {
         DB::beginTransaction();
 
         try {
-            // Extract temp file path from request
             $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
-
-            // ✅ FIXED: Extract year & month from request (from form, not CSV)
             $year = $request instanceof Request ? $request->input('year') : null;
             $month = $request instanceof Request ? $request->input('month') : null;
 
-            // Validate required parameters
             if (!$year || !$month) {
                 DB::rollBack();
                 return [
@@ -614,7 +599,6 @@ class ImportAMController extends Controller
                 ];
             }
 
-            // Validate temp file exists
             if (!$tempFilePath || !file_exists($tempFilePath)) {
                 DB::rollBack();
                 return [
@@ -624,8 +608,6 @@ class ImportAMController extends Controller
             }
 
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
-
-            // ✅ FIXED: Only NIPNAS, NIK_AM, PROPORSI required from CSV
             $requiredColumns = ['NIPNAS', 'NIK_AM', 'PROPORSI'];
             $headers = array_shift($csvData);
 
@@ -653,7 +635,6 @@ class ImportAMController extends Controller
                 $rowNumber = $index + 2;
 
                 try {
-                    // ✅ FIXED: Use year & month from request parameters
                     $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                     $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
                     $proporsi = floatval($this->getColumnValue($row, $columnIndices['PROPORSI']));
@@ -786,8 +767,11 @@ class ImportAMController extends Controller
         }
     }
 
-    // ==================== HELPER METHODS (MAINTAINED) ====================
+    // ==================== HELPER METHODS ====================
 
+    /**
+     * Parse CSV file from uploaded file object
+     */
     private function parseCsvFile($file)
     {
         $csvData = [];
@@ -801,6 +785,9 @@ class ImportAMController extends Controller
         return $csvData;
     }
 
+    /**
+     * Parse CSV file from file path
+     */
     private function parseCsvFileFromPath($filepath)
     {
         $csvData = [];
@@ -833,6 +820,50 @@ class ImportAMController extends Controller
         return true;
     }
 
+    /**
+     * ✅ NEW: Flexible header validation with alternative column names
+     * Support multiple possible column names (e.g., NIK_AM or NIK)
+     *
+     * @param array $headers CSV headers
+     * @param array $alternativeColumns Alternative column names (e.g., ['NIK_AM', 'NIK'])
+     * @param array $requiredColumns Other required columns
+     * @return bool
+     */
+    private function validateHeadersFlexible($headers, $alternativeColumns, $requiredColumns)
+    {
+        $cleanHeaders = array_map(function ($h) {
+            return strtoupper(trim($h));
+        }, $headers);
+
+        // Check if at least one alternative column exists
+        $hasAlternative = false;
+        foreach ($alternativeColumns as $altCol) {
+            $cleanAltCol = strtoupper(trim($altCol));
+            if (in_array($cleanAltCol, $cleanHeaders)) {
+                $hasAlternative = true;
+                break;
+            }
+        }
+
+        if (!$hasAlternative) {
+            return false;
+        }
+
+        // Check all other required columns
+        foreach ($requiredColumns as $column) {
+            $cleanColumn = strtoupper(trim($column));
+            if (!in_array($cleanColumn, $cleanHeaders)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get column indices from headers
+     * Returns array with column name as key and index as value
+     */
     private function getColumnIndices($headers, $columns)
     {
         $indices = [];
@@ -849,11 +880,22 @@ class ImportAMController extends Controller
         return $indices;
     }
 
+    /**
+     * Get column value from row by index
+     * Returns null if index is null or value doesn't exist
+     */
     private function getColumnValue($row, $index)
     {
         return $index !== null && isset($row[$index]) ? trim($row[$index]) : null;
     }
 
+    /**
+     * Generate error log CSV file
+     *
+     * @param array $failedRows Array of failed rows with error details
+     * @param string $type Type of import (data_am or revenue_am)
+     * @return string|null Public URL to error log file
+     */
     private function generateErrorLog($failedRows, $type)
     {
         if (empty($failedRows)) {
@@ -881,7 +923,7 @@ class ImportAMController extends Controller
                 ]);
             }
         } else {
-            fputcsv($handle, ['Baris', 'NIK', 'Error']);
+            fputcsv($handle, ['Baris', 'NIK_AM', 'Error']);
             foreach ($failedRows as $row) {
                 fputcsv($handle, [
                     $row['row_number'],
@@ -895,4 +937,3 @@ class ImportAMController extends Controller
         return asset('storage/import_logs/' . $filename);
     }
 }
-

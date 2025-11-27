@@ -4,6 +4,76 @@
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/overview.css') }}">
+<style>
+/* Responsive Table with Horizontal Scroll */
+.table-container {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    padding: 0;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+}
+
+.table-modern {
+    min-width: 1000px; /* Minimum width agar tidak terlalu sempit */
+    white-space: nowrap;
+}
+
+.table-modern th,
+.table-modern td {
+    white-space: nowrap;
+    padding: 12px 16px;
+}
+
+/* Styling untuk row tanpa revenue */
+.row-no-revenue {
+    background-color: #f8f9fa !important;
+    opacity: 0.75;
+}
+
+.row-no-revenue:hover {
+    opacity: 1;
+    background-color: #e9ecef !important;
+}
+
+/* Custom scrollbar untuk table container */
+.table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Scroll indicator shadow */
+.table-container {
+    background:
+        linear-gradient(to right, white 30%, rgba(255,255,255,0)),
+        linear-gradient(to right, rgba(255,255,255,0), white 70%) 0 100%,
+        radial-gradient(farthest-side at 0% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)),
+        radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)) 0 100%;
+    background-repeat: no-repeat;
+    background-color: white;
+    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+    background-attachment: local, local, scroll, scroll;
+}
+</style>
 @endsection
 
 @section('content')
@@ -14,7 +84,7 @@
             <div class="header-text">
                 <h1 class="header-title">Overview Data</h1>
                 <p class="header-subtitle">
-                    Monitoring Pendapatan RLEGS TREG 3
+                    Monitoring Pendapatan RLEGS
                     @if(isset($cardData['period_text']))
                         <span class="period-text">{{ $cardData['period_text'] }}</span>
                     @endif
@@ -83,13 +153,13 @@
         </div>
     @endif
 
-    <!-- 1. CARD GROUP SECTION - SIMPLIFIED -->
+    <!-- 1. CARD GROUP SECTION - DENGAN FORMAT SHORT -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="stats-card">
                 <div class="stats-title">Total Revenue</div>
-                <div class="stats-value">Rp {{ number_format($cardData['total_revenue'] ?? 0, 0, ',', '.') }}</div>
-                <div class="stats-period">Pendapatan yang dihasilkan RLEGS Regional III</div>
+                <div class="stats-value">Rp {{ $cardData['total_revenue_formatted'] ?? '0' }}</div>
+                <div class="stats-period">Keseluruhan Real Revenue RLEGS</div>
                 <div class="stats-icon icon-revenue">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -98,8 +168,8 @@
         <div class="col-md-4">
             <div class="stats-card">
                 <div class="stats-title">Target Revenue</div>
-                <div class="stats-value">Rp {{ number_format($cardData['total_target'] ?? 0, 0, ',', '.') }}</div>
-                <div class="stats-period">Target yang ditetapkan untuk semua Corporate Customer</div>
+                <div class="stats-value">Rp {{ $cardData['total_target_formatted'] ?? '0' }}</div>
+                <div class="stats-period">Keseluruhan Target Revenue RLEGS</div>
                 <div class="stats-icon icon-target">
                     <i class="fas fa-bullseye"></i>
                 </div>
@@ -109,7 +179,7 @@
             <div class="stats-card is-achievement">
                 <div class="stats-title">Achievement Rate</div>
                 <div class="stats-value">{{ number_format($cardData['achievement_rate'] ?? 0, 2) }}%<span class="achievement-indicator achievement-{{ $cardData['achievement_color'] ?? 'poor' }}"></span></div>
-                <div class="stats-period">Persentase pencapaian target pendapatan</div>
+                <div class="stats-period">Persentase Pencapaian Target Pendapatan</div>
                 <div class="stats-icon icon-achievement">
                     <i class="fas fa-medal"></i>
                 </div>
@@ -180,20 +250,32 @@
                             </thead>
                             <tbody>
                                 @foreach($performanceData['corporate_customer'] as $index => $customer)
-                                <tr class="clickable-row" data-url="{{ $customer->detail_url ?? route('corporate-customer.show', $customer->id) }}">
+                                <tr class="clickable-row {{ $customer->has_revenue ?? true ? '' : 'row-no-revenue' }}" data-url="{{ $customer->detail_url ?? route('corporate-customer.show', $customer->id) }}">
                                     <td><strong>{{ $index + 1 }}</strong></td>
                                     <td>
                                         <div>
-                                            <div class="fw-semibold">{{ $customer->nama ?? 'N/A' }}</div>
+                                            <div class="fw-semibold">{{ $customer->nama ?? '-' }}</div>
                                             @if(!empty($customer->nipnas))
                                                 <small class="text-muted">{{ $customer->nipnas }}</small>
                                             @endif
                                         </div>
                                     </td>
-                                    <td>{{ $customer->divisi_nama ?? 'N/A' }}</td>
-                                    <td>{{ $customer->segment_nama ?? 'N/A' }}</td>
-                                    <td class="text-end">Rp {{ number_format($customer->total_revenue ?? 0, 0, ',', '.') }}</td>
-                                    <td class="text-end">Rp {{ number_format($customer->total_target ?? 0, 0, ',', '.') }}</td>
+                                    <td>{{ ($customer->divisi_nama && $customer->divisi_nama !== 'N/A') ? $customer->divisi_nama : '-' }}</td>
+                                    <td>{{ ($customer->segment_nama && $customer->segment_nama !== 'N/A') ? $customer->segment_nama : '-' }}</td>
+                                    <td class="text-end">
+                                        @if(($customer->total_revenue ?? 0) > 0)
+                                            Rp {{ number_format($customer->total_revenue, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if(($customer->total_target ?? 0) > 0)
+                                            Rp {{ number_format($customer->total_target, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td class="text-end">
                                         @php
                                             $rate = $customer->achievement_rate ?? 0;
@@ -203,16 +285,18 @@
                                             } elseif ($rate >= 80) {
                                                 $color = 'warning';
                                                 $tooltip = 'Good: Mendekati target, perlu sedikit peningkatan';
-                                            } else {
+                                            } elseif ($rate > 0) {
                                                 $color = 'danger';
                                                 $tooltip = 'Poor: Perlu peningkatan signifikan';
+                                            } else {
+                                                $color = 'secondary';
+                                                $tooltip = 'Belum ada data revenue';
                                             }
                                         @endphp
                                         <span class="status-badge bg-{{ $color }}-soft" data-tooltip="{{ $tooltip }}">
-                                            {{ number_format($rate, 2) }}%
+                                            {{ $rate > 0 ? number_format($rate, 2) . '%' : '-' }}
                                         </span>
                                     </td>
-
                                     <td>
                                         <a href="{{ $customer->detail_url ?? route('corporate-customer.show', $customer->id) }}"
                                            class="btn btn-sm btn-primary">Detail</a>
@@ -232,7 +316,7 @@
                 </div>
             </div>
 
-            <!-- Account Manager Tab - SERVER-SIDE DATA -->
+            <!-- Account Manager Tab - SERVER-SIDE DATA WITH TOP 10 PRIORITY -->
             <div class="tab-pane" id="content-account-manager" role="tabpanel">
                 <div class="table-container">
                     @if(isset($performanceData['account_manager']) && $performanceData['account_manager']->count() > 0)
@@ -252,7 +336,7 @@
                             </thead>
                             <tbody>
                                 @foreach($performanceData['account_manager'] as $index => $am)
-                                <tr class="clickable-row" data-url="{{ $am->detail_url ?? route('account-manager.show', $am->id) }}">
+                                <tr class="clickable-row {{ $am->has_revenue ?? true ? '' : 'row-no-revenue' }}" data-url="{{ $am->detail_url ?? route('account-manager.show', $am->id) }}">
                                     <td><strong>{{ $index + 1 }}</strong></td>
                                     <td>
                                         <div class="d-flex align-items-center">
@@ -260,39 +344,32 @@
                                             <span class="ms-2 clickable-name">{{ $am->nama }}</span>
                                         </div>
                                     </td>
-                                    <td>{{ $am->witel->nama ?? 'N/A' }}</td>
+                                    <td>{{ $am->witel->nama ?? '-' }}</td>
                                     <td>
                                         <div class="divisi-pills">
-                                            @if(!empty($am->divisi_list) && $am->divisi_list !== 'N/A')
+                                            @if(!empty($am->divisi_list) && $am->divisi_list !== 'N/A' && $am->divisi_list !== '-')
                                             @php
-                                                // Pecah robust: boleh ada/tiada spasi setelah koma
                                                 $divs = preg_split('/\s*,\s*/', $am->divisi_list, -1, PREG_SPLIT_NO_EMPTY);
-
-                                                // Peta alias -> kelas CSS yang tersedia
                                                 $alias = [
                                                 'government-service' => 'dgs',
                                                 'govt-service'       => 'dgs',
                                                 'gs'                 => 'dgs',
                                                 'dgs'                => 'dgs',
-
                                                 'digital-platform-service' => 'dps',
                                                 'platform-service'         => 'dps',
                                                 'dps'                      => 'dps',
-
                                                 'digital-solution-service' => 'dss',
                                                 'solution-service'         => 'dss',
                                                 'dss'                      => 'dss',
-
                                                 'digital-enterprise-service' => 'des',
                                                 'enterprise-service'         => 'des',
                                                 'des'                        => 'des',
                                                 ];
                                             @endphp
-
                                             @foreach($divs as $divisi)
                                                 @php
-                                                $key = \Illuminate\Support\Str::slug($divisi);   // "Government Service" -> "government-service"
-                                                $code = $alias[$key] ?? 'all';                   // fallback "all"
+                                                $key = \Illuminate\Support\Str::slug($divisi);
+                                                $code = $alias[$key] ?? 'all';
                                                 @endphp
                                                 <span class="divisi-pill badge-{{ $code }}">{{ $divisi }}</span>
                                             @endforeach
@@ -301,12 +378,35 @@
                                             @endif
                                         </div>
                                     </td>
-
-                                    <td class="text-end">Rp {{ number_format($am->total_revenue ?? 0, 0, ',', '.') }}</td>
-                                    <td class="text-end">Rp {{ number_format($am->total_target ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-end">
-                                        <span class="status-badge bg-{{ $am->achievement_color ?? 'secondary' }}-soft">
-                                            {{ number_format($am->achievement_rate ?? 0, 2) }}%
+                                        @if(($am->total_revenue ?? 0) > 0)
+                                            Rp {{ number_format($am->total_revenue, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if(($am->total_target ?? 0) > 0)
+                                            Rp {{ number_format($am->total_target, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @php
+                                            $rate = $am->achievement_rate ?? 0;
+                                            if ($rate >= 100) {
+                                                $color = 'success';
+                                            } elseif ($rate >= 80) {
+                                                $color = 'warning';
+                                            } elseif ($rate > 0) {
+                                                $color = 'danger';
+                                            } else {
+                                                $color = 'secondary';
+                                            }
+                                        @endphp
+                                        <span class="status-badge bg-{{ $color }}-soft">
+                                            {{ $rate > 0 ? number_format($rate, 2) . '%' : '-' }}
                                         </span>
                                     </td>
                                     <td>
@@ -328,12 +428,12 @@
                 </div>
             </div>
 
-            <!-- Witel Tab - AJAX LOADED -->
+            <!-- Witel Tab - AJAX LOADED (ALL WITELS) -->
             <div class="tab-pane" id="content-witel" role="tabpanel">
                 <!-- Content loaded via AJAX -->
             </div>
 
-            <!-- Segment Tab - AJAX LOADED -->
+            <!-- Segment Tab - AJAX LOADED (ALL SEGMENTS) -->
             <div class="tab-pane" id="content-segment" role="tabpanel">
                 <!-- Content loaded via AJAX -->
             </div>
@@ -342,7 +442,7 @@
 
     <!-- 3. VISUALISASI PENDAPATAN BULANAN -->
     <div class="row mt-4 equal-cards">
-        <!-- Line Chart Total Revenue Bulanan -->
+        <!-- Line Chart Total Revenue Bulanan - DENGAN FORMAT LABEL Y-AXIS -->
         <div class="col-md-6">
             <div class="dashboard-card">
                 <div class="card-header">
@@ -355,7 +455,6 @@
                     <div class="chart-container">
                         <canvas id="monthlyRevenueChart"></canvas>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -446,6 +545,8 @@
 
 @section('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<!-- Custom Select Enhancement -->
 <script>
 (function(){
   function enhanceSelect(sel){
@@ -458,7 +559,6 @@
     menu.className = 'select-menu';
     btn.textContent = sel.options[sel.selectedIndex]?.text || sel.options[0]?.text || 'Pilih';
 
-    // buat item
     [...sel.options].forEach((opt,i)=>{
       const a = document.createElement('button');
       a.type='button';
@@ -499,21 +599,23 @@
 })();
 </script>
 
+<!-- Monthly Revenue Chart - DENGAN FORMAT Y-AXIS -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('monthlyRevenueChart');
   if (!el) return;
 
-  // --- data dari controller + fallback tabel
+  // Data dari controller (sudah dalam format juta)
   let labels = @json($monthlyLabels ?? []);
-  let real   = (@json($monthlyReal ?? [])   || []).map(v => Number(v) || 0);
-  let target = (@json($monthlyTarget ?? []) || []).map(v => Number(v) || 0);
+  let real   = @json($monthlyReal ?? []);
+  let target = @json($monthlyTarget ?? []);
 
+  // Fallback ke tabel jika tidak ada data dari controller
   const fallback = @json($revenueTable ?? []);
   if ((!labels || !labels.length) && Array.isArray(fallback) && fallback.length) {
     labels = fallback.map(r => r.bulan ?? '');
-    real   = fallback.map(r => Number(r.realisasi ?? 0));
-    target = fallback.map(r => Number(r.target ?? 0));
+    real   = fallback.map(r => Number(r.realisasi ?? 0) / 1000000);
+    target = fallback.map(r => Number(r.target ?? 0) / 1000000);
   }
 
   const n = Math.min(labels.length, real.length, target.length);
@@ -527,9 +629,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (window._monthlyRevenueChart) window._monthlyRevenueChart.destroy();
 
-  // Nilai untuk membuat bar lebih ramping
-  const CAT = 0.50;   // lebar kelompok (diperkecil agar bar lebih ramping)
-  const BAR = 0.85;   // lebar masing-masing bar dalam kelompok
+  const CAT = 0.50;
+  const BAR = 0.85;
 
   window._monthlyRevenueChart = new Chart(el.getContext('2d'), {
     type: 'bar',
@@ -547,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
           borderRadius: 6,
           categoryPercentage: CAT,
           barPercentage: BAR,
-          order: 2  // bar di belakang
+          order: 2
         },
         {
           label: 'Target Revenue',
@@ -560,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
           borderRadius: 6,
           categoryPercentage: CAT,
           barPercentage: BAR,
-          order: 2  // bar di belakang
+          order: 2
         },
         {
           label: 'Achievement (%)',
@@ -578,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
           tension: 0,
           fill: false,
           spanGaps: false,
-          order: 1  // garis di depan (angka lebih kecil = lebih depan)
+          order: 1
         }
       ]
     },
@@ -594,8 +695,19 @@ document.addEventListener('DOMContentLoaded', () => {
         tooltip: {
           callbacks: {
             label(ctx) {
-              if (ctx.dataset.yAxisID === 'y1') return ` ${ctx.dataset.label}: ${ctx.formattedValue}%`;
-              return ` ${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString('id-ID')}`;
+              if (ctx.dataset.yAxisID === 'y1') {
+                return ` ${ctx.dataset.label}: ${ctx.formattedValue}%`;
+              }
+              const val = Number(ctx.raw || 0);
+              let formatted;
+              if (val >= 1000000) {
+                formatted = (val / 1000000).toFixed(2) + ' Triliun';
+              } else if (val >= 1000) {
+                formatted = (val / 1000).toFixed(2) + ' Miliar';
+              } else {
+                formatted = val.toFixed(2) + ' Juta';
+              }
+              return ` ${ctx.dataset.label}: ${formatted}`;
             }
           }
         }
@@ -612,10 +724,25 @@ document.addEventListener('DOMContentLoaded', () => {
           grid: { color: 'rgba(0,0,0,0.05)' },
           ticks: {
             color: '#6b7280',
-            callback: v => v.toLocaleString('id-ID'),
+            callback: function(value) {
+              if (value >= 1000000) {
+                return (value / 1000000).toFixed(1) + ' Triliun';
+              } else if (value >= 1000) {
+                return (value / 1000).toFixed(1) + ' Miliar';
+              } else if (value >= 1) {
+                return value.toFixed(1) + ' Juta';
+              } else {
+                return value.toFixed(2);
+              }
+            },
             font: { size: 11 }
           },
-          title: { display: true, text: 'Revenue (Juta Rp)', color: '#6b7280', font: { size: 12 } }
+          title: {
+            display: true,
+            text: 'Revenue (Juta Rp)',
+            color: '#6b7280',
+            font: { size: 12 }
+          }
         },
         y1: {
           position: 'right',
@@ -627,7 +754,12 @@ document.addEventListener('DOMContentLoaded', () => {
             callback: v => `${v}%`,
             font: { size: 11 }
           },
-          title: { display: true, text: 'Achievement (%)', color: '#6b7280', font: { size: 12 } }
+          title: {
+            display: true,
+            text: 'Achievement (%)',
+            color: '#6b7280',
+            font: { size: 12 }
+          }
         }
       },
       layout: { padding: { top: 10, right: 12, left: 4, bottom: 0 } }
@@ -636,76 +768,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<!-- AM Distribution Chart (Doughnut) -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('amDistributionChart');
   if (!el) return;
 
-  // 1) Data raw dari controller (boleh berbagai bentuk)
-  const RAW = @json($amPerformanceDistribution ?? null);
-
-  // 2) Fallback sumber data dari list AM (server-side table)
-  const AM_ROWS = @json($performanceData['account_manager'] ?? []);
-
-  // --- Normalizer agar paham banyak bentuk ---
-  function normalizeFromRaw(raw){
-    const order = ['Hijau','Oranye','Merah'];
-    const aliases = {
-      hijau:'Hijau', green:'Hijau',
-      oranye:'Oranye', orange:'Oranye', kuning:'Oranye', yellow:'Oranye',
-      merah:'Merah', red:'Merah'
-    };
-    const bucket = {Hijau:0, Oranye:0, Merah:0};
-
-    const pickNum = (o)=> Number(
-      o?.count ?? o?.jumlah ?? o?.total ?? o?.qty ?? o?.value ?? o?.nilai ?? 0
-    ) || 0;
-
-    if (Array.isArray(raw)) {
-      if (raw.length === 3 && raw.every(v => !isNaN(Number(v)))) {
-        order.forEach((k,i)=> bucket[k] = Number(raw[i])||0);
-      } else {
-        raw.forEach(it=>{
-          const key = String(it?.status ?? it?.bucket ?? it?.name ?? '').toLowerCase();
-          const norm = aliases[key];
-          if (norm) bucket[norm] += pickNum(it);
-        });
-      }
-    } else if (raw && typeof raw === 'object') {
-      Object.entries(raw).forEach(([k,v])=>{
-        const key = String(k).toLowerCase();
-        const norm = aliases[key] || (['hijau','oranye','merah'].includes(key) ? (key[0].toUpperCase()+key.slice(1)) : null);
-        if (norm) bucket[norm] += Number(v)||0;
-      });
-    }
-
-    return bucket;
-  }
-
-  function normalizeFromAM(rows){
-    const bucket = {Hijau:0, Oranye:0, Merah:0};
-    (rows || []).forEach(r=>{
-      const rate = Number(r?.achievement_rate ?? r?.achievement ?? r?.rate ?? 0);
-      if (isNaN(rate)) return;
-      if (rate >= 100) bucket.Hijau += 1;
-      else if (rate >= 80) bucket.Oranye += 1;
-      else bucket.Merah += 1;
-    });
-    return bucket;
-  }
-
-  // 3) Gabungkan kedua sumber
-  let bucket = normalizeFromRaw(RAW);
-  const totalRaw = (bucket.Hijau||0)+(bucket.Oranye||0)+(bucket.Merah||0);
-
-  if (!totalRaw) {
-    bucket = normalizeFromAM(AM_ROWS);
-  }
+  const distribution = @json($amPerformanceDistribution ?? ['Hijau' => 0, 'Oranye' => 0, 'Merah' => 0]);
 
   const rows = [
-    { status:'Hijau',  count: bucket.Hijau||0,  color:'#10b981', label:'≥ 100%' },
-    { status:'Oranye', count: bucket.Oranye||0, color:'#f59e0b', label:'80–99%' },
-    { status:'Merah',  count: bucket.Merah||0,  color:'#ef4444', label:'< 80%'  },
+    { status:'Hijau',  count: distribution.Hijau || 0,  color:'#10b981', label:'≥ 100%' },
+    { status:'Oranye', count: distribution.Oranye || 0, color:'#f59e0b', label:'80–99%' },
+    { status:'Merah',  count: distribution.Merah || 0,  color:'#ef4444', label:'< 80%'  },
   ];
 
   const labels = rows.map(r=>r.status);
@@ -718,14 +792,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const centerTextPlugin = {
     id:'centerText',
     beforeDraw(chart){
-      const {ctx, chartArea} = chart; if(!chartArea) return;
+      const {ctx, chartArea} = chart;
+      if(!chartArea) return;
       const {width, top, height} = chartArea;
       const cx = width/2, cy = top + height/2 - 6;
       ctx.save();
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillStyle='#111827'; ctx.font='700 30px Poppins,system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillStyle='#111827';
+      ctx.font='700 30px Poppins,system-ui,sans-serif';
       ctx.fillText(String(total), cx, cy);
-      ctx.fillStyle='#6b7280'; ctx.font='500 12px Poppins,system-ui,sans-serif';
+      ctx.fillStyle='#6b7280';
+      ctx.font='500 12px Poppins,system-ui,sans-serif';
       ctx.fillText('Total AM', cx, cy+20);
       ctx.restore();
     }
@@ -733,69 +811,80 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window._amDistributionChart = new Chart(el.getContext('2d'), {
     type:'doughnut',
-    data:{ labels, datasets:[{
-      data, backgroundColor:colors, borderColor:'#fff', borderWidth:4,
-      hoverOffset:10, hoverBorderWidth:4
-    }]},
+    data:{
+      labels,
+      datasets:[{
+        data,
+        backgroundColor:colors,
+        borderColor:'#fff',
+        borderWidth:4,
+        hoverOffset:10,
+        hoverBorderWidth:4
+      }]
+    },
     options:{
-      responsive:true, maintainAspectRatio:false, cutout:'70%',
-      plugins:{ legend:{display:false}, tooltip:{
-        backgroundColor:'rgba(17,24,39,.92)', padding:12,
-        callbacks:{
-          title:(items)=> `${rows[items[0].dataIndex].status} • ${rows[items[0].dataIndex].label}`,
-          label:(ctx)=> {
-            const cnt = ctx.parsed||0;
-            const pct = total ? (cnt/total*100).toFixed(1) : '0.0';
-            return ` ${cnt} AM (${pct}%)`;
+      responsive:true,
+      maintainAspectRatio:false,
+      cutout:'70%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(17,24,39,.92)',
+          padding:12,
+          callbacks:{
+            title:(items)=> `${rows[items[0].dataIndex].status} • ${rows[items[0].dataIndex].label}`,
+            label:(ctx)=> {
+              const cnt = ctx.parsed||0;
+              const pct = total ? (cnt/total*100).toFixed(1) : '0.0';
+              return ` ${cnt} AM (${pct}%)`;
+            }
           }
         }
-      }}
+      }
     },
     plugins:[centerTextPlugin]
   });
 
-  // (opsional) legend custom di elemen #amDistributionLegend kalau kamu punya
   const legendEl = document.getElementById('amDistributionLegend');
-if (legendEl) {
-  const toRGBA = (hex, a=0.15) => {
-    const m = String(hex).replace('#','');
-    const [r,g,b] = m.length===3
-      ? m.split('').map(x=>parseInt(x+x,16))
-      : [m.slice(0,2),m.slice(2,4),m.slice(4,6)].map(x=>parseInt(x,16));
-    return `rgba(${r},${g},${b},${a})`;
-  };
+  if (legendEl) {
+    const toRGBA = (hex, a=0.15) => {
+      const m = String(hex).replace('#','');
+      const [r,g,b] = m.length===3
+        ? m.split('').map(x=>parseInt(x+x,16))
+        : [m.slice(0,2),m.slice(2,4),m.slice(4,6)].map(x=>parseInt(x,16));
+      return `rgba(${r},${g},${b},${a})`;
+    };
 
-  legendEl.classList.add('am-legend-grid'); // grid wrapper
-  legendEl.innerHTML = rows.map(r => {
-    const pct = total ? (r.count/total*100).toFixed(1) : '0.0';
-    return `
-      <div class="am-legend-card2">
-        <div class="am-legend-head">
-          <span class="dot" style="background:${r.color}"></span>
-          <span class="label">${r.status}</span>
-          <span class="range">• ${r.label}</span>
-        </div>
-        <div class="am-legend-body">
-          <div class="count"><strong>${r.count}</strong> AM</div>
-          <div class="pct-chip" style="background:${toRGBA(r.color)}; color:${r.color}">
-            ${pct}%
+    legendEl.classList.add('am-legend-grid');
+    legendEl.innerHTML = rows.map(r => {
+      const pct = total ? (r.count/total*100).toFixed(1) : '0.0';
+      return `
+        <div class="am-legend-card2">
+          <div class="am-legend-head">
+            <span class="dot" style="background:${r.color}"></span>
+            <span class="label">${r.status}</span>
+            <span class="range">• ${r.label}</span>
+          </div>
+          <div class="am-legend-body">
+            <div class="count"><strong>${r.count}</strong> AM</div>
+            <div class="pct-chip" style="background:${toRGBA(r.color)}; color:${r.color}">
+              ${pct}%
+            </div>
           </div>
         </div>
-      </div>
-    `;
-  }).join('');
-}
+      `;
+    }).join('');
+  }
 });
 </script>
 
-
+<!-- Main Dashboard JavaScript -->
 <script>
 $(document).ready(function() {
-    console.log('Dashboard RLEGS V2 - Working Version with All Tabs');
-
+    console.log('Dashboard RLEGS V2 - FINAL FIXED VERSION with N/A→- & Responsive Table');
 
     // =====================================
-    // FILTER HANDLING - WORKING VERSION
+    // FILTER HANDLING
     // =====================================
     function applyFilters() {
         const filters = {
@@ -826,21 +915,19 @@ $(document).ready(function() {
     });
 
     // =====================================
-    // TAB SWITCHING - FIXED VERSION
+    // TAB SWITCHING
     // =====================================
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
         const tabType = $(e.target).attr('data-tab');
         console.log('Tab switched to:', tabType);
 
-        // Load AJAX data only for Witel and Segment tabs
-        // Corporate Customer and Account Manager use server-side data
         if (tabType === 'witel' || tabType === 'segment') {
             loadTabData(tabType);
         }
     });
 
     // =====================================
-    // AJAX LOAD TAB DATA - ONLY FOR WITEL & SEGMENT
+    // AJAX LOAD TAB DATA - WITEL & SEGMENT
     // =====================================
     function loadTabData(tabType) {
         console.log('Loading AJAX data for:', tabType);
@@ -855,7 +942,6 @@ $(document).ready(function() {
 
         const tabContent = $(`#content-${tabType}`);
 
-        // Show loading state
         tabContent.html(`
             <div class="table-container">
                 <div class="text-center py-5">
@@ -953,14 +1039,16 @@ $(document).ready(function() {
 
         switch(tabType) {
             case 'witel':
+                const witelRevenue = parseFloat(item.total_revenue) || 0;
+                const witelTarget = parseFloat(item.total_target) || 0;
                 row += `
-                    <td>${item.nama || 'N/A'}</td>
+                    <td>${item.nama || '-'}</td>
                     <td class="text-center">${formatNumber(item.total_customers || 0)}</td>
-                    <td class="text-end">Rp ${formatCurrency(item.total_revenue || 0)}</td>
-                    <td class="text-end">Rp ${formatCurrency(item.total_target || 0)}</td>
+                    <td class="text-end">${witelRevenue > 0 ? 'Rp ' + formatCurrency(witelRevenue) : '<span class="text-muted">-</span>'}</td>
+                    <td class="text-end">${witelTarget > 0 ? 'Rp ' + formatCurrency(witelTarget) : '<span class="text-muted">-</span>'}</td>
                     <td class="text-end">
                         <span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">
-                            ${(parseFloat(item.achievement_rate) || 0).toFixed(2)}%
+                            ${(parseFloat(item.achievement_rate) || 0) > 0 ? (parseFloat(item.achievement_rate) || 0).toFixed(2) + '%' : '-'}
                         </span>
                     </td>
                     <td><a href="${detailUrl}" class="btn btn-sm btn-primary">Detail</a></td>
@@ -968,20 +1056,21 @@ $(document).ready(function() {
                 break;
 
             case 'segment':
-            row += `
-                <td>${item.lsegment_ho || item.nama || 'N/A'}</td>
-                <td>${(item.divisi && item.divisi.nama) || item.divisi_nama || 'N/A'}</td>
-                <td class="text-center">${formatNumber(item.total_customers || 0)}</td>
-                <td class="text-end">Rp ${formatCurrency(item.total_revenue || 0)}</td>
-                <td class="text-end">Rp ${formatCurrency(item.total_target || 0)}</td>
-                <td class="text-end">
-                <span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">
-                    ${(parseFloat(item.achievement_rate) || 0).toFixed(2)}%
-                </span>
-                </td>
-            `;
-            break;
-
+                const segRevenue = parseFloat(item.total_revenue) || 0;
+                const segTarget = parseFloat(item.total_target) || 0;
+                row += `
+                    <td>${item.lsegment_ho || item.nama || '-'}</td>
+                    <td>${(item.divisi && item.divisi.nama) || item.divisi_nama || '-'}</td>
+                    <td class="text-center">${formatNumber(item.total_customers || 0)}</td>
+                    <td class="text-end">${segRevenue > 0 ? 'Rp ' + formatCurrency(segRevenue) : '<span class="text-muted">-</span>'}</td>
+                    <td class="text-end">${segTarget > 0 ? 'Rp ' + formatCurrency(segTarget) : '<span class="text-muted">-</span>'}</td>
+                    <td class="text-end">
+                        <span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">
+                            ${(parseFloat(item.achievement_rate) || 0) > 0 ? (parseFloat(item.achievement_rate) || 0).toFixed(2) + '%' : '-'}
+                        </span>
+                    </td>
+                `;
+                break;
 
             default:
                 console.error('Unknown tab type:', tabType);
@@ -1068,7 +1157,7 @@ $(document).ready(function() {
     }
 
     // =====================================
-    // CLICKABLE ROWS AND INTERACTIONS
+    // CLICKABLE ROWS
     // =====================================
     function bindClickableRows() {
         $('.clickable-row').off('click.dashboard').off('mouseenter.dashboard').off('mouseleave.dashboard');
@@ -1096,7 +1185,6 @@ $(document).ready(function() {
         console.log('Clickable rows bound:', $('.clickable-row').length, 'rows');
     }
 
-    // Initial bind for existing rows (Corporate Customer and Account Manager)
     bindClickableRows();
 
     // =====================================
@@ -1140,199 +1228,49 @@ $(document).ready(function() {
     $(window).on('load', hideLoading);
 
     // =====================================
-    // FILTER INDICATOR UPDATES
-    // =====================================
-    function updateFilterIndicators() {
-        const sortIndicator = $('#sortIndicatorFilter').val();
-        const sortName = $('#sortIndicatorFilter option:selected').text().toLowerCase();
-        $('.performance-section .card-header p').text(`Top performers berdasarkan ${sortName}`);
-
-        console.log('Filter indicators updated');
-    }
-
-    $('#periodTypeFilter, #divisiFilter, #sortIndicatorFilter, #tipeRevenueFilter').on('change', function() {
-        updateFilterIndicators();
-    });
-
-    // =====================================
-    // KEYBOARD SHORTCUTS
-    // =====================================
-    $(document).on('keydown', function(e) {
-        // Ctrl + E untuk export
-        if (e.ctrlKey && e.key === 'e') {
-            e.preventDefault();
-            exportData();
-        }
-
-        // Ctrl + R untuk refresh
-        if (e.ctrlKey && e.key === 'r') {
-            e.preventDefault();
-            location.reload();
-        }
-
-        // Tab navigation dengan angka 1-4
-        if (e.altKey && e.key >= '1' && e.key <= '4') {
-            e.preventDefault();
-            const tabs = ['corporate_customer', 'account_manager', 'witel', 'segment'];
-            const tabIndex = parseInt(e.key) - 1;
-            if (tabs[tabIndex]) {
-                $(`#tab-${tabs[tabIndex]}`).click();
-            }
-        }
-    });
-
-    // =====================================
-    // AUTO REFRESH FOR AJAX TABS ONLY
-    // =====================================
-    setInterval(function() {
-        const activeTab = $('.performance-tabs .nav-link.active').attr('data-tab');
-        if (activeTab === 'witel' || activeTab === 'segment') {
-            console.log('Auto-refreshing AJAX tab:', activeTab);
-            loadTabData(activeTab);
-        }
-    }, 300000); // 5 minutes
-
-    // =====================================
-    // ERROR HANDLING
-    // =====================================
-    window.addEventListener('error', function(e) {
-        console.error('Global error:', e.error);
-
-        if (!document.querySelector('.error-notification')) {
-            const notification = $(`
-                <div class="alert alert-danger error-notification position-fixed top-0 end-0 m-3" style="z-index: 9999;">
-                    <strong>Error:</strong> Terjadi kesalahan sistem. <a href="#" onclick="location.reload()">Refresh halaman</a>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `);
-
-            $('body').append(notification);
-
-            setTimeout(() => {
-                notification.fadeOut();
-            }, 5000);
-        }
-    });
-
-    // =====================================
-    // NETWORK STATUS MONITORING
-    // =====================================
-    window.addEventListener('online', function() {
-        console.log('Network connection restored');
-        $('.network-status').fadeOut();
-    });
-
-    window.addEventListener('offline', function() {
-        console.log('Network connection lost');
-
-        const networkAlert = $(`
-            <div class="alert alert-warning network-status position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999;">
-                <i class="fas fa-wifi-slash"></i> Koneksi internet terputus. Data mungkin tidak terupdate.
-            </div>
-        `);
-
-        $('body').append(networkAlert);
-    });
-
-    // =====================================
     // TOOLTIPS
     // =====================================
-    // TOOLTIPS: isi via atribut data-tooltip saat hover + auto-flip cerdas
     $(document).off('mouseenter.statusBadge mouseleave.statusBadge');
 
     $(document).on('mouseenter.statusBadge', '.status-badge', function () {
-    const $el = $(this);
-    const raw = ($el.text() || '').replace('%','');
-    const val = parseFloat(raw);
-    let msg = 'Achievement Rate';
-    if (!isNaN(val)) {
-        if (val >= 100) msg = 'Excellent: Target tercapai dengan baik!';
-        else if (val >= 80) msg = 'Good: Mendekati target, perlu sedikit peningkatan';
-        else msg = 'Poor: Perlu peningkatan signifikan';
-    }
-    $el.attr('data-tooltip', msg);
+        const $el = $(this);
+        const raw = ($el.text() || '').replace('%','');
+        const val = parseFloat(raw);
+        let msg = 'Achievement Rate';
+        if (!isNaN(val)) {
+            if (val >= 100) msg = 'Excellent: Target tercapai dengan baik!';
+            else if (val >= 80) msg = 'Good: Mendekati target, perlu sedikit peningkatan';
+            else if (val > 0) msg = 'Poor: Perlu peningkatan signifikan';
+            else msg = 'Belum ada data revenue';
+        }
+        $el.attr('data-tooltip', msg);
 
-    // ====== AUTO-FLIP: bandingkan dengan tepi bawah thead yang sticky ======
-    const rect = this.getBoundingClientRect();
-    const table = this.closest('table');
-    const thead = table ? table.querySelector('thead') : null;
-    const headBottom = thead ? thead.getBoundingClientRect().bottom : 0;
+        const rect = this.getBoundingClientRect();
+        const table = this.closest('table');
+        const thead = table ? table.querySelector('thead') : null;
+        const headBottom = thead ? thead.getBoundingClientRect().bottom : 0;
 
-    // kalau jarak ke tepi atas viewport kecil ATAU berada di dekat bawah thead -> flip ke bawah
-    const nearTop = rect.top < 140;                 // lebih toleran dari 72
-    const underStickyHead = rect.top < (headBottom + 12);
+        const nearTop = rect.top < 140;
+        const underStickyHead = rect.top < (headBottom + 12);
 
-    // Secara default, tooltip turun di tab AJAX
-    const tabPane = this.closest('.tab-pane');
-    const forceBottomInAjax = tabPane && ['content-account-manager','content-witel','content-segment']
-        .includes(tabPane.id);
+        const tabPane = this.closest('.tab-pane');
+        const forceBottomInAjax = tabPane && ['content-account-manager','content-witel','content-segment']
+            .includes(tabPane.id);
 
-    $el.toggleClass('tooltip-bottom', (nearTop || underStickyHead || forceBottomInAjax));
+        $el.toggleClass('tooltip-bottom', (nearTop || underStickyHead || forceBottomInAjax));
 
-    // Jika mepet tepi kanan, geser anchor ke kiri
-    const rightOverflow = (rect.left + 260) > window.innerWidth; // 260 ~ max-width tooltip
-    $el.toggleClass('tooltip-left', rightOverflow);
+        const rightOverflow = (rect.left + 260) > window.innerWidth;
+        $el.toggleClass('tooltip-left', rightOverflow);
     }).on('mouseleave.statusBadge', '.status-badge', function () {
-    $(this).removeAttr('data-tooltip').removeClass('tooltip-bottom tooltip-left');
+        $(this).removeAttr('data-tooltip').removeClass('tooltip-bottom tooltip-left');
     });
-
-
-    
-
-
-
-    // =====================================
-    // DEBUGGING HELPERS (Development mode)
-    // =====================================
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('🔧 Development mode active');
-
-        window.debugDashboard = {
-            loadTab: loadTabData,
-            showFilters: () => {
-                console.log('Current filters:', {
-                    period_type: $('#periodTypeFilter').val(),
-                    divisi_id: $('#divisiFilter').val(),
-                    sort_indicator: $('#sortIndicatorFilter').val(),
-                    tipe_revenue: $('#tipeRevenueFilter').val()
-                });
-            },
-            testAjaxTabs: () => {
-                ['witel', 'segment'].forEach((tab, index) => {
-                    setTimeout(() => {
-                        console.log(`Testing AJAX tab: ${tab}`);
-                        loadTabData(tab);
-                    }, index * 2000);
-                });
-            },
-            getCurrentTab: () => {
-                return $('.performance-tabs .nav-link.active').attr('data-tab');
-            },
-            simulateError: (tabType) => {
-                const tabContent = $(`#content-${tabType}`);
-                showErrorState(tabContent, tabType, 'Simulated error for testing');
-            }
-        };
-    }
 
     // =====================================
     // INITIALIZATION COMPLETE
     // =====================================
-    console.log('🎯 Dashboard initialization completed');
-    console.log('📊 Server-side tabs: Corporate Customer, Account Manager');
-    console.log('🔄 AJAX tabs: Witel, Segment');
-    console.log('🎛️ Active tab:', $('.performance-tabs .nav-link.active').attr('data-tab'));
-
-    // Final setup
+    console.log('✅ Dashboard RLEGS V2 - FINAL FIXED VERSION Ready');
+    console.log('📊 Features: Format Currency ✓, N/A→- ✓, Responsive Table ✓, Top 10 Priority ✓');
     hideLoading();
-    updateFilterIndicators();
-
-    // Success message
-    console.log('✅ Dashboard RLEGS V2 - Final Working Version Ready');
-    console.log('📋 Features: Filters ✓, Tab switching ✓, AJAX loading ✓, Export ✓, Keyboard shortcuts ✓');
-
-    // Show ready indicator in console
-    console.log('%c🚀 All systems operational!', 'color: #28a745; font-weight: bold; font-size: 16px;');
 });
 </script>
 @endsection

@@ -21,6 +21,9 @@
     <link rel="stylesheet" href="{{ asset('css/sidebarpage.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 
+    <link rel="stylesheet" href="{{ asset('css/ccwitel.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/inertia.css') }}">
+
     @yield('styles')
     <style>[x-cloak]{display:none !important}</style>
 
@@ -483,6 +486,11 @@
                 <li class="sidebar-item">
                     <a href="{{ route('leaderboard') }}" class="sidebar-link">
                         <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('high-five.index') }}" class="sidebar-link">
+                        <i class="lni lni-agenda"></i><span>High Five</span>
                     </a>
                 </li>
 
@@ -1128,7 +1136,7 @@
                 createMobileNavbar();
             }
         }
-        
+
     </script>
 
     @yield('scripts')

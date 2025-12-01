@@ -1,4 +1,6 @@
-<t!DOCTYPE html>
+<!DOCTYPE html>
+<!-- ALERT! this layout is a direct copy of the main layout, so ANY changes done to the main layout must be pasted over here as well for the cc + witel performance page layout to synchronize. see the note in line 93 for more info -->
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -61,6 +63,11 @@
                         <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
                     </a>
                 </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('high-five.index') }}" class="sidebar-link">
+                        <i class="lni lni-agenda"></i><span>High Five</span>
+                    </a>
+                </li>
 
             </ul>
             <div class="sidebar-footer">
@@ -83,6 +90,7 @@
                         <span class="navbar-toggler-icon"></span>
                     </button>
 
+                    <!-- NOTE: this nav element is why this page uses a distinct layout -->
                     <!-- Center: quick links with consistent spacing -->
                     <nav class="flex-fill">
                       <ul class="navbar-nav flex-row gap-3 mb-0 d-none d-md-flex">

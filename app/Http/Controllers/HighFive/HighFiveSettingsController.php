@@ -104,42 +104,23 @@ class HighFiveSettingsController extends Controller
             ], 422);
         }
 
-        DB::beginTransaction();
-
         try {
-            // 1. Create dataset link
+            // Create dataset link (NO auto-fetch)
             $link = DatasetLink::create([
                 'divisi_id' => $request->divisi_id,
                 'link_spreadsheet' => $request->link_spreadsheet,
                 'is_active' => true,
             ]);
 
-            // 2. Fetch data immediately (auto date)
-            $fetchResult = $this->fetchAndStoreSnapshot($link, null);
-
-            if (!$fetchResult['success']) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Link berhasil disimpan tetapi gagal fetch data: ' . $fetchResult['message']
-                ], 500);
-            }
-
-            DB::commit();
-
             return response()->json([
                 'success' => true,
-                'message' => 'Link berhasil disimpan dan data berhasil di-fetch!',
+                'message' => 'Link berhasil disimpan! Gunakan "Simpan Data" untuk membuat snapshot.',
                 'data' => [
                     'link_id' => $link->id,
-                    'snapshot_id' => $fetchResult['snapshot_id'],
-                    'snapshot_date' => $fetchResult['snapshot_date'],
-                    'total_rows' => $fetchResult['total_rows'],
                 ]
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan link: ' . $e->getMessage()
@@ -221,6 +202,131 @@ class HighFiveSettingsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus link: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all snapshots for a specific link
+     */
+    public function getSnapshotsForLink($linkId)
+    {
+        try {
+            $snapshots = SpreadsheetSnapshot::where('dataset_link_id', $linkId)
+                ->orderBy('snapshot_date', 'desc')
+                ->get()
+                ->map(function ($snapshot) {
+                    return [
+                        'id' => $snapshot->id,
+                        'snapshot_date' => $snapshot->snapshot_date->format('Y-m-d'),
+                        'snapshot_date_formatted' => $snapshot->formatted_date,
+                        'total_rows' => $snapshot->total_rows,
+                        'total_ams' => $snapshot->total_ams,
+                        'total_customers' => $snapshot->total_customers,
+                        'total_products' => $snapshot->total_products,
+                        'fetch_status' => $snapshot->fetch_status,
+                        'status_color' => $snapshot->status_color,
+                        'status_icon' => $snapshot->status_icon,
+                        'fetched_at' => $snapshot->fetched_at->locale('id')->isoFormat('DD MMM YYYY HH:mm'),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $snapshots,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil snapshots: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update snapshot date
+     */
+    public function updateSnapshotDate(Request $request, $snapshotId)
+    {
+        $validator = Validator::make($request->all(), [
+            'snapshot_date' => 'required|date',
+        ], [
+            'snapshot_date.required' => 'Tanggal harus diisi',
+            'snapshot_date.date' => 'Format tanggal tidak valid',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $snapshot = SpreadsheetSnapshot::findOrFail($snapshotId);
+            
+            // Check for duplicate date in same divisi
+            $duplicate = SpreadsheetSnapshot::where('divisi_id', $snapshot->divisi_id)
+                ->where('snapshot_date', $request->snapshot_date)
+                ->where('id', '!=', $snapshotId)
+                ->exists();
+
+            if ($duplicate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tanggal ini sudah ada untuk divisi yang sama'
+                ], 422);
+            }
+
+            $snapshot->update([
+                'snapshot_date' => $request->snapshot_date
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tanggal snapshot berhasil diupdate!',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update tanggal: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete individual snapshot
+     */
+    public function deleteSnapshot($snapshotId)
+    {
+        try {
+            $snapshot = SpreadsheetSnapshot::findOrFail($snapshotId);
+            $linkId = $snapshot->dataset_link_id;
+            
+            $snapshot->delete();
+
+            // Update link's total_snapshots count if link still exists
+            if ($linkId) {
+                $link = DatasetLink::find($linkId);
+                if ($link) {
+                    $link->update([
+                        'total_snapshots' => $link->snapshots()->count()
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Snapshot berhasil dihapus!',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus snapshot: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -419,6 +525,9 @@ class HighFiveSettingsController extends Controller
             // Update link stats
             $link->updateFetchStats('success');
 
+            // Clear cache so new data is displayed immediately
+            $this->googleSheetService->clearCache($link->link_spreadsheet);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Snapshot berhasil di-retry!',
@@ -449,6 +558,7 @@ class HighFiveSettingsController extends Controller
     private function fetchAndStoreSnapshot(DatasetLink $link, $customDate = null)
     {
         try {
+            $this->googleSheetService->clearCache($link->link_spreadsheet);
             // 1. Fetch data from Google Sheets
             $parsedData = $this->googleSheetService->fetchSpreadsheetData($link->link_spreadsheet);
 
@@ -486,6 +596,9 @@ class HighFiveSettingsController extends Controller
 
             // 4. Update link statistics
             $link->updateFetchStats('success');
+
+            // 5. Clear cache so new data is displayed immediately
+            $this->googleSheetService->clearCache($link->link_spreadsheet);
 
             return [
                 'success' => true,
@@ -528,5 +641,206 @@ class HighFiveSettingsController extends Controller
 
         // Otherwise, get last Friday
         return $now->previous(Carbon::FRIDAY)->toDateString();
+    }
+
+    /**
+     * Get Auto Fetch Settings
+     */
+    public function getAutoFetchSettings()
+    {
+        $day = \App\Models\Setting::where('key', 'highfive_autofetch_day')->value('value') ?? 'Friday';
+        $time = \App\Models\Setting::where('key', 'highfive_autofetch_time')->value('value') ?? '01:00';
+        $isActive = \App\Models\Setting::where('key', 'highfive_autofetch_active')->value('value') ?? '0';
+
+        // Calculate next run
+        $nextRun = $this->calculateNextRun($day, $time);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'day' => $day,
+                'time' => $time,
+                'is_active' => filter_var($isActive, FILTER_VALIDATE_BOOLEAN),
+                'next_run' => $nextRun->locale('id')->isoFormat('dddd, D MMMM YYYY HH:mm'),
+                'next_run_diff' => $nextRun->diffForHumans(),
+            ]
+        ]);
+    }
+
+    /**
+     * Save Auto Fetch Settings
+     */
+    public function saveAutoFetchSettings(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'day' => 'required|string',
+            'time' => 'required|date_format:H:i',
+            // 'is_active' => 'required|boolean', // Remove validation to be flexible
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . $validator->errors()->first()
+            ], 422);
+        }
+
+        try {
+            // Log::info('Save AutoFetch', ['req' => $request->all(), 'is_active_bool' => $request->boolean('is_active')]);
+
+            \App\Models\Setting::updateOrCreate(
+                ['key' => 'highfive_autofetch_day'],
+                ['value' => $request->day, 'description' => 'Day of week for High Five auto fetch']
+            );
+
+            \App\Models\Setting::updateOrCreate(
+                ['key' => 'highfive_autofetch_time'],
+                ['value' => $request->time, 'description' => 'Time of day for High Five auto fetch']
+            );
+
+            // Handle Active Status Explicitly
+            // Accept: true, "true", 1, "1", "on" => TRUE
+            // Accept: false, "false", 0, "0", "off", null => FALSE
+            $isActive = filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN);
+            $isActiveValue = $isActive ? '1' : '0';
+            
+            // Debug: force update
+            $activeSetting = \App\Models\Setting::firstOrNew(['key' => 'highfive_autofetch_active']);
+            $activeSetting->value = $isActiveValue;
+            $activeSetting->description = 'Is High Five auto fetch active';
+            $activeSetting->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengaturan Auto Fetch berhasil disimpan!',
+                'data' => $this->getAutoFetchSettings()->original['data'] // Return updated state
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan pengaturan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Check and Trigger Auto Fetch (To be called by Cron/Scheduler)
+     * e.g., Every hour or every minute
+     */
+    public function checkAutoFetch()
+    {
+        $isActive = filter_var(\App\Models\Setting::where('key', 'highfive_autofetch_active')->value('value'), FILTER_VALIDATE_BOOLEAN);
+
+        if (!$isActive) {
+            return response()->json(['message' => 'Auto fetch is disabled']);
+        }
+
+        // Current time (WIB)
+        $timezone = 'Asia/Jakarta';
+        $now = Carbon::now($timezone);
+        $todayName = $now->format('l'); // e.g., Friday
+        $currentTime = $now->format('H:i');
+
+        // Settings
+        $scheduledDay = \App\Models\Setting::where('key', 'highfive_autofetch_day')->value('value') ?? 'Friday';
+        $scheduledTime = \App\Models\Setting::where('key', 'highfive_autofetch_time')->value('value') ?? '01:00';
+
+        // Check if day matches
+        if (strcasecmp($todayName, $scheduledDay) !== 0) {
+            return response()->json(['message' => "Not scheduled day ($todayName != $scheduledDay)"]);
+        }
+
+        // Check if time matches (within a small window, e.g., current hour/minute)
+        // For simplicity, let's assume this is called once per hour or we check strictly
+        // Ideally, scheduler runs every minute.
+        
+        // Strict check: if current time is exactly the scheduled time (or just past it within tolerance)
+        // NOTE: Scheduler logic dictates how precise this is. 
+        // We will assume "Run if it's currently the scheduled hour and minute"
+        if ($currentTime !== $scheduledTime) {
+             return response()->json(['message' => "Not scheduled time ($currentTime != $scheduledTime)"]);
+        }
+
+        // PREVENT DOUBLE FETCH (Check Last Run Minute)
+        // We compare Y-m-d H:i. If it ran at 13:50:00, we block 13:50:30. But 13:51:00 is fine.
+        $lastRunTime = \App\Models\Setting::where('key', 'highfive_autofetch_last_run')->value('value');
+        if ($lastRunTime === $now->format('Y-m-d H:i')) {
+             return response()->json(['message' => "Already ran this minute (" . $now->format('H:i') . ")"]);
+        }
+
+        // EXECUTE FETCH
+        \Illuminate\Support\Facades\Log::info("Starting Auto Fetch High Five Snapshots...");
+        
+        $links = DatasetLink::where('is_active', true)->get();
+        $results = [];
+
+        foreach ($links as $link) {
+            try {
+                // Use existing private method via reflection or just make it public? 
+                // Or better, refactor fetchAndStoreSnapshot to be usable.
+                // Since I am inside the class, I can call private method.
+                
+                // IMPORTANT: Calculate date based on policy. 
+                // If auto fetch runs on Friday, date is Today.
+                // If runs on Monday, date is Last Friday? 
+                // Let's stick to standard logic: Snapshot Date = Today (execution date)
+                $snapshotDate = $now->toDateString();
+                
+                $res = $this->fetchAndStoreSnapshot($link, $snapshotDate);
+                $results[] = [
+                    'divisi' => $link->divisi->kode,
+                    'result' => $res
+                ];
+                
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Auto Fetch Failed for Link {$link->id}: " . $e->getMessage());
+                $results[] = [
+                    'divisi' => $link->divisi->kode,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        // Update Last Run Date (With Minute Precision)
+        \App\Models\Setting::updateOrCreate(
+             ['key' => 'highfive_autofetch_last_run'],
+             ['value' => $now->format('Y-m-d H:i'), 'description' => 'Last successful auto fetch timestamp']
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Auto fetch executed',
+            'results' => $results
+        ]);
+    }
+
+    /**
+     * Helper: Calculate Next Run Date
+     */
+    private function calculateNextRun($day, $time)
+    {
+        // Force timezone to WIB (Asia/Jakarta)
+        $timezone = 'Asia/Jakarta';
+        $now = Carbon::now($timezone);
+        
+        // Parse "this [day]" in the specific timezone
+        // We set the time to 00:00:00 first to get the correct date for "this week"
+        $date = Carbon::parse("this $day", $timezone)->startOfDay(); 
+        
+        // Set the target time
+        $timeParts = explode(':', $time);
+        $target = $date->copy()->setTime($timeParts[0], $timeParts[1], 0);
+
+        // Logic Re-eval:
+        // If today is Friday, and we look for Friday 10:00
+        // "this Friday" might be today.
+        
+        // If target is in the past relative to now, move to next week
+        if ($target->lessThan($now)) {
+            $target->addWeek();
+        }
+
+        return $target;
     }
 }

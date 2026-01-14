@@ -61,6 +61,11 @@
                         <i class="lni lni-hierarchy-1"></i><span>Leaderboard AM</span>
                     </a>
                 </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('high-five') }}" class="sidebar-link">
+                        <i class="lni lni-hierarchy-1"></i><span>High-Five</span>
+                    </a>
+                </li>
 
             </ul>
             <div class="sidebar-footer">

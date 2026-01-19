@@ -6,6 +6,55 @@
 /* Import base design system */
 @import url('leaderboardAM.css');
 
+/* Hide mobile menu hamburger button */
+.mobile-menu-btn {
+    display: none !important;
+}
+
+/* CRITICAL: Force sidebar to always be visible - prevent hiding on zoom */
+body aside#sidebar,
+body #sidebar,
+aside#sidebar,
+#sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+}
+
+/* Sidebar navigation takes available space */
+#sidebar .sidebar-nav,
+aside#sidebar .sidebar-nav {
+    flex-grow: 1 !important;
+    overflow-y: auto !important;
+}
+
+/* Sidebar footer sticks to bottom */
+#sidebar .sidebar-footer,
+aside#sidebar .sidebar-footer {
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+/* Ensure sidebar stays visible at all screen sizes */
+@media (max-width: 1024px) {
+
+    body aside#sidebar,
+    body #sidebar,
+    aside#sidebar,
+    #sidebar {
+        display: flex !important;
+        flex-direction: column !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+}
+
 /* =====================================================
    MAIN CONTENT AREA - FIXED MARGIN & PADDING
    ===================================================== */
@@ -17,25 +66,104 @@
 .main-content,
 .highfive-main-content {
     padding: 0 30px !important;
-    margin-left: 10px !important; /* Minimal spacing from sidebar */
+    margin-left: 10px !important;
+    /* Minimal spacing from sidebar */
     margin-right: 20px !important;
-    width: calc(100% - 30px) !important; /* Adjusted: 10px left + 20px right */
+    width: calc(100% - 30px) !important;
+    /* Adjusted: 10px left + 20px right */
     background: transparent;
     min-height: 100vh;
 }
 
+/* Style untuk Cell AM */
+.am-cell-dropdown {
+    vertical-align: top !important;
+    padding: 0 !important;
+    /* Reset padding biar full width */
+}
+
+.am-header {
+    padding: 12px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.am-header:hover {
+    background-color: #f8fafc;
+}
+
+.am-toggle-icon {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    transition: transform 0.3s ease;
+}
+
+.am-toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+/* Style untuk Stats Container */
+.am-stats-container {
+    background-color: #f1f5f9;
+    border-top: 1px solid #e2e8f0;
+    padding: 10px 15px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    text-align: center;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    padding: 6px 4px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+}
+
+.stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.stat-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.text-success {
+    color: #10b981;
+}
+
+.text-danger {
+    color: #ef4444;
+}
+
 /* Apply to any possible container wrapper */
-#app > .main-content,
+#app>.main-content,
 main.main-content,
 .content-wrapper,
 .highfive-main-content {
     padding: 0 30px !important;
-    margin-left: 10px !important; /* Minimal spacing from sidebar */
+    margin-left: 10px !important;
+    /* Minimal spacing from sidebar */
     margin-right: 20px !important;
 }
 
 /* Ensure all direct children have proper spacing */
-.main-content > * {
+.main-content>* {
     margin-left: 0;
     margin-right: 0;
 }
@@ -75,13 +203,14 @@ main.main-content,
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: pointer;
+    /* cursor: pointer; */
     padding: 8px 0;
     margin-bottom: 0;
 }
 
 .toolkit-header h4 {
-    font-size: 1.2rem; /* INCREASED from 0.95rem */
+    font-size: 1.2rem;
+    /* INCREASED from 0.95rem */
     font-weight: 700;
     color: var(--gray-800);
     margin: 0;
@@ -97,11 +226,12 @@ main.main-content,
 
 /* NEW: Kelola Link Button */
 .btn-kelola-link {
+    height: var(--ctrl-h);
     padding: 8px 16px;
     background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%);
     color: var(--white);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -256,7 +386,7 @@ main.main-content,
 
 .selector-grid {
     display: grid;
-    grid-template-columns: 140px 1fr 1fr 150px;
+    grid-template-columns: 140px 1fr 1fr 144px 144px;
     gap: 12px;
     align-items: end;
 }
@@ -268,7 +398,7 @@ main.main-content,
     color: var(--white);
     border: none;
     border-radius: var(--radius-lg);
-    font-size: var(--ctrl-fs);
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
@@ -347,7 +477,8 @@ main.main-content,
 }
 
 .alert-box {
-    background: var(--white) !important; /* SOLID WHITE */
+    background: var(--white) !important;
+    /* SOLID WHITE */
     border-radius: var(--radius-lg);
     padding: 16px 20px;
     margin-bottom: 12px;
@@ -364,6 +495,7 @@ main.main-content,
         transform: translateX(400px);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -448,32 +580,59 @@ main.main-content,
    PERFORMANCE SECTION - Tabs
    ===================================================== */
 
+/* =====================================================
+   PERFORMANCE SECTION - REVISED LAYOUT (FULL HEADER)
+   ===================================================== */
+
 .performance-container {
     background: var(--white);
     border-radius: var(--radius-xl);
-    padding: 30px;
+    padding: 0 !important;
+    /* HAPUS PADDING UTAMA */
     box-shadow: var(--shadow-md);
     border: 1px solid var(--gray-200);
     position: relative;
-    overflow: visible;
+    overflow: hidden;
+    /* Agar background header tidak keluar dari radius */
 }
 
-.performance-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    
+/* Wrapper untuk Header + Filter + Tabs (Background Abu-abu) */
+.performance-header-wrapper {
+    background-color: var(--white);
+    /* Abu-abu sedikit gelap (Slate-100) */
+    padding: 25px 30px 0 30px;
+    /* Padding atas kanan kiri, bawah 0 untuk tabs */
+    border-bottom: 1px solid #cbd5e1;
+    /* Garis pemisah */
 }
 
+/* Wrapper untuk Konten (Background Putih) */
+.performance-body-wrapper {
+    background-color: var(--white);
+    padding: 30px;
+    min-height: 400px;
+}
+
+/* Penyesuaian Header Title di dalam wrapper baru */
+.performance-header-wrapper .toolkit-header {
+    padding-bottom: 20px;
+    margin-bottom: 0;
+}
+
+/* Penyesuaian Grid Selector */
+.performance-header-wrapper .selector-grid {
+    padding-bottom: 25px !important;
+}
+
+/* Penyesuaian Tabs agar menempel di bawah */
 .performance-tabs {
     display: flex;
     gap: 10px;
-    margin-bottom: 30px;
-    padding-top: 10px;
-    border-bottom: 2px solid var(--gray-200);
+    margin-bottom: 0;
+    /* Hapus margin bawah */
+    padding-top: 0;
+    border-bottom: none;
+    /* Hapus border bawaan karena sudah ada di wrapper */
 }
 
 .tab-btn {
@@ -481,7 +640,8 @@ main.main-content,
     padding: 14px 20px;
     background: transparent;
     border: none;
-    border-bottom: 3px solid transparent;
+    border-bottom: 4px solid transparent;
+    /* Pertebal sedikit indikator aktif */
     color: var(--gray-600);
     font-size: 15px;
     font-weight: 600;
@@ -491,21 +651,24 @@ main.main-content,
     align-items: center;
     justify-content: center;
     gap: 8px;
+    margin-bottom: -1px;
+    /* Agar menimpa garis border wrapper */
 }
 
 .tab-btn:hover {
     color: var(--telkom-red);
-    background: var(--telkom-red-ultra-soft);
+    background: rgba(255, 255, 255, 0.5);
+    /* Efek hover halus */
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 .tab-btn.active {
     color: var(--telkom-red);
     border-bottom-color: var(--telkom-red);
-    background: var(--telkom-red-soft);
-}
-
-.tab-btn i {
-    font-size: 16px;
+    background: var(--telkom-red-subtle);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 /* =====================================================
@@ -573,7 +736,9 @@ main.main-content,
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-state p {
@@ -582,42 +747,342 @@ main.main-content,
     font-size: 15px;
 }
 
-/* =====================================================
-   ANALYSIS CARDS - 4 HORIZONTAL LAYOUT
-   ===================================================== */
+/* =========================================
+    2. METRICS CARD STYLES (3 COLS LAYOUT)
+    ========================================= */
+.cards-grid-3-cols {
+    display: grid;
+    grid-template-columns: 320px 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+    /* TAMBAHAN PENTING: Paksa setiap baris grid memiliki tinggi yang sama */
+    grid-auto-rows: 1fr;
+}
 
-.cards-section {
+/* Kartu Vertikal (Pillar) */
+.card-tall {
+    grid-row: span 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Konten di tengah vertikal */
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+}
+
+.card-tall .sq-icon {
+    border-radius: 16px;
     margin-bottom: 20px;
 }
 
-.cards-section-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--gray-700);
-    margin-bottom: 12px;
+.card-tall .sq-stat {
+    font-size: 36px;
+}
+
+/* Kartu Square Biasa */
+.metric-sq-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    /* UBAH INI: Reset aspect-ratio agar tinggi mengikuti grid (bukan fix) */
+    aspect-ratio: auto;
+    height: 100%;
+    /* Paksa memenuhi tinggi cell grid */
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.metric-sq-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #e2e8f0;
+}
+
+/* Clickable card cursor */
+.clickable-card {
+    cursor: pointer;
+}
+
+/* Elemen Dalam Kartu */
+.sq-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
 }
 
-.cards-section-title i {
+.sq-icon i {
+    font-size: 20px;
+    /* Paksa ukuran font ikon */
+}
+
+.sq-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-500);
+    margin-bottom: 6px;
+}
+
+.sq-value {
+    font-size: 22px;
+    font-weight: 900;
+    color: #1e293b;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.sq-stat {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #1e293b;
+}
+
+.sq-sub {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #f8fafc;
+    color: #64748b;
+    display: inline-block;
+}
+
+/* Tombol Insight */
+.btn-sq-insight {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-sq-insight:hover {
+    background: #f1f5f9;
     color: var(--telkom-red);
-    font-size: 0.9rem;
 }
 
-/* NEW: 4 Cards Horizontal Grid */
-.cards-grid-horizontal {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr) !important; /* FIXED: 4 columns */
-    gap: 16px;
-    margin-bottom: 16px;
+/* Tema Warna */
+.theme-primary .sq-icon {
+    background: #eff6ff;
+    color: #3b82f6;
 }
 
-.cards-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 12px;
+.theme-primary .sq-stat {
+    color: #3b82f6;
+}
+
+.theme-success .sq-icon {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.theme-success .sq-stat {
+    color: #10b981;
+}
+
+.theme-warning .sq-icon {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.theme-warning .sq-stat {
+    color: #f59e0b;
+}
+
+.theme-purple .sq-icon {
+    background: #f5f3ff;
+    color: #8b5cf6;
+}
+
+.theme-purple .sq-stat {
+    color: #8b5cf6;
+}
+
+.theme-danger .sq-icon {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.theme-danger .sq-stat {
+    color: #ef4444;
+}
+
+/* =====================================================
+   HORIZONTAL CARD LAYOUT (NEW DESIGN)
+   For 4 cards: Witel Champion, Focus Area, MVP Improver, Top Sales AM
+   ===================================================== */
+
+.metric-sq-card.card-horizontal {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    /* Space between elements */
+    text-align: left;
+    padding: 28px 28px;
+    position: relative;
+    min-height: 140px;
+}
+
+/* Hide info button for horizontal cards */
+.card-horizontal .btn-sq-insight {
+    display: none !important;
+}
+
+/* Icon positioned at top-right - LARGER BACKGROUND */
+.card-horizontal .sq-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    margin-bottom: 0;
+    border-radius: 16px;
+}
+
+/* Label/Title at top-left */
+.card-horizontal .sq-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b7280;
+    margin-bottom: 0;
+    /* Remove margin */
+    width: 100%;
+    line-height: 1.2;
+    flex-shrink: 0;
+    /* Don't shrink */
+}
+
+/* Main highlighted value (name) */
+.card-horizontal .sq-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.2;
+    margin: auto 0;
+    /* Center vertically */
+    width: calc(100% - 90px);
+    flex-grow: 1;
+    /* Take available space */
+    display: flex !important;
+    align-items: center;
+    /* Center text vertically */
+    /* Remove ALL truncation properties */
+    overflow: visible !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    text-overflow: unset !important;
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: unset !important;
+    max-width: none !important;
+}
+
+/* Additional info at bottom */
+.card-horizontal .sq-sub {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    /* Add padding */
+    margin: 0;
+    border-radius: 16px;
+    /* Rounded corners */
+    background: #F8FAFC;
+    /* Light gray background */
+    color: #68778E;
+    display: inline-block;
+    /* Fit content width */
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+
+/* Theme-specific value colors removed - using default black for all cards */
+
+
+/* Modal Styles */
+.insight-list {
+    padding-left: 20px;
+    margin-bottom: 0;
+}
+
+.insight-list li {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #334155;
+}
+
+.text-primary {
+    color: #2563eb !important;
+}
+
+.text-success {
+    color: #059669 !important;
+}
+
+.text-info {
+    color: #0891b2 !important;
+}
+
+.badge-up {
+    background: #dcfce7;
+    color: #166534;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+@media (max-width: 1024px) {
+    .cards-grid-3-cols {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .card-tall {
+        grid-column: span 2;
+        grid-row: span 1;
+        flex-direction: row;
+        text-align: left;
+        justify-content: start;
+        gap: 20px;
+        padding: 24px;
+    }
+
+    .card-tall .sq-icon {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 0;
+    }
 }
 
 .analysis-card {
@@ -797,8 +1262,8 @@ main.main-content,
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(200px, 280px)); /* COMPACT */
-    justify-content: center;
+    /* Ganti 3 jadi 4, atau pakai auto-fit agar responsif */
+    grid-template-columns: repeat(4, 1fr); 
     gap: 16px;
     margin-bottom: 20px;
 }
@@ -858,8 +1323,127 @@ main.main-content,
 }
 
 /* =====================================================
-   BENCHMARKING TABLE - RED HEADER & PROGRESS BARS
+   BENCHMARKING TABLE - RED HEADER & PROGRESS BARS - FILTER & SORT
    ===================================================== */
+
+/* Filter Container Styling */
+.am-filter-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Distribusi jarak */
+    gap: 12px;
+    /* Jarak antar elemen */
+    background: #fff;
+    border-radius: var(--radius-lg);
+    flex-wrap: nowrap !important;
+    /* KUNCI: Paksa tidak turun baris */
+    margin-bottom: 16px;
+}
+
+/* Search Input */
+.am-search-group {
+    flex: 1;
+    min-width: 280px;
+    /* Minimal lebar agar tidak gepeng */
+    position: relative;
+}
+
+.am-search-group i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    font-size: 14px;
+}
+
+.am-search-group input {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.am-search-group input:focus {
+    border-color: var(--telkom-red);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Filter Dropdown */
+.am-filter-group {
+    flex: 0 0 200px;
+    /* Lebar fix untuk dropdown */
+    min-width: 280px;
+}
+
+.am-filter-group select {
+    padding: 10px 14px;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    width: 100%;
+    color: var(--gray-700);
+    background-color: white;
+    cursor: pointer;
+    outline: none;
+}
+
+.am-filter-group select:focus {
+    border-color: var(--telkom-red);
+}
+
+/* Sort Buttons */
+.am-sort-group {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    padding: 4px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--gray-300);
+}
+
+.sort-label {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-right: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-transform: uppercase;
+    padding-left: 6px;
+}
+
+.btn-sort {
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    font-weight: 500;
+    color: var(--gray-600);
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-sort:hover {
+    background: white;
+    color: var(--telkom-red);
+}
+
+.btn-sort.active {
+    background: white;
+    color: var(--telkom-red);
+    font-weight: 600;
+}
 
 .table-container {
     margin-bottom: 25px;
@@ -946,16 +1530,19 @@ main.main-content,
     text-align: left;
     font-size: 11px;
     font-weight: 700;
-    color: var(--white) !important; /* FIXED: White text */
+    color: var(--white) !important;
+    /* FIXED: White text */
     background: transparent !important;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
     border-right: 1px solid rgba(255, 255, 255, 0.15);
-    position: sticky; /* NEW: Sticky header */
+    position: sticky;
+    /* NEW: Sticky header */
     top: 0;
     z-index: 10;
-    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%) !important; /* Ensure background on scroll */
+    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%) !important;
+    /* Ensure background on scroll */
 }
 
 .benchmark-table th:last-child {
@@ -964,13 +1551,17 @@ main.main-content,
 
 .benchmark-table th small {
     display: block;
-    font-size: 10.5px; /* Increased from 9px */
-    font-weight: 700; /* Bold instead of 500 */
+    font-size: 10.5px;
+    /* Increased from 9px */
+    font-weight: 700;
+    /* Bold instead of 500 */
     color: var(--white) !important;
-    opacity: 1; /* Full opacity instead of 0.9 */
+    opacity: 1;
+    /* Full opacity instead of 0.9 */
     text-transform: none;
     margin-top: 4px;
-    background: rgba(255, 255, 255, 0.15); /* Add subtle background */
+    background: rgba(255, 255, 255, 0.15);
+    /* Add subtle background */
     padding: 2px 6px;
     border-radius: 4px;
 }
@@ -994,7 +1585,7 @@ main.main-content,
     color: var(--gray-700);
     font-weight: 500;
     vertical-align: middle;
-    border-right: 1px solid var(--gray-100);
+    border-right: 1px solid var(--gray-200);
 }
 
 .benchmark-table td:last-child {
@@ -1061,10 +1652,9 @@ main.main-content,
 
 /* NEW: Witel Summary Row */
 .witel-summary {
-    background: linear-gradient(135deg, #fee2e2, #fecaca) !important; /* Pink/red-soft */
+    background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+    /* Pink/red-soft */
     font-weight: 600 !important;
-    border-top: 2px solid #fca5a5; /* Slightly darker pink for border */
-    border-bottom: 2px solid #fca5a5;
 }
 
 .witel-summary td {
@@ -1336,19 +1926,20 @@ main.main-content,
 }
 
 .btn-download-report {
-    padding: 12px 28px;
+    padding: 8px 16px;
+    height: var(--ctrl-h);
     background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%);
     color: var(--white);
     border: none;
     border-radius: var(--radius-lg);
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: var(--shadow-md);
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    gap: 6px;
 }
 
 .btn-download-report:hover:not(:disabled) {
@@ -1693,4 +2284,295 @@ main.main-content,
 
 .flatpickr-current-month .flatpickr-monthDropdown-months {
     background: var(--telkom-red-soft);
+}
+
+/* =====================================================
+   TABLE SCROLLABLE WRAPPER
+   ===================================================== */
+.table-scrollable-wrapper {
+    max-height: 560px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.table-header-fixed {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.table-header-fixed table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+.table-header-fixed thead th {
+    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%);
+    color: var(--white);
+    font-weight: 700;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 11px;
+    border: none;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.table-scrollable-wrapper table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+.table-scrollable-wrapper thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%);
+    color: var(--white);
+    font-weight: 700;
+}
+
+.table-scrollable-wrapper thead th:first-child {
+    /* keep first column header visually consistent */
+}
+
+.table-scrollable-wrapper::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.table-scrollable-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+}
+
+/* Firefox */
+.table-scrollable-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+/* Product tabs reuse visual style from AM nested tabs but keep selectors scoped */
+.product-tabs-navigation {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--gray-200);
+    padding-top: 6px;
+}
+
+.product-tab-btn {
+    padding: 12px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--gray-600);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.product-tab-btn:hover {
+    color: var(--telkom-red);
+    background: var(--telkom-red-ultra-soft);
+}
+
+.product-tab-btn.active {
+    color: var(--telkom-red);
+    border-bottom-color: var(--telkom-red);
+}
+
+/* =====================================================
+   AM LEVEL NESTED TABS - Benchmarking & Leaderboard
+   ===================================================== */
+
+.am-tabs-container {
+    margin-bottom: 25px;
+}
+
+.am-tabs-navigation {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--gray-200);
+    padding-bottom: 0;
+}
+
+.am-tab-btn {
+    padding: 12px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--gray-600);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.am-tab-btn:hover {
+    color: var(--telkom-red);
+    background: var(--telkom-red-ultra-soft);
+    border-bottom-color: var(--telkom-red-light);
+}
+
+.am-tab-btn.active {
+    color: var(--telkom-red);
+    border-bottom-color: var(--telkom-red);
+    background: transparent;
+}
+
+.am-tab-btn i {
+    font-size: 14px;
+}
+
+.am-tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.am-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================
+   INSIGHT MODAL 2.0 STYLES
+   ========================================= */
+
+/* Grid Container untuk Data Metrics */
+.insight-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 Kolom */
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* Card Kecil untuk setiap angka */
+.insight-metric-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.insight-metric-item:hover {
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+    background: #fff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.insight-metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.insight-metric-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.insight-metric-sub {
+    font-size: 10px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* Warna Contextual */
+.im-success .insight-metric-value {
+    color: #10b981;
+}
+
+.im-danger .insight-metric-value {
+    color: #ef4444;
+}
+
+.im-primary .insight-metric-value {
+    color: #3b82f6;
+}
+
+.im-warning .insight-metric-value {
+    color: #f59e0b;
+}
+
+/* Section Penjelasan Narrative */
+.insight-narrative-box {
+    background: #fffbeb;
+    /* Warna dasar kuning lembut */
+    border-left: 4px solid #f59e0b;
+    border-radius: 6px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.insight-narrative-box.blue-theme {
+    background: #eff6ff;
+    border-left-color: #3b82f6;
+}
+
+.insight-narrative-box.green-theme {
+    background: #f0fdf4;
+    border-left-color: #22c55e;
+}
+
+.insight-narrative-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #475569;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.insight-narrative-text {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Khusus Mobile */
+@media (max-width: 600px) {
+    .insight-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        /* Jadi 2 kolom di HP */
+    }
 }

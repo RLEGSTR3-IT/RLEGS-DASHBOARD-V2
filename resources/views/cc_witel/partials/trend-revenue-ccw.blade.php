@@ -484,7 +484,6 @@
                     revenueChart.update();
                 } else {
                     revenueChart = new Chart(dom.chartCanvas, {
-                        // Default type is bar, but datasets will override
                         type: 'bar',
                         data: { labels, datasets },
                         options: chartOptions

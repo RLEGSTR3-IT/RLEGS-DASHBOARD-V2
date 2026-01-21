@@ -628,13 +628,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('template/revenue-am', [ImportAMController::class, 'downloadTemplate'])->defaults('type', 'revenue-am')->name('template.revenue-am');
 
         Route::get('template/{type}', function ($type) {
-            if (in_array($type, ['data-cc', 'revenue-cc-dgs', 'revenue-cc-dps'])) {
+            // Accept anything that starts with expected patterns
+            if (str_starts_with($type, 'revenue-cc-') || $type === 'data-cc') {
                 $controller = new ImportCCController();
                 return $controller->downloadTemplate($type);
-            } elseif (in_array($type, ['data-am', 'revenue-am'])) {
+            } elseif (str_starts_with($type, 'revenue-am') || $type === 'data-am') {
                 $controller = new ImportAMController();
                 return $controller->downloadTemplate($type);
             }
+            
             return response()->json(['error' => 'Template not found'], 404);
         })->name('template');
 

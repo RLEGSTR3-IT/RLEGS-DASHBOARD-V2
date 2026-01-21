@@ -19,7 +19,9 @@ class ImportCCController extends Controller
     public function downloadTemplate($type)
     {
         $templates = [
-            // Data CC Template
+            // ========================================
+            // DATA CC TEMPLATE
+            // ========================================
             'data-cc' => [
                 'filename' => 'template_data_cc.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME'],
@@ -29,63 +31,70 @@ class ImportCCController extends Controller
                 ]
             ],
 
-            // DGS Real Revenue (Sold)
+
+            // ========================================
+            // REVENUE CC - DGS TEMPLATES
+            // ========================================
             'revenue-cc-dgs-real' => [
-                'filename' => 'template_revenue_cc_dgs_real.csv',
+                'filename' => 'template_revenue_real_dgs.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '195000000', 'HO']
                 ]
             ],
-
-            // DSS Real Revenue (Sold)
-            'revenue-cc-dss-real' => [
-                'filename' => 'template_revenue_cc_dss_real.csv',
-                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
-                'sample' => [
-                    ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '250000000', 'HO']
-                ]
-            ],
-
-            // DPS Real Revenue (Bill)
-            'revenue-cc-dps-real' => [
-                'filename' => 'template_revenue_cc_dps_real.csv',
-                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'REVENUE_BILL', 'SOURCE_DATA'],
-                'sample' => [
-                    ['76590021', 'PT TELKOMSEL', 'RETAIL & MEDIA SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '920000000', 'BILL']
-                ]
-            ],
-
-            // DGS Target Revenue
+            
             'revenue-cc-dgs-target' => [
-                'filename' => 'template_revenue_cc_dgs_target.csv',
+                'filename' => 'template_revenue_target_dgs.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '200000000', 'HO']
                 ]
             ],
 
-            // DSS Target Revenue
+            // ========================================
+            // REVENUE CC - DSS TEMPLATES
+            // ========================================
+            'revenue-cc-dss-real' => [
+                'filename' => 'template_revenue_real_dss.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '250000000', 'HO']
+                ]
+            ],
+            
             'revenue-cc-dss-target' => [
-                'filename' => 'template_revenue_cc_dss_target.csv',
+                'filename' => 'template_revenue_target_dss.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '270000000', 'HO']
                 ]
             ],
 
-            // DPS Target Revenue
+            // ========================================
+            // REVENUE CC - DPS TEMPLATES
+            // ========================================
+            'revenue-cc-dps-real' => [
+                'filename' => 'template_revenue_real_dps.csv',
+                'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'REVENUE_BILL', 'SOURCE_DATA'],
+                'sample' => [
+                    ['76590001', 'BANK JATIM', 'FINANCIAL SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '920000000', 'BILL']
+                ]
+            ],
+            
             'revenue-cc-dps-target' => [
-                'filename' => 'template_revenue_cc_dps_target.csv',
+                'filename' => 'template_revenue_target_dps.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'TARGET_REVENUE', 'SOURCE_DATA'],
                 'sample' => [
-                    ['76590021', 'PT TELKOMSEL', 'RETAIL & MEDIA SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '950000000', 'BILL']
+                    ['76590001', 'BANK JATIM', 'FINANCIAL SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '1000000000', 'BILL']
                 ]
             ],
 
-            // Aliases for backward compatibility
+
+            // ========================================
+            // BACKWARD COMPATIBILITY ALIASES
+            // ========================================
             'revenue-cc-dgs' => [
-                'filename' => 'template_revenue_cc_dgs_real.csv',
+                'filename' => 'template_revenue_real_dgs.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '195000000', 'HO']
@@ -93,7 +102,7 @@ class ImportCCController extends Controller
             ],
 
             'revenue-cc-dss' => [
-                'filename' => 'template_revenue_cc_dss_real.csv',
+                'filename' => 'template_revenue_real_dss.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'REVENUE_SOLD', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '250000000', 'HO']
@@ -101,16 +110,15 @@ class ImportCCController extends Controller
             ],
 
             'revenue-cc-dps' => [
-                'filename' => 'template_revenue_cc_dps_real.csv',
+                'filename' => 'template_revenue_real_dps.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'REVENUE_BILL', 'SOURCE_DATA'],
                 'sample' => [
-                    ['76590021', 'PT TELKOMSEL', 'RETAIL & MEDIA SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '920000000', 'BILL']
+                    ['76590001', 'BANK JATIM', 'FINANCIAL SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '920000000', 'BILL']
                 ]
             ],
 
-            // Generic target template
             'revenue-cc-target' => [
-                'filename' => 'template_revenue_cc_target.csv',
+                'filename' => 'template_revenue_target.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
                 'sample' => [
                     ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '200000000', 'HO']
@@ -133,18 +141,18 @@ class ImportCCController extends Controller
 
         $template = $templates[$type];
 
+        // Create CSV
         $csv = fopen('php://temp', 'r+');
         fputcsv($csv, $template['headers']);
         foreach ($template['sample'] as $row) {
             fputcsv($csv, $row);
         }
-
         rewind($csv);
         $csvContent = stream_get_contents($csv);
         fclose($csv);
 
         return response($csvContent, 200, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $template['filename'] . '"',
         ]);
     }

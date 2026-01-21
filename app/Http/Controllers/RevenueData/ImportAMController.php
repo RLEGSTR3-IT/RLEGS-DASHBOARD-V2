@@ -37,57 +37,87 @@ use Carbon\Carbon;
  */
 class ImportAMController extends Controller
 {
-    /**
-     * Download Template CSV
-     */
-    public function downloadTemplate($type)
-    {
-        $templates = [
-            'data-am' => [
-                'filename' => 'template_data_am.csv',
-                // ✅ FIXED: Changed NIK to NIK_AM to match Excel format
-                'headers' => ['NIK_AM', 'NAMA AM', 'PROPORSI', 'WITEL AM', 'NIPNAS', 'DIVISI AM', 'DIVISI', 'TELDA'],
-                'sample' => [
-                    ['123456', 'John Doe', '1', 'BALI', '76590001', 'AM', 'DGS', ''],
-                    ['789012', 'Jane Smith', '1', 'JATIM BARAT', '19669082', 'HOTDA', 'DSS', 'TELKOM DAERAH BOJONEGORO'],
-                    ['345678', 'Ahmad Multi', '0.5', 'JATIM TIMUR', '4601571', 'AM', 'DGS,DSS', '']
-                ]
+/**
+ * Download Template CSV
+ */
+public function downloadTemplate($type)
+{
+    $templates = [
+        // ========================================
+        // DATA AM TEMPLATE
+        // ========================================
+        'data-am' => [
+            'filename' => 'template_data_am.csv',
+            'headers' => [
+                'NIK',
+                'NAMA AM',
+                'PROPORSI',
+                'WITEL AM',
+                'NIPNAS',
+                'STANDARD NAME',
+                'GROUP CONGLO',
+                'DIVISI AM',
+                'SEGMEN',
+                'WITEL HO',
+                'REGIONAL',
+                'DIVISI',
+                'TELDA'
             ],
-            'revenue-am' => [
-                'filename' => 'template_revenue_am.csv',
-                'headers' => ['NIPNAS', 'NIK_AM', 'PROPORSI'],
-                'sample' => [
-                    ['76590001', '0001', '60'],
-                    ['76590001', '0002', '40'],
-                    ['76590002', 'AM0003', '100']
-                ]
+            'sample' => [
+                ['404482', 'I WAYAN AGUS SUANTARA', '1', 'BALI', '2000106', 'ACCOR HOTEL BALI', '', 'AM', 'FWS', 'BALI', 'TREG 3', 'DPS', ''],
+                ['970252', 'DESY CAHYANI LARI', '1', 'NUSA TENGGARA', '19669082', 'AGUSTINUS WAE FOLO-PT MITRA SINAR JAYA', '', 'HOTDA', 'PRS', 'NUSA TENGGARA', 'TREG 3', 'DPS', 'TELDA NUSA TENGGARA']
             ]
-        ];
+        ],
 
-        if (!isset($templates[$type])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Template type not found'
-            ], 404);
-        }
+        // ========================================
+        // ✅ REVENUE AM TEMPLATE (NEW)
+        // ========================================
+        'revenue-am' => [
+            'filename' => 'template_revenue_am.csv',
+            'headers' => [
+                'YEAR',
+                'MONTH',
+                'NIPNAS',
+                'NIK_AM',
+                'PROPORSI'
+            ],
+            'sample' => [
+                ['2026', '1', '76590002', '404482', '30'],
+                ['2026', '1', '76590002', '970252', '70']
+            ]
+        ]
+    ];
 
-        $template = $templates[$type];
-
-        $csv = fopen('php://temp', 'r+');
-        fputcsv($csv, $template['headers']);
-        foreach ($template['sample'] as $row) {
-            fputcsv($csv, $row);
-        }
-
-        rewind($csv);
-        $csvContent = stream_get_contents($csv);
-        fclose($csv);
-
-        return response($csvContent, 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $template['filename'] . '"',
-        ]);
+    if (!isset($templates[$type])) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Template type not found',
+            'available_types' => array_keys($templates)
+        ], 404);
     }
+
+    $template = $templates[$type];
+
+    // Create CSV
+    $csv = fopen('php://temp', 'r+');
+    
+    // Add headers
+    fputcsv($csv, $template['headers']);
+    
+    // Add sample data
+    foreach ($template['sample'] as $row) {
+        fputcsv($csv, $row);
+    }
+
+    rewind($csv);
+    $csvContent = stream_get_contents($csv);
+    fclose($csv);
+
+    return response($csvContent, 200, [
+        'Content-Type' => 'text/csv; charset=UTF-8',
+        'Content-Disposition' => 'attachment; filename="' . $template['filename'] . '"',
+    ]);
+}
 
     /**
      * ✅ FIXED: Preview Data AM Import

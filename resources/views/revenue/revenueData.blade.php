@@ -1216,7 +1216,7 @@
 </div>
 
 <!-- ========================================
-     ✨ MODERN IMPORT MODAL WITH MONTH PICKER
+     ✨ MODERN IMPORT MODAL - FULLY UPDATED & COMPACT
      ======================================== -->
 <div class="modal fade" id="importModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
@@ -1230,7 +1230,7 @@
       </div>
 
       <div class="modal-body">
-        <!-- ✨ Modern Type Selector (SAMA dengan tabs utama) -->
+        <!-- ✨ Modern Type Selector -->
         <div class="type-selector">
           <button class="type-btn active" data-imp="imp-data-cc">
               <i class="fa-solid fa-building"></i>
@@ -1250,16 +1250,19 @@
           </button>
         </div>
 
-        <!-- ✅ FORM 1: Data CC -->
+        <!-- ==========================================
+             ✅ FORM 1: DATA CC
+             ========================================== -->
         <div id="imp-data-cc" class="imp-panel active">
-            <div class="alert alert-info" style="margin-bottom: 1.5rem;">
-                <div class="d-flex align-items-start gap-2">
-                    <i class="fa-solid fa-info-circle" style="font-size: 1.25rem; margin-top: 2px;"></i>
-                    <div style="flex: 1;">
-                        <strong style="display: block; margin-bottom: 0.5rem;">Format CSV:</strong>
-                        <div style="font-size: 0.9rem;">
-                            <strong>Kolom yang diperlukan:</strong> NIPNAS, STANDARD_NAME &nbsp;|&nbsp;
-                            <strong>Update data:</strong> Berlaku jika data revenue dari pelanggan pada periode yang sama sudah ada sebelumnya
+            <!-- Compact Info -->
+            <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
+                <div class="d-flex gap-2 align-items-start">
+                    <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block mb-1">Format CSV Data CC</strong>
+                        <div class="text-muted" style="font-size: 0.85rem;">
+                            <strong>Kolom:</strong> NIPNAS, STANDARD_NAME | 
+                            <strong>Catatan:</strong> NIPNAS duplikat = update data lama
                         </div>
                     </div>
                 </div>
@@ -1270,35 +1273,37 @@
                 <input type="hidden" name="import_type" value="data_cc">
 
                 <div class="mb-3">
-                    <label class="form-label">
-                        <i class="fa-solid fa-file-csv"></i>
-                        Upload File CSV <span class="required">*</span>
+                    <label class="form-label fw-semibold">
+                        <i class="fa-solid fa-file-csv me-1"></i>
+                        Upload File CSV <span class="text-danger">*</span>
                     </label>
                     <input type="file" class="form-control" name="file" accept=".csv" required>
-                    <small class="text-muted">
-                        <a href="{{ route('revenue.template', ['type' => 'data-cc']) }}">
+                    <small class="form-text text-muted">
+                        <a href="{{ route('revenue.template', ['type' => 'data-cc']) }}" class="text-decoration-none">
                             <i class="fa-solid fa-download me-1"></i>Download Template
                         </a>
                     </small>
                 </div>
 
                 <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-upload"></i>Import Data CC
+                    <i class="fa-solid fa-upload me-2"></i>Import Data CC
                 </button>
             </form>
         </div>
 
-        <!-- ✅ FORM 2: Data AM -->
+        <!-- ==========================================
+             ✅ FORM 2: DATA AM
+             ========================================== -->
         <div id="imp-data-am" class="imp-panel">
-            <div class="alert alert-info" style="margin-bottom: 1.5rem;">
-                <div class="d-flex align-items-start gap-2">
-                    <i class="fa-solid fa-info-circle" style="font-size: 1.25rem; margin-top: 2px;"></i>
-                    <div style="flex: 1;">
-                        <strong style="display: block; margin-bottom: 0.5rem;">Format CSV:</strong>
-                        <div style="font-size: 0.9rem; line-height: 1.6;">
-                            <strong>Kolom:</strong> NIK, NAMA_AM, WITEL, ROLE, DIVISI, TELDA<br>
-                            <strong>ROLE:</strong> AM atau HOTDA (TELDA wajib untuk HOTDA) &nbsp;|&nbsp;
-                            <strong>Update:</strong> Jika NIK sudah ada → data di-update
+            <!-- Compact Info -->
+            <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
+                <div class="d-flex gap-2 align-items-start">
+                    <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block mb-1">Format CSV Data AM</strong>
+                        <div class="text-muted" style="font-size: 0.85rem; line-height: 1.5;">
+                            <strong>Kolom:</strong> NIK, NAMA AM, PROPORSI, WITEL AM, NIPNAS, STANDARD NAME, GROUP CONGLO, DIVISI AM, SEGMEN, WITEL HO, REGIONAL, DIVISI, TELDA<br>
+                            <strong>Aturan:</strong> HOTDA wajib isi TELDA | AM kosongkan TELDA | Total proporsi per NIPNAS = 1
                         </div>
                     </div>
                 </div>
@@ -1309,158 +1314,116 @@
                 <input type="hidden" name="import_type" value="data_am">
 
                 <div class="mb-3">
-                    <label class="form-label">
-                        <i class="fa-solid fa-file-csv"></i>
-                        Upload File CSV <span class="required">*</span>
+                    <label class="form-label fw-semibold">
+                        <i class="fa-solid fa-file-csv me-1"></i>
+                        Upload File CSV <span class="text-danger">*</span>
                     </label>
                     <input type="file" class="form-control" name="file" accept=".csv" required>
-                    <small class="text-muted">
-                        <a href="{{ route('revenue.template', ['type' => 'data-am']) }}">
+                    <small class="form-text text-muted">
+                        <a href="{{ route('revenue.template', ['type' => 'data-am']) }}" class="text-decoration-none">
                             <i class="fa-solid fa-download me-1"></i>Download Template
                         </a>
                     </small>
                 </div>
 
                 <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-upload"></i>Import Data AM
+                    <i class="fa-solid fa-upload me-2"></i>Import Data AM
                 </button>
             </form>
         </div>
 
-        <!-- ✅ FORM 3: Revenue CC -->
-        <div id="imp-rev-cc" class="imp-panel">
-            <div class="alert alert-info" style="cursor: pointer; margin-bottom: 1rem;" data-bs-toggle="collapse" data-bs-target="#infoRevCC">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fa-solid fa-info-circle me-2"></i>
-                        <strong>Instruksi Format CSV</strong>
-                        <small class="ms-2 text-muted">(klik untuk penjelasan lebih lanjut)</small>
-                    </div>
-                    <i class="fa-solid fa-chevron-down"></i>
-                </div>
+        <!-- ==========================================
+     ✅ FORM 3: REVENUE CC - FINAL COMPACT
+     ========================================== -->
+<div id="imp-rev-cc" class="imp-panel">
+    <!-- Ultra Compact Info -->
+  <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.8rem;">
+        <div class="d-flex gap-2">
+            <i class="fa-solid fa-info-circle text-primary"></i>
+            <div class="flex-grow-1">
+                <strong class="d-block mb-1">Format CSV</strong>
+                  <div class="text-muted" style="font-size: 0.75rem; line-height: 1.6;">
+                      <strong class="text-success">Real:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, REVENUE_SOLD | DPS → tambah WITEL_BILL, REVENUE_BILL<br>
+                      <strong class="text-warning">Target:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, TARGET_REVENUE | DPS → tambah WITEL_BILL
+                  </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="formRevenueCC" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="import_type" value="revenue_cc">
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold small">
+                    <i class="fa-solid fa-calendar me-1"></i>Periode <span class="text-danger">*</span>
+                </label>
+                <input type="text" id="import-cc-periode" class="form-control form-control-sm datepicker-control" placeholder="Pilih Periode" readonly required>
+                <input type="hidden" name="month" id="import-cc-month">
+                <input type="hidden" name="year" id="import-cc-year">
             </div>
 
-            <div class="collapse" id="infoRevCC">
-                <div class="alert alert-warning" style="margin-bottom: 1rem;">
-                    <strong>Penting:</strong>
-                    <ul style="margin: 0.5rem 0 0 0; padding-left: 1.25rem; font-size: 0.9rem;">
-                        <li>Pilih <strong>Periode</strong> terlebih dahulu</li>
-                        <li>Jika periode + NIPNAS sudah ada → <strong>UPDATE</strong></li>
-                        <li>AM revenues otomatis <strong>recalculated</strong></li>
-                    </ul>
-                </div>
-
-                <div class="card mb-3" style="border: 2px solid #e7f3ff; background: #f8fcff;">
-                    <div class="card-body" style="padding: 1rem;">
-                        <h6 class="mb-2" style="color: #0066cc; font-weight: 600;">
-                            <i class="fa-solid fa-file-lines me-1"></i> Format DGS/DSS:
-                        </h6>
-                        <small><strong>Kolom:</strong> NIPNAS, LSEGMENT_HO, WITEL_HO, REVENUE_SOLD</small>
-
-                        <hr style="margin: 0.75rem 0;">
-
-                        <h6 class="mb-2" style="color: #0066cc; font-weight: 600;">
-                            <i class="fa-solid fa-file-lines me-1"></i> Format DPS:
-                        </h6>
-                        <small><strong>Kolom:</strong> NIPNAS, LSEGMENT_HO, WITEL_HO, WITEL_BILL, REVENUE_BILL</small>
-                    </div>
-                </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold small">
+                    <i class="fa-solid fa-sitemap me-1"></i>Divisi <span class="text-danger">*</span>
+                </label>
+                <select class="form-select form-select-sm" name="divisi_id" id="revCCDivisiImport" required>
+                    <option value="">Pilih Divisi</option>
+                </select>
             </div>
 
-            <form id="formRevenueCC" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="import_type" value="revenue_cc">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold small">
+                    <i class="fa-solid fa-tag me-1"></i>Jenis Data <span class="text-danger">*</span>
+                </label>
+                <select class="form-select form-select-sm" name="jenis_data" id="revCCJenisDataImport" required>
+                    <option value="">Pilih Jenis</option>
+                    <option value="revenue">Real Revenue</option>
+                    <option value="target">Target Revenue</option>
+                </select>
+            </div>
 
-                <div class="row gx-3 gy-3">
-                    <div class="col-md-4">
-                        <label class="form-label">
-                            <i class="fa-solid fa-calendar-days"></i>
-                            Periode <span class="required">*</span>
-                        </label>
-                        <input type="text" id="import-cc-periode" class="form-control datepicker-control" placeholder="Pilih Bulan & Tahun" autocomplete="off" readonly required>
-                        <input type="hidden" name="month" id="import-cc-month">
-                        <input type="hidden" name="year" id="import-cc-year">
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label">
-                            <i class="fa-solid fa-file-csv"></i>
-                            Upload File CSV <span class="required">*</span>
-                        </label>
-                        <input type="file" class="form-control" name="file" accept=".csv" required>
-                        <small class="text-muted">
-                            <a href="{{ route('revenue.template', ['type' => 'revenue-cc-dgs']) }}">
-                                <i class="fa-solid fa-download me-1"></i>Template DGS/DSS
-                            </a> |
-                            <a href="{{ route('revenue.template', ['type' => 'revenue-cc-dps']) }}">
-                                Template DPS
-                            </a>
-                        </small>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="filter-group">
-                            <label class="form-label">
-                                <i class="fa-solid fa-sitemap"></i>
-                                Divisi <span class="required">*</span>
-                            </label>
-                            <select class="form-select" name="divisi_id" id="divisiImport" required>
-                                <option value="">Pilih Divisi</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <label class="form-label">
-                            <i class="fa-solid fa-tag"></i>
-                            Jenis Data <span class="required">*</span>
-                        </label>
-                        <select class="form-select" name="jenis_data" required>
-                            <option value="">Pilih Jenis Data</option>
-                            <option value="revenue">Revenue (Real)</option>
-                            <option value="target">Target Revenue</option>
-                        </select>
-                        <small class="text-muted">
-                            Pilih "Revenue" untuk REVENUE_SOLD/BILL, "Target" untuk TARGET_REVENUE
-                        </small>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-upload"></i>Import Revenue CC
-                </button>
-            </form>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold small">
+                    <i class="fa-solid fa-file me-1"></i>Upload CSV <span class="text-danger">*</span>
+                </label>
+                <input type="file" class="form-control form-control-sm" name="file" accept=".csv" required>
+            </div>
         </div>
 
-        <!-- ✅ FORM 4: Revenue AM -->
+        <!-- Template Horizontal - 1 Baris -->
+        <div class="mb-3" style="font-size: 0.82rem;">
+            <span class="text-muted me-2">Template:</span>
+            <a href="#" id="linkTemplateDGSDSS" class="text-decoration-none me-2">
+                <i class="fa-solid fa-download me-1"></i><span id="textTemplateDGSDSS">DGS/DSS</span>
+            </a>
+            <span class="text-muted mx-1">|</span>
+            <a href="#" id="linkTemplateDPS" class="text-decoration-none">
+                <i class="fa-solid fa-download me-1"></i><span id="textTemplateDPS">DPS</span>
+            </a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-upload me-1"></i>Import Revenue CC
+        </button>
+    </form>
+</div>
+
+        <!-- ==========================================
+             ✅ FORM 4: REVENUE AM
+             ========================================== -->
         <div id="imp-rev-map" class="imp-panel">
-            <div class="alert alert-info" style="cursor: pointer; margin-bottom: 1rem;" data-bs-toggle="collapse" data-bs-target="#infoRevAM">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fa-solid fa-info-circle me-2"></i>
-                        <strong>Instruksi Format CSV</strong>
-                        <small class="ms-2 text-muted">(klik untuk penjelasan lebih lanjut)</small>
-                    </div>
-                    <i class="fa-solid fa-chevron-down"></i>
-                </div>
-            </div>
-
-            <div class="collapse" id="infoRevAM">
-                <div class="alert alert-warning" style="margin-bottom: 1rem;">
-                    <strong>Penting:</strong>
-                    <ul style="margin: 0.5rem 0 0 0; padding-left: 1.25rem; font-size: 0.9rem;">
-                        <li>Pilih <strong>Periode</strong> terlebih dahulu</li>
-                        <li><strong>Revenue CC harus sudah ada</strong> untuk periode ini</li>
-                        <li>PROPORSI disimpan untuk recalculation otomatis</li>
-                    </ul>
-                </div>
-
-                <div class="card mb-3" style="border: 2px solid #e7f3ff; background: #f8fcff;">
-                    <div class="card-body" style="padding: 1rem;">
-                        <h6 class="mb-2" style="color: #0066cc; font-weight: 600;">
-                            <i class="fa-solid fa-file-lines me-1"></i> Format CSV:
-                        </h6>
-                        <small><strong>Kolom:</strong> NIPNAS, NIK_AM, PROPORSI (0-100)</small>
+            <!-- Compact Info -->
+            <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
+                <div class="d-flex gap-2 align-items-start">
+                    <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block mb-1">Format CSV Revenue AM</strong>
+                        <div class="text-muted" style="font-size: 0.85rem; line-height: 1.5;">
+                            <strong>Kolom:</strong> NIPNAS, NIK_AM, PROPORSI<br>
+                            <strong>Aturan:</strong> Revenue CC harus ada dulu | Proporsi dalam persen (60 = 60%) | Total per NIPNAS = 100
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1469,25 +1432,33 @@
                 @csrf
                 <input type="hidden" name="import_type" value="revenue_am">
 
-                <div class="row gx-3 gy-3">
-                    <div class="col-md-6">
-                        <label class="form-label">
-                            <i class="fa-solid fa-calendar-days"></i>
-                            Periode <span class="required">*</span>
+                <div class="row g-3 mb-3">
+                    <!-- Periode -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-calendar-days me-1"></i>
+                            Periode <span class="text-danger">*</span>
                         </label>
-                        <input type="text" id="import-am-periode" class="form-control datepicker-control" placeholder="Pilih Bulan & Tahun" autocomplete="off" readonly required>
+                        <input type="text" 
+                               id="import-am-periode" 
+                               class="form-control datepicker-control" 
+                               placeholder="Pilih Bulan & Tahun" 
+                               autocomplete="off" 
+                               readonly 
+                               required>
                         <input type="hidden" name="month" id="import-am-month">
                         <input type="hidden" name="year" id="import-am-year">
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">
-                            <i class="fa-solid fa-file-csv"></i>
-                            Upload File CSV <span class="required">*</span>
+                    <!-- Upload File -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-file-csv me-1"></i>
+                            Upload File CSV <span class="text-danger">*</span>
                         </label>
                         <input type="file" class="form-control" name="file" accept=".csv" required>
-                        <small class="text-muted">
-                            <a href="{{ route('revenue.template', ['type' => 'revenue-am']) }}">
+                        <small class="form-text text-muted">
+                            <a href="{{ route('revenue.template', ['type' => 'revenue-am']) }}" class="text-decoration-none">
                                 <i class="fa-solid fa-download me-1"></i>Download Template
                             </a>
                         </small>
@@ -1495,7 +1466,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-upload"></i>Import Revenue AM
+                    <i class="fa-solid fa-upload me-2"></i>Import Revenue AM
                 </button>
             </form>
         </div>
@@ -2324,6 +2295,136 @@ $(document).ready(function() {
       });
     }
   })();
+
+
+
+// ============================================
+// REVENUE CC - FIX DIVISI LOADING
+// ============================================
+
+/**
+ * Update template links
+ */
+function updateRevenueCCTemplateLinks() {
+    const jenisData = $('#revCCJenisDataImport').val() || 'target';
+    
+    let templateDGSDSS, templateDPS, textDGSDSS, textDPS;
+    
+    if (jenisData === 'revenue') {
+        templateDGSDSS = 'revenue-cc-dgs-real';
+        templateDPS = 'revenue-cc-dps-real';
+        textDGSDSS = 'Real DGS/DSS';
+        textDPS = 'Real DPS';
+    } else {
+        templateDGSDSS = 'revenue-cc-dgs-target';
+        templateDPS = 'revenue-cc-dps-target';
+        textDGSDSS = 'Target DGS/DSS';
+        textDPS = 'Target DPS';
+    }
+    
+    $('#linkTemplateDGSDSS')
+        .attr('href', `/revenue-data/template/${templateDGSDSS}`)
+        .find('#textTemplateDGSDSS').text(textDGSDSS);
+    
+    $('#linkTemplateDPS')
+        .attr('href', `/revenue-data/template/${templateDPS}`)
+        .find('#textTemplateDPS').text(textDPS);
+}
+
+/**
+ * Load divisi - MULTIPLE FALLBACK STRATEGIES
+ */
+function loadDivisiOptionsRevCC() {
+    const select = $('#revCCDivisiImport');
+    select.empty().append('<option value="">Pilih Divisi</option>');
+    
+    // Strategy 1: Use global allDivisiData
+    if (typeof allDivisiData !== 'undefined' && Array.isArray(allDivisiData) && allDivisiData.length > 0) {
+        console.log('Using allDivisiData:', allDivisiData);
+        allDivisiData.forEach(function(div) {
+            select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
+        });
+        return;
+    }
+    
+    // Strategy 2: Use window.allDivisiData
+    if (typeof window.allDivisiData !== 'undefined' && Array.isArray(window.allDivisiData) && window.allDivisiData.length > 0) {
+        console.log('Using window.allDivisiData:', window.allDivisiData);
+        window.allDivisiData.forEach(function(div) {
+            select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
+        });
+        return;
+    }
+    
+    // Strategy 3: Copy from main filter dropdown
+    const mainDivisiOptions = $('#divisiFilter option:not(:first)');
+    if (mainDivisiOptions.length > 0) {
+        console.log('Cloning from #divisiFilter');
+        mainDivisiOptions.each(function() {
+            select.append($(this).clone());
+        });
+        return;
+    }
+    
+    // Strategy 4: AJAX as last resort
+    console.log('Loading divisi via AJAX');
+    $.ajax({
+        url: '/revenue-data/filter-options',
+        method: 'GET',
+        success: function(response) {
+            console.log('AJAX response:', response);
+            
+            let divisiData = null;
+            
+            // Try different response structures
+            if (response && response.success && response.data && response.data.divisi) {
+                divisiData = response.data.divisi;
+            } else if (response && response.data && Array.isArray(response.data)) {
+                divisiData = response.data;
+            } else if (response && response.divisi) {
+                divisiData = response.divisi;
+            } else if (Array.isArray(response)) {
+                divisiData = response;
+            }
+            
+            if (divisiData && Array.isArray(divisiData) && divisiData.length > 0) {
+                divisiData.forEach(function(div) {
+                    select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
+                });
+            } else {
+                console.error('No divisi data found in response:', response);
+            }
+        },
+        error: function(xhr) {
+            console.error('AJAX error:', xhr);
+        }
+    });
+}
+
+// Event listeners
+$(document).on('change', '#revCCJenisDataImport', updateRevenueCCTemplateLinks);
+
+// Load on modal show
+$('#importModal').on('shown.bs.modal', function() {
+    if ($('#imp-rev-cc').hasClass('active')) {
+        loadDivisiOptionsRevCC();
+        updateRevenueCCTemplateLinks();
+    }
+});
+
+// Load on tab click
+$(document).on('click', '[data-imp="imp-rev-cc"]', function() {
+    setTimeout(function() {
+        loadDivisiOptionsRevCC();
+        updateRevenueCCTemplateLinks();
+    }, 200);
+});
+
+// Initialize
+$(document).ready(function() {
+    updateRevenueCCTemplateLinks();
+});
+
 
   // ========================================
   // ✅ FIX #1: BUILD SEGMENT DROPDOWN UI + INTERACTIONS
@@ -3297,7 +3398,7 @@ $(document).ready(function() {
     loadData();
   });
 
-  // ========================================
+// ========================================
   // ✅ FIXED: 2-STEP IMPORT WITH PREVIEW
   // ========================================
 
@@ -3321,35 +3422,60 @@ $(document).ready(function() {
     handleImportPreview(currentFormData, currentImportType);
   });
 
+  // ✅ FIXED: Revenue CC Form Submit Handler
   $('#formRevenueCC').submit(function(e) {
     e.preventDefault();
 
     currentFormData = new FormData($(this)[0]);
     currentImportType = currentFormData.get('import_type');
 
+    // ✅ FIXED: Menggunakan ID selector yang BENAR
     const year = $('#import-cc-year').val();
     const month = $('#import-cc-month').val();
-    const divisi = $('#divisiImport').val();
-    const jenisData = $('select[name="jenis_data"]', $(this)).val();
+    const divisi = $('#revCCDivisiImport').val();        // ✅ FIXED: ID yang benar
+    const jenisData = $('#revCCJenisDataImport').val();  // ✅ FIXED: ID yang benar
 
+    // ✅ Debug log untuk validasi
+    console.log('📋 Revenue CC Form Values:', {
+      year: year,
+      month: month,
+      divisi_id: divisi,
+      jenis_data: jenisData,
+      file: currentFormData.get('file')?.name
+    });
+
+    // Validation 1: Periode
     if (!year || !month) {
       alert('❌ Pilih Periode terlebih dahulu!');
+      console.error('Validation failed: Periode kosong');
       return;
     }
 
-    if (!divisi) {
+    // Validation 2: Divisi
+    if (!divisi || divisi === '') {
       alert('❌ Pilih Divisi terlebih dahulu!');
+      console.error('Validation failed: Divisi kosong', {
+        divisi_value: divisi,
+        selector: '#revCCDivisiImport'
+      });
       return;
     }
 
-    if (!jenisData) {
-      alert('❌ Pilih Jenis Data (Revenue/Target) terlebih dahulu!');
+    // Validation 3: Jenis Data
+    if (!jenisData || jenisData === '') {
+      alert('❌ Pilih Jenis Data (Real Revenue/Target Revenue) terlebih dahulu!');
+      console.error('Validation failed: Jenis Data kosong', {
+        jenisData_value: jenisData,
+        selector: '#revCCJenisDataImport'
+      });
       return;
     }
 
+    // Set params to FormData
     currentFormData.set('year', year);
     currentFormData.set('month', month);
 
+    console.log('✅ All validations passed');
     console.log('📤 Submitting Revenue CC with:', {
       year: year,
       month: month,
@@ -3361,6 +3487,7 @@ $(document).ready(function() {
     handleImportPreview(currentFormData, currentImportType);
   });
 
+  // Revenue AM Form Submit Handler
   $('#formRevenueAM').submit(function(e) {
     e.preventDefault();
 

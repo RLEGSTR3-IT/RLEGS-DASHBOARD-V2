@@ -44,23 +44,33 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
 
     // ✅ EXPANDED: Alternative column names yang konsisten
     private $alternativeColumns = [
-        'nik' => [
-            'nik', 'NIK', 'Nik', 'employee_id', 'emp_id', 'id_karyawan', 'Employee ID', 'ID Karyawan'
-        ],
-        'nama_am' => [
-            'nama am', 'NAMA AM', 'nama_am', 'Nama AM', 'account_manager', 'Account Manager',
-            'ACCOUNT_MANAGER', 'AM Name', 'AM_Name', 'namaAM', 'Name', 'Nama Account Manager'
-        ],
-        'witel_ho' => [
-            'witel ho', 'WITEL HO', 'witel_ho', 'Witel HO', 'witel', 'WITEL', 'Witel', 'Witel_HO'
-        ],
-        'regional' => [
-            'regional', 'REGIONAL', 'Regional', 'treg', 'TREG', 'Treg', 'TREG Regional'
-        ],
-        'divisi' => [
-            'divisi', 'DIVISI', 'Divisi', 'division', 'Division', 'DIVISION', 'Nama Divisi'
-        ]
-    ];
+    'nik' => [
+        'nik', 'NIK', 'Nik', 'nik_am', 'NIK_AM', 'employee_id', 'emp_id'
+    ],
+    'nama_am' => [
+        'nama am', 'NAMA AM', 'nama_am', 'Nama AM', 'account_manager', 'Account Manager'
+    ],
+    'witel_ho' => [
+        'witel ho', 'WITEL HO', 'witel_ho', 'Witel HO', 
+        'witel am', 'WITEL AM', 'witel_am', 'Witel AM',  // ✅ TAMBAH INI
+        'witel', 'WITEL', 'Witel'
+    ],
+    'regional' => [
+        'regional', 'REGIONAL', 'Regional', 'treg', 'TREG', 'Treg'
+    ],
+    'divisi' => [
+        'divisi', 'DIVISI', 'Divisi', 
+        'divisi am', 'DIVISI AM', 'divisi_am', 'Divisi AM',  // ✅ TAMBAH INI
+        'division', 'Division'
+    ],
+    // ✅ TAMBAH MAPPING BARU
+    'role' => [
+        'role', 'ROLE', 'Role', 'AM Role', 'Account Manager Role'
+    ],
+    'telda' => [
+        'telda', 'TELDA', 'Telda', 'TELDA AM', 'telda_id'
+    ]
+];
 
     public function __construct()
     {
@@ -253,34 +263,54 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
      * ✅ FIXED: Extract and validate row data dengan NIK validation 4-10 digit
      */
     private function extractRowData($row, $columnMap, $rowNumber)
-    {
-        $data = [
-            'nik' => $this->extractValue($row, $columnMap, 'nik'),
-            'nama' => $this->extractValue($row, $columnMap, 'nama_am'),
-            'witel_name' => $this->extractValue($row, $columnMap, 'witel_ho'),
-            'regional_name' => $this->extractValue($row, $columnMap, 'regional'),
-            'divisi_name' => $this->extractValue($row, $columnMap, 'divisi')
-        ];
+{
+    $data = [
+        'nik' => $this->extractValue($row, $columnMap, 'nik'),
+        'nama' => $this->extractValue($row, $columnMap, 'nama_am'),
+        'witel_name' => $this->extractValue($row, $columnMap, 'witel_ho'),
+        'role' => $this->extractValue($row, $columnMap, 'role'),        // ✅ TAMBAH
+        'divisi_name' => $this->extractValue($row, $columnMap, 'divisi'),
+        'telda_name' => $this->extractValue($row, $columnMap, 'telda')  // ✅ TAMBAH
+    ];
 
-        // ✅ Validate required fields
-        if (empty($data['nik'])) {
-            $this->errorDetails[] = "❌ Baris {$rowNumber}: NIK kosong";
-            return null;
-        }
-
-        if (empty($data['nama'])) {
-            $this->errorDetails[] = "❌ Baris {$rowNumber}: Nama Account Manager kosong";
-            return null;
-        }
-
-        // ✅ FIXED: Validate NIK format (4-10 digits) - konsisten dengan controller
-        if (!preg_match('/^\d{4,10}$/', $data['nik'])) {
-            $this->errorDetails[] = "❌ Baris {$rowNumber}: Format NIK tidak valid: '{$data['nik']}' (harus 4-10 digit angka)";
-            return null;
-        }
-
-        return $data;
+    // Validate NIK
+    if (empty($data['nik'])) {
+        $this->errorDetails[] = "❌ Baris {$rowNumber}: NIK kosong";
+        return null;
     }
+
+    // Validate nama
+    if (empty($data['nama'])) {
+        $this->errorDetails[] = "❌ Baris {$rowNumber}: Nama kosong";
+        return null;
+    }
+
+    // ✅ VALIDATE ROLE
+    if (empty($data['role'])) {
+        $this->errorDetails[] = "❌ Baris {$rowNumber}: ROLE kosong";
+        return null;
+    }
+
+    $data['role'] = strtoupper(trim($data['role']));
+    if (!in_array($data['role'], ['AM', 'HOTDA'])) {
+        $this->errorDetails[] = "❌ Baris {$rowNumber}: ROLE harus 'AM' atau 'HOTDA', dapat: '{$data['role']}'";
+        return null;
+    }
+
+    // ✅ VALIDATE TELDA (wajib untuk HOTDA)
+    if ($data['role'] === 'HOTDA' && empty($data['telda_name'])) {
+        $this->errorDetails[] = "❌ Baris {$rowNumber}: HOTDA wajib memiliki TELDA";
+        return null;
+    }
+
+    // ✅ VALIDATE TELDA (tidak boleh untuk AM)
+    if ($data['role'] === 'AM' && !empty($data['telda_name'])) {
+        $this->errorDetails[] = "❌ Baris {$rowNumber}: AM tidak boleh memiliki TELDA";
+        return null;
+    }
+
+    return $data;
+}
 
     /**
      * ✅ IMPROVED: Process grouped data dengan transaction

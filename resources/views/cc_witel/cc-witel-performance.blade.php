@@ -1,3 +1,4 @@
+{{-- FIX: ideally this should use the main layout, but it's far too deep in this layout now. changing to main will only ensue chaos --}}
 @extends('layouts.cc-witel-performance-layout')
 
 @section('styles')

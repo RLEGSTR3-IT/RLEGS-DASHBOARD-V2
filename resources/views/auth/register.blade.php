@@ -586,6 +586,7 @@
           if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
             suggestionsContainer.classList.add('hidden');
           }
+          suggestionsContainer.classList.add('hidden');
         });
       }
 

@@ -73,7 +73,7 @@ class RegisteredUserController extends Controller
 
             Log::info($_REQUEST, []);
 
-            // Validasi dasar untuk semua role
+            // validasi dasar untuk semua role
             $commonRules = [
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
@@ -82,7 +82,7 @@ class RegisteredUserController extends Controller
                 'recaptcha_token'  => ['required', new RecaptchaV3('register', config('services.recaptcha.v3.threshold'))],
             ];
 
-            // Validasi khusus berdasarkan role
+            // validasi khusus berdasarkan role
             $roleSpecificRules = [];
 
             if ($request->role === 'admin') {
@@ -99,7 +99,7 @@ class RegisteredUserController extends Controller
                     ])->withInput();
                 }
 
-                // Periksa apakah ada account manager di database
+                // periksa apakah ada account manager di database
                 $accountManagersExist = AccountManager::count() > 0;
 
                 if ($accountManagersExist) {
@@ -114,7 +114,7 @@ class RegisteredUserController extends Controller
                     ])->withInput();
                 }
             } elseif ($request->role === 'witel') {
-                // Periksa apakah ada witel di database
+                // periksa apakah ada witel di database
                 $witelsExist = Witel::count() > 0;
 
                 if ($witelsExist) {
@@ -130,11 +130,10 @@ class RegisteredUserController extends Controller
                 }
             }
 
-            // TODO: Make a validator function to check if selected AM already has an account
             $rules = array_merge($commonRules, $roleSpecificRules);
             $validator = Validator::make($request->all(), $rules);
 
-            // Validasi khusus untuk kode admin
+            // validasi khusus untuk kode admin
             if ($request->role === 'admin') {
                 $validator->after(function ($validator) use ($request) {
                     $hash = config('auth.admin_code_hash');
@@ -144,7 +143,7 @@ class RegisteredUserController extends Controller
                 });
             }
 
-            // Validasi khusus untuk komparasi NIK AM
+            // validasi khusus untuk komparasi NIK AM
             elseif ($request->role === 'account_manager') {
                 $validator->after(function ($validator) use ($request) {
                     $accountManager = AccountManager::findOrFail($request->account_manager_id);
@@ -154,7 +153,7 @@ class RegisteredUserController extends Controller
                 });
             }
 
-            // Validasi khusus untuk kode witel
+            // validasi khusus untuk kode witel
             else {
                 $validator->after(function ($validator) use ($request) {
                     // NOTE: the order of this array is important to keep it as is
@@ -175,7 +174,7 @@ class RegisteredUserController extends Controller
                 return back()->withErrors($validator)->withInput();
             }
 
-            // Set data berdasarkan role
+            // set data berdasarkan role
             $userData = [
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
@@ -187,12 +186,12 @@ class RegisteredUserController extends Controller
                 'witel_code' => null,
             ];
 
-            // Proses untuk admin
+            // proses untuk admin
             if ($request->role === 'admin') {
                 $userData['name'] = $request->name;
                 $userData['admin_code'] = $request->admin_code;
             }
-            // Proses untuk account manager
+            // proses untuk account manager
             elseif ($request->role === 'account_manager') {
                 try {
                     $accountManager = AccountManager::findOrFail($request->account_manager_id);
@@ -206,13 +205,12 @@ class RegisteredUserController extends Controller
                     return back()->withErrors(['account_manager_id' => 'Account Manager tidak ditemukan.'])->withInput();
                 }
             }
-            // Proses untuk witel
+            // proses untuk witel
             elseif ($request->role === 'witel') {
                 try {
                     $witel = Witel::findOrFail($request->witel_id);
                     $userData['name'] = "Support Witel " . $witel->nama;
                     $userData['witel_id'] = $witel->id;
-                    // NOTE: wut??
                     $userData['witel_code'] = $request->witel_code;
                 } catch (Exception $e) {
                     Log::error('Witel not found', [
@@ -223,7 +221,7 @@ class RegisteredUserController extends Controller
                 }
             }
 
-            // Upload profile image jika ada
+            // upload profile image jika ada
             if ($request->hasFile('profile_image') && $request->file('profile_image')->isValid()) {
                 try {
                     $path = $request->file('profile_image')->store('profile-images', 'public');
@@ -233,7 +231,6 @@ class RegisteredUserController extends Controller
                     Log::error('Failed to upload profile image', [
                         'error' => $e->getMessage()
                     ]);
-                    // Continue registration even if image upload fails
                 }
             }
 

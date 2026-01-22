@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
+
+      
         /* ===== EXISTING STYLES - PRESERVED ===== */
 
         /* Additional styles for result modal */
@@ -87,6 +89,22 @@
             font-weight: bold;
             transition: width 0.5s ease;
         }
+      
+      
+      
+        /* ✅ Force show tab content in modal */
+        #modalEditDataAM .tab-content {
+            display: block !important;
+        }
+
+        #modalEditDataAM .tab-pane {
+            display: none;
+        }
+
+        #modalEditDataAM .tab-pane.active {
+            display: block !important;
+        }
+
 
         .result-modal-info {
             background: #e7f3ff;
@@ -1642,53 +1660,32 @@
     </div>
 </div>
 
-<!-- ✅ IMPROVED: Modal Edit Data AM with Conditional Tabs & Fields -->
-<div class="modal fade" id="modalEditDataAM" tabindex="-1" aria-labelledby="modalEditDataAMLabel" aria-hidden="true">
+<!-- Modal Edit Data AM -->
+<div class="modal fade" id="modalEditDataAM" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalEditDataAMLabel">Edit Data AM</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Edit Data AM</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- ✅ CONDITIONAL: Tabs only if registered -->
-                <ul class="nav nav-tabs mb-3" role="tablist" id="editDataAMTabs" style="display: none;">
+                <!-- ✅ TABS NAV -->
+                <ul class="nav nav-tabs mb-3" id="editDataAMTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active"
-                                id="tab-edit-data-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#tab-edit-data"
-                                type="button"
-                                role="tab"
-                                aria-controls="tab-edit-data"
-                                aria-selected="true">
-                            Data AM
-                        </button>
+                        <button class="nav-link active" id="tab-edit-data-tab" data-bs-toggle="tab" data-bs-target="#tab-edit-data" type="button">Data AM</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link"
-                                id="tab-change-password-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#tab-change-password"
-                                type="button"
-                                role="tab"
-                                aria-controls="tab-change-password"
-                                aria-selected="false">
-                            Ganti Password
-                        </button>
+                        <button class="nav-link" id="tab-change-password-tab" data-bs-toggle="tab" data-bs-target="#tab-change-password" type="button">Ganti Password</button>
                     </li>
                 </ul>
 
-                <!-- Tab Content -->
-                <div class="tab-content" id="editDataAMTabContent">
-                    <!-- Tab 1: Edit Data AM -->
-                    <div class="tab-pane fade show active"
-                         id="tab-edit-data"
-                         role="tabpanel"
-                         aria-labelledby="tab-edit-data-tab">
+                <!-- TAB CONTENT -->
+                <div class="tab-content">
+                    <!-- Tab 1: Edit Data -->
+                    <div class="tab-pane fade show active" id="tab-edit-data">
                         <form id="formEditDataAM">
                             <input type="hidden" id="editDataAMId">
-
+                            
                             <div class="mb-3">
                                 <label class="form-label">Nama AM</label>
                                 <input type="text" class="form-control" id="editDataAMNama" required>
@@ -1710,58 +1707,39 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Witel</label>
-                                <select class="form-select" id="editDataAMWitel" required>
-                                    <option value="">Pilih Witel</option>
-                                </select>
+                                <select class="form-select" id="editDataAMWitel" required></select>
                             </div>
 
-                            <!-- ✅ CONDITIONAL: TELDA field (only for HOTDA) -->
+                            <!-- ✅ TELDA WRAPPER -->
                             <div class="mb-3" id="editDataAMTeldaWrapper">
                                 <label class="form-label">TELDA</label>
-                                <select class="form-select" id="editDataAMTelda">
-                                    <option value="">Pilih TELDA</option>
-                                </select>
+                                <select class="form-select" id="editDataAMTelda"></select>
                             </div>
 
-                            <!-- ✨ Divisi Button Group -->
+                            <!-- ✅ DIVISI BUTTON GROUP -->
                             <div class="mb-3">
                                 <label class="form-label">Divisi</label>
-                                <small class="text-muted d-block mb-2">
-                                    <i class="fa-solid fa-info-circle me-1"></i>
-                                    Klik button untuk memilih divisi (bisa pilih lebih dari satu)
-                                </small>
                                 <div class="divisi-button-group" id="divisiButtonGroup"></div>
                                 <div class="divisi-hidden-container" id="divisiHiddenInputs"></div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fa-solid fa-save me-2"></i>Simpan Perubahan
-                            </button>
+                            <button type="submit" class="btn btn-primary w-100">Simpan</button>
                         </form>
                     </div>
 
-                    <!-- Tab 2: Change Password (only if registered) -->
-                    <div class="tab-pane fade"
-                         id="tab-change-password"
-                         role="tabpanel"
-                         aria-labelledby="tab-change-password-tab">
+                    <!-- Tab 2: Change Password -->
+                    <div class="tab-pane fade" id="tab-change-password">
                         <form id="formChangePasswordAM">
                             <input type="hidden" id="changePasswordAMId">
-
                             <div class="mb-3">
                                 <label class="form-label">Password Baru</label>
                                 <input type="password" class="form-control" id="newPassword" required minlength="6">
-                                <small class="text-muted">Minimal 6 karakter</small>
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label">Konfirmasi Password</label>
                                 <input type="password" class="form-control" id="confirmPassword" required minlength="6">
                             </div>
-
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fa-solid fa-key me-2"></i>Ganti Password
-                            </button>
+                            <button type="submit" class="btn btn-primary w-100">Ganti Password</button>
                         </form>
                     </div>
                 </div>
@@ -2731,61 +2709,79 @@ $(document).ready(function() {
   // ✨ DIVISI BUTTON GROUP HANDLER
   // ========================================
   function initDivisiButtonGroup() {
-    const buttonGroup = document.getElementById('divisiButtonGroup');
-    const hiddenContainer = document.getElementById('divisiHiddenInputs');
+  const buttonGroup = document.getElementById('divisiButtonGroup');
+  const hiddenContainer = document.getElementById('divisiHiddenInputs');
 
-    if (!buttonGroup || !hiddenContainer) return;
-
-    buttonGroup.innerHTML = '';
-    hiddenContainer.innerHTML = '';
-
-    allDivisiData.forEach(divisi => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      const kodeRingkas = divisi.kode.substring(0, 3).toUpperCase();
-      btn.className = `divisi-toggle-btn ${kodeRingkas.toLowerCase()}`;
-      btn.dataset.divisiId = divisi.id;
-      btn.dataset.divisiKode = divisi.kode;
-      btn.textContent = kodeRingkas;
-
-      btn.addEventListener('click', function() {
-        this.classList.toggle('active');
-        updateHiddenInputs();
-      });
-
-      buttonGroup.appendChild(btn);
-    });
+  if (!buttonGroup || !hiddenContainer) {
+    console.warn('Divisi button group elements not found');
+    return;
   }
 
-  function updateHiddenInputs() {
-    const hiddenContainer = document.getElementById('divisiHiddenInputs');
-    const activeButtons = document.querySelectorAll('.divisi-toggle-btn.active');
+  buttonGroup.innerHTML = '';
+  hiddenContainer.innerHTML = '';
 
-    hiddenContainer.innerHTML = '';
+  allDivisiData.forEach(divisi => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    const kodeRingkas = divisi.kode.substring(0, 3).toUpperCase();
+    btn.className = `divisi-toggle-btn ${kodeRingkas.toLowerCase()}`;
+    btn.dataset.divisiId = divisi.id;
+    btn.dataset.divisiKode = divisi.kode;
+    btn.textContent = kodeRingkas;
 
-    activeButtons.forEach(btn => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'divisi_ids[]';
-      input.value = btn.dataset.divisiId;
-      hiddenContainer.appendChild(input);
+    btn.addEventListener('click', function() {
+      this.classList.toggle('active');
+      updateHiddenInputs();
     });
+
+    buttonGroup.appendChild(btn);
+  });
+}
+
+function updateHiddenInputs() {
+  const hiddenContainer = document.getElementById('divisiHiddenInputs');
+  
+  // ✅ FIX: Null check
+  if (!hiddenContainer) {
+    console.warn('hiddenContainer not found, skipping update');
+    return;
   }
 
-  function setSelectedDivisi(divisiIds) {
-    document.querySelectorAll('.divisi-toggle-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
+  const activeButtons = document.querySelectorAll('.divisi-toggle-btn.active');
+  hiddenContainer.innerHTML = '';
 
+  activeButtons.forEach(btn => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'divisi_ids[]';
+    input.value = btn.dataset.divisiId;
+    hiddenContainer.appendChild(input);
+  });
+}
+
+function setSelectedDivisi(divisiIds) {
+  // ✅ FIX: Null check untuk buttons
+  const buttons = document.querySelectorAll('.divisi-toggle-btn');
+  if (!buttons || buttons.length === 0) {
+    console.warn('Divisi buttons not found');
+    return;
+  }
+
+  // Reset all buttons
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  // Set active buttons
+  if (Array.isArray(divisiIds)) {
     divisiIds.forEach(id => {
       const btn = document.querySelector(`.divisi-toggle-btn[data-divisi-id="${id}"]`);
       if (btn) {
         btn.classList.add('active');
       }
     });
-
-    updateHiddenInputs();
   }
+
+  updateHiddenInputs();
+}
 
   // ========================================
   // CHECKBOX & BULK DELETE LOGIC
@@ -3945,16 +3941,76 @@ $(document).ready(function() {
     });
   };
 
-  // ✅ FIX #3: IMPROVED Edit Data AM with Conditional Logic
-  window.editDataAM = function(id) {
-    $.ajax({
-      url: `/revenue-data/data-am/${id}`,
-      method: 'GET',
-      success: function(response) {
-        if (response.success) {
-          const data = response.data;
 
-          // Set basic fields
+// ========================================
+// ✅ TOGGLE TELDA FIELD - FIXED
+// ========================================
+function toggleTeldaField(role) {
+  const teldaWrapper = document.getElementById('editDataAMTeldaWrapper');
+  
+  // ✅ FIX: Null check
+  if (!teldaWrapper) {
+    console.warn('editDataAMTeldaWrapper not found');
+    return;
+  }
+
+  if (role === 'HOTDA') {
+    teldaWrapper.classList.remove('hidden');
+    teldaWrapper.style.display = 'block';
+  } else {
+    teldaWrapper.classList.add('hidden');
+    teldaWrapper.style.display = 'none';
+  }
+}
+
+// ========================================
+// ✅ EVENT LISTENER - ROLE CHANGE
+// ========================================
+$('#editDataAMRole').on('change', function() {
+  const role = $(this).val();
+  toggleTeldaField(role);
+});
+
+
+// ========================================
+// ✅ EDIT DATA AM - FORCE SHOW CONTENT
+// ========================================
+window.editDataAM = function(id) {
+  $.ajax({
+    url: `/revenue-data/data-am/${id}`,
+    method: 'GET',
+    success: function(response) {
+      if (!response.success) {
+        alert('Error: ' + response.message);
+        return;
+      }
+
+      const data = response.data;
+      const modalEl = document.getElementById('modalEditDataAM');
+      
+      if (!modalEl) {
+        console.error('❌ Modal not found!');
+        return;
+      }
+
+      const modal = new bootstrap.Modal(modalEl);
+
+      $(modalEl).one('shown.bs.modal', function() {
+        setTimeout(function() {
+          console.log('✅ Populating fields with data:', data);
+
+          // ✅ FORCE SHOW TAB CONTENT
+          $('#tab-edit-data').addClass('show active');
+          $('#tab-change-password').removeClass('show active');
+          
+          // ✅ FORCE SHOW TABS NAV (jika registered)
+          if (data.is_registered) {
+            $('#editDataAMTabs').show().css('display', 'flex');
+          } else {
+            $('#editDataAMTabs').hide();
+          }
+
+          // Set values
           $('#editDataAMId').val(data.id);
           $('#changePasswordAMId').val(data.id);
           $('#editDataAMNama').val(data.nama);
@@ -3963,83 +4019,31 @@ $(document).ready(function() {
           $('#editDataAMWitel').val(data.witel_id);
           $('#editDataAMTelda').val(data.telda_id || '');
 
-          // Set divisi button group
-          const divisiIds = data.divisi.map(d => d.id);
-          setSelectedDivisi(divisiIds);
-
-          // ✅ Show/hide TELDA field based on role
-          toggleTeldaField(data.role);
-
-          // ✅ Show/hide tabs based on registration status
-          const tabsNav = document.getElementById('editDataAMTabs');
-          if (data.is_registered) {
-            tabsNav.style.display = 'flex';
-          } else {
-            tabsNav.style.display = 'none';
+          // Divisi
+          if ($('#divisiButtonGroup').children().length === 0) {
+            initDivisiButtonGroup();
+          }
+          
+          if (data.divisi && Array.isArray(data.divisi)) {
+            const divisiIds = data.divisi.map(d => d.id);
+            setTimeout(() => setSelectedDivisi(divisiIds), 100);
           }
 
-          // Show modal
-          const modal = new bootstrap.Modal(document.getElementById('modalEditDataAM'));
-          modal.show();
+          // TELDA toggle
+          toggleTeldaField(data.role);
 
-          // ✅ Ensure first tab is active
-          setTimeout(() => {
-            const firstTab = document.querySelector('#tab-edit-data-tab');
-            if (firstTab && data.is_registered) {
-              const bsTab = new bootstrap.Tab(firstTab);
-              bsTab.show();
-            }
-          }, 100);
-        } else {
-          alert('Error: ' + response.message);
-        }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
-    });
-  };
+          console.log('✅ All fields populated!');
+        }, 200);
+      });
 
-  // ✅ Helper: Toggle TELDA field visibility
-  function toggleTeldaField(role) {
-    const teldaWrapper = document.getElementById('editDataAMTeldaWrapper');
-    if (role === 'HOTDA') {
-      teldaWrapper.classList.remove('hidden');
-      teldaWrapper.style.display = 'block';
-    } else {
-      teldaWrapper.classList.add('hidden');
-      teldaWrapper.style.display = 'none';
+      modal.show();
+    },
+    error: function(xhr) {
+      console.error('❌ AJAX Error:', xhr);
+      alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
     }
-  }
-
-  // ✅ Event listener: Role change triggers TELDA visibility
-  $('#editDataAMRole').on('change', function() {
-    const role = $(this).val();
-    toggleTeldaField(role);
   });
-
-  window.deleteDataAM = function(id) {
-    if (!confirm('Hapus Data AM ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
-      return;
-    }
-
-    $.ajax({
-      url: `/revenue-data/data-am/${id}`,
-      method: 'DELETE',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      success: function(response) {
-        if (response.success) {
-          alert(response.message);
-          loadData();
-        } else {
-          alert('Error: ' + response.message);
-        }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
-    });
-  };
+};
 
   window.editDataCC = function(id) {
     $.ajax({

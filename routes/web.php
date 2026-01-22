@@ -1087,19 +1087,8 @@ if (app()->environment('local')) {
 
 // ===== FALLBACK =====
 Route::fallback(function () {
-    if (request()->wantsJson()) {
-        return response()->json([
-            'error' => 'Route not found',
-            'available_routes' => [
-                'dashboard' => route('dashboard'),
-                'leaderboard' => route('leaderboard'),
-                'high_five' => route('high-five.index'),
-                'health_check' => route('health-check')
-            ]
-        ], 404);
-    }
-
-    return view('errors.404');
+    // Return view untuk semua requests
+    return response()->view('errors.404', [], 404);
 });
 
 require __DIR__ . '/auth.php';

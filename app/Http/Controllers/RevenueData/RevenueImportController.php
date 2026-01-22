@@ -52,7 +52,7 @@ class RevenueImportController extends Controller
             // Validate import_type
             $validator = Validator::make($request->all(), [
                 'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-                'file' => 'required|file|mimes:csv,txt|max:10240'
+                'file' => 'required|file|mimes:csv,txt|max:102400'
             ]);
 
             if ($validator->fails()) {
@@ -412,7 +412,7 @@ class RevenueImportController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-                'file' => 'required|file|mimes:csv,txt|max:10240'
+                'file' => 'required|file|mimes:csv,txt|max:102400'
             ]);
 
             if ($validator->fails()) {
@@ -727,7 +727,7 @@ class RevenueImportController extends Controller
 
         $basicRules = [
             'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-            'file' => 'required|file|mimes:csv,txt|max:10240'
+            'file' => 'required|file|mimes:csv,txt|max:102400'
         ];
 
         $additionalRules = [];

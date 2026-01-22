@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const action = form.getAttribute('data-recaptcha-action') || 'submit';
                 const token = await getToken(action);
                 input.value = token;
+                // TODO: send request to backend (verifyCaptcha('auth.captchaVerify')?)
                 form.submit();
             } catch (err) {
                 console.error('reCAPTCHA v3 error', err);

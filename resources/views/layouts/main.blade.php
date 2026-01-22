@@ -82,12 +82,13 @@
             #sidebar {
                 position: fixed !important;
                 top: 0 !important;
-                left: -280px !important;
-                width: 280px !important;
+                left: -100vw !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
                 height: 100vh !important;
                 z-index: 1040 !important;
                 transition: left 0.3s ease-in-out !important;
-                box-shadow: 2px 0 15px rgba(0,0,0,0.1) !important;
+                box-shadow: none !important;
                 overflow-y: auto !important;
                 overflow-x: hidden !important;
                 display: block !important;
@@ -95,10 +96,10 @@
                 transform: translateX(0) !important;
                 margin-left: 0 !important;
                 background: white !important;
-                border-right: 1px solid #e9ecef !important;
+                border-right: none !important;
             }
 
-            /* CRITICAL: Show sidebar when active - ULTRA HIGH specificity */
+            /* CRITICAL: Show sidebar when active - FULL SCREEN */
             body aside#sidebar.show,
             body #sidebar.show,
             aside#sidebar.show,
@@ -106,17 +107,28 @@
                 left: 0 !important;
                 transform: translateX(0) !important;
                 margin-left: 0 !important;
+                width: 100vw !important;
             }
 
             /* OVERRIDE: Disable external sidebar toggle behavior */
             body.toggle-sidebar aside#sidebar,
             body.toggle-sidebar #sidebar {
-                left: -280px !important;
+                left: -100vw !important;
             }
 
             body.toggle-sidebar aside#sidebar.show,
             body.toggle-sidebar #sidebar.show {
                 left: 0 !important;
+            }
+
+            /* Full screen sidebar - add padding for better mobile UX */
+            #sidebar {
+                padding: 20px !important;
+            }
+
+            #sidebar .sidebar-nav,
+            aside#sidebar .sidebar-nav {
+                margin-top: 20px !important;
             }
 
             /* Sidebar header styling */
@@ -159,11 +171,30 @@
                 overflow: visible !important;
             }
 
+            /* Force consistent spacing - override any external CSS */
+            #sidebar .sidebar-nav > *,
+            aside#sidebar .sidebar-nav > * {
+                margin: 0 !important;
+            }
+
+            #sidebar .sidebar-nav > li,
+            aside#sidebar .sidebar-nav > li {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
             #sidebar .sidebar-item,
             aside#sidebar .sidebar-item {
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: visible !important;
+            }
+
+            /* FORCE NO EXTRA SPACING between items */
+            #sidebar .sidebar-item + .sidebar-item,
+            aside#sidebar .sidebar-item + .sidebar-item {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
             }
 
             #sidebar .sidebar-link,
@@ -276,21 +307,9 @@
                 width: 280px !important;
             }
 
-            /* Overlay for when sidebar is open */
+            /* NO OVERLAY - sidebar will be full screen on mobile */
             .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(0,0,0,0.5);
-                z-index: 1035;
-                display: none;
-                backdrop-filter: blur(2px);
-            }
-
-            .sidebar-overlay.show {
-                display: block;
+                display: none !important;
             }
 
             /* Force wrapper to not accommodate sidebar */
@@ -461,7 +480,8 @@
 
         @media (max-width: 576px) {
             #sidebar {
-                width: 260px !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
             }
 
             #mobile-navbar .avatar-container {
@@ -512,7 +532,8 @@
                 <li class="sidebar-item">
                     <a href="{{ route('leaderboard') }}" class="sidebar-link">
                         <i class="fas fa-trophy"></i><span>Leaderboard AM</span>
-                    </li>
+                    </a>
+                </li>
                 <li class="sidebar-item">
                     <a href="{{ route('high-five.index') }}" class="sidebar-link">
                         <i class="fas fa-hand-sparkles"></i><span>High-Five</span>
@@ -596,11 +617,12 @@
                     document.body.classList.remove('toggle-sidebar');
                     sidebar.classList.remove('expanded', 'collapsed');
 
-                    // Force initial position
-                    sidebar.style.left = '-280px';
+                    // Force initial position - FULL SCREEN OFF SCREEN
+                    sidebar.style.left = '-100vw';
                     sidebar.style.position = 'fixed';
                     sidebar.style.zIndex = '1040';
-                    sidebar.style.width = '280px';
+                    sidebar.style.width = '100vw';
+                    sidebar.style.maxWidth = '100vw';
                     sidebar.style.transition = 'left 0.3s ease-in-out';
 
                     // Disable external toggle button on mobile
@@ -808,8 +830,7 @@
                 // Insert at the beginning of body
                 document.body.insertBefore(mobileNav, document.body.firstChild);
 
-                // Create overlay
-                createSidebarOverlay();
+                // NO OVERLAY NEEDED - sidebar is full screen
 
                 // Initialize Bootstrap dropdown for mobile navbar
                 setTimeout(() => {
@@ -820,21 +841,6 @@
                 }, 100);
 
                 console.log('Mobile navbar created successfully!');
-            }
-        }
-
-        // Create sidebar overlay
-        function createSidebarOverlay() {
-            let overlay = document.querySelector('.sidebar-overlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.className = 'sidebar-overlay';
-                overlay.addEventListener('click', function(e) {
-                    console.log('Overlay clicked!');
-                    closeSidebar();
-                });
-                document.body.appendChild(overlay);
-                console.log('Overlay created!');
             }
         }
 
@@ -849,12 +855,10 @@
 
             console.log('Toggle sidebar clicked!');
             const sidebar = document.querySelector('#sidebar');
-            const overlay = document.querySelector('.sidebar-overlay');
 
             console.log('Sidebar:', sidebar);
-            console.log('Overlay:', overlay);
 
-            if (sidebar && overlay) {
+            if (sidebar) {
                 const isOpen = sidebar.classList.contains('show');
                 console.log('Is open:', isOpen);
 
@@ -864,7 +868,7 @@
                     openSidebar();
                 }
             } else {
-                console.error('Sidebar or overlay not found!');
+                console.error('Sidebar not found!');
             }
 
             setTimeout(() => {
@@ -876,13 +880,11 @@
         function openSidebar() {
             console.log('Opening sidebar...');
             const sidebar = document.querySelector('#sidebar');
-            const overlay = document.querySelector('.sidebar-overlay');
             const mobileNavbar = document.querySelector('#mobile-navbar');
             const hamburger = document.querySelector('.mobile-menu-btn');
 
-            if (sidebar && overlay) {
+            if (sidebar) {
                 sidebar.classList.add('show');
-                overlay.classList.add('show');
 
                 // HIDE HAMBURGER WHEN SIDEBAR OPENS
                 if (hamburger) {
@@ -892,11 +894,13 @@
                     mobileNavbar.classList.add('sidebar-open');
                 }
 
+                // FULL SCREEN SIDEBAR
                 sidebar.style.setProperty('left', '0px', 'important');
                 sidebar.style.setProperty('position', 'fixed', 'important');
                 sidebar.style.setProperty('transform', 'translateX(0)', 'important');
                 sidebar.style.setProperty('z-index', '1040', 'important');
-                sidebar.style.setProperty('width', '280px', 'important');
+                sidebar.style.setProperty('width', '100vw', 'important');
+                sidebar.style.setProperty('max-width', '100vw', 'important');
                 sidebar.style.setProperty('overflow', 'visible', 'important');
                 sidebar.style.setProperty('overflow-x', 'visible', 'important');
                 sidebar.style.setProperty('overflow-y', 'auto', 'important');
@@ -967,13 +971,11 @@
         function closeSidebar() {
             console.log('Closing sidebar...');
             const sidebar = document.querySelector('#sidebar');
-            const overlay = document.querySelector('.sidebar-overlay');
             const mobileNavbar = document.querySelector('#mobile-navbar');
             const hamburger = document.querySelector('.mobile-menu-btn');
 
-            if (sidebar && overlay) {
+            if (sidebar) {
                 sidebar.classList.remove('show');
-                overlay.classList.remove('show');
 
                 // SHOW HAMBURGER WHEN SIDEBAR CLOSES
                 if (hamburger) {
@@ -983,7 +985,7 @@
                     mobileNavbar.classList.remove('sidebar-open');
                 }
 
-                sidebar.style.left = '-280px';
+                sidebar.style.left = '-100vw';
 
                 document.body.style.overflow = '';
 
@@ -993,11 +995,6 @@
 
         // Hide mobile elements on desktop
         function hideMobileElements() {
-            const overlay = document.querySelector('.sidebar-overlay');
-            if (overlay) {
-                overlay.remove();
-            }
-
             const mobileNav = document.querySelector('#mobile-navbar');
             if (mobileNav) {
                 mobileNav.remove();

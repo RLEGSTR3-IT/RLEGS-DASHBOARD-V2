@@ -54,8 +54,27 @@
             object-position: center;
         }
 
+        /* ========== DESKTOP DEFAULT ========== */
+        @media (min-width: 1025px) {
+            /* Hide mobile-only elements on desktop */
+            .mobile-menu-btn,
+            .sidebar-overlay {
+                display: none !important;
+            }
+
+            /* Keep original navbar visible on desktop */
+            .navbar {
+                display: flex !important;
+            }
+        }
+
         /* ========== SIDEBAR MOBILE RESPONSIVE ========== */
         @media (max-width: 1024px) {
+            /* CRITICAL: Hide original navbar on mobile - we'll use custom mobile navbar */
+            .navbar.navbar-expand-lg {
+                display: none !important;
+            }
+
             /* CRITICAL: Override external CSS - Force hide sidebar by default */
             body aside#sidebar,
             body #sidebar,
@@ -297,8 +316,9 @@
                 padding-top: 10px !important;
             }
 
-            /* Fixed navbar with hamburger */
-            .navbar {
+            /* ========== MOBILE NAVBAR STYLES ========== */
+            /* Mobile navbar - created by JavaScript */
+            #mobile-navbar {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -307,7 +327,7 @@
                 max-width: 100vw !important;
                 z-index: 1030 !important;
                 height: 60px !important;
-                padding: 0 10px !important;
+                padding: 0 15px !important;
                 margin: 0 !important;
                 display: flex !important;
                 align-items: center !important;
@@ -315,6 +335,11 @@
                 background: white !important;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
                 border-bottom: 1px solid #e9ecef !important;
+            }
+
+            /* Hide mobile navbar when sidebar is open */
+            #mobile-navbar.sidebar-open {
+                display: none !important;
             }
 
             /* Hamburger menu button */
@@ -328,9 +353,10 @@
                 background: #dc3545 !important;
                 color: white !important;
                 border-radius: 8px !important;
-                font-size: 16px !important;
+                font-size: 18px !important;
                 cursor: pointer !important;
                 transition: all 0.2s ease !important;
+                flex-shrink: 0 !important;
             }
 
             .mobile-menu-btn:hover {
@@ -342,57 +368,75 @@
                 background: #a02834 !important;
             }
 
-            /* Navbar content */
-            .navbar .container-fluid {
-                padding: 0 !important;
+            /* Hide hamburger when sidebar is open */
+            .mobile-menu-btn.hide {
+                display: none !important;
+            }
+
+            /* Mobile navbar container */
+            #mobile-navbar .mobile-navbar-container {
                 width: 100% !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: space-between !important;
-            }
-
-            /* Left side with hamburger */
-            .navbar-left {
-                display: flex !important;
-                align-items: center !important;
                 gap: 12px !important;
             }
 
-            /* Right side with profile */
-            .navbar-right {
+            /* Left side with hamburger */
+            #mobile-navbar .navbar-left {
                 display: flex !important;
                 align-items: center !important;
+                gap: 0 !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Right side with profile */
+            #mobile-navbar .navbar-right {
+                display: flex !important;
+                align-items: center !important;
+                flex-shrink: 0 !important;
             }
 
             /* Profile dropdown mobile */
-            .nav-item.dropdown .nav-link {
-                padding: 6px 10px !important;
-                border-radius: 20px !important;
+            #mobile-navbar .nav-item.dropdown {
+                margin: 0 !important;
+            }
+
+            #mobile-navbar .nav-item.dropdown .nav-link {
+                padding: 6px !important;
+                border-radius: 50% !important;
                 transition: background 0.2s ease !important;
                 color: #2d3748 !important;
                 text-decoration: none !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 0 !important;
             }
 
-            .nav-item.dropdown .nav-link:hover {
+            /* Hide dropdown toggle arrow on mobile */
+            #mobile-navbar .nav-link.dropdown-toggle::after {
+                display: none !important;
+            }
+
+            #mobile-navbar .nav-item.dropdown .nav-link:hover {
                 background: #f8f9fa !important;
             }
 
             /* Avatar container mobile */
-            .avatar-container {
+            #mobile-navbar .avatar-container {
                 width: 32px !important;
                 height: 32px !important;
-                margin-right: 6px !important;
+                margin: 0 !important;
+                flex-shrink: 0 !important;
             }
 
-            /* Profile name */
-            .nav-link span {
-                font-size: 14px !important;
-                font-weight: 500 !important;
-                color: #2d3748 !important;
+            /* Profile name - HIDE ON MOBILE, only show avatar */
+            #mobile-navbar .nav-link .user-name {
+                display: none !important;
             }
 
             /* Dropdown menu mobile */
-            .dropdown-menu {
+            #mobile-navbar .dropdown-menu {
                 right: 0 !important;
                 left: auto !important;
                 margin-top: 8px !important;
@@ -400,17 +444,6 @@
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
                 border-radius: 8px !important;
                 min-width: 180px !important;
-            }
-
-            /* Brand/Logo mobile - simpler */
-            .navbar-brand {
-                font-size: 0 !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-
-            .navbar-brand img {
-                display: inline-block !important;
             }
 
             /* Body and HTML adjustments */
@@ -424,33 +457,26 @@
             html {
                 overflow-x: hidden !important;
             }
-
-            /* Hide original navbar elements that might interfere */
-            .navbar-toggler {
-                display: none !important;
-            }
-
-            .navbar-collapse {
-                display: none !important;
-            }
         }
 
         @media (max-width: 576px) {
-            .navbar-brand {
-                font-size: 1.0rem !important;
-            }
-
             #sidebar {
                 width: 260px !important;
             }
 
-            .avatar-container {
+            #mobile-navbar .avatar-container {
                 width: 30px !important;
                 height: 30px !important;
             }
 
-            .nav-link span {
-                font-size: 13px !important;
+            .mobile-menu-btn {
+                width: 36px !important;
+                height: 36px !important;
+                font-size: 16px !important;
+            }
+
+            #mobile-navbar {
+                padding: 0 10px !important;
             }
         }
     </style>
@@ -486,19 +512,12 @@
                 <li class="sidebar-item">
                     <a href="{{ route('leaderboard') }}" class="sidebar-link">
                         <i class="fas fa-trophy"></i><span>Leaderboard AM</span>
-                    </a>
-                </li>
+                    </li>
                 <li class="sidebar-item">
                     <a href="{{ route('high-five.index') }}" class="sidebar-link">
                         <i class="fas fa-hand-sparkles"></i><span>High-Five</span>
                     </a>
                 </li>
-                <li class="sidebar-item">
-                    <a href="{{ route('high-five.index') }}" class="sidebar-link">
-                        <i class="lni lni-agenda"></i><span>High Five</span>
-                    </a>
-                </li>
-
             </ul>
             <div class="sidebar-footer">
                 <a href="{{ route('profile.index') }}" class="sidebar-link">
@@ -514,6 +533,7 @@
 
         <!-- Main Content -->
         <div class="main p-0">
+            <!-- Original Desktop Navbar (hidden on mobile) -->
             <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
                 <div class="container-fluid">
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -524,7 +544,6 @@
                             <li class="nav-item dropdown ms-1">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="avatar-container me-2">
-                                        <!-- FIX: check auth before this? cause using `user()?` is maybe not be the best practice? idk -->
                                         @if(Auth::user()->profile_image)
                                             <img src="{{ asset('storage/' . Auth::user()->profile_image) }}" alt="{{ Auth::user()->name }}">
                                         @else
@@ -596,7 +615,7 @@
                         toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
                     }
 
-                    console.log('Initial sidebar position set'); // Debug
+                    console.log('Initial sidebar position set');
                 }
             }
         }
@@ -607,7 +626,7 @@
             initializeSidebarPosition();
 
             // Create mobile navbar structure ONCE
-            if (!mobileNavbarCreated) {
+            if (window.innerWidth <= 1024 && !mobileNavbarCreated) {
                 createMobileNavbar();
             }
 
@@ -643,9 +662,8 @@
                 preventHorizontalScroll();
                 if (window.innerWidth > 1024) {
                     hideMobileElements();
-                    mobileNavbarCreated = false; // Reset flag
+                    mobileNavbarCreated = false;
                 } else if (!mobileNavbarCreated) {
-                    // Only create if not already created
                     createMobileNavbar();
                     initializeSidebarDropdowns();
                 }
@@ -657,10 +675,7 @@
             const dropdownLinks = document.querySelectorAll('#sidebar .sidebar-link.has-dropdown');
 
             dropdownLinks.forEach(function(link) {
-                // Remove existing event listeners to avoid duplicates
                 link.removeEventListener('click', handleDropdownClick);
-
-                // Add new event listener
                 link.addEventListener('click', handleDropdownClick);
             });
         }
@@ -676,7 +691,6 @@
             if (target) {
                 const isExpanded = link.getAttribute('aria-expanded') === 'true';
 
-                // Close all other dropdowns in sidebar
                 const allDropdowns = document.querySelectorAll('#sidebar .sidebar-dropdown');
                 const allDropdownLinks = document.querySelectorAll('#sidebar .sidebar-link.has-dropdown');
 
@@ -694,15 +708,12 @@
                     }
                 });
 
-                // Toggle current dropdown
                 if (isExpanded) {
-                    // Close
                     target.classList.remove('show');
                     target.style.display = 'none';
                     link.setAttribute('aria-expanded', 'false');
                     link.classList.add('collapsed');
                 } else {
-                    // Open
                     target.classList.add('show');
                     target.style.display = 'block';
                     link.setAttribute('aria-expanded', 'true');
@@ -711,72 +722,70 @@
             }
         }
 
-        // Create mobile navbar structure
+        // Create mobile navbar structure - COMPLETELY NEW IMPLEMENTATION
         function createMobileNavbar() {
             if (window.innerWidth <= 1024 && !mobileNavbarCreated) {
-                console.log('Creating mobile navbar...'); // Debug
+                console.log('Creating mobile navbar...');
 
-                mobileNavbarCreated = true; // Set flag
+                mobileNavbarCreated = true;
 
-                let navbar = document.querySelector('.navbar');
-
-                if (!navbar) {
-                    navbar = document.createElement('nav');
-                    navbar.className = 'navbar navbar-expand-lg navbar-light bg-white';
-                    document.body.insertBefore(navbar, document.body.firstChild);
+                // Remove any existing mobile navbar
+                const existingMobileNav = document.querySelector('#mobile-navbar');
+                if (existingMobileNav) {
+                    existingMobileNav.remove();
                 }
 
-                const containerFluid = navbar.querySelector('.container-fluid') || document.createElement('div');
-                containerFluid.className = 'container-fluid';
+                // Create new mobile navbar
+                const mobileNav = document.createElement('nav');
+                mobileNav.id = 'mobile-navbar';
 
-                if (!navbar.contains(containerFluid)) {
-                    navbar.appendChild(containerFluid);
-                }
+                // Create container
+                const container = document.createElement('div');
+                container.className = 'mobile-navbar-container';
 
-                // Clear existing content only once
-                containerFluid.innerHTML = '';
-
-                // Create left side (hamburger + brand)
+                // Left side - Hamburger only
                 const navbarLeft = document.createElement('div');
                 navbarLeft.className = 'navbar-left';
 
-                // Hamburger button
                 const hamburgerBtn = document.createElement('button');
                 hamburgerBtn.className = 'mobile-menu-btn';
                 hamburgerBtn.innerHTML = '<i class="fas fa-bars"></i>';
                 hamburgerBtn.setAttribute('type', 'button');
                 hamburgerBtn.setAttribute('aria-label', 'Toggle navigation');
 
-                // IMPORTANT: Use addEventListener instead of onclick
                 hamburgerBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Hamburger clicked via addEventListener!'); // Debug
+                    console.log('Hamburger clicked!');
                     toggleSidebar();
                 });
 
-                // Brand - NO LOGO, keep it clean
-                // Removed to avoid too many Telkom logos
-
                 navbarLeft.appendChild(hamburgerBtn);
-                // Logo removed - cleaner navbar
 
-                // Create right side (profile)
+                // Right side - Profile dropdown (ONLY AVATAR, NO NAME)
                 const navbarRight = document.createElement('div');
                 navbarRight.className = 'navbar-right';
 
-                // Profile dropdown
                 const profileDropdown = document.createElement('div');
                 profileDropdown.className = 'nav-item dropdown';
+
+                // Get user data
+                const userName = '{{ Auth::user()->name ?? "Admin" }}';
+                const profileImage = '{{ Auth::user()->profile_image ? asset("storage/" . Auth::user()->profile_image) : asset("img/profile.png") }}';
+
+                // NO NAME, ONLY AVATAR
                 profileDropdown.innerHTML = `
-                    <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" id="mobileProfileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="avatar-container">
-                            <img src="{{ asset('img/profile.png') }}" alt="Profile">
+                            <img src="${profileImage}" alt="${userName}">
                         </div>
-                        <span>{{ Auth::user()->name ?? 'Admin' }}</span>
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileProfileDropdown">
+                        <li>
+                            <a class="dropdown-item" href="{{ route('profile.index') }}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}" class="m-0">
@@ -792,16 +801,25 @@
                 navbarRight.appendChild(profileDropdown);
 
                 // Append to container
-                containerFluid.appendChild(navbarLeft);
-                containerFluid.appendChild(navbarRight);
+                container.appendChild(navbarLeft);
+                container.appendChild(navbarRight);
+                mobileNav.appendChild(container);
 
-                // Create overlay for sidebar
+                // Insert at the beginning of body
+                document.body.insertBefore(mobileNav, document.body.firstChild);
+
+                // Create overlay
                 createSidebarOverlay();
 
-                console.log('Mobile navbar created successfully!'); // Debug
-            } else if (window.innerWidth > 1024 && mobileNavbarCreated) {
-                // Reset flag when switching to desktop
-                mobileNavbarCreated = false;
+                // Initialize Bootstrap dropdown for mobile navbar
+                setTimeout(() => {
+                    const dropdown = document.querySelector('#mobileProfileDropdown');
+                    if (dropdown && typeof bootstrap !== 'undefined') {
+                        new bootstrap.Dropdown(dropdown);
+                    }
+                }, 100);
+
+                console.log('Mobile navbar created successfully!');
             }
         }
 
@@ -812,34 +830,33 @@
                 overlay = document.createElement('div');
                 overlay.className = 'sidebar-overlay';
                 overlay.addEventListener('click', function(e) {
-                    console.log('Overlay clicked!'); // Debug
+                    console.log('Overlay clicked!');
                     closeSidebar();
                 });
                 document.body.appendChild(overlay);
-                console.log('Overlay created!'); // Debug
+                console.log('Overlay created!');
             }
         }
 
         // Toggle sidebar function
         function toggleSidebar() {
-            // Prevent multiple rapid clicks
             if (isTogglingInProgress) {
-                console.log('Toggle already in progress, ignoring...'); // Debug
+                console.log('Toggle already in progress, ignoring...');
                 return;
             }
 
             isTogglingInProgress = true;
 
-            console.log('Toggle sidebar clicked!'); // Debug
+            console.log('Toggle sidebar clicked!');
             const sidebar = document.querySelector('#sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
 
-            console.log('Sidebar:', sidebar); // Debug
-            console.log('Overlay:', overlay); // Debug
+            console.log('Sidebar:', sidebar);
+            console.log('Overlay:', overlay);
 
             if (sidebar && overlay) {
                 const isOpen = sidebar.classList.contains('show');
-                console.log('Is open:', isOpen); // Debug
+                console.log('Is open:', isOpen);
 
                 if (isOpen) {
                     closeSidebar();
@@ -850,7 +867,6 @@
                 console.error('Sidebar or overlay not found!');
             }
 
-            // Reset flag after animation completes
             setTimeout(() => {
                 isTogglingInProgress = false;
             }, 350);
@@ -858,16 +874,24 @@
 
         // Open sidebar
         function openSidebar() {
-            console.log('Opening sidebar...'); // Debug
+            console.log('Opening sidebar...');
             const sidebar = document.querySelector('#sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
+            const mobileNavbar = document.querySelector('#mobile-navbar');
+            const hamburger = document.querySelector('.mobile-menu-btn');
 
             if (sidebar && overlay) {
-                // Add class
                 sidebar.classList.add('show');
                 overlay.classList.add('show');
 
-                // NUCLEAR: Use setProperty with 'important' priority
+                // HIDE HAMBURGER WHEN SIDEBAR OPENS
+                if (hamburger) {
+                    hamburger.classList.add('hide');
+                }
+                if (mobileNavbar) {
+                    mobileNavbar.classList.add('sidebar-open');
+                }
+
                 sidebar.style.setProperty('left', '0px', 'important');
                 sidebar.style.setProperty('position', 'fixed', 'important');
                 sidebar.style.setProperty('transform', 'translateX(0)', 'important');
@@ -877,7 +901,6 @@
                 sidebar.style.setProperty('overflow-x', 'visible', 'important');
                 sidebar.style.setProperty('overflow-y', 'auto', 'important');
 
-                // Force nav and items overflow
                 const sidebarNav = sidebar.querySelector('.sidebar-nav');
                 if (sidebarNav) {
                     sidebarNav.style.setProperty('overflow', 'visible', 'important');
@@ -890,7 +913,6 @@
                     item.style.setProperty('padding', '0', 'important');
                 });
 
-                // NUCLEAR: Force show all text spans with setProperty
                 const allSpans = sidebar.querySelectorAll('.sidebar-link span');
                 allSpans.forEach(span => {
                     span.style.setProperty('display', 'inline-block', 'important');
@@ -908,7 +930,6 @@
                     span.style.setProperty('font-weight', '400', 'important');
                 });
 
-                // Force all sidebar links overflow
                 const allLinks = sidebar.querySelectorAll('.sidebar-link');
                 allLinks.forEach(link => {
                     link.style.setProperty('overflow', 'visible', 'important');
@@ -916,7 +937,6 @@
                     link.style.setProperty('align-items', 'center', 'important');
                 });
 
-                // Force show logo text
                 const logoText = sidebar.querySelector('.sidebar-logo');
                 if (logoText) {
                     logoText.style.setProperty('display', 'block', 'important');
@@ -926,21 +946,10 @@
 
                 document.body.style.overflow = 'hidden';
 
-                console.log('Sidebar opened, classes:', sidebar.className);
-                console.log('Text spans forced visible:', allSpans.length);
+                console.log('Sidebar opened');
 
-                // Debug: Log actual HTML content
-                if (allSpans.length > 0) {
-                    const firstSpan = allSpans[0];
-                    console.log('First span HTML:', firstSpan.outerHTML);
-                    console.log('First span text content:', firstSpan.textContent);
-                    console.log('First span computed width:', window.getComputedStyle(firstSpan).width);
-                }
-
-                // Re-initialize dropdown functionality when sidebar opens
                 initializeSidebarDropdowns();
 
-                // Add click handlers to sidebar links for mobile
                 const sidebarLinks = sidebar.querySelectorAll('.sidebar-link:not(.has-dropdown)');
                 sidebarLinks.forEach(link => {
                     link.addEventListener('click', function() {
@@ -956,20 +965,29 @@
 
         // Close sidebar
         function closeSidebar() {
-            console.log('Closing sidebar...'); // Debug
+            console.log('Closing sidebar...');
             const sidebar = document.querySelector('#sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
+            const mobileNavbar = document.querySelector('#mobile-navbar');
+            const hamburger = document.querySelector('.mobile-menu-btn');
 
             if (sidebar && overlay) {
                 sidebar.classList.remove('show');
                 overlay.classList.remove('show');
 
-                // Reset inline styles
+                // SHOW HAMBURGER WHEN SIDEBAR CLOSES
+                if (hamburger) {
+                    hamburger.classList.remove('hide');
+                }
+                if (mobileNavbar) {
+                    mobileNavbar.classList.remove('sidebar-open');
+                }
+
                 sidebar.style.left = '-280px';
 
                 document.body.style.overflow = '';
 
-                console.log('Sidebar closed'); // Debug
+                console.log('Sidebar closed');
             }
         }
 
@@ -978,6 +996,11 @@
             const overlay = document.querySelector('.sidebar-overlay');
             if (overlay) {
                 overlay.remove();
+            }
+
+            const mobileNav = document.querySelector('#mobile-navbar');
+            if (mobileNav) {
+                mobileNav.remove();
             }
 
             const sidebar = document.querySelector('#sidebar');
@@ -1020,12 +1043,10 @@
                 const swipeDistance = touchEndX - touchStartX;
                 const sidebar = document.querySelector('#sidebar');
 
-                // Swipe right to open sidebar
                 if (swipeDistance > 50 && touchStartX < 50) {
                     openSidebar();
                 }
 
-                // Swipe left to close sidebar
                 if (swipeDistance < -50 && sidebar && sidebar.classList.contains('show')) {
                     closeSidebar();
                 }
@@ -1042,13 +1063,11 @@
             }
         }
 
-        // Run viewport adjustment
         adjustViewportForMobile();
         window.addEventListener('resize', adjustViewportForMobile);
 
         // Accessibility improvements
         document.addEventListener('keydown', function(e) {
-            // Close sidebar with Escape key
             if (e.key === 'Escape') {
                 const sidebar = document.querySelector('#sidebar');
                 if (sidebar && sidebar.classList.contains('show')) {
@@ -1056,7 +1075,6 @@
                 }
             }
 
-            // Handle Enter/Space for dropdown links
             if (e.key === 'Enter' || e.key === ' ') {
                 const target = e.target;
                 if (target.classList.contains('has-dropdown')) {
@@ -1068,13 +1086,11 @@
 
         // Enhanced Bootstrap dropdown initialization for mobile
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Bootstrap dropdowns
             var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
             var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
                 return new bootstrap.Dropdown(dropdownToggleEl);
             });
 
-            // Fix for mobile dropdown menu positioning
             document.addEventListener('show.bs.dropdown', function (e) {
                 const dropdown = e.target.closest('.dropdown');
                 if (dropdown && window.innerWidth <= 1024) {
@@ -1098,7 +1114,6 @@
         window.addEventListener('resize', function() {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {
-                // Recalculate layout after resize
                 if (window.innerWidth <= 1024 && !mobileNavbarCreated) {
                     createMobileNavbar();
                     initializeSidebarDropdowns();
@@ -1112,32 +1127,28 @@
         // Optimize for mobile performance
         function optimizeForMobile() {
             if (window.innerWidth <= 1024) {
-                // Reduce animation complexity on mobile
                 document.body.classList.add('mobile-optimized');
 
-                // Disable hover effects on touch devices
                 if ('ontouchstart' in window) {
                     document.body.classList.add('touch-device');
                 }
 
-                // Optimize scrolling
                 document.body.style.webkitOverflowScrolling = 'touch';
             }
         }
 
         optimizeForMobile();
 
-        // Initialize everything when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
                 initializeSidebarDropdowns();
-                if (!mobileNavbarCreated) {
+                if (window.innerWidth <= 1024 && !mobileNavbarCreated) {
                     createMobileNavbar();
                 }
             });
         } else {
             initializeSidebarDropdowns();
-            if (!mobileNavbarCreated) {
+            if (window.innerWidth <= 1024 && !mobileNavbarCreated) {
                 createMobileNavbar();
             }
         }

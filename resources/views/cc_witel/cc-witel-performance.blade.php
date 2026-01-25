@@ -1,5 +1,5 @@
 {{-- FIX: ideally this should use the main layout, but it's far too deep in this layout now. changing to main will only ensue chaos --}}
-@extends('layouts.cc-witel-performance-layout')
+@extends('layouts.main')
 
 @section('styles')
     {{-- <link rel="stylesheet" href="{{ asset('css/inertia.css') }}"> --}}

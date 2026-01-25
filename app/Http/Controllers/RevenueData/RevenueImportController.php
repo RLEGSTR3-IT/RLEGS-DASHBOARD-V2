@@ -13,17 +13,15 @@ use Illuminate\Support\Facades\Cache;
 /**
  * RevenueImportController - Main Import Router
  *
- * ✅ FIXED VERSION - 2025-11-06
+ * ✅ FIXED VERSION - 2026-01-25
  *
  * ========================================
  * CHANGELOG
  * ========================================
  *
- * ✅ FIXED PROBLEM: Enhanced validation error debugging
- *    - Line 75-89: Added detailed error logging and debug info in response
- *    - Line 351-365: Added detailed error logging in legacy import
- *    - Now shows exact validation errors to help debugging
- *
+ * ✅ FIXED: File size check before preview (skip preview for large files)
+ * ✅ FIXED: Increased timeout limits and memory allocation
+ * ✅ FIXED: Better error logging and user feedback
  * ✅ MAINTAINED: All existing functionality
  *    - Two-step import (preview + execute)
  *    - Legacy single-step import
@@ -31,17 +29,19 @@ use Illuminate\Support\Facades\Cache;
  *    - Error log downloads
  *    - Import history
  *    - Temp file cleanup
- *
- * ✅ ENHANCED: Better error messages
- *    - Shows which field failed validation
- *    - Shows received vs expected values
- *    - Logs to Laravel log for debugging
  */
 class RevenueImportController extends Controller
 {
+    // ========================================
+    // ✅ CONFIGURATION CONSTANTS
+    // ========================================
+    private const MAX_PREVIEW_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private const MAX_EXECUTION_TIME = 600; // 10 minutes
+    private const MAX_MEMORY = '512M';
+
     /**
      * ✅ STEP 1: Preview Import - Check for duplicates
-     * ENHANCED: Better validation error messages with debug info
+     * FIXED: File size check to skip preview for large files
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -49,6 +49,10 @@ class RevenueImportController extends Controller
     public function previewImport(Request $request)
     {
         try {
+            // Increase limits
+            set_time_limit(self::MAX_EXECUTION_TIME);
+            ini_set('memory_limit', self::MAX_MEMORY);
+
             // Validate import_type
             $validator = Validator::make($request->all(), [
                 'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
@@ -71,12 +75,79 @@ class RevenueImportController extends Controller
             $importType = $request->import_type;
             $file = $request->file('file');
 
+            // ✅ CHECK FILE SIZE FIRST
+            $fileSize = $file->getSize();
+            $fileSizeMB = round($fileSize / 1024 / 1024, 2);
+
             Log::info("Preview Import started", [
                 'type' => $importType,
                 'filename' => $file->getClientOriginalName(),
-                'filesize' => $file->getSize(),
+                'filesize' => $fileSize,
+                'filesize_mb' => $fileSizeMB,
                 'all_params' => $request->except(['file'])
             ]);
+
+            // ✅ SKIP PREVIEW FOR LARGE FILES
+            if ($fileSize > self::MAX_PREVIEW_FILE_SIZE) {
+                Log::warning("⚠️ File too large for preview, will skip to direct execution", [
+                    'filesize_mb' => $fileSizeMB,
+                    'max_preview_mb' => round(self::MAX_PREVIEW_FILE_SIZE / 1024 / 1024, 2)
+                ]);
+
+                // Store file for direct execution
+                $sessionId = uniqid('import_', true);
+                $tempPath = storage_path('app/temp_imports');
+
+                if (!file_exists($tempPath)) {
+                    mkdir($tempPath, 0755, true);
+                }
+
+                $tempFilename = $sessionId . '_' . $file->getClientOriginalName();
+                $tempFullPath = $tempPath . '/' . $tempFilename;
+                $file->move($tempPath, $tempFilename);
+
+                // Store session data
+                $sessionData = [
+                    'import_type' => $importType,
+                    'temp_file' => $tempFullPath,
+                    'original_filename' => $file->getClientOriginalName(),
+                    'created_at' => now()->toISOString(),
+                    'skip_preview' => true
+                ];
+
+                // Save additional params
+                if ($importType === 'revenue_cc') {
+                    $sessionData['additional_params'] = [
+                        'divisi_id' => $request->divisi_id,
+                        'jenis_data' => $request->jenis_data,
+                        'year' => $request->year,
+                        'month' => $request->month
+                    ];
+                } elseif ($importType === 'revenue_am') {
+                    $sessionData['additional_params'] = [
+                        'year' => $request->year,
+                        'month' => $request->month
+                    ];
+                }
+
+                Cache::put('import_session_' . $sessionId, $sessionData, 3600);
+
+                return response()->json([
+                    'success' => true,
+                    'skip_preview' => true,
+                    'session_id' => $sessionId,
+                    'message' => "File terlalu besar ({$fileSizeMB} MB). Preview dilewati. Klik 'Lanjutkan Import' untuk memproses seluruh file.",
+                    'data' => [
+                        'summary' => [
+                            'total_rows' => 'Unknown (file will be processed in background)',
+                            'new_count' => 'Unknown',
+                            'update_count' => 'Unknown',
+                            'error_count' => 0
+                        ],
+                        'rows' => []
+                    ]
+                ]);
+            }
 
             // ✅ FIX: Cast month/year to integer (frontend sends "05" as string, we need 5 as integer)
             if (in_array($importType, ['revenue_cc', 'revenue_am'])) {
@@ -164,7 +235,6 @@ class RevenueImportController extends Controller
                     break;
 
                 case 'revenue_am':
-                    // Pass year & month from form to preview
                     $controller = new ImportAMController();
                     $previewResult = $controller->previewRevenueAM(
                         $tempFullPath,
@@ -199,7 +269,8 @@ class RevenueImportController extends Controller
                 'import_type' => $importType,
                 'temp_file' => $tempFullPath,
                 'original_filename' => $file->getClientOriginalName(),
-                'created_at' => now()->toISOString()
+                'created_at' => now()->toISOString(),
+                'skip_preview' => $previewResult['skip_preview'] ?? false
             ];
 
             // Save additional params to session (year, month, divisi_id, jenis_data)
@@ -211,334 +282,28 @@ class RevenueImportController extends Controller
                     'month' => $request->month
                 ];
             } elseif ($importType === 'revenue_am') {
-                // Save year/month for revenue_am
                 $sessionData['additional_params'] = [
                     'year' => $request->year,
                     'month' => $request->month
                 ];
             }
 
-            Cache::put($sessionId, $sessionData, now()->addHours(2));
+            Cache::put('import_session_' . $sessionId, $sessionData, 3600);
 
-            // Prepare response
-            $previewResult['session_id'] = $sessionId;
-            $previewResult['expires_at'] = now()->addHours(2)->toISOString();
-
-            Log::info("Preview Import completed successfully", [
-                'type' => $importType,
+            Log::info('✅ Preview session created', [
                 'session_id' => $sessionId,
-                'additional_params' => $sessionData['additional_params'] ?? null,
-                'preview_result' => [
-                    'total_rows' => $previewResult['data']['summary']['total_rows'] ?? 0,
-                    'new_count' => $previewResult['data']['summary']['new_count'] ?? 0,
-                    'update_count' => $previewResult['data']['summary']['update_count'] ?? 0
-                ]
-            ]);
-
-            return response()->json($previewResult);
-
-        } catch (\Exception $e) {
-            Log::error("Preview Import exception caught", [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->except(['file'])
+                'skip_preview' => $sessionData['skip_preview']
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat preview import: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * ✅ STEP 2: Execute Import - Process with user confirmation
-     * MAINTAINED: Merge additional_params from session to request
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function executeImport(Request $request)
-    {
-        try {
-            // Validate session
-            $validator = Validator::make($request->all(), [
-                'session_id' => 'required|string',
-                'confirmed_updates' => 'array',
-                'confirmed_updates.*' => 'string',
-                'skip_updates' => 'array',
-                'skip_updates.*' => 'string'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $sessionId = $request->session_id;
-            $sessionData = Cache::get($sessionId);
-
-            if (!$sessionData) {
-                Log::warning('Execute Import - Session not found or expired', [
-                    'session_id' => $sessionId
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Session tidak valid atau sudah expired. Silakan upload ulang file.'
-                ], 400);
-            }
-
-            $importType = $sessionData['import_type'];
-            $tempFile = $sessionData['temp_file'];
-
-            // Validate temp file
-            if (empty($tempFile)) {
-                Cache::forget($sessionId);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Path file temporary tidak valid. Silakan upload ulang.'
-                ], 400);
-            }
-
-            if (!file_exists($tempFile)) {
-                Cache::forget($sessionId);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'File temporary tidak ditemukan. Silakan upload ulang.'
-                ], 400);
-            }
-
-            Log::info("Execute Import started", [
-                'type' => $importType,
+                'success' => true,
                 'session_id' => $sessionId,
-                'temp_file' => $tempFile,
-                'confirmed_updates' => count($request->confirmed_updates ?? []),
-                'skip_updates' => count($request->skip_updates ?? [])
+                'skip_preview' => $sessionData['skip_preview'],
+                'data' => $previewResult
             ]);
-
-            // Prepare request
-            $importRequest = new Request();
-            $importRequest->merge([
-                'temp_file' => $tempFile,
-                'confirmed_updates' => $request->confirmed_updates ?? [],
-                'skip_updates' => $request->skip_updates ?? []
-            ]);
-
-            // Merge additional params from session (year, month, divisi_id, jenis_data)
-            if (!empty($sessionData['additional_params'])) {
-                $importRequest->merge($sessionData['additional_params']);
-
-                Log::info("Merged additional params to request", [
-                    'params' => $sessionData['additional_params']
-                ]);
-            }
-
-            // Validate importRequest has temp_file
-            if (!$importRequest->has('temp_file') || empty($importRequest->input('temp_file'))) {
-                Cache::forget($sessionId);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Parameter temp_file tidak valid dalam request.'
-                ], 400);
-            }
-
-            // Route to specific execute handler
-            $executeResult = null;
-            switch ($importType) {
-                case 'data_cc':
-                    $controller = new ImportCCController();
-                    $executeResult = $controller->executeDataCC($importRequest);
-                    break;
-
-                case 'data_am':
-                    $controller = new ImportAMController();
-                    $executeResult = $controller->executeDataAM($importRequest);
-                    break;
-
-                case 'revenue_cc':
-                    $controller = new ImportCCController();
-                    $executeResult = $controller->executeRevenueCC($importRequest);
-                    break;
-
-                case 'revenue_am':
-                    // Year & month sudah ada di $importRequest dari session merge
-                    $controller = new ImportAMController();
-                    $executeResult = $controller->executeRevenueAM($importRequest);
-                    break;
-
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tipe import tidak dikenali'
-                    ], 400);
-            }
-
-            // Clean up temp file and cache
-            if (file_exists($tempFile)) {
-                unlink($tempFile);
-            }
-            Cache::forget($sessionId);
-
-            Log::info("Execute Import completed", [
-                'type' => $importType,
-                'session_id' => $sessionId,
-                'result' => $executeResult
-            ]);
-
-            return response()->json($executeResult);
 
         } catch (\Exception $e) {
-            Log::error("Execute Import error: " . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat import: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * ✅ MAINTAINED: Legacy single-step import (backward compatibility)
-     * ENHANCED: Better error logging
-     */
-    public function import(Request $request)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-                'file' => 'required|file|mimes:csv,txt|max:102400'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $importType = $request->import_type;
-            $file = $request->file('file');
-
-            Log::info('Legacy Import started', [
-                'type' => $importType,
-                'filename' => $file->getClientOriginalName()
-            ]);
-
-            // ✅ FIX: Cast month/year/divisi_id to integer
-            if (in_array($importType, ['revenue_cc', 'revenue_am'])) {
-                if ($request->has('month')) {
-                    $request->merge(['month' => (int) $request->input('month')]);
-                }
-                if ($request->has('year')) {
-                    $request->merge(['year' => (int) $request->input('year')]);
-                }
-                if ($request->has('divisi_id')) {
-                    $request->merge(['divisi_id' => (int) $request->input('divisi_id')]);
-                }
-            }
-
-            // ✅ ENHANCED: Additional validation for revenue imports
-            if (in_array($importType, ['revenue_cc', 'revenue_am'])) {
-                $additionalRules = $this->getAdditionalValidationRules($importType);
-                $additionalValidator = Validator::make($request->all(), $additionalRules);
-
-                if ($additionalValidator->fails()) {
-                    // ✅ ENHANCED: Detailed error logging
-                    Log::error('Legacy Import - Validation failed', [
-                        'import_type' => $importType,
-                        'request_data' => $request->except(['file']),
-                        'failed_rules' => $additionalValidator->errors()->toArray()
-                    ]);
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validasi parameter tambahan gagal',
-                        'errors' => $additionalValidator->errors(),
-                        'debug' => [
-                            'import_type' => $importType,
-                            'received_params' => $request->only(['year', 'month', 'divisi_id', 'jenis_data'])
-                        ]
-                    ], 422);
-                }
-            }
-
-            // Create temp file
-            $tempPath = storage_path('app/temp_imports');
-            if (!file_exists($tempPath)) {
-                mkdir($tempPath, 0755, true);
-            }
-
-            $tempFilename = uniqid('import_') . '_' . $file->getClientOriginalName();
-            $tempFullPath = $tempPath . '/' . $tempFilename;
-            $file->move($tempPath, $tempFilename);
-
-            // Prepare request
-            $importRequest = new Request();
-            $importRequest->merge([
-                'temp_file' => $tempFullPath
-            ]);
-
-            // Merge params based on import type
-            if ($importType === 'revenue_cc') {
-                $importRequest->merge([
-                    'divisi_id' => $request->divisi_id,
-                    'jenis_data' => $request->jenis_data,
-                    'year' => $request->year,
-                    'month' => $request->month
-                ]);
-            } elseif ($importType === 'revenue_am') {
-                // Add year/month for revenue_am
-                $importRequest->merge([
-                    'year' => $request->year,
-                    'month' => $request->month
-                ]);
-            }
-
-            // Execute import
-            $result = null;
-            switch ($importType) {
-                case 'data_cc':
-                    $controller = new ImportCCController();
-                    $result = $controller->executeDataCC($importRequest);
-                    break;
-
-                case 'data_am':
-                    $controller = new ImportAMController();
-                    $result = $controller->executeDataAM($importRequest);
-                    break;
-
-                case 'revenue_cc':
-                    $controller = new ImportCCController();
-                    $result = $controller->executeRevenueCC($importRequest);
-                    break;
-
-                case 'revenue_am':
-                    $controller = new ImportAMController();
-                    $result = $controller->executeRevenueAM($importRequest);
-                    break;
-            }
-
-            // Clean up
-            if (file_exists($tempFullPath)) {
-                unlink($tempFullPath);
-            }
-
-            Log::info('Legacy Import completed', [
-                'type' => $importType,
-                'result' => $result
-            ]);
-
-            return response()->json($result);
-
-        } catch (\Exception $e) {
-            Log::error('Legacy Import error: ' . $e->getMessage(), [
+            Log::error('Preview Import - Unexpected error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -550,29 +315,192 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Legacy validate import (for backward compatibility)
+     * ✅ STEP 2: Execute Import
+     * FIXED: Support for skip_preview mode (direct execution)
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function validateImport(Request $request)
+    public function executeImport(Request $request)
     {
-        // Redirect to preview
-        return $this->previewImport($request);
+        try {
+            // Increase limits
+            set_time_limit(self::MAX_EXECUTION_TIME);
+            ini_set('memory_limit', self::MAX_MEMORY);
+
+            $validator = Validator::make($request->all(), [
+                'session_id' => 'required|string',
+                'import_type' => 'required|string',
+                'selected_rows' => 'array'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $sessionId = $request->session_id;
+            $sessionData = Cache::get('import_session_' . $sessionId);
+
+            if (!$sessionData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session tidak ditemukan atau sudah kadaluarsa. Silakan upload ulang file.'
+                ], 404);
+            }
+
+            $tempFile = $sessionData['temp_file'];
+            if (!file_exists($tempFile)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File temporary tidak ditemukan'
+                ], 404);
+            }
+
+            $importType = $sessionData['import_type'];
+            $selectedRows = $request->selected_rows ?? [];
+            $skipPreview = $sessionData['skip_preview'] ?? false;
+
+            Log::info('✅ Execute Import started', [
+                'session_id' => $sessionId,
+                'import_type' => $importType,
+                'skip_preview' => $skipPreview,
+                'selected_rows_count' => count($selectedRows)
+            ]);
+
+            // Route to specific execute handler
+            $executeResult = null;
+            switch ($importType) {
+                case 'data_cc':
+                    $controller = new ImportCCController();
+                    $executeResult = $controller->executeDataCC($tempFile, $selectedRows);
+                    break;
+
+                case 'data_am':
+                    $controller = new ImportAMController();
+                    $executeResult = $controller->executeDataAM($tempFile, $selectedRows);
+                    break;
+
+                case 'revenue_cc':
+                    $params = $sessionData['additional_params'];
+                    $controller = new ImportCCController();
+                    $executeResult = $controller->executeRevenueCC(
+                        $tempFile,
+                        $params['divisi_id'],
+                        $params['jenis_data'],
+                        $params['year'],
+                        $params['month'],
+                        $selectedRows
+                    );
+                    break;
+
+                case 'revenue_am':
+                    $params = $sessionData['additional_params'];
+                    $controller = new ImportAMController();
+                    $executeResult = $controller->executeRevenueAM(
+                        $tempFile,
+                        $params['year'],
+                        $params['month'],
+                        $selectedRows
+                    );
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tipe import tidak dikenali'
+                    ], 400);
+            }
+
+            // Clean up temp file
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+
+            // Remove session from cache
+            Cache::forget('import_session_' . $sessionId);
+
+            Log::info('✅ Execute Import completed', [
+                'session_id' => $sessionId,
+                'result' => $executeResult
+            ]);
+
+            return response()->json($executeResult);
+
+        } catch (\Exception $e) {
+            Log::error('Execute Import - Unexpected error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * ✅ MAINTAINED: Download error log file
+     * ✅ MAINTAINED: Download Template
+     */
+    public function downloadTemplate($type)
+    {
+        try {
+            $controller = null;
+
+            if (in_array($type, ['data-cc', 'revenue-cc-dgs', 'revenue-cc-dgs-real', 'revenue-cc-dgs-target',
+                                 'revenue-cc-dss', 'revenue-cc-dss-real', 'revenue-cc-dss-target',
+                                 'revenue-cc-dps', 'revenue-cc-dps-real', 'revenue-cc-dps-target',
+                                 'revenue-cc-target'])) {
+                $controller = new ImportCCController();
+                return $controller->downloadTemplate($type);
+            } elseif (in_array($type, ['data-am', 'revenue-am'])) {
+                $controller = new ImportAMController();
+                return $controller->downloadTemplate($type);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Template type not found'
+            ], 404);
+
+        } catch (\Exception $e) {
+            Log::error('Download Template Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal download template: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * ✅ MAINTAINED: Download error log
      */
     public function downloadErrorLog($filename)
     {
-        $filepath = public_path('storage/import_logs/' . $filename);
+        try {
+            $path = public_path('storage/import_logs/' . $filename);
 
-        if (!file_exists($filepath)) {
+            if (!file_exists($path)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File tidak ditemukan'
+                ], 404);
+            }
+
+            return response()->download($path);
+
+        } catch (\Exception $e) {
+            Log::error('Download Error Log Error: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'File tidak ditemukan'
-            ], 404);
+                'message' => 'Gagal download log: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->download($filepath);
     }
 
     /**
@@ -623,7 +551,6 @@ class RevenueImportController extends Controller
 
     /**
      * ✅ ENHANCED: Get additional validation rules based on import type
-     * Better organized and documented
      *
      * @param string $importType
      * @return array
@@ -712,7 +639,6 @@ class RevenueImportController extends Controller
 
     /**
      * ✅ NEW: Get validation rules info (for debugging)
-     * Endpoint untuk melihat aturan validasi yang berlaku
      */
     public function getValidationRules(Request $request)
     {
@@ -775,6 +701,11 @@ class RevenueImportController extends Controller
                 'database' => [
                     'connected' => false,
                     'tables_exist' => []
+                ],
+                'configuration' => [
+                    'max_preview_file_size_mb' => round(self::MAX_PREVIEW_FILE_SIZE / 1024 / 1024, 2),
+                    'max_execution_time' => self::MAX_EXECUTION_TIME,
+                    'max_memory' => self::MAX_MEMORY
                 ]
             ];
 

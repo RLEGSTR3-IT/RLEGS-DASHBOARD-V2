@@ -9,875 +9,951 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
-
-      
-        /* ===== EXISTING STYLES - PRESERVED ===== */
-
-        /* Additional styles for result modal */
-        .result-modal-stats-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .result-modal-stats-container.four-cols {
-            grid-template-columns: repeat(4, 1fr);
-        }
-
-        @media (max-width: 992px) {
-            .result-modal-stats-container.four-cols {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 576px) {
-            .result-modal-stats-container.four-cols {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .result-modal-stat {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .result-modal-stat .icon {
-            font-size: 2rem;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .result-modal-stat .icon.success { background: #d4edda; color: #155724; }
-        .result-modal-stat .icon.danger { background: #f8d7da; color: #721c24; }
-        .result-modal-stat .icon.warning { background: #fff3cd; color: #856404; }
-        .result-modal-stat .icon.info { background: #d1ecf1; color: #0c5460; }
-        .result-modal-stat .content { flex: 1; }
-
-        .result-modal-stat .content h4 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: bold;
-            white-space: nowrap;
-            color: #212529;
-        }
-        .result-modal-stat .content p { margin: 0; color: #6c757d; font-size: 0.9rem; }
-
-        .progress-bar-custom {
-            width: 100%;
-            height: 30px;
-            background: #e9ecef;
-            border-radius: 15px;
-            overflow: hidden;
-            margin: 1.5rem 0;
-        }
-        .progress-bar-fill-custom {
-            height: 100%;
-            background: linear-gradient(90deg, #28a745, #20c997);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            transition: width 0.5s ease;
-        }
-      
-      
-      
-        /* ✅ Force show tab content in modal */
-        #modalEditDataAM .tab-content {
-            display: block !important;
-        }
-
-        #modalEditDataAM .tab-pane {
-            display: none;
-        }
-
-        #modalEditDataAM .tab-pane.active {
-            display: block !important;
-        }
-
-
-        .result-modal-info {
-            background: #e7f3ff;
-            border-left: 4px solid #0066cc;
-            padding: 1rem 1.5rem;
-            margin: 1rem 0;
-            border-radius: 4px;
-        }
-
-        .result-modal-info h6 {
-            margin: 0 0 0.5rem 0;
-            color: #0066cc;
-            font-weight: 600;
-        }
-
-        .result-modal-info ul {
-            margin: 0;
-            padding-left: 1.25rem;
-        }
-
-        .result-modal-info li {
-            color: #495057;
-            margin-bottom: 0.25rem;
-        }
-
-        /* Better badge colors for Role & Status */
-        .badge-role-am {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .badge-role-hotda {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .badge-status-registered {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .badge-status-not-registered {
-            background: #6c757d;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-
-        /* Checkbox column */
-        .table thead th:first-child,
-        .table tbody td:first-child {
-            width: 48px !important;
-            min-width: 48px !important;
-            text-align: center !important;
-            padding: 0.5rem !important;
-        }
-
-        .table thead th:first-child input[type="checkbox"],
-        .table tbody td:first-child input[type="checkbox"] {
-            width: 18px !important;
-            height: 18px !important;
-            cursor: pointer !important;
-            display: inline-block !important;
-            margin: 0 auto !important;
-        }
-
-        /* Aksi column wider for buttons */
-        .table thead th:last-child,
-        .table tbody td:last-child {
-            width: 150px !important;
-            min-width: 150px !important;
-            text-align: center !important;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* Tab button active state - MERAH bukan biru */
-        .tab-btn.active {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-            color: white !important;
-            border-color: #dc3545 !important;
-        }
-
-        .tab-btn.active .badge {
-            background: rgba(255, 255, 255, 0.3) !important;
-            color: white !important;
-        }
-
-        /* ==========================================
-           ✨ MODERN IMPORT MODAL STYLES
-           ========================================== */
-
-        /* Import Modal Header */
-        #importModal .modal-header {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            padding: 1.5rem 2rem;
-            border-bottom: none;
-        }
-
-        #importModal .modal-header .modal-title {
-            font-weight: 700;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        #importModal .modal-header .btn-close {
-            filter: brightness(0) invert(1);
-            opacity: 0.8;
-        }
-
-        #importModal .modal-header .btn-close:hover {
-            opacity: 1;
-        }
-
-        /* Import Modal Body */
-        #importModal .modal-body {
-            padding: 2rem;
-            background: #f8f9fa;
-        }
-
-        /* ✨ TYPE SELECTOR - Modern Tabs Style (SAMA dengan tabs utama) */
-        .type-selector {
-            display: flex;
-            gap: 0;
-            background: white;
-            padding: 6px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            margin-bottom: 2rem;
-        }
-
-        .type-btn {
-            flex: 1;
-            padding: 1rem 1.5rem;
-            border: none;
-            background: transparent;
-            color: #6c757d;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 8px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .type-btn:hover:not(.active) {
-            background: rgba(220, 53, 69, 0.08);
-            color: #dc3545;
-            transform: translateY(-2px);
-        }
-
-        .type-btn.active {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            box-shadow: 0 4px 16px rgba(220, 53, 69, 0.35);
-            transform: scale(1.02);
-        }
-
-        .type-btn i {
-            font-size: 1.1rem;
-        }
-
-        /* Import Panel (Form Container) */
-        .imp-panel {
-            display: none;
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-            animation: fadeInUp 0.4s ease;
-        }
-
-        .imp-panel.active {
-            display: block;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Alert Boxes in Import Form */
-        .imp-panel .alert {
-            border: none;
-            border-radius: 10px;
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid;
-        }
-
-        .imp-panel .alert-info {
-            background: linear-gradient(135deg, #e7f3ff 0%, #d4e9ff 100%);
-            border-left-color: #0066cc;
-            color: #004080;
-        }
-
-        .imp-panel .alert-warning {
-            background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%);
-            border-left-color: #ff9800;
-            color: #995c00;
-        }
-
-        .imp-panel .alert ul {
-            margin: 0.5rem 0 0 0;
-            padding-left: 1.5rem;
-        }
-
-        .imp-panel .alert li {
-            margin-bottom: 0.35rem;
-            line-height: 1.6;
-        }
-
-        .imp-panel .alert strong {
-            font-weight: 700;
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Form Controls in Import Modal */
-        .imp-panel .form-label {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 0.75rem;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .imp-panel .form-label .required {
-            color: #dc3545;
-            font-weight: 700;
-        }
-
-        .imp-panel .form-control,
-        .imp-panel .form-select {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 0.875rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-        }
-
-        .imp-panel .form-control:focus,
-        .imp-panel .form-select:focus {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.12);
-            background: white;
-        }
-
-        .imp-panel .form-control:hover,
-        .imp-panel .form-select:hover {
-            border-color: #dee2e6;
-        }
-
-        /* Month Picker in Import Form (SAMA dengan filter) */
-        .imp-panel .datepicker-control {
-            background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23dc3545' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") no-repeat right 1rem center;
-            background-size: 20px;
-            padding-right: 3rem;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        /* Small Text (Template Link) */
-        .imp-panel .text-muted {
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-            display: inline-block;
-        }
-
-        .imp-panel .text-muted a {
-            color: #dc3545;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .imp-panel .text-muted a:hover {
-            color: #c82333;
-            text-decoration: underline;
-        }
-
-        /* Submit Button in Import Form */
-        .imp-panel .btn-primary {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            border: none;
-            padding: 0.875rem 2rem;
-            font-weight: 600;
-            font-size: 1rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 14px rgba(220, 53, 69, 0.3);
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 1rem;
-        }
-
-        .imp-panel .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-        }
-
-        .imp-panel .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .imp-panel .btn-primary i {
-            margin-right: 0.5rem;
-        }
-
-        /* Modal form styling */
-        .modal-body .form-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-body .form-control,
-        .modal-body .form-select {
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 0.75rem;
-            transition: all 0.3s ease;
-        }
-
-        .modal-body .form-control:focus,
-        .modal-body .form-select:focus {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
-        }
-
-        .modal-body .nav-tabs {
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .modal-body .nav-tabs .nav-link {
-            border: none;
-            color: #6c757d;
-            font-weight: 600;
-            padding: 1rem 1.5rem;
-        }
-
-        .modal-body .nav-tabs .nav-link.active {
-            color: #dc3545;
-            border-bottom: 3px solid #dc3545;
-            background: transparent;
-        }
-
-        /* ✨ NEW: Divisi Button Group Styling */
-        .divisi-button-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-top: 0.5rem;
-        }
-
-        .divisi-toggle-btn {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .divisi-toggle-btn:hover {
-            border-color: #cbd5e0;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .divisi-toggle-btn.active {
-            color: white;
-            border-width: 2px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .divisi-toggle-btn.active::after {
-            content: '✓';
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: white;
-            color: inherit;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: bold;
-            border: 2px solid currentColor;
-        }
-
-        .divisi-toggle-btn.dps.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: #667eea;
-        }
-
-        .divisi-toggle-btn.dss.active {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-color: #f093fb;
-        }
-
-        .divisi-toggle-btn.dgs.active {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-color: #4facfe;
-        }
-
-        .divisi-toggle-btn.des.active {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            border-color: #fa709a;
-        }
-
-        /* Hidden helper for form submission */
-        .divisi-hidden-container {
-            display: none;
-        }
-
-        /* ✨ TELDA Field - Conditional Display */
-        #editDataAMTeldaWrapper {
-            transition: all 0.3s ease;
-        }
-
-        #editDataAMTeldaWrapper.hidden {
-            display: none;
-        }
-
-        /* ==========================================
-           ✨ PREVIEW MODAL - FIXED COLORS (MERAH SEMUA)
-           ========================================== */
-
-        #previewModal .modal-dialog {
-            max-width: 90%;
-            margin: 1.75rem auto;
-        }
-
-        /* ✅ HEADER MERAH dengan TEXT PUTIH */
-        #previewModal .modal-header {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            padding: 1.5rem 2rem;
-            border-bottom: none;
-        }
-
-        #previewModal .modal-title {
-            font-weight: 700;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: white;
-        }
-
-        #previewModal .modal-title i {
-            color: white;
-        }
-
-        #previewModal .btn-close {
-            filter: brightness(0) invert(1);
-            opacity: 0.8;
-        }
-
-        #previewModal .btn-close:hover {
-            opacity: 1;
-        }
-
-        #previewModal .modal-body {
-            padding: 2rem;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        /* ✅ Preview Summary Cards - MERAH */
-        .preview-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .preview-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .preview-card .icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        /* ✅ SEMUA MERAH dengan intensitas berbeda */
-        .preview-card.new .icon { color: #dc3545; }
-        .preview-card.update .icon { color: #c82333; }
-        .preview-card.conflict .icon { color: #a71d2a; }
-        .preview-card.skip .icon { color: #6c757d; }
-
-        .preview-card h3 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0.5rem 0 0.25rem 0;
-            color: #212529;
-        }
-
-        .preview-card p {
-            margin: 0;
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-
-        /* ✅ Preview Actions - MERAH */
-        .preview-actions {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: #fff5f5;
-            border-radius: 8px;
-            align-items: center;
-            border-left: 4px solid #dc3545;
-        }
-
-        .preview-actions i {
-            font-size: 1.25rem;
-            color: #dc3545;
-        }
-
-        .preview-actions .btn-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        /* ✅ Button Group - MERAH */
-        .preview-actions .btn {
-            border: 2px solid #e9ecef;
-            background: white;
-            color: #6c757d;
-            font-weight: 600;
-            font-size: 0.875rem;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .preview-actions .btn:hover {
-            background: #dc3545;
-            color: white;
-            border-color: #dc3545;
-            transform: translateY(-1px);
-        }
-
-        /* Preview Table */
-        .preview-table-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        }
-
-        .preview-table {
-            width: 100%;
-            margin: 0;
-        }
-
-        /* ✅ Table Header MERAH */
-        .preview-table thead {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-        }
-
-        .preview-table thead th {
-            padding: 1rem;
-            font-weight: 600;
-            text-align: left;
-            border: none;
-            color: white;
-        }
-
-        .preview-table tbody tr {
-            border-bottom: 1px solid #e9ecef;
-            transition: background 0.2s;
-        }
-
-        .preview-table tbody tr:hover {
-            background: #fff5f5;
-        }
-
-        .preview-table tbody td {
-            padding: 1rem;
-            vertical-align: middle;
-        }
-
-        /* ✅ Status Badges - MERAH */
-        .status-badge {
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-badge.new {
-            background: #ffd6d9;
-            color: #a71d2a;
-        }
-
-        .status-badge.update {
-            background: #ffe6e8;
-            color: #c82333;
-        }
-
-        .status-badge.conflict {
-            background: #dc3545;
-            color: white;
-        }
-
-        .status-badge.skip {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        /* Comparison Display */
-        .value-comparison {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .value-old {
-            color: #dc3545;
-            text-decoration: line-through;
-            font-size: 0.875rem;
-        }
-
-        .value-new {
-            color: #28a745;
-            font-weight: 600;
-        }
-
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .loading-spinner {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .loading-spinner .spinner-border {
-            width: 3rem;
-            height: 3rem;
-            border-width: 0.3rem;
-            color: #dc3545;
-        }
-
-        .loading-spinner p {
-            margin-top: 1rem;
-            color: #212529;
-            font-weight: 600;
-        }
-
-        /* ✅ Preview Modal Footer - MERAH */
-        #previewModal .modal-footer {
-            border-top: 2px solid #e9ecef;
-            padding: 1.5rem 2rem;
-            background: #f8f9fa;
-        }
-
-        #previewModal .btn-execute {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            border: none;
-            padding: 0.875rem 2rem;
-            font-weight: 600;
-            border-radius: 10px;
-            color: white;
-            box-shadow: 0 4px 14px rgba(220, 53, 69, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        #previewModal .btn-execute:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-            background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
-        }
-
-        #previewModal .btn-execute:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        #previewModal .btn-light {
-            border: 2px solid #e9ecef;
-            background: white;
-            color: #6c757d;
-            padding: 0.875rem 2rem;
-            font-weight: 600;
-            border-radius: 10px;
-            transition: all 0.3s;
-        }
-
-        #previewModal .btn-light:hover {
-            border-color: #dc3545;
-            color: #dc3545;
-            background: #fff5f5;
-        }
+/* ============================================================
+   🎨 REVENUE DATA - COMPLETE CSS (MOBILE OPTIMIZED - NO FAB)
+   ============================================================ */
+
+/* ===== BASE RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #f8f9fa;
+    overflow-x: hidden;
+}
+
+/* ===== MAIN CONTAINER ===== */
+.rlegs-container {
+    padding: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+    .rlegs-container {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .rlegs-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+}
+
+/* ===== CARD SHADOW ===== */
+.card-shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-header .page-title h1 {
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem 0;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.page-header .page-title p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.page-header .page-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 2rem;
+    }
+
+    .page-header .page-actions {
+        margin-top: 0;
+        flex-wrap: nowrap;
+    }
+}
+
+/* ===== FILTERS (ALWAYS VISIBLE, COMPACT ON MOBILE) ===== */
+.filters {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+@media (min-width: 1024px) {
+    .filters {
+        padding: 1.5rem;
+        gap: 1rem;
+    }
+}
+
+/* Searchbar */
+.searchbar {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    gap: 0.5rem;
+}
+
+@media (max-width: 767px) {
+    .searchbar {
+        width: 100%;
+        min-width: 100%;
+    }
+}
+
+.search-input {
+    flex: 1;
+    padding: 0.625rem 0.875rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.3s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #dc3545;
+}
+
+.search-btn {
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.875rem;
+}
+
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Filter Groups */
+.filter-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+@media (max-width: 767px) {
+    .filter-group {
+        width: 100%;
+        min-width: 100%;
+    }
+}
+
+.filter-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: #2c3e50;
+    font-size: 0.8125rem;
+}
+
+.filter-group .form-select,
+.filter-group .form-control {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.3s;
+}
+
+.filter-group .form-select:focus,
+.filter-group .form-control:focus {
+    outline: none;
+    border-color: #dc3545;
+}
+
+/* Filter Actions */
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+    .filter-actions {
+        width: auto;
+        margin-top: 0;
+    }
+}
+
+.filter-actions button {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    font-size: 0.8125rem;
+}
+
+@media (min-width: 1024px) {
+    .filter-actions button {
+        flex: 0;
+        white-space: nowrap;
+        padding: 0.75rem 1.25rem;
+    }
+}
+
+/* ===== TABS ===== */
+.tabs {
+    background: white;
+    border-radius: 12px;
+    padding: 0.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
+}
+
+.tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.tabs::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+    background: #dc3545;
+    border-radius: 10px;
+}
+
+.tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .tab-btn {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.9rem;
+    }
+}
+
+.tab-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.tab-btn .badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn.active .badge {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.badge.neutral {
+    background: #6c757d;
+    color: white;
+}
+
+/* ===== TAB PANELS ===== */
+.tab-panel {
+    display: none;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+@media (min-width: 768px) {
+    .tab-panel {
+        padding: 1.5rem;
+    }
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* ===== PANEL HEADER ===== */
+.panel-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f1f3f5;
+}
+
+@media (min-width: 768px) {
+    .panel-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.panel-header .left h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    color: #2c3e50;
+}
+
+@media (min-width: 768px) {
+    .panel-header .left h3 {
+        font-size: 1.25rem;
+    }
+}
+
+.panel-header .left p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.8125rem;
+}
+
+.panel-header .right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .panel-header .right {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+    }
+}
+
+/* Mobile: Stack buttons vertically */
+@media (max-width: 767px) {
+    .panel-header .right > * {
+        width: 100%;
+    }
+
+    .panel-header .right .dropdown {
+        width: 100%;
+    }
+
+    .panel-header .right .dropdown .btn {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-outline-danger {
+    background: white;
+    color: #dc3545;
+    border: 2px solid #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-outline-primary {
+    background: white;
+    color: #dc3545;
+    border: 2px solid #dc3545;
+}
+
+.btn-outline-primary:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+    .btn-danger.btn-sm,
+    .btn-outline-danger.btn-sm {
+        width: 100%;
+    }
+}
+
+/* ===== DROPDOWN ===== */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    min-width: 140px;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    margin: 0.125rem 0 0;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: #212529;
+    text-align: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item.active {
+    background-color: #dc3545;
+    color: white;
+}
+
+@media (max-width: 767px) {
+    .dropdown-toggle {
+        width: 100%;
+    }
+}
+
+/* ===== TABLES ===== */
+.table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+    .table-wrap {
+        margin: 0 -1rem;
+        padding: 0 1rem;
+    }
+}
+
+.table {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: collapse;
+}
+
+.table.modern thead {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.table.modern thead th {
+    padding: 1rem;
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+    border: none;
+}
+
+.table.modern tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: background 0.2s;
+}
+
+.table.modern tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.table.modern tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table.modern tbody td:first-child,
+.table.modern thead th:first-child {
+    width: 48px;
+    min-width: 48px;
+    text-align: center;
+}
+
+.table.modern tbody td:last-child,
+.table.modern thead th:last-child {
+    width: 150px;
+    min-width: 150px;
+    text-align: center;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ===== PAGINATION ===== */
+.pagination-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+@media (min-width: 768px) {
+    .pagination-bar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.pagination-bar .info {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.pagination-bar .pages {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.pager {
+    padding: 0.5rem 0.75rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.pager:hover {
+    background: #f8f9fa;
+    border-color: #dc3545;
+}
+
+.pager.active {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.pager:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-bar .perpage {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-bar .perpage label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.pagination-bar .perpage .form-select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+/* ===== BADGES ===== */
+.badge-div {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-div.dps {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.badge-div.dss {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.badge-div.dgs {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.badge-status-registered {
+    background: #28a745;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-status-not-registered {
+    background: #6c757d;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-role-am {
+    background: #007bff;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-role-hotda {
+    background: #ffc107;
+    color: #000;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ===== MODALS ===== */
+.modal {
+    z-index: 1060 !important;
+}
+
+.modal-backdrop {
+    z-index: 1050 !important;
+    opacity: 0.5 !important;
+}
+
+.modal-dialog {
+    margin: 1.75rem auto;
+}
+
+@media (max-width: 767px) {
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+
+    .modal-xl {
+        max-width: calc(100% - 1rem);
+    }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    padding: 1.25rem 1.5rem;
+    border-bottom: none;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.modal-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: white;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+@media (max-width: 767px) {
+    .modal-body {
+        padding: 1rem;
+    }
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Import Modal Type Selector */
+.type-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.type-btn {
+    padding: 1rem;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.type-btn:hover {
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+.type-btn.active {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.type-btn i {
+    font-size: 1.5rem;
+}
+
+.imp-panel {
+    display: none;
+}
+
+.imp-panel.active {
+    display: block;
+}
+
+/* ===== LOADING OVERLAY ===== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.loading-spinner .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.25rem;
+}
+
+/* ===== UTILITIES ===== */
+.text-muted {
+    color: #6c757d !important;
+}
+
+.text-end {
+    text-align: right !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.muted {
+    color: #6c757d;
+}
+
+.me-1 {
+    margin-right: 0.25rem !important;
+}
+
+.me-2 {
+    margin-right: 0.5rem !important;
+}
+
+.ms-1 {
+    margin-left: 0.25rem !important;
+}
+
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+
+.mb-1 {
+    margin-bottom: 0.25rem !important;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem !important;
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+.mt-2 {
+    margin-top: 0.5rem !important;
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+.d-flex {
+    display: flex !important;
+}
+
+.d-block {
+    display: block !important;
+}
+
+.gap-2 {
+    gap: 0.5rem !important;
+}
+
+.flex-grow-1 {
+    flex-grow: 1 !important;
+}
+
+.align-items-start {
+    align-items: flex-start !important;
+}
+
+.fw-semibold {
+    font-weight: 600 !important;
+}
+
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+.small {
+    font-size: 0.875rem !important;
+}
     </style>
 @endsection
 
 @section('content')
 <div class="rlegs-container">
 
-    <!-- ===== Page Header / Action Bar ===== -->
+    {{-- ===== PAGE HEADER ===== --}}
     <div class="page-header card-shadow">
         <div class="page-title">
             <h1>Data Revenue RLEGS</h1>
@@ -889,62 +965,52 @@
                 <i class="fa-solid fa-file-import me-2"></i>Import
             </button>
             <div class="export-group">
-            <a href="/export/excel" class="btn btn-primary">
-                <i class="fa-solid fa-file-export me-2"></i> Export
-            </a>
+                <a href="/export/excel" class="btn btn-primary">
+                    <i class="fa-solid fa-file-export me-2"></i> Export
+                </a>
             </div>
-
         </div>
     </div>
 
-    <!-- ===== Filters Line ===== -->
+    {{-- ===== FILTERS (ALWAYS VISIBLE, COMPACT) ===== --}}
     <div class="filters card-shadow">
-         <form class="searchbar" action="#" method="GET" id="searchForm" onsubmit="return false;">
-                <input type="search" class="search-input" id="searchInput" placeholder="Cari data...">
-                <button class="search-btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-            </form>
+        <form class="searchbar" action="#" method="GET" id="searchForm" onsubmit="return false;">
+            <input type="search" class="search-input" id="searchInput" placeholder="Cari data...">
+            <button class="search-btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </form>
+        
         <div class="filter-group">
             <label>Witel</label>
             <select class="form-select" id="filterWitel">
                 <option value="all">Semua Witel</option>
             </select>
         </div>
+        
         <div class="filter-group">
             <label>Divisi</label>
             <select class="form-select" id="filterDivisi">
                 <option value="all">Semua Divisi</option>
             </select>
         </div>
+        
         <div class="filter-group">
             <label>Segment</label>
-
-            <!-- Select asli (hidden, untuk form submit) -->
             <select class="form-select" id="filter-segment" name="segment">
                 <option value="all">Semua Segment</option>
-                <!-- Options dari database akan diisi via JS -->
             </select>
 
-            <!-- UI custom dengan tabs (akan di-generate via JS) -->
             <div class="seg-select" id="segSelect">
-                <!-- Tombol trigger -->
                 <button type="button" class="seg-select__btn" aria-haspopup="listbox">
                     <span class="seg-select__label">Semua Segment</span>
                     <span class="seg-select__caret"></span>
                 </button>
-
-                <!-- Menu dropdown (akan diisi via JS) -->
                 <div class="seg-menu" id="segMenu" role="listbox">
-                    <div class="seg-tabs" id="segTabs" role="tablist">
-                        <!-- Tabs akan di-generate via JS -->
-                    </div>
-                    <div class="seg-panels" id="segPanels">
-                        <!-- Panels akan di-generate via JS -->
-                    </div>
+                    <div class="seg-tabs" id="segTabs" role="tablist"></div>
+                    <div class="seg-panels" id="segPanels"></div>
                 </div>
             </div>
         </div>
 
-        <!-- === Periode: MONTHPICKER (pilih bulan & tahun) === -->
         <div class="filter-group" id="filterPeriodeGroup">
             <label>Periode</label>
             <input type="text" id="filter-date" class="form-control datepicker-control" placeholder="Pilih bulan & tahun" autocomplete="off" readonly>
@@ -962,7 +1028,7 @@
         </div>
     </div>
 
-    <!-- ===== Tabs ===== -->
+    {{-- ===== TABS ===== --}}
     <div class="tabs card-shadow">
         <button class="tab-btn active" data-tab="tab-cc-revenue">
             <i class="fa-solid fa-chart-line me-2"></i>Revenue CC
@@ -982,25 +1048,33 @@
         </button>
     </div>
 
-    <!-- ===== Tab: Revenue CC ===== -->
+    {{-- ===== TAB: REVENUE CC ===== --}}
     <div id="tab-cc-revenue" class="tab-panel card-shadow active">
         <div class="panel-header">
             <div class="left">
                 <h3>Revenue Corporate Customer</h3>
-                <p class="muted">Gunakan <i>option button</i> untuk melihat kategori Revenue CC</p>
+                <p class="muted">Gunakan dropdown untuk melihat kategori Revenue CC</p>
             </div>
-            <div class="right" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="right">
+                {{-- Dropdown Revenue Type (COMPACT) --}}
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dropdownRevType" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-filter me-1"></i>
+                        <span id="currentRevType">Reguler</span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownRevType">
+                        <li><a class="dropdown-item active" href="#" data-revtype="REGULER">Reguler</a></li>
+                        <li><a class="dropdown-item" href="#" data-revtype="NGTMA">NGTMA</a></li>
+                        <li><a class="dropdown-item" href="#" data-revtype="KOMBINASI">Kombinasi</a></li>
+                    </ul>
+                </div>
+
                 <button class="btn btn-danger btn-sm" id="btnDeleteSelectedCC" disabled>
                     <i class="fa-solid fa-trash-can me-2"></i>Hapus Terpilih
                 </button>
                 <button class="btn btn-outline-danger btn-sm" id="btnBulkDeleteCC">
                     <i class="fa-solid fa-trash-alt me-2"></i>Hapus Semua
                 </button>
-                <div class="btn-segmentation" role="group" aria-label="Revenue Type">
-                    <button class="seg-btn active" data-revtype="REGULER">Reguler</button>
-                    <button class="seg-btn" data-revtype="NGTMA">NGTMA</button>
-                    <button class="seg-btn" data-revtype="KOMBINASI">Kombinasi</button>
-                </div>
             </div>
         </div>
 
@@ -1012,12 +1086,7 @@
                         <th>Nama CC</th>
                         <th>Segment</th>
                         <th class="text-end">Target Revenue</th>
-                        <th class="text-end">
-                            Revenue
-                            <i class="fa-regular fa-circle-question ms-1 text-muted"
-                               data-bs-toggle="tooltip"
-                               title="Nilai ini menampilkan Revenue sesuai kategori (Reguler/NGTMA/Kombinasi). Hover pada angka untuk detail: Revenue Sold/Bill."></i>
-                        </th>
+                        <th class="text-end">Revenue</th>
                         <th>Bulan</th>
                         <th class="text-center" style="width: 150px; min-width: 150px;">Aksi</th>
                     </tr>
@@ -1049,27 +1118,33 @@
         </div>
     </div>
 
-    <!-- ===== Tab: Revenue AM ===== -->
+    {{-- ===== TAB: REVENUE AM ===== --}}
     <div id="tab-am-revenue" class="tab-panel card-shadow">
         <div class="panel-header">
             <div class="left">
                 <h3>Revenue Account Manager</h3>
-                <p class="muted">Gunakan <i>option button</i> untuk melihat kategori Revenue AM</p>
+                <p class="muted">Gunakan dropdown untuk filter AM/HOTDA</p>
             </div>
-            <div class="right" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="right">
+                {{-- Dropdown AM Mode (COMPACT) --}}
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dropdownAMMode" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-user-tie me-1"></i>
+                        <span id="currentAMMode">Semua</span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownAMMode">
+                        <li><a class="dropdown-item active" href="#" data-mode="all">Semua</a></li>
+                        <li><a class="dropdown-item" href="#" data-mode="AM">AM</a></li>
+                        <li><a class="dropdown-item" href="#" data-mode="HOTDA">HOTDA</a></li>
+                    </ul>
+                </div>
+
                 <button class="btn btn-danger btn-sm" id="btnDeleteSelectedAM" disabled>
                     <i class="fa-solid fa-trash-can me-2"></i>Hapus Terpilih
                 </button>
                 <button class="btn btn-outline-danger btn-sm" id="btnBulkDeleteAM">
                     <i class="fa-solid fa-trash-alt me-2"></i>Hapus Semua
                 </button>
-                <div class="am-toggles">
-                    <div class="btn-toggle" data-role="amMode">
-                        <button class="am-btn active" data-mode="all">Semua</button>
-                        <button class="am-btn" data-mode="AM">AM</button>
-                        <button class="am-btn" data-mode="HOTDA">HOTDA</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -1078,18 +1153,13 @@
                 <thead>
                     <tr>
                         <th style="width: 48px; min-width: 48px; text-align: center;"><input type="checkbox" id="selectAllAM"></th>
-                        <th style="width: auto;">Nama AM</th>
-                        <th style="width: auto;">Corporate Customer</th>
-                        <th class="text-end" style="width: 140px;">Target Revenue</th>
-                        <th class="text-end" style="width: 140px;">
-                            Revenue
-                            <i class="fa-regular fa-circle-question ms-1 text-muted"
-                               data-bs-toggle="tooltip"
-                               title="Nilai revenue mengikuti mode (AM/HOTDA)."></i>
-                        </th>
-                        <th class="text-end" style="width: 100px;">Achievement</th>
-                        <th style="width: 100px;">Bulan</th>
-                        <th class="telda-col" style="width: auto;">TELDA</th>
+                        <th>Nama AM</th>
+                        <th>Corporate Customer</th>
+                        <th class="text-end">Target Revenue</th>
+                        <th class="text-end">Revenue</th>
+                        <th class="text-end">Achievement</th>
+                        <th>Bulan</th>
+                        <th>TELDA</th>
                         <th class="text-center" style="width: 150px; min-width: 150px;">Aksi</th>
                     </tr>
                 </thead>
@@ -1120,14 +1190,14 @@
         </div>
     </div>
 
-    <!-- ===== Tab: Data AM ===== -->
+    {{-- ===== TAB: DATA AM ===== --}}
     <div id="tab-data-am" class="tab-panel card-shadow">
         <div class="panel-header">
             <div class="left">
                 <h3>Data Account Manager</h3>
                 <p class="muted">Daftar Account Manager yang terdaftar di sistem</p>
             </div>
-            <div class="right" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="right">
                 <button class="btn btn-danger btn-sm" id="btnDeleteSelectedDataAM" disabled>
                     <i class="fa-solid fa-trash-can me-2"></i>Hapus Terpilih
                 </button>
@@ -1177,14 +1247,14 @@
         </div>
     </div>
 
-    <!-- ===== Tab: Data CC ===== -->
+    {{-- ===== TAB: DATA CC ===== --}}
     <div id="tab-data-cc" class="tab-panel card-shadow">
         <div class="panel-header">
             <div class="left">
                 <h3>Data Corporate Customer</h3>
                 <p class="muted">Detail Corporate Customer</p>
             </div>
-            <div class="right" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="right">
                 <button class="btn btn-danger btn-sm" id="btnDeleteSelectedDataCC" disabled>
                     <i class="fa-solid fa-trash-can me-2"></i>Hapus Terpilih
                 </button>
@@ -1233,22 +1303,21 @@
 
 </div>
 
-<!-- ========================================
-     ✨ MODERN IMPORT MODAL - FULLY UPDATED & COMPACT
-     ======================================== -->
+{{-- ========================================
+     IMPORT MODAL
+     ======================================== --}}
 <div class="modal fade" id="importModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" style="color: white;">
-            <i class="fa-solid fa-file-import" style="color: white;"></i>
+        <h5 class="modal-title">
+            <i class="fa-solid fa-file-import"></i>
             Import Data Revenue
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
       <div class="modal-body">
-        <!-- ✨ Modern Type Selector -->
         <div class="type-selector">
           <button class="type-btn active" data-imp="imp-data-cc">
               <i class="fa-solid fa-building"></i>
@@ -1268,14 +1337,11 @@
           </button>
         </div>
 
-        <!-- ==========================================
-             ✅ FORM 1: DATA CC
-             ========================================== -->
+        {{-- Form Data CC --}}
         <div id="imp-data-cc" class="imp-panel active">
-            <!-- Compact Info -->
             <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
                 <div class="d-flex gap-2 align-items-start">
-                    <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
+                    <i class="fa-solid fa-info-circle text-primary"></i>
                     <div class="flex-grow-1">
                         <strong class="d-block mb-1">Format CSV Data CC</strong>
                         <div class="text-muted" style="font-size: 0.85rem;">
@@ -1309,14 +1375,11 @@
             </form>
         </div>
 
-        <!-- ==========================================
-             ✅ FORM 2: DATA AM
-             ========================================== -->
+        {{-- Form Data AM --}}
         <div id="imp-data-am" class="imp-panel">
-            <!-- Compact Info -->
             <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
                 <div class="d-flex gap-2 align-items-start">
-                    <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
+                    <i class="fa-solid fa-info-circle text-primary"></i>
                     <div class="flex-grow-1">
                         <strong class="d-block mb-1">Format CSV Data AM</strong>
                         <div class="text-muted" style="font-size: 0.85rem; line-height: 1.5;">
@@ -1350,92 +1413,85 @@
             </form>
         </div>
 
-        <!-- ==========================================
-     ✅ FORM 3: REVENUE CC - FINAL COMPACT
-     ========================================== -->
-<div id="imp-rev-cc" class="imp-panel">
-    <!-- Ultra Compact Info -->
-  <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.8rem;">
-        <div class="d-flex gap-2">
-            <i class="fa-solid fa-info-circle text-primary"></i>
-            <div class="flex-grow-1">
-                <strong class="d-block mb-1">Format CSV</strong>
-                  <div class="text-muted" style="font-size: 0.75rem; line-height: 1.6;">
-                      <strong class="text-success">Real:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, REVENUE_SOLD | DPS → tambah WITEL_BILL, REVENUE_BILL<br>
-                      <strong class="text-warning">Target:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, TARGET_REVENUE | DPS → tambah WITEL_BILL
-                  </div>
+        {{-- Form Revenue CC --}}
+        <div id="imp-rev-cc" class="imp-panel">
+          <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.8rem;">
+                <div class="d-flex gap-2">
+                    <i class="fa-solid fa-info-circle text-primary"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block mb-1">Format CSV</strong>
+                          <div class="text-muted" style="font-size: 0.75rem; line-height: 1.6;">
+                              <strong class="text-success">Real:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, REVENUE_SOLD | DPS → tambah WITEL_BILL, REVENUE_BILL<br>
+                              <strong class="text-warning">Target:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, TARGET_REVENUE | DPS → tambah WITEL_BILL
+                          </div>
+                    </div>
+                </div>
             </div>
+
+            <form id="formRevenueCC" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="import_type" value="revenue_cc">
+
+                <div class="row g-2 mb-2">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-calendar me-1"></i>Periode <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="import-cc-periode" class="form-control form-control-sm datepicker-control" placeholder="Pilih Periode" readonly required>
+                        <input type="hidden" name="month" id="import-cc-month">
+                        <input type="hidden" name="year" id="import-cc-year">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-sitemap me-1"></i>Divisi <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm" name="divisi_id" id="revCCDivisiImport" required>
+                            <option value="">Pilih Divisi</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-tag me-1"></i>Jenis Data <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm" name="jenis_data" id="revCCJenisDataImport" required>
+                            <option value="">Pilih Jenis</option>
+                            <option value="revenue">Real Revenue</option>
+                            <option value="target">Target Revenue</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-file me-1"></i>Upload CSV <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" class="form-control form-control-sm" name="file" accept=".csv" required>
+                    </div>
+                </div>
+
+                <div class="mb-3" style="font-size: 0.82rem;">
+                    <span class="text-muted me-2">Template:</span>
+                    <a href="#" id="linkTemplateDGSDSS" class="text-decoration-none me-2">
+                        <i class="fa-solid fa-download me-1"></i><span id="textTemplateDGSDSS">DGS/DSS</span>
+                    </a>
+                    <span class="text-muted mx-1">|</span>
+                    <a href="#" id="linkTemplateDPS" class="text-decoration-none">
+                        <i class="fa-solid fa-download me-1"></i><span id="textTemplateDPS">DPS</span>
+                    </a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-upload me-1"></i>Import Revenue CC
+                </button>
+            </form>
         </div>
-    </div>
 
-    <form id="formRevenueCC" enctype="multipart/form-data">
-        @csrf
-        <input type="hidden" name="import_type" value="revenue_cc">
-
-        <div class="row g-2 mb-2">
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-calendar me-1"></i>Periode <span class="text-danger">*</span>
-                </label>
-                <input type="text" id="import-cc-periode" class="form-control form-control-sm datepicker-control" placeholder="Pilih Periode" readonly required>
-                <input type="hidden" name="month" id="import-cc-month">
-                <input type="hidden" name="year" id="import-cc-year">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-sitemap me-1"></i>Divisi <span class="text-danger">*</span>
-                </label>
-                <select class="form-select form-select-sm" name="divisi_id" id="revCCDivisiImport" required>
-                    <option value="">Pilih Divisi</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-tag me-1"></i>Jenis Data <span class="text-danger">*</span>
-                </label>
-                <select class="form-select form-select-sm" name="jenis_data" id="revCCJenisDataImport" required>
-                    <option value="">Pilih Jenis</option>
-                    <option value="revenue">Real Revenue</option>
-                    <option value="target">Target Revenue</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-file me-1"></i>Upload CSV <span class="text-danger">*</span>
-                </label>
-                <input type="file" class="form-control form-control-sm" name="file" accept=".csv" required>
-            </div>
-        </div>
-
-        <!-- Template Horizontal - 1 Baris -->
-        <div class="mb-3" style="font-size: 0.82rem;">
-            <span class="text-muted me-2">Template:</span>
-            <a href="#" id="linkTemplateDGSDSS" class="text-decoration-none me-2">
-                <i class="fa-solid fa-download me-1"></i><span id="textTemplateDGSDSS">DGS/DSS</span>
-            </a>
-            <span class="text-muted mx-1">|</span>
-            <a href="#" id="linkTemplateDPS" class="text-decoration-none">
-                <i class="fa-solid fa-download me-1"></i><span id="textTemplateDPS">DPS</span>
-            </a>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-sm">
-            <i class="fa-solid fa-upload me-1"></i>Import Revenue CC
-        </button>
-    </form>
-</div>
-
-        <!-- ==========================================
-             ✅ FORM 4: REVENUE AM
-             ========================================== -->
+        {{-- Form Revenue AM --}}
         <div id="imp-rev-map" class="imp-panel">
-            <!-- Compact Info -->
             <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
                 <div class="d-flex gap-2 align-items-start">
-                    <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
+                    <i class="fa-solid fa-info-circle text-primary"></i>
                     <div class="flex-grow-1">
                         <strong class="d-block mb-1">Format CSV Revenue AM</strong>
                         <div class="text-muted" style="font-size: 0.85rem; line-height: 1.5;">
@@ -1451,24 +1507,16 @@
                 <input type="hidden" name="import_type" value="revenue_am">
 
                 <div class="row g-3 mb-3">
-                    <!-- Periode -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">
                             <i class="fa-solid fa-calendar-days me-1"></i>
                             Periode <span class="text-danger">*</span>
                         </label>
-                        <input type="text" 
-                               id="import-am-periode" 
-                               class="form-control datepicker-control" 
-                               placeholder="Pilih Bulan & Tahun" 
-                               autocomplete="off" 
-                               readonly 
-                               required>
+                        <input type="text" id="import-am-periode" class="form-control datepicker-control" placeholder="Pilih Bulan & Tahun" autocomplete="off" readonly required>
                         <input type="hidden" name="month" id="import-am-month">
                         <input type="hidden" name="year" id="import-am-year">
                     </div>
 
-                    <!-- Upload File -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">
                             <i class="fa-solid fa-file-csv me-1"></i>
@@ -1494,81 +1542,40 @@
   </div>
 </div>
 
-<!-- ==========================================
-     ✨ PREVIEW MODAL
-     ========================================== -->
+{{-- ========================================
+     PREVIEW MODAL
+     ======================================== --}}
 <div class="modal fade" id="previewModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fa-solid fa-eye me-2"></i>
-                    Preview Import Data
+                    <i class="fa-solid fa-eye me-2"></i>Preview Import Data
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="preview-summary" id="previewSummary"></div>
-
-                <div class="preview-actions">
-                    <i class="fa-solid fa-info-circle"></i>
-                    <div style="flex: 1;">
-                        <strong>Pilih data yang akan diimport:</strong>
-                        <div class="btn-group mt-2">
-                            <button class="btn btn-sm" id="btnSelectAll">
-                                <i class="fa-solid fa-check-double me-1"></i>Pilih Semua
-                            </button>
-                            <button class="btn btn-sm" id="btnDeselectAll">
-                                <i class="fa-solid fa-times me-1"></i>Batal Semua
-                            </button>
-                            <button class="btn btn-sm" id="btnSelectNew">
-                                <i class="fa-solid fa-plus me-1"></i>Pilih Baru Saja
-                            </button>
-                            <button class="btn btn-sm" id="btnSelectUpdates">
-                                <i class="fa-solid fa-edit me-1"></i>Pilih Update Saja
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="preview-table-container">
-                    <table class="preview-table table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px;">
-                                    <input type="checkbox" id="selectAllPreview">
-                                </th>
-                                <th>Status</th>
-                                <th>Data</th>
-                                <th>Nilai</th>
-                            </tr>
-                        </thead>
+                    <table class="table">
+                        <thead><tr><th>Status</th><th>Data</th></tr></thead>
                         <tbody id="previewTableBody"></tbody>
                     </table>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                    <i class="fa-solid fa-times me-2"></i>Batal
-                </button>
-                <button type="button" class="btn btn-execute" id="btnExecuteImport">
-                    <i class="fa-solid fa-check me-2"></i>
-                    Lanjutkan Import (<span id="selectedCount">0</span> dipilih)
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnExecuteImport">
+                    Lanjutkan Import
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner">
-        <div class="spinner-border"></div>
-        <p id="loadingText">Memproses...</p>
-    </div>
-</div>
-
-<!-- =================== ✅ RESULT MODAL =================== -->
+{{-- ========================================
+     RESULT MODAL
+     ======================================== --}}
 <div class="modal fade" id="resultModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1579,18 +1586,14 @@
             <div class="modal-body" id="resultModalBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                <a href="#" class="btn btn-primary" id="btnDownloadErrorLog" style="display: none;" target="_blank">
-                    <i class="fa-solid fa-download me-2"></i>Download Error Log
-                </a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ========================================
-     ✅ EDIT MODALS - IMPROVED
-     ======================================== -->
-<!-- Modal Edit Revenue CC -->
+{{-- ========================================
+     EDIT MODALS
+     ======================================== --}}
 <div class="modal fade" id="modalEditRevenueCC" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -1623,7 +1626,6 @@
     </div>
 </div>
 
-<!-- Modal Edit Revenue AM -->
 <div class="modal fade" id="modalEditRevenueAM" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -1642,14 +1644,6 @@
                         <label class="form-label">Proporsi (%)</label>
                         <input type="number" class="form-control" id="editAMProporsi" min="0" max="100" step="0.01" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Target Revenue</label>
-                        <input type="number" class="form-control" id="editAMTargetRevenue" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Real Revenue</label>
-                        <input type="number" class="form-control" id="editAMRealRevenue" required>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -1660,7 +1654,6 @@
     </div>
 </div>
 
-<!-- Modal Edit Data AM -->
 <div class="modal fade" id="modalEditDataAM" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1669,65 +1662,31 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- ✅ TABS NAV -->
-                <ul class="nav nav-tabs mb-3" id="editDataAMTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tab-edit-data-tab" data-bs-toggle="tab" data-bs-target="#tab-edit-data" type="button">Data AM</button>
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-edit-data">Data AM</button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-change-password-tab" data-bs-toggle="tab" data-bs-target="#tab-change-password" type="button">Ganti Password</button>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-change-password">Ganti Password</button>
                     </li>
                 </ul>
 
-                <!-- TAB CONTENT -->
                 <div class="tab-content">
-                    <!-- Tab 1: Edit Data -->
                     <div class="tab-pane fade show active" id="tab-edit-data">
                         <form id="formEditDataAM">
                             <input type="hidden" id="editDataAMId">
-                            
                             <div class="mb-3">
                                 <label class="form-label">Nama AM</label>
                                 <input type="text" class="form-control" id="editDataAMNama" required>
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label">NIK</label>
                                 <input type="text" class="form-control" id="editDataAMNik" required>
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Role</label>
-                                <select class="form-select" id="editDataAMRole" required>
-                                    <option value="">Pilih Role</option>
-                                    <option value="AM">AM</option>
-                                    <option value="HOTDA">HOTDA</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Witel</label>
-                                <select class="form-select" id="editDataAMWitel" required></select>
-                            </div>
-
-                            <!-- ✅ TELDA WRAPPER -->
-                            <div class="mb-3" id="editDataAMTeldaWrapper">
-                                <label class="form-label">TELDA</label>
-                                <select class="form-select" id="editDataAMTelda"></select>
-                            </div>
-
-                            <!-- ✅ DIVISI BUTTON GROUP -->
-                            <div class="mb-3">
-                                <label class="form-label">Divisi</label>
-                                <div class="divisi-button-group" id="divisiButtonGroup"></div>
-                                <div class="divisi-hidden-container" id="divisiHiddenInputs"></div>
-                            </div>
-
                             <button type="submit" class="btn btn-primary w-100">Simpan</button>
                         </form>
                     </div>
 
-                    <!-- Tab 2: Change Password -->
                     <div class="tab-pane fade" id="tab-change-password">
                         <form id="formChangePasswordAM">
                             <input type="hidden" id="changePasswordAMId">
@@ -1748,7 +1707,6 @@
     </div>
 </div>
 
-<!-- Modal Edit Data CC -->
 <div class="modal fade" id="modalEditDataCC" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -1777,7 +1735,17 @@
     </div>
 </div>
 
+{{-- LOADING OVERLAY --}}
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="spinner-border"></div>
+        <p id="loadingText">Memproses...</p>
+    </div>
+</div>
+
 @endsection
+
+
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

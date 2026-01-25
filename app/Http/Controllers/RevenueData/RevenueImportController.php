@@ -383,40 +383,50 @@ class RevenueImportController extends Controller
                 'selected_rows_count' => count($request->selected_rows)
             ]);
 
+            // ✅ FIX: Create pseudo-Request for all execute methods
+            $pseudoRequest = new Request();
+            $pseudoRequest->merge([
+                'temp_file' => $tempFilePath,
+                'selected_rows' => $request->selected_rows
+            ]);
+
+            // Add additional params for revenue imports
+            if ($request->import_type === 'revenue_cc') {
+                $params = $sessionData['additional_params'] ?? [];
+                $pseudoRequest->merge([
+                    'divisi_id' => $params['divisi_id'] ?? null,
+                    'jenis_data' => $params['jenis_data'] ?? null,
+                    'year' => $params['year'] ?? null,
+                    'month' => $params['month'] ?? null
+                ]);
+            } elseif ($request->import_type === 'revenue_am') {
+                $params = $sessionData['additional_params'] ?? [];
+                $pseudoRequest->merge([
+                    'year' => $params['year'] ?? null,
+                    'month' => $params['month'] ?? null
+                ]);
+            }
+
             $result = null;
             switch ($request->import_type) {
                 case 'data_cc':
                     $controller = new ImportCCController();
-                    $result = $controller->executeDataCC($tempFilePath, $request->selected_rows);
+                    $result = $controller->executeDataCC($pseudoRequest);
                     break;
 
                 case 'data_am':
                     $controller = new ImportAMController();
-                    $result = $controller->executeDataAM($tempFilePath, $request->selected_rows);
+                    $result = $controller->executeDataAM($pseudoRequest);
                     break;
 
                 case 'revenue_cc':
-                    $params = $sessionData['additional_params'] ?? [];
                     $controller = new ImportCCController();
-                    $result = $controller->executeRevenueCC(
-                        $tempFilePath,
-                        $params['divisi_id'] ?? null,
-                        $params['jenis_data'] ?? null,
-                        $params['year'] ?? null,
-                        $params['month'] ?? null,
-                        $request->selected_rows
-                    );
+                    $result = $controller->executeRevenueCC($pseudoRequest);
                     break;
 
                 case 'revenue_am':
-                    $params = $sessionData['additional_params'] ?? [];
                     $controller = new ImportAMController();
-                    $result = $controller->executeRevenueAM(
-                        $tempFilePath,
-                        $params['year'] ?? null,
-                        $params['month'] ?? null,
-                        $request->selected_rows
-                    );
+                    $result = $controller->executeRevenueAM($pseudoRequest);
                     break;
 
                 default:

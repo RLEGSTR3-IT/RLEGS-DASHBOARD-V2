@@ -232,6 +232,7 @@ class ImportCCController extends Controller
 
         try {
             $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
+            $selectedRows = $request instanceof Request ? $request->input('selected_rows', []) : [];
 
             if (!$tempFilePath || !file_exists($tempFilePath)) {
                 DB::rollBack();
@@ -249,8 +250,14 @@ class ImportCCController extends Controller
             $failedCount = 0;
             $updatedCount = 0;
             $errors = [];
+            $hasSelectedRows = !empty($selectedRows);
 
             foreach ($csvData as $index => $row) {
+                // Skip rows that are not selected (if preview mode)
+                if ($hasSelectedRows && !in_array($index, $selectedRows)) {
+                    continue;
+                }
+
                 $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                 $standardName = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
 
@@ -455,6 +462,7 @@ class ImportCCController extends Controller
             $jenisData = $request instanceof Request ? $request->input('jenis_data') : null;
             $year = $request instanceof Request ? $request->input('year') : null;
             $month = $request instanceof Request ? $request->input('month') : null;
+            $selectedRows = $request instanceof Request ? $request->input('selected_rows', []) : [];
 
             // Validation
             if (!$tempFilePath || !file_exists($tempFilePath)) {
@@ -561,11 +569,24 @@ class ImportCCController extends Controller
 
             $rowNumber = 1; // Start from 1 (header)
             $processedInChunk = 0;
+            $hasSelectedRows = !empty($selectedRows);
+
+            Log::info('Processing mode', [
+                'has_selected_rows' => $hasSelectedRows,
+                'selected_count' => count($selectedRows)
+            ]);
 
             // ✅ FIX: Process line by line with fgetcsv()
             while (($row = fgetcsv($handle)) !== false) {
                 $rowNumber++;
                 $statistics['total_rows']++;
+                
+                // ✅ NEW: Skip rows that are not selected (if preview mode)
+                $rowIndex = $rowNumber - 2; // Adjust for 0-based index (header is row 1)
+                if ($hasSelectedRows && !in_array($rowIndex, $selectedRows)) {
+                    continue; // Skip this row
+                }
+
                 $processedInChunk++;
 
                 try {

@@ -252,7 +252,7 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ NEW: Handle large file import (skip preview, direct chunk execution)
+     * ✅ FIXED: Handle large file import (skip preview, direct chunk execution)
      */
     private function handleLargeFileImport(Request $request, $file, $importType)
     {
@@ -274,41 +274,37 @@ class RevenueImportController extends Controller
             $tempFullPath = $tempPath . '/' . $tempFilename;
             $file->move($tempPath, $tempFilename);
 
+            // ✅ FIX: Create pseudo-request with temp_file path
+            $pseudoRequest = new Request();
+            $pseudoRequest->merge([
+                'temp_file' => $tempFullPath,
+                'divisi_id' => $request->divisi_id,
+                'jenis_data' => $request->jenis_data,
+                'year' => $request->year,
+                'month' => $request->month
+            ]);
+
             // Execute import directly with chunk processing
             $executeResult = null;
             switch ($importType) {
                 case 'data_cc':
                     $controller = new ImportCCController();
-                    $executeResult = $controller->executeDataCC($tempFullPath, [], true); // true = all rows
+                    $executeResult = $controller->executeDataCC($pseudoRequest);
                     break;
 
                 case 'data_am':
                     $controller = new ImportAMController();
-                    $executeResult = $controller->executeDataAM($tempFullPath, [], true);
+                    $executeResult = $controller->executeDataAM($pseudoRequest);
                     break;
 
                 case 'revenue_cc':
                     $controller = new ImportCCController();
-                    $executeResult = $controller->executeRevenueCC(
-                        $tempFullPath,
-                        $request->divisi_id,
-                        $request->jenis_data,
-                        $request->year,
-                        $request->month,
-                        [], // empty selected rows = process all
-                        true // skip preview mode
-                    );
+                    $executeResult = $controller->executeRevenueCC($pseudoRequest);
                     break;
 
                 case 'revenue_am':
                     $controller = new ImportAMController();
-                    $executeResult = $controller->executeRevenueAM(
-                        $tempFullPath,
-                        $request->year,
-                        $request->month,
-                        [],
-                        true
-                    );
+                    $executeResult = $controller->executeRevenueAM($pseudoRequest);
                     break;
 
                 default:

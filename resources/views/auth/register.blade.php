@@ -73,9 +73,9 @@
             <label for="role" class="block font-medium text-sm text-gray-700 mb-1">Tipe Akun</label>
             <select id="role" name="role"
                     class="w-full border-gray-300 focus:border-red-600 focus:ring-red-600 rounded-md shadow-sm">
-              <option value="account_manager">Account Manager</option>
-              <option value="witel">Support Witel</option>
-              <option value="admin">Admin</option>
+              <option value="account_manager" {{ old('role') === 'account_manager' ? 'selected' : '' }}>Account Manager</option>
+              <option value="witel" {{ old('role') === 'witel' ? 'selected' : '' }}>Support Witel</option>
+              <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
             </select>
             @error('role')
               <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

@@ -42,7 +42,7 @@ class RegisteredUserController extends Controller
 
             return view('auth.register', compact('accountManagers', 'witels', 'noAccountManagers', 'noWitels'));
         } catch (Exception $e) {
-            Log::error('Error loading registration page: ', [
+            Log::error('Error memuat halaman registrasi: ', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -275,7 +275,7 @@ class RegisteredUserController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             return redirect()->route('login')
-                ->withErrors(['email' => 'Gagal mengautentikasi, silahkan log in ulang']);
+                ->withErrors(['email' => 'Gagal mengautentikasi, silahkan log in kembali']);
 
             //return redirect(route('login', absolute: false))->with('success', 'Pendaftaran berhasil! Silakan login dengan akun yang telah Anda buat.');
         } catch (Exception $e) {

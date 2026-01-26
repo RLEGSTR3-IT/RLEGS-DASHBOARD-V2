@@ -133,7 +133,6 @@
     margin-left: 45px;
     width: calc(100% - 90px);
     min-height: 100vh;
-    background: #f8fafc;
 }
 
 /* Profile Overview - Clean Modern */
@@ -166,8 +165,8 @@
 }
 
 .profile-name {
-    font-size: 2.5rem;
-    font-weight: 800;
+    font-size: 2rem;
+    font-weight: 600;
     color: #dc2626;
     margin-bottom: 20px;
     letter-spacing: -0.02em;
@@ -338,39 +337,10 @@
 }
 
 .ranking-value {
-    font-size: 2rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 500;
     color: #0f172a;
     line-height: 1.1;
-}
-
-.rank-badge {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.rank-badge.up {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    color: #065f46;
-}
-
-.rank-badge.down {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    color: #991b1b;
-}
-
-.rank-badge.neutral {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    color: #64748b;
 }
 
 .rank-change-detail {
@@ -522,7 +492,7 @@
 
 .tab-content-title {
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 500;
     color: #0f172a;
     display: flex;
     align-items: center;
@@ -799,8 +769,8 @@
 }
 
 .revenue-card-value {
-    font-size: 2.25rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 600;
     color: #0f172a;
     margin-bottom: 8px;
     line-height: 1.1;
@@ -836,7 +806,7 @@
     background: #f8fafc;
     padding: 20px 24px;
     text-align: left;
-    font-weight: 800;
+    font-weight: 600;
     font-size: 0.75rem;
     color: #64748b;
     text-transform: uppercase;
@@ -862,7 +832,7 @@
 }
 
 .row-number {
-    font-weight: 800;
+    font-weight: 600;
     color: #dc2626;
     text-align: center;
 }
@@ -972,7 +942,7 @@
 
 .insight-header h4 {
     font-size: 1.75rem;
-    font-weight: 800;
+    font-weight: 600;
     color: #991b1b;
     margin: 0;
     margin-top: 12px;
@@ -987,7 +957,7 @@
 
 .insight-body strong {
     color: #dc2626;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 /* Insight Metrics */
@@ -1043,7 +1013,7 @@
 
 .metric-value {
     font-size: 1.75rem;
-    font-weight: 800;
+    font-weight: 600;
     color: #0f172a;
     line-height: 1.2;
 }
@@ -1075,7 +1045,7 @@
 
 .chart-title {
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 600;
     color: #0f172a;
     display: flex;
     align-items: center;

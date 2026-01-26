@@ -4,76 +4,6 @@
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/overview.css') }}">
-<style>
-/* Responsive Table with Horizontal Scroll */
-.table-container {
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    margin: 0;
-    padding: 0;
-}
-
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin: 0;
-}
-
-.table-modern {
-    min-width: 1000px; /* Minimum width agar tidak terlalu sempit */
-    white-space: nowrap;
-}
-
-.table-modern th,
-.table-modern td {
-    white-space: nowrap;
-    padding: 12px 16px;
-}
-
-/* Styling untuk row tanpa revenue */
-.row-no-revenue {
-    background-color: #f8f9fa !important;
-    opacity: 0.75;
-}
-
-.row-no-revenue:hover {
-    opacity: 1;
-    background-color: #e9ecef !important;
-}
-
-/* Custom scrollbar untuk table container */
-.table-container::-webkit-scrollbar {
-    height: 8px;
-}
-
-.table-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.table-container::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.table-container::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Scroll indicator shadow */
-.table-container {
-    background:
-        linear-gradient(to right, white 30%, rgba(255,255,255,0)),
-        linear-gradient(to right, rgba(255,255,255,0), white 70%) 0 100%,
-        radial-gradient(farthest-side at 0% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)),
-        radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)) 0 100%;
-    background-repeat: no-repeat;
-    background-color: white;
-    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
-    background-attachment: local, local, scroll, scroll;
-}
-</style>
 @endsection
 
 @section('content')
@@ -159,7 +89,7 @@
             <div class="stats-card">
                 <div class="stats-title">Total Revenue</div>
                 <div class="stats-value">Rp {{ $cardData['total_revenue_formatted'] ?? '0' }}</div>
-                <div class="stats-period">Keseluruhan Real Revenue RLEGS</div>
+                <div class="stats-period">Keseluruhan Real Revenue</div>
                 <div class="stats-icon icon-revenue">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -169,7 +99,7 @@
             <div class="stats-card">
                 <div class="stats-title">Target Revenue</div>
                 <div class="stats-value">Rp {{ $cardData['total_target_formatted'] ?? '0' }}</div>
-                <div class="stats-period">Keseluruhan Target Revenue RLEGS</div>
+                <div class="stats-period">Keseluruhan Target Revenue</div>
                 <div class="stats-icon icon-target">
                     <i class="fas fa-bullseye"></i>
                 </div>
@@ -470,7 +400,7 @@
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
-                        <canvas id="amDistributionChart" style="max-height:350px"></canvas>
+                        <canvas id="amDistributionChart" style="max-height:320px"></canvas>
                     </div>
                     <div id="amDistributionLegend" class="am-legend-grid mt-3"></div>
                 </div>

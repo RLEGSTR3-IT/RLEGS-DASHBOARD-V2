@@ -147,33 +147,31 @@
         </div>
 
         {{-- Customer Detail --}}
-        <div class="witel-detail-pane">
-            <div class="witel-layout-card border-gray-200">
-                <div class="customer-detail-header py-2 p-0 text-center">
-                     <h2 id="witel-cc-leaderboard-loading" class="py-2 truncate">Loading...</h2>
-                     <h2 class="py-2 truncate inline-block w-auto">
-                            <span id="witel-detail-name" style="display: none;"></span>
-                    </h2>
-                     <p class="pt-2 m-0" id="witel-detail-subheading">Customer Leaderboard</p>
-                </div>
+        <div class="witel-detail-pane witel-layout-card">
+            <div class="customer-detail-header py-2 p-0 text-center">
+                 <h2 id="witel-cc-leaderboard-loading" class="py-2 truncate">Loading...</h2>
+                 <h2 class="py-2 truncate inline-block w-auto">
+                        <span id="witel-detail-name" style="display: none;"></span>
+                </h2>
+                 <p class="pt-2 m-0" id="witel-detail-subheading">Customer Leaderboard</p>
+            </div>
 
-                <div class="witel-customer-layout-card-content pt-2">
-                    <div id="witel-detail-empty" class="placeholder-text">
-                        Loading...
-                    </div>
-                    <div id="witel-detail-loading" class="placeholder-text" style="display: none;">
-                        {{-- This will never be seen, a data is instant --}}
-                    </div>
-                    <div id="witel-detail-content"  style="display: none;">
-                        <div class="customer-list-header pb-2">
-                            <span class="customer-list-header-label customer-list-header-left">Nama CC</span>
-                            <div class="customer-list-header-right">
-                                <span class="customer-list-header-label">Share</span>
-                                <span class="customer-list-header-label">Nominal</span>
-                            </div>
+            <div class="witel-customer-layout-card-content pt-2">
+                <div id="witel-detail-empty" class="placeholder-text">
+                    Loading...
+                </div>
+                <div id="witel-detail-loading" class="placeholder-text" style="display: none;">
+                    {{-- This will never be seen, a data is instant --}}
+                </div>
+                <div id="witel-detail-content"  style="display: none;">
+                    <div class="customer-list-header pb-2">
+                        <span class="customer-list-header-label customer-list-header-left">Nama CC</span>
+                        <div class="customer-list-header-right">
+                            <span class="customer-list-header-label">Share</span>
+                            <span class="customer-list-header-label">Nominal</span>
                         </div>
-                        <ol id="witel-customer-list" class="space-y-2" style="padding-left: 0px; margin-top: 0px; margin-bottom: 0px;"></ol>
                     </div>
+                    <ol id="witel-customer-list" class="space-y-2" style="padding-left: 0px; margin-top: 0px; margin-bottom: 0px;"></ol>
                 </div>
             </div>
         </div>

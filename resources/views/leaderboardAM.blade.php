@@ -11,13 +11,13 @@
 
 @section('content')
 <div class="main-content">
-    <!-- Header Leaderboard -->
+    <!-- Header Leaderboard - FIXED: Larger font sizes -->
     <div class="header-leaderboard">
-        <h1 class="header-title">
-            <i class="fas fa-trophy me-3"></i>
+        <h1 class="header-title" style="font-size: 1.875rem !important; font-weight: 600 !important; line-height: 1.2; letter-spacing: -0.02em;">
+            <i class="fas fa-trophy" style="margin-right: 16px; font-size: 1.75rem;"></i>
             Leaderboard Performa Account Manager
         </h1>
-        <p class="header-subtitle">
+        <p class="header-subtitle" style="font-size: 1.0625rem !important; font-weight: 500 !important; line-height: 1.5;">
             Dashboard Performa Revenue dan Achievement Account Manager RLEGS
         </p>
     </div>
@@ -241,9 +241,9 @@
                 <label for="perPage">Baris</label>
                 <select id="perPage"
                         name="per_page"
-                        form="filterForm"                     {{-- penting: asosiasikan ke form --}}
+                        form="filterForm"
                         class="per-page-select"
-                        onchange="document.getElementById('filterForm').submit()">  {{-- submit pasti --}}
+                        onchange="document.getElementById('filterForm').submit()">
                     <option value="10"  {{ (int)request('per_page', 10) === 10  ? 'selected' : '' }}>10</option>
                     <option value="25"  {{ (int)request('per_page') === 25      ? 'selected' : '' }}>25</option>
                     <option value="50"  {{ (int)request('per_page') === 50      ? 'selected' : '' }}>50</option>

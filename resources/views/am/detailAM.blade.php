@@ -150,12 +150,12 @@
                         @php $badge = $getBadgeInfo($globalRanking['status'], $globalRanking['change']); @endphp
                         <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
-                    @if($globalRanking['change'] != 0)
+                    {{-- @if($globalRanking['change'] != 0)
                         <div class="rank-badge {{ $badge['class'] }}">
                             <i class="lni {{ $badge['icon'] }}"></i>
                             {{ $badge['text'] }}
                         </div>
-                    @endif
+                    @endif --}}
                 </a>
             </div>
 
@@ -173,12 +173,12 @@
                         @php $badge = $getBadgeInfo($witelRanking['status'], $witelRanking['change']); @endphp
                         <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
-                    @if($witelRanking['change'] != 0)
+                    {{-- @if($witelRanking['change'] != 0)
                         <div class="rank-badge {{ $badge['class'] }}">
                             <i class="lni {{ $badge['icon'] }}"></i>
                             {{ $badge['text'] }}
                         </div>
-                    @endif
+                    @endif --}}
                 </a>
             </div>
 
@@ -213,12 +213,12 @@
                                     </div>
                                     <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                                 </div>
-                                @if(($ranking['change'] ?? 0) != 0)
+                                {{-- @if(($ranking['change'] ?? 0) != 0)
                                     <div class="rank-badge {{ $badge['class'] }}">
                                         <i class="lni {{ $badge['icon'] }}"></i>
                                         {{ $badge['text'] }}
                                     </div>
-                                @endif
+                                @endif --}}
                             </a>
                         @else
                             <div class="ranking-card division">

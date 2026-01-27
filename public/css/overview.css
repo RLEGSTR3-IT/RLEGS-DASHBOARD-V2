@@ -104,15 +104,12 @@
 body {
     line-height: 1.6;
     color: var(--gray-700);
-    background: var(--light-blue);
-    font-size: 14px;
+    font-size: 12px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.01em;
 }
 
-.header-title,
-.header-subtitle,
 .card-title,
 .table-modern thead th,
 .table-modern tbody td,
@@ -153,7 +150,6 @@ body {
 
 /* ===== LAYOUT STRUCTURE ===== */
 .main-content {
-    padding: 24px 32px;
     margin-left: 45px;
     width: calc(100% - 90px);
     min-height: 100vh;
@@ -207,8 +203,8 @@ body {
 }
 
 .header-title{
-  font-weight: 800;
-  font-size: 2rem;
+  font-weight: 550 !important;
+  font-size: 1.5rem;
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--gray-900);
@@ -470,8 +466,8 @@ body {
 }
 
 .stats-value {
-    font-size: 2.25rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 500;
     color: var(--gray-900);
     margin-bottom: 8px;
     line-height: 1.1;
@@ -588,7 +584,7 @@ body {
 
 .card-title {
     font-size: 1.25rem;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--gray-900);
     margin: 0 0 4px 0;
     letter-spacing: -0.02em;
@@ -774,7 +770,6 @@ body {
     border-bottom: 1px solid var(--gray-100);
     font-size: 0.875rem;
     color: var(--gray-700);
-    vertical-align: middle;
     font-weight: 500;
     transition: var(--transition-fast);
     white-space: nowrap; /* Prevent cell content wrapping */

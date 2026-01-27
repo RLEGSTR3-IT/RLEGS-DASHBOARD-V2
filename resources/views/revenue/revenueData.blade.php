@@ -1812,278 +1812,6 @@ $(document).ready(function() {
   let currentFormData = null;
   let currentSessionId = null;
 
-
-  /**
- * ========================================
- * FUNGSI BARU YANG HARUS DITAMBAHKAN (NEW)
- * ========================================
- * 
- * File ini berisi fungsi-fungsi dan konstanta yang BELUM ADA di blade file.
- * Semua kode di file ini harus DITAMBAHKAN ke blade file.
- * 
- * LOKASI PENAMBAHAN:
- * - Tambahkan di dalam $(document).ready(function() { ... })
- * - Letakkan SETELAH deklarasi variable state (setelah let currentSessionId = null;)
- * - SEBELUM fungsi lainnya
- */
-
-// ========================================
-// ✅ NEW #1: File Size Constants
-// ========================================
-// LOKASI: Tambahkan setelah let currentSessionId = null;
-// ACTION: Copy paste 2 baris ini
-
-const MAX_FILE_SIZE = 52428800; // 50MB
-const PREVIEW_THRESHOLD = 10485760; // 10MB
-
-
-// ========================================
-// ✅ NEW #2: Format File Size Helper
-// ========================================
-// LOKASI: Tambahkan setelah konstanta di atas
-// ACTION: Copy paste seluruh fungsi ini
-
-/**
- * Convert bytes to human readable format
- * @param {number} bytes - File size in bytes
- * @returns {string} - Formatted file size (e.g., "10.5 MB")
- */
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-}
-
-
-// ========================================
-// ✅ NEW #3: Check if File is Large
-// ========================================
-// LOKASI: Tambahkan setelah formatFileSize()
-// ACTION: Copy paste seluruh fungsi ini
-
-/**
- * Check if file exceeds preview threshold
- * @param {number} fileSize - File size in bytes
- * @returns {boolean} - True if file is larger than threshold
- */
-function isLargeFile(fileSize) {
-  return fileSize > PREVIEW_THRESHOLD;
-}
-
-
-// ========================================
-// ✅ NEW #4: Validate File Size
-// ========================================
-// LOKASI: Tambahkan setelah isLargeFile()
-// ACTION: Copy paste seluruh fungsi ini
-
-/**
- * Validate file size against maximum allowed
- * @param {File} file - File object to validate
- * @returns {Object} - { valid: boolean, message: string }
- */
-function validateFileSize(file) {
-  if (!file) {
-    return { 
-      valid: false, 
-      message: 'File tidak ditemukan' 
-    };
-  }
-  
-  if (file.size > MAX_FILE_SIZE) {
-    return { 
-      valid: false, 
-      message: `File terlalu besar! Maksimal ${formatFileSize(MAX_FILE_SIZE)}. File Anda: ${formatFileSize(file.size)}` 
-    };
-  }
-  
-  return { valid: true };
-}
-
-
-// ========================================
-// ✅ NEW #5: File Input Change Handler (OPTIONAL)
-// ========================================
-// LOKASI: Tambahkan di AKHIR $(document).ready() sebelum closing bracket
-// ACTION: Copy paste seluruh event listener ini
-// NOTE: Ini OPTIONAL tapi sangat berguna untuk UX
-
-/**
- * Show file size info when user selects a file
- * This provides immediate feedback to users about file size
- */
-$(document).on('change', 'input[type="file"]', function() {
-  const file = this.files[0];
-  
-  if (!file) {
-    return;
-  }
-  
-  const fileSize = formatFileSize(file.size);
-  const isLarge = isLargeFile(file.size);
-  
-  console.log(`📁 File selected: ${file.name} (${fileSize})${isLarge ? ' ⚠️ LARGE FILE' : ''}`);
-  
-  // Find or create file size info element
-  const parent = $(this).closest('.mb-3, .col-md-3, .col-md-4');
-  let sizeInfo = parent.find('.file-size-info');
-  
-  if (sizeInfo.length === 0) {
-    sizeInfo = $('<small class="file-size-info text-muted d-block mt-1"></small>');
-    $(this).after(sizeInfo);
-  }
-  
-  // Show different message for large files
-  if (isLarge) {
-    sizeInfo.html(`
-      <i class="fa-solid fa-exclamation-triangle text-warning me-1"></i>
-      Ukuran: ${fileSize} - File besar akan diproses langsung tanpa preview
-    `);
-    sizeInfo.removeClass('text-muted').addClass('text-warning');
-  } else {
-    sizeInfo.html(`
-      <i class="fa-solid fa-file me-1"></i>
-      Ukuran: ${fileSize}
-    `);
-    sizeInfo.removeClass('text-warning').addClass('text-muted');
-  }
-});
-
-
-// ========================================
-// INSTRUKSI INSTALASI LENGKAP
-// ========================================
-
-/**
- * LANGKAH-LANGKAH INSTALASI:
- * 
- * 1. Buka file: resources/views/revenue/revenueData.blade.php
- * 
- * 2. Cari section: $(document).ready(function() {
- * 
- * 3. TAMBAHKAN KONSTANTA (setelah let currentSessionId = null;):
- *    const MAX_FILE_SIZE = 52428800;
- *    const PREVIEW_THRESHOLD = 10485760;
- * 
- * 4. TAMBAHKAN 3 HELPER FUNCTIONS (setelah konstanta):
- *    - formatFileSize()
- *    - isLargeFile()
- *    - validateFileSize()
- * 
- * 5. TAMBAHKAN FILE INPUT HANDLER (di akhir document.ready, OPTIONAL):
- *    - $(document).on('change', 'input[type="file"]', ...)
- * 
- * 6. REPLACE FUNGSI-FUNGSI YANG ADA (lihat file js-replace-functions.js):
- *    - $('#formDataCC').submit()
- *    - $('#formDataAM').submit()
- *    - $('#formRevenueCC').submit()
- *    - $('#formRevenueAM').submit()
- *    - handleImportPreview()
- *    - showLoading()
- *    - hideLoading()
- *    - showPreviewModal()
- * 
- * 7. SAVE FILE dan TEST:
- *    - Upload file kecil (<10MB) → harus tampil preview
- *    - Upload file besar (>10MB) → harus langsung proses tanpa preview
- *    - File size info harus muncul saat pilih file (jika pakai optional handler)
- * 
- * TESTING CHECKLIST:
- * □ File <10MB shows preview modal
- * □ File >10MB skips preview and processes directly
- * □ File >50MB shows error message
- * □ File size indicator appears when selecting file
- * □ Large file warning shows when file >10MB selected
- * □ Timeout error handled gracefully (504 Gateway Timeout)
- * □ Loading message changes for large files
- * □ Preview limited warning shows when file has >1000 rows
- */
-
-
-// ========================================
-// CONTOH STRUKTUR AKHIR DOCUMENT.READY
-// ========================================
-
-/**
- * Struktur akhir $(document).ready() seharusnya seperti ini:
- * 
- * $(document).ready(function() {
- *   // STATE MANAGEMENT
- *   let currentTab = 'tab-cc-revenue';
- *   let currentPage = 1;
- *   // ... variable lainnya ...
- *   let currentSessionId = null;
- * 
- *   // ✅ NEW: File Size Constants (TAMBAHKAN DI SINI)
- *   const MAX_FILE_SIZE = 52428800;
- *   const PREVIEW_THRESHOLD = 10485760;
- * 
- *   // ✅ NEW: Helper Functions (TAMBAHKAN DI SINI)
- *   function formatFileSize(bytes) { ... }
- *   function isLargeFile(fileSize) { ... }
- *   function validateFileSize(file) { ... }
- * 
- *   // FLATPICKR INITIALIZATION
- *   (function initMonthYearPicker() { ... })();
- *   (function initImportMonthPickers() { ... })();
- * 
- *   // ... fungsi-fungsi lain yang sudah ada ...
- * 
- *   // FORM SUBMISSIONS (REPLACE YANG INI)
- *   $('#formDataCC').submit(function(e) { ... });
- *   $('#formDataAM').submit(function(e) { ... });
- *   $('#formRevenueCC').submit(function(e) { ... });
- *   $('#formRevenueAM').submit(function(e) { ... });
- * 
- *   // IMPORT HANDLERS (REPLACE YANG INI)
- *   function handleImportPreview(formData, importType) { ... }
- *   function showPreviewModal(data, importType) { ... }
- *   function showLoading(text) { ... }
- *   function hideLoading() { ... }
- * 
- *   // ... fungsi-fungsi lain ...
- * 
- *   // ✅ NEW: File Input Handler (OPTIONAL, TAMBAHKAN DI AKHIR)
- *   $(document).on('change', 'input[type="file"]', function() { ... });
- * 
- *   // INITIALIZATION
- *   loadFilterOptions();
- *   loadData();
- * });
- */
-
-
-// ========================================
-// TROUBLESHOOTING
-// ========================================
-
-/**
- * JIKA MASIH ERROR 504 TIMEOUT:
- * 
- * 1. Pastikan PHP/Nginx timeout sudah diset (lihat command Linux sebelumnya)
- * 2. Pastikan file controller sudah di-replace dengan versi baru
- * 3. Check browser console untuk error JavaScript
- * 4. Verifikasi file size dengan: console.log(file.size)
- * 5. Test dengan file lebih kecil dulu (1-2MB)
- * 
- * JIKA FILE BESAR TIDAK SKIP PREVIEW:
- * 
- * 1. Pastikan isLargeFile() sudah dipanggil di handleImportPreview()
- * 2. Check threshold: console.log('Threshold:', PREVIEW_THRESHOLD)
- * 3. Check file size: console.log('File size:', file.size)
- * 4. Verifikasi backend response memiliki field 'skip_preview'
- * 
- * JIKA PREVIEW LIMITED WARNING TIDAK MUNCUL:
- * 
- * 1. Check backend response: console.log(response.data.summary)
- * 2. Pastikan backend return is_preview dan warning
- * 3. Verifikasi showPreviewModal() sudah di-replace dengan versi baru
- */
-
   // ========================================
   // FLATPICKR MONTH YEAR PICKER
   // ========================================
@@ -3680,324 +3408,229 @@ function setSelectedDivisi(divisiIds) {
     $(`#${target}`).addClass('active');
   });
 
-  $('#formDataCC').submit(function(e) {
-  e.preventDefault();
-  
-  // ✅ NEW: File size validation
-  const fileInput = $(this).find('input[type="file"]')[0];
-  const validation = validateFileSize(fileInput.files[0]);
-  
-  if (!validation.valid) {
-    alert('❌ ' + validation.message);
-    return;
-  }
-  
-  currentFormData = new FormData($(this)[0]);
-  currentImportType = currentFormData.get('import_type');
-  
-  console.log('📤 Submitting Data CC');
-  handleImportPreview(currentFormData, currentImportType);
-});
+  // Form submissions
+  $('#formDataCC, #formDataAM').submit(function(e) {
+    e.preventDefault();
+    currentFormData = new FormData($(this)[0]);
+    currentImportType = currentFormData.get('import_type');
 
-$('#formDataAM').submit(function(e) {
-  e.preventDefault();
-  
-  // ✅ NEW: File size validation
-  const fileInput = $(this).find('input[type="file"]')[0];
-  const validation = validateFileSize(fileInput.files[0]);
-  
-  if (!validation.valid) {
-    alert('❌ ' + validation.message);
-    return;
-  }
-  
-  currentFormData = new FormData($(this)[0]);
-  currentImportType = currentFormData.get('import_type');
-  
-  console.log('📤 Submitting Data AM');
-  handleImportPreview(currentFormData, currentImportType);
-});
-
-  $('#formRevenueAM').submit(function(e) {
-  e.preventDefault();
-
-  currentFormData = new FormData($(this)[0]);
-  currentImportType = currentFormData.get('import_type');
-
-  const year = $('#import-am-year').val();
-  const month = $('#import-am-month').val();
-
-  if (!year || !month) {
-    alert('❌ Pilih Periode terlebih dahulu!');
-    return;
-  }
-  
-  // ✅ NEW: File size validation
-  const fileInput = $(this).find('input[type="file"]')[0];
-  const validation = validateFileSize(fileInput.files[0]);
-  
-  if (!validation.valid) {
-    alert('❌ ' + validation.message);
-    return;
-  }
-
-  currentFormData.set('year', year);
-  currentFormData.set('month', month);
-
-  console.log('📤 Submitting Revenue AM');
-  handleImportPreview(currentFormData, currentImportType);
-});
-
+    console.log('📤 Submitting', currentImportType);
+    handleImportPreview(currentFormData, currentImportType);
+  });
 
   // ✅ FIXED: Revenue CC Form Submit Handler
   $('#formRevenueCC').submit(function(e) {
-  e.preventDefault();
+    e.preventDefault();
 
-  currentFormData = new FormData($(this)[0]);
-  currentImportType = currentFormData.get('import_type');
+    currentFormData = new FormData($(this)[0]);
+    currentImportType = currentFormData.get('import_type');
 
-  const year = $('#import-cc-year').val();
-  const month = $('#import-cc-month').val();
-  const divisi = $('#revCCDivisiImport').val();
-  const jenisData = $('#revCCJenisDataImport').val();
+    // ✅ FIXED: Menggunakan ID selector yang BENAR
+    const year = $('#import-cc-year').val();
+    const month = $('#import-cc-month').val();
+    const divisi = $('#revCCDivisiImport').val();        // ✅ FIXED: ID yang benar
+    const jenisData = $('#revCCJenisDataImport').val();  // ✅ FIXED: ID yang benar
 
-  console.log('📋 Revenue CC Form Values:', {
-    year: year,
-    month: month,
-    divisi_id: divisi,
-    jenis_data: jenisData,
-    file: currentFormData.get('file')?.name
+    // ✅ Debug log untuk validasi
+    console.log('📋 Revenue CC Form Values:', {
+      year: year,
+      month: month,
+      divisi_id: divisi,
+      jenis_data: jenisData,
+      file: currentFormData.get('file')?.name
+    });
+
+    // Validation 1: Periode
+    if (!year || !month) {
+      alert('❌ Pilih Periode terlebih dahulu!');
+      console.error('Validation failed: Periode kosong');
+      return;
+    }
+
+    // Validation 2: Divisi
+    if (!divisi || divisi === '') {
+      alert('❌ Pilih Divisi terlebih dahulu!');
+      console.error('Validation failed: Divisi kosong', {
+        divisi_value: divisi,
+        selector: '#revCCDivisiImport'
+      });
+      return;
+    }
+
+    // Validation 3: Jenis Data
+    if (!jenisData || jenisData === '') {
+      alert('❌ Pilih Jenis Data (Real Revenue/Target Revenue) terlebih dahulu!');
+      console.error('Validation failed: Jenis Data kosong', {
+        jenisData_value: jenisData,
+        selector: '#revCCJenisDataImport'
+      });
+      return;
+    }
+
+    // Set params to FormData
+    currentFormData.set('year', year);
+    currentFormData.set('month', month);
+
+    console.log('✅ All validations passed');
+    console.log('📤 Submitting Revenue CC with:', {
+      year: year,
+      month: month,
+      divisi_id: divisi,
+      jenis_data: jenisData,
+      file: currentFormData.get('file')?.name
+    });
+
+    handleImportPreview(currentFormData, currentImportType);
   });
 
-  // Validations
-  if (!year || !month) {
-    alert('❌ Pilih Periode terlebih dahulu!');
-    return;
-  }
+  // Revenue AM Form Submit Handler
+  $('#formRevenueAM').submit(function(e) {
+    e.preventDefault();
 
-  if (!divisi || divisi === '') {
-    alert('❌ Pilih Divisi terlebih dahulu!');
-    return;
-  }
+    currentFormData = new FormData($(this)[0]);
+    currentImportType = currentFormData.get('import_type');
 
-  if (!jenisData || jenisData === '') {
-    alert('❌ Pilih Jenis Data (Real Revenue/Target Revenue) terlebih dahulu!');
-    return;
-  }
-  
-  // ✅ NEW: File size validation
-  const fileInput = $(this).find('input[type="file"]')[0];
-  const validation = validateFileSize(fileInput.files[0]);
-  
-  if (!validation.valid) {
-    alert('❌ ' + validation.message);
-    return;
-  }
+    const year = $('#import-am-year').val();
+    const month = $('#import-am-month').val();
 
-  currentFormData.set('year', year);
-  currentFormData.set('month', month);
+    if (!year || !month) {
+      alert('❌ Pilih Periode terlebih dahulu!');
+      return;
+    }
 
-  console.log('✅ All validations passed');
-  handleImportPreview(currentFormData, currentImportType);
-});
+    currentFormData.set('year', year);
+    currentFormData.set('month', month);
 
+    console.log('📤 Submitting Revenue AM with:', {
+      year: year,
+      month: month,
+      file: currentFormData.get('file')?.name
+    });
 
+    handleImportPreview(currentFormData, currentImportType);
+  });
 
   function handleImportPreview(formData, importType) {
-  // ✅ NEW: Check file size
-  const file = formData.get('file');
-  const fileSize = file ? file.size : 0;
-  const isLarge = isLargeFile(fileSize);
-  
-  console.log('📤 Sending to /import/preview:', {
-    import_type: importType,
-    file_name: file?.name,
-    file_size: formatFileSize(fileSize),
-    is_large_file: isLarge
-  });
-  
-  // Log all form data
-  for (let [key, value] of formData.entries()) {
-    if (value instanceof File) {
-      console.log(`  ${key}: ${value.name} (${formatFileSize(value.size)})`);
-    } else {
-      console.log(`  ${key}: ${value}`);
+    console.log('📤 Sending to /import/preview:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
     }
-  }
 
-  // ✅ NEW: Show appropriate loading message
-  if (isLarge) {
-    showLoading(`Memproses file besar (${formatFileSize(fileSize)})... Ini mungkin memakan waktu beberapa menit.`);
-  } else {
     showLoading('Memproses file...');
-  }
 
-  $.ajax({
-    url: '/revenue-data/import/preview',
-    method: 'POST',
-    data: formData,
-    processData: false,
-    contentType: false,
-    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-    // ✅ NEW: Increased timeout for large files
-    timeout: isLarge ? 600000 : 60000, // 10 minutes for large files, 1 minute for small
-    success: function(response) {
-      hideLoading();
+    $.ajax({
+      url: '/revenue-data/import/preview',
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+      success: function(response) {
+        hideLoading();
 
-      if (response.success) {
-        // ✅ NEW: Handle skip_preview response
-        if (response.skip_preview) {
-          console.log('✅ Large file processed directly (skip preview mode)');
-          
-          // Close import modal
-          bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
-          
-          // Show result directly
-          showImportResult(response.data);
-          
-          // Reload data
-          loadData();
-        } else {
-          // Normal preview flow
+        if (response.success) {
           previewData = response.data;
           currentSessionId = response.session_id;
           console.log('✅ Preview loaded, session_id:', currentSessionId);
 
-          // ✅ NEW: Show warning if preview is limited
-          if (response.data?.summary?.is_preview) {
-            const warning = response.data.summary.warning || 
-              `File memiliki lebih dari ${response.data.summary.preview_limit} baris. Preview hanya menampilkan ${response.data.summary.preview_limit} baris pertama.`;
-            console.warn('⚠️ Preview Limited:', warning);
-          }
-
           showPreviewModal(previewData, importType);
+
           bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+        } else {
+          alert('Error: ' + response.message);
         }
-      } else {
-        alert('Error: ' + response.message);
+      },
+      error: function(xhr) {
+        hideLoading();
+        console.error('❌ Preview failed:', xhr.responseJSON);
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
-    },
-    error: function(xhr, status, error) {
-      hideLoading();
-      
-      console.error('❌ Preview failed:', {
-        status: status,
-        error: error,
-        response: xhr.responseJSON
-      });
-      
-      // ✅ NEW: Better error messages
-      let errorMessage = 'Terjadi kesalahan saat memproses file.';
-      
-      if (status === 'timeout') {
-        errorMessage = 'Timeout: File terlalu besar atau server terlalu lama memproses. Coba dengan file yang lebih kecil atau hubungi administrator.';
-      } else if (xhr.status === 504) {
-        errorMessage = 'Gateway Timeout: Server membutuhkan waktu terlalu lama. File Anda mungkin terlalu besar. Coba dengan file yang lebih kecil.';
-      } else if (xhr.responseJSON?.message) {
-        errorMessage = xhr.responseJSON.message;
-      } else if (xhr.statusText) {
-        errorMessage += ' ' + xhr.statusText;
-      }
-      
-      alert('❌ ' + errorMessage);
-    }
-  });
-}
+    });
+  }
 
   function showPreviewModal(data, importType) {
-  // ✅ NEW: Show warning if preview is limited
-  let summaryHTML = '';
-  
-  if (data.summary?.is_preview) {
-    summaryHTML += `
-      <div class="alert alert-warning mb-3">
-        <i class="fa-solid fa-exclamation-triangle me-2"></i>
-        <strong>Perhatian:</strong> ${data.summary.warning || 'Preview terbatas'}
-        <br><small>Semua data akan diproses saat Anda klik "Lanjutkan Import"</small>
+    const summaryHTML = `
+      <div class="preview-card new">
+        <div class="icon"><i class="fa-solid fa-plus"></i></div>
+        <h3>${data.summary.new_count || 0}</h3>
+        <p>Data Baru</p>
+      </div>
+      <div class="preview-card update">
+        <div class="icon"><i class="fa-solid fa-edit"></i></div>
+        <h3>${data.summary.update_count || 0}</h3>
+        <p>Akan Di-update</p>
+      </div>
+      <div class="preview-card conflict">
+        <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
+        <h3>${data.summary.error_count || 0}</h3>
+        <p>Error/Konflik</p>
       </div>
     `;
+    $('#previewSummary').html(summaryHTML);
+
+    const tableBody = $('#previewTableBody');
+    tableBody.empty();
+
+    data.rows.forEach((row, index) => {
+      const statusClass = row.status || 'new';
+      const statusText = {
+        'new': 'Baru',
+        'update': 'Update',
+        'error': 'Error',
+        'skip': 'Skip'
+      }[statusClass] || 'Baru';
+
+      let dataDisplay = '';
+      let valueDisplay = '';
+
+      if (importType === 'data_cc') {
+        dataDisplay = `<strong>${row.data.NIPNAS || '-'}</strong><br><small>${row.data.STANDARD_NAME || '-'}</small>`;
+        valueDisplay = row.old_data ? `
+          <div class="value-comparison">
+            <span class="value-old">${row.old_data.nama || '-'}</span>
+            <span class="value-new">${row.data.STANDARD_NAME || '-'}</span>
+          </div>
+        ` : row.data.STANDARD_NAME || '-';
+      } else if (importType === 'data_am') {
+        dataDisplay = `<strong>${row.data.NIK || '-'}</strong><br><small>${row.data.NAMA_AM || '-'}</small>`;
+        valueDisplay = `${row.data.ROLE || '-'} | ${row.data.WITEL || '-'}`;
+      } else if (importType === 'revenue_cc') {
+        dataDisplay = `<strong>${row.data.NIPNAS || '-'}</strong><br><small>${row.data.LSEGMENT_HO || '-'}</small>`;
+        valueDisplay = row.data.REVENUE_SOLD ? `Rp ${parseFloat(row.data.REVENUE_SOLD).toLocaleString('id-ID')}` :
+                       row.data.REVENUE_BILL ? `Rp ${parseFloat(row.data.REVENUE_BILL).toLocaleString('id-ID')}` : '-';
+      } else if (importType === 'revenue_am') {
+        dataDisplay = `<strong>${row.data.NIK_AM || '-'}</strong><br><small>${row.data.NIPNAS || '-'}</small>`;
+        valueDisplay = `${row.data.PROPORSI || 0}%`;
+      }
+
+      const rowHTML = `
+        <tr data-row-index="${index}" data-status="${statusClass}" class="${statusClass === 'error' ? 'table-danger' : ''}">
+          <td>
+            <input type="checkbox" class="preview-row-checkbox"
+                   data-index="${index}"
+                   ${statusClass !== 'error' ? 'checked' : ''}
+                   ${statusClass === 'error' ? 'disabled' : ''}>
+          </td>
+          <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+          <td>${dataDisplay}</td>
+          <td>
+            ${valueDisplay}
+            ${row.error ? `<br><small class="text-danger"><i class="fa-solid fa-warning me-1"></i>${row.error}</small>` : ''}
+          </td>
+        </tr>
+      `;
+      tableBody.append(rowHTML);
+    });
+
+    updateSelectedCount();
+
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
   }
-  
-  summaryHTML += `
-    <div class="preview-card new">
-      <div class="icon"><i class="fa-solid fa-plus"></i></div>
-      <h3>${data.summary.new_count || 0}</h3>
-      <p>Data Baru</p>
-    </div>
-    <div class="preview-card update">
-      <div class="icon"><i class="fa-solid fa-edit"></i></div>
-      <h3>${data.summary.update_count || 0}</h3>
-      <p>Akan Di-update</p>
-    </div>
-    <div class="preview-card conflict">
-      <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
-      <h3>${data.summary.error_count || 0}</h3>
-      <p>Error/Konflik</p>
-    </div>
-  `;
-  
-  $('#previewSummary').html(summaryHTML);
-
-  const tableBody = $('#previewTableBody');
-  tableBody.empty();
-
-  data.rows.forEach((row, index) => {
-    const statusClass = row.status || 'new';
-    const statusText = {
-      'new': 'Baru',
-      'update': 'Update',
-      'error': 'Error',
-      'skip': 'Skip'
-    }[statusClass] || 'Baru';
-
-    let dataDisplay = '';
-    let valueDisplay = '';
-
-    if (importType === 'data_cc') {
-      dataDisplay = `<strong>${row.data.NIPNAS || '-'}</strong><br><small>${row.data.STANDARD_NAME || '-'}</small>`;
-      valueDisplay = row.old_data ? `
-        <div class="value-comparison">
-          <span class="value-old">${row.old_data.nama || '-'}</span>
-          <span class="value-new">${row.data.STANDARD_NAME || '-'}</span>
-        </div>
-      ` : row.data.STANDARD_NAME || '-';
-    } else if (importType === 'data_am') {
-      dataDisplay = `<strong>${row.data.NIK || '-'}</strong><br><small>${row.data.NAMA_AM || '-'}</small>`;
-      valueDisplay = `${row.data.ROLE || '-'} | ${row.data.WITEL || '-'}`;
-    } else if (importType === 'revenue_cc') {
-      dataDisplay = `<strong>${row.data.NIPNAS || '-'}</strong><br><small>${row.data.LSEGMENT_HO || '-'}</small>`;
-      valueDisplay = row.data.REVENUE_SOLD ? `Rp ${parseFloat(row.data.REVENUE_SOLD).toLocaleString('id-ID')}` :
-                     row.data.REVENUE_BILL ? `Rp ${parseFloat(row.data.REVENUE_BILL).toLocaleString('id-ID')}` :
-                     row.data.REVENUE ? `Rp ${parseFloat(row.data.REVENUE).toLocaleString('id-ID')}` : '-';
-    } else if (importType === 'revenue_am') {
-      dataDisplay = `<strong>${row.data.NIK_AM || '-'}</strong><br><small>${row.data.NIPNAS || '-'}</small>`;
-      valueDisplay = `${row.data.PROPORSI || 0}%`;
-    }
-
-    const rowHTML = `
-      <tr data-row-index="${index}" data-status="${statusClass}" class="${statusClass === 'error' ? 'table-danger' : ''}">
-        <td>
-          <input type="checkbox" class="preview-row-checkbox"
-                 data-index="${index}"
-                 ${statusClass !== 'error' ? 'checked' : ''}
-                 ${statusClass === 'error' ? 'disabled' : ''}>
-        </td>
-        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-        <td>${dataDisplay}</td>
-        <td>
-          ${valueDisplay}
-          ${row.error ? `<br><small class="text-danger"><i class="fa-solid fa-warning me-1"></i>${row.error}</small>` : ''}
-        </td>
-      </tr>
-    `;
-    tableBody.append(rowHTML);
-  });
-
-  updateSelectedCount();
-
-  const modal = new bootstrap.Modal(document.getElementById('previewModal'));
-  modal.show();
-}
 
   $('#selectAllPreview').on('change', function() {
     $('.preview-row-checkbox:not(:disabled)').prop('checked', this.checked);
@@ -4103,6 +3736,7 @@ $('#formDataAM').submit(function(e) {
   function hideLoading() {
     $('#loadingOverlay').removeClass('active');
   }
+
   function showImportResult(response) {
     const stats = response.statistics || {
       total_rows: 0,

@@ -216,7 +216,7 @@ body {
 .page-title h1 {
     margin: 0 0 6px 0;
     font-weight: 550;
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     line-height: 1.15;
     letter-spacing: -0.02em;
     color: var(--gray-900);
@@ -512,7 +512,7 @@ body {
         }
 
         #importModal .modal-header .modal-title {
-            font-weight: 700;
+            font-weight: 500;
             font-size: 1.5rem;
             display: flex;
             align-items: center;
@@ -637,7 +637,7 @@ body {
         }
 
         .imp-panel .alert strong {
-            font-weight: 700;
+            font-weight: 500;
             display: block;
             margin-bottom: 0.5rem;
         }
@@ -655,7 +655,7 @@ body {
 
         .imp-panel .form-label .required {
             color: #dc3545;
-            font-weight: 700;
+            font-weight: 500;
         }
 
         .imp-panel .form-control,
@@ -867,7 +867,7 @@ body {
         }
 
         #previewModal .modal-title {
-            font-weight: 700;
+            font-weight: 500;
             font-size: 1.5rem;
             display: flex;
             align-items: center;
@@ -923,7 +923,7 @@ body {
 
         .preview-card h3 {
             font-size: 2rem;
-            font-weight: 700;
+            font-weight: 500;
             margin: 0.5rem 0 0.25rem 0;
             color: #212529;
         }
@@ -1297,7 +1297,7 @@ body {
 }
 
 .filters .form-select optgroup{
-  font-weight: 700;
+  font-weight: 500;
   color: var(--gray-700);
   padding: 6px 10px;
 }
@@ -1635,7 +1635,7 @@ body {
   border: 0;
   background: transparent;
   color: var(--gray-600);
-  font-weight: 700;
+  font-weight: 500;
   font-size: .85rem;
   padding: 8px 10px;
   border-radius: 999px;
@@ -1902,7 +1902,7 @@ body {
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-full);
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 500;
     background: var(--gray-200);
     color: var(--gray-600);
     min-width: 20px;
@@ -2496,7 +2496,7 @@ body {
     padding: var(--space-5) var(--space-6);
     text-align: left;
     font-size: 0.875rem;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--gray-700);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -2536,7 +2536,7 @@ body {
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-full);
     font-size: 0.875rem;
-    font-weight: 700;
+    font-weight: 500;
     border: 1px solid transparent;
     display: inline-flex;
     align-items: center;
@@ -2572,7 +2572,7 @@ body {
 .achv {
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-lg);
-    font-weight: 700;
+    font-weight: 500;
     font-size: 0.875rem;
     display: inline-flex;
     align-items: center;
@@ -2742,7 +2742,7 @@ body {
 }
 
 .import-modal .modal-title {
-    font-weight: 700;
+    font-weight: 500;
     color: var(--gray-900);
     display: flex;
     align-items: center;

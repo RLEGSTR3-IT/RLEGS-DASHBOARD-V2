@@ -44,33 +44,71 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
 
     // ✅ EXPANDED: Alternative column names yang konsisten
     private $alternativeColumns = [
-    'nik' => [
-        'nik', 'NIK', 'Nik', 'nik_am', 'NIK_AM', 'employee_id', 'emp_id'
-    ],
-    'nama_am' => [
-        'nama am', 'NAMA AM', 'nama_am', 'Nama AM', 'account_manager', 'Account Manager'
-    ],
-    'witel_ho' => [
-        'witel ho', 'WITEL HO', 'witel_ho', 'Witel HO', 
-        'witel am', 'WITEL AM', 'witel_am', 'Witel AM',  // ✅ TAMBAH INI
-        'witel', 'WITEL', 'Witel'
-    ],
-    'regional' => [
-        'regional', 'REGIONAL', 'Regional', 'treg', 'TREG', 'Treg'
-    ],
-    'divisi' => [
-        'divisi', 'DIVISI', 'Divisi', 
-        'divisi am', 'DIVISI AM', 'divisi_am', 'Divisi AM',  // ✅ TAMBAH INI
-        'division', 'Division'
-    ],
-    // ✅ TAMBAH MAPPING BARU
-    'role' => [
-        'role', 'ROLE', 'Role', 'AM Role', 'Account Manager Role'
-    ],
-    'telda' => [
-        'telda', 'TELDA', 'Telda', 'TELDA AM', 'telda_id'
-    ]
-];
+        'nik' => [
+            'nik',
+            'NIK',
+            'Nik',
+            'nik_am',
+            'NIK_AM',
+            'employee_id',
+            'emp_id'
+        ],
+        'nama_am' => [
+            'nama am',
+            'NAMA AM',
+            'nama_am',
+            'Nama AM',
+            'account_manager',
+            'Account Manager'
+        ],
+        'witel_ho' => [
+            'witel ho',
+            'WITEL HO',
+            'witel_ho',
+            'Witel HO',
+            'witel am',
+            'WITEL AM',
+            'witel_am',
+            'Witel AM',  // ✅ TAMBAH INI
+            'witel',
+            'WITEL',
+            'Witel'
+        ],
+        'regional' => [
+            'regional',
+            'REGIONAL',
+            'Regional',
+            'treg',
+            'TREG',
+            'Treg'
+        ],
+        'divisi' => [
+            'divisi',
+            'DIVISI',
+            'Divisi',
+            'divisi am',
+            'DIVISI AM',
+            'divisi_am',
+            'Divisi AM',  // ✅ TAMBAH INI
+            'division',
+            'Division'
+        ],
+        // ✅ TAMBAH MAPPING BARU
+        'role' => [
+            'role',
+            'ROLE',
+            'Role',
+            'AM Role',
+            'Account Manager Role'
+        ],
+        'telda' => [
+            'telda',
+            'TELDA',
+            'Telda',
+            'TELDA AM',
+            'telda_id'
+        ]
+    ];
 
     public function __construct()
     {
@@ -121,7 +159,6 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
                 'divisis' => count($divisis),
                 'existing_ams' => count($existingAMs)
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Error loading master data: ' . $e->getMessage());
             throw new \Exception('Gagal memuat master data: ' . $e->getMessage());
@@ -247,12 +284,11 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
                     $this->duplicateCount++;
                     $this->warningDetails[] = "⚠️ Baris {$rowNumber}: Duplikasi divisi '{$divisi->nama}' untuk NIK '{$nik}'";
                 }
-
             } catch (\Exception $e) {
                 $this->errorCount++;
                 $errorMsg = "❌ Baris {$rowNumber}: " . $e->getMessage();
                 $this->errorDetails[] = $errorMsg;
-                Log::error($errorMsg, ['exception' => $e]);
+                Log::error("RevenueImport" + $errorMsg, ['exception' => $e]);
             }
         }
 
@@ -263,54 +299,54 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
      * ✅ FIXED: Extract and validate row data dengan NIK validation 4-10 digit
      */
     private function extractRowData($row, $columnMap, $rowNumber)
-{
-    $data = [
-        'nik' => $this->extractValue($row, $columnMap, 'nik'),
-        'nama' => $this->extractValue($row, $columnMap, 'nama_am'),
-        'witel_name' => $this->extractValue($row, $columnMap, 'witel_ho'),
-        'role' => $this->extractValue($row, $columnMap, 'role'),        // ✅ TAMBAH
-        'divisi_name' => $this->extractValue($row, $columnMap, 'divisi'),
-        'telda_name' => $this->extractValue($row, $columnMap, 'telda')  // ✅ TAMBAH
-    ];
+    {
+        $data = [
+            'nik' => $this->extractValue($row, $columnMap, 'nik'),
+            'nama' => $this->extractValue($row, $columnMap, 'nama_am'),
+            'witel_name' => $this->extractValue($row, $columnMap, 'witel_ho'),
+            'role' => $this->extractValue($row, $columnMap, 'role'),        // ✅ TAMBAH
+            'divisi_name' => $this->extractValue($row, $columnMap, 'divisi'),
+            'telda_name' => $this->extractValue($row, $columnMap, 'telda')  // ✅ TAMBAH
+        ];
 
-    // Validate NIK
-    if (empty($data['nik'])) {
-        $this->errorDetails[] = "❌ Baris {$rowNumber}: NIK kosong";
-        return null;
+        // Validate NIK
+        if (empty($data['nik'])) {
+            $this->errorDetails[] = "❌ Baris {$rowNumber}: NIK kosong";
+            return null;
+        }
+
+        // Validate nama
+        if (empty($data['nama'])) {
+            $this->errorDetails[] = "❌ Baris {$rowNumber}: Nama kosong";
+            return null;
+        }
+
+        // ✅ VALIDATE ROLE
+        if (empty($data['role'])) {
+            $this->errorDetails[] = "❌ Baris {$rowNumber}: ROLE kosong";
+            return null;
+        }
+
+        $data['role'] = strtoupper(trim($data['role']));
+        if (!in_array($data['role'], ['AM', 'HOTDA'])) {
+            $this->errorDetails[] = "❌ Baris {$rowNumber}: ROLE harus 'AM' atau 'HOTDA', dapat: '{$data['role']}'";
+            return null;
+        }
+
+        // ✅ VALIDATE TELDA (wajib untuk HOTDA)
+        if ($data['role'] === 'HOTDA' && empty($data['telda_name'])) {
+            $this->errorDetails[] = "❌ Baris {$rowNumber}: HOTDA wajib memiliki TELDA";
+            return null;
+        }
+
+        // ✅ VALIDATE TELDA (tidak boleh untuk AM)
+        if ($data['role'] === 'AM' && !empty($data['telda_name'])) {
+            $this->errorDetails[] = "❌ Baris {$rowNumber}: AM tidak boleh memiliki TELDA";
+            return null;
+        }
+
+        return $data;
     }
-
-    // Validate nama
-    if (empty($data['nama'])) {
-        $this->errorDetails[] = "❌ Baris {$rowNumber}: Nama kosong";
-        return null;
-    }
-
-    // ✅ VALIDATE ROLE
-    if (empty($data['role'])) {
-        $this->errorDetails[] = "❌ Baris {$rowNumber}: ROLE kosong";
-        return null;
-    }
-
-    $data['role'] = strtoupper(trim($data['role']));
-    if (!in_array($data['role'], ['AM', 'HOTDA'])) {
-        $this->errorDetails[] = "❌ Baris {$rowNumber}: ROLE harus 'AM' atau 'HOTDA', dapat: '{$data['role']}'";
-        return null;
-    }
-
-    // ✅ VALIDATE TELDA (wajib untuk HOTDA)
-    if ($data['role'] === 'HOTDA' && empty($data['telda_name'])) {
-        $this->errorDetails[] = "❌ Baris {$rowNumber}: HOTDA wajib memiliki TELDA";
-        return null;
-    }
-
-    // ✅ VALIDATE TELDA (tidak boleh untuk AM)
-    if ($data['role'] === 'AM' && !empty($data['telda_name'])) {
-        $this->errorDetails[] = "❌ Baris {$rowNumber}: AM tidak boleh memiliki TELDA";
-        return null;
-    }
-
-    return $data;
-}
 
     /**
      * ✅ IMPROVED: Process grouped data dengan transaction
@@ -336,7 +372,6 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
 
                     $this->updatedCount++;
                     $this->successDetails[] = "✅ NIK {$nik}: Account Manager '{$data['nama']}' diperbarui dengan " . count($data['divisi_ids']) . " divisi";
-
                 } else {
                     // ✅ Create new Account Manager
                     $newAM = AccountManager::create([
@@ -354,13 +389,12 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
                 }
 
                 DB::commit();
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 $this->errorCount++;
                 $errorMsg = "❌ NIK {$nik}: Gagal menyimpan - " . $e->getMessage();
                 $this->errorDetails[] = $errorMsg;
-                Log::error($errorMsg, ['exception' => $e]);
+                Log::error("RevenueImport" + $errorMsg, ['exception' => $e]);
             }
         }
     }
@@ -423,8 +457,10 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
             if (strpos($key, 'nama:') === 0) {
                 $storedName = substr($key, 5); // Remove 'nama:' prefix
                 // Check for partial match in both directions
-                if (strpos($storedName, $this->normalizeString($witelName)) !== false ||
-                    strpos($this->normalizeString($witelName), $storedName) !== false) {
+                if (
+                    strpos($storedName, $this->normalizeString($witelName)) !== false ||
+                    strpos($this->normalizeString($witelName), $storedName) !== false
+                ) {
                     $this->warningDetails[] = "⚠️ Baris {$rowNumber}: Witel ditemukan dengan fuzzy search: '{$witelName}' → '{$storedWitel->nama}'";
                     return $storedWitel;
                 }
@@ -464,8 +500,10 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
         foreach ($this->regionals as $key => $storedRegional) {
             if (strpos($key, 'nama:') === 0) {
                 $storedName = substr($key, 5);
-                if (strpos($storedName, $this->normalizeString($regionalName)) !== false ||
-                    strpos($this->normalizeString($regionalName), $storedName) !== false) {
+                if (
+                    strpos($storedName, $this->normalizeString($regionalName)) !== false ||
+                    strpos($this->normalizeString($regionalName), $storedName) !== false
+                ) {
                     $this->warningDetails[] = "⚠️ Baris {$rowNumber}: Regional ditemukan dengan fuzzy search: '{$regionalName}' → '{$storedRegional->nama}'";
                     return $storedRegional;
                 }
@@ -505,8 +543,10 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
         foreach ($this->divisis as $key => $storedDivisi) {
             if (strpos($key, 'nama:') === 0) {
                 $storedName = substr($key, 5);
-                if (strpos($storedName, $this->normalizeString($divisiName)) !== false ||
-                    strpos($this->normalizeString($divisiName), $storedName) !== false) {
+                if (
+                    strpos($storedName, $this->normalizeString($divisiName)) !== false ||
+                    strpos($this->normalizeString($divisiName), $storedName) !== false
+                ) {
                     $this->warningDetails[] = "⚠️ Baris {$rowNumber}: Divisi ditemukan dengan fuzzy search: '{$divisiName}' → '{$storedDivisi->nama}'";
                     return $storedDivisi;
                 }
@@ -606,3 +646,4 @@ class AccountManagerImport implements ToCollection, WithHeadingRow, WithValidati
         ];
     }
 }
+

@@ -38,17 +38,52 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
     // ✅ EXPANDED: Alternative column names dengan lebih banyak variasi
     private $alternativeColumns = [
         'standard_name' => [
-            'standard name', 'STANDARD NAME', 'standard_name', 'Standard Name',
-            'nama customer', 'NAMA CUSTOMER', 'nama_customer', 'Nama Customer',
-            'corporate customer', 'CORPORATE CUSTOMER', 'corporate_customer',
-            'customer_name', 'Customer Name', 'CUSTOMER NAME', 'nama_corporate',
-            'nama', 'NAMA', 'Nama', 'name', 'Name', 'NAME', 'company_name',
-            'Company Name', 'COMPANY NAME', 'company', 'Company', 'COMPANY'
+            'standard name',
+            'STANDARD NAME',
+            'standard_name',
+            'Standard Name',
+            'nama customer',
+            'NAMA CUSTOMER',
+            'nama_customer',
+            'Nama Customer',
+            'corporate customer',
+            'CORPORATE CUSTOMER',
+            'corporate_customer',
+            'customer_name',
+            'Customer Name',
+            'CUSTOMER NAME',
+            'nama_corporate',
+            'nama',
+            'NAMA',
+            'Nama',
+            'name',
+            'Name',
+            'NAME',
+            'company_name',
+            'Company Name',
+            'COMPANY NAME',
+            'company',
+            'Company',
+            'COMPANY'
         ],
         'nipnas' => [
-            'nipnas', 'NIPNAS', 'Nipnas', 'customer_id', 'CUSTOMER_ID', 'customer id',
-            'cust_id', 'CUST_ID', 'id_customer', 'ID_CUSTOMER', 'id customer',
-            'customer code', 'CUSTOMER CODE', 'customer_code', 'code', 'Code', 'CODE'
+            'nipnas',
+            'NIPNAS',
+            'Nipnas',
+            'customer_id',
+            'CUSTOMER_ID',
+            'customer id',
+            'cust_id',
+            'CUST_ID',
+            'id_customer',
+            'ID_CUSTOMER',
+            'id customer',
+            'customer code',
+            'CUSTOMER CODE',
+            'customer_code',
+            'code',
+            'Code',
+            'CODE'
         ]
     ];
 
@@ -85,7 +120,6 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
             Log::info('✅ Master data loaded for CorporateCustomer import', [
                 'existing_customers' => count($existingCustomers)
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Error loading master data: ' . $e->getMessage());
             throw new \Exception('Gagal memuat master data: ' . $e->getMessage());
@@ -185,13 +219,12 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
             if ($chunkIndex % 10 === 0) {
                 gc_collect_cycles();
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
             $this->errorCount++;
             $errorMsg = "❌ Error chunk {$chunkIndex}: " . $e->getMessage();
             $this->errorDetails[] = $errorMsg;
-            Log::error($errorMsg, ['exception' => $e]);
+            Log::error("RevenueImport" + $errorMsg, ['exception' => $e]);
         }
     }
 
@@ -222,7 +255,6 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
                     $this->duplicateCount++;
                     $this->warningDetails[] = "⚠️ Baris {$rowNumber}: Data sama, tidak ada perubahan - '{$rowData['nama']}' (NIPNAS: {$rowData['nipnas']})";
                 }
-
             } else {
                 // ✅ Create new customer
                 $newCustomer = $this->createNewCustomer($rowData, $rowNumber);
@@ -232,12 +264,11 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
                     $this->successDetails[] = "✅ Baris {$rowNumber}: Corporate Customer baru '{$rowData['nama']}' dibuat (NIPNAS: {$rowData['nipnas']})";
                 }
             }
-
         } catch (\Exception $e) {
             $this->errorCount++;
             $errorMsg = "❌ Baris {$rowNumber}: " . $e->getMessage();
             $this->errorDetails[] = $errorMsg;
-            Log::error($errorMsg, ['exception' => $e]);
+            Log::error("RevenueImport" + $errorMsg, ['exception' => $e]);
         }
     }
 
@@ -367,9 +398,9 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
 
         // ✅ Database fallback dengan LIKE search
         $existingCustomer = CorporateCustomer::where('nipnas', $nipnas)
-            ->orWhere(function($query) use ($nama) {
+            ->orWhere(function ($query) use ($nama) {
                 $query->where('nama', 'like', "%{$nama}%")
-                      ->orWhere('nama', 'like', "%" . str_replace(' ', '%', $nama) . "%");
+                    ->orWhere('nama', 'like', "%" . str_replace(' ', '%', $nama) . "%");
             })
             ->first();
 
@@ -441,7 +472,6 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
             $this->existingCustomers['id:' . $newCustomer->id] = $newCustomer;
 
             return $newCustomer;
-
         } catch (\Exception $e) {
             throw new \Exception("Gagal membuat Corporate Customer baru: " . $e->getMessage());
         }
@@ -533,3 +563,4 @@ class CorporateCustomerImport implements ToCollection, WithHeadingRow, WithValid
         ];
     }
 }
+

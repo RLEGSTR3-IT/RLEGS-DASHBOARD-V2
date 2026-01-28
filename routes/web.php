@@ -123,7 +123,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/fetch-now/{id}', [HighFiveSettingsController::class, 'fetchNow'])->name('fetch-now');
             Route::get('/history/{id}', [HighFiveSettingsController::class, 'history'])->name('history');
             Route::post('/retry-snapshot/{id}', [HighFiveSettingsController::class, 'retrySnapshot'])->name('retry-snapshot');
-            
+
             // Snapshot Management
             Route::get('/snapshots/{linkId}', [HighFiveSettingsController::class, 'getSnapshotsForLink'])->name('snapshots');
             Route::put('/snapshot/{snapshotId}/update-date', [HighFiveSettingsController::class, 'updateSnapshotDate'])->name('snapshot.update-date');
@@ -612,13 +612,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('bulk-delete-all-data-cc', [RevenueDataController::class, 'bulkDeleteAllDataCC'])->name('api.bulk-delete-all-data-cc');
 
         // ===== IMPORT ROUTES =====
-        Route::post('import/preview', [RevenueImportController::class, 'previewImport'])->name('import.preview');
+        // Route::post('import/preview', [RevenueImportController::class, 'previewImport'])->name('import.preview');
         Route::post('import/execute', [RevenueImportController::class, 'executeImport'])->name('import.execute');
         Route::post('import', [RevenueImportController::class, 'import'])->name('import');
         Route::post('import-data-cc', [RevenueImportController::class, 'import'])->name('import.data-cc');
         Route::post('import-data-am', [RevenueImportController::class, 'import'])->name('import.data-am');
         Route::post('import-revenue-cc', [RevenueImportController::class, 'import'])->name('import.revenue-cc');
         Route::post('import-revenue-am', [RevenueImportController::class, 'import'])->name('import.revenue-am');
+
+        // NOTE: EXPERIMENTING
+        Route::post('import/upload-chunk', [RevenueImportController::class, 'uploadChunk'])
+            ->name('import.upload-chunk');
+        Route::post('import/preview', [RevenueImportController::class, 'previewImport'])
+            ->name('import.preview');
 
         // Template downloads
         Route::get('template/data-cc', [ImportCCController::class, 'downloadTemplate'])->defaults('type', 'data-cc')->name('template.data-cc');
@@ -636,7 +642,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 $controller = new ImportAMController();
                 return $controller->downloadTemplate($type);
             }
-            
+
             return response()->json(['error' => 'Template not found'], 404);
         })->name('template');
 

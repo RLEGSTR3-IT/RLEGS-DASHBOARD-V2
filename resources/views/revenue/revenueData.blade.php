@@ -10,7 +10,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
 
-      
+
         /* ===== EXISTING STYLES - PRESERVED ===== */
 
         /* Additional styles for result modal */
@@ -89,9 +89,9 @@
             font-weight: bold;
             transition: width 0.5s ease;
         }
-      
-      
-      
+
+
+
         /* ✅ Force show tab content in modal */
         #modalEditDataAM .tab-content {
             display: block !important;
@@ -1279,7 +1279,7 @@
                     <div class="flex-grow-1">
                         <strong class="d-block mb-1">Format CSV Data CC</strong>
                         <div class="text-muted" style="font-size: 0.85rem;">
-                            <strong>Kolom:</strong> NIPNAS, STANDARD_NAME | 
+                            <strong>Kolom:</strong> NIPNAS, STANDARD_NAME |
                             <strong>Catatan:</strong> NIPNAS duplikat = update data lama
                         </div>
                     </div>
@@ -1457,12 +1457,12 @@
                             <i class="fa-solid fa-calendar-days me-1"></i>
                             Periode <span class="text-danger">*</span>
                         </label>
-                        <input type="text" 
-                               id="import-am-periode" 
-                               class="form-control datepicker-control" 
-                               placeholder="Pilih Bulan & Tahun" 
-                               autocomplete="off" 
-                               readonly 
+                        <input type="text"
+                               id="import-am-periode"
+                               class="form-control datepicker-control"
+                               placeholder="Pilih Bulan & Tahun"
+                               autocomplete="off"
+                               readonly
                                required>
                         <input type="hidden" name="month" id="import-am-month">
                         <input type="hidden" name="year" id="import-am-year">
@@ -1685,7 +1685,7 @@
                     <div class="tab-pane fade show active" id="tab-edit-data">
                         <form id="formEditDataAM">
                             <input type="hidden" id="editDataAMId">
-                            
+
                             <div class="mb-3">
                                 <label class="form-label">Nama AM</label>
                                 <input type="text" class="form-control" id="editDataAMNama" required>
@@ -2285,9 +2285,9 @@ $(document).ready(function() {
  */
 function updateRevenueCCTemplateLinks() {
     const jenisData = $('#revCCJenisDataImport').val() || 'target';
-    
+
     let templateDGSDSS, templateDPS, textDGSDSS, textDPS;
-    
+
     if (jenisData === 'revenue') {
         templateDGSDSS = 'revenue-cc-dgs-real';
         templateDPS = 'revenue-cc-dps-real';
@@ -2299,11 +2299,11 @@ function updateRevenueCCTemplateLinks() {
         textDGSDSS = 'Target DGS/DSS';
         textDPS = 'Target DPS';
     }
-    
+
     $('#linkTemplateDGSDSS')
         .attr('href', `/revenue-data/template/${templateDGSDSS}`)
         .find('#textTemplateDGSDSS').text(textDGSDSS);
-    
+
     $('#linkTemplateDPS')
         .attr('href', `/revenue-data/template/${templateDPS}`)
         .find('#textTemplateDPS').text(textDPS);
@@ -2315,7 +2315,7 @@ function updateRevenueCCTemplateLinks() {
 function loadDivisiOptionsRevCC() {
     const select = $('#revCCDivisiImport');
     select.empty().append('<option value="">Pilih Divisi</option>');
-    
+
     // Strategy 1: Use global allDivisiData
     if (typeof allDivisiData !== 'undefined' && Array.isArray(allDivisiData) && allDivisiData.length > 0) {
         console.log('Using allDivisiData:', allDivisiData);
@@ -2324,7 +2324,7 @@ function loadDivisiOptionsRevCC() {
         });
         return;
     }
-    
+
     // Strategy 2: Use window.allDivisiData
     if (typeof window.allDivisiData !== 'undefined' && Array.isArray(window.allDivisiData) && window.allDivisiData.length > 0) {
         console.log('Using window.allDivisiData:', window.allDivisiData);
@@ -2333,7 +2333,7 @@ function loadDivisiOptionsRevCC() {
         });
         return;
     }
-    
+
     // Strategy 3: Copy from main filter dropdown
     const mainDivisiOptions = $('#divisiFilter option:not(:first)');
     if (mainDivisiOptions.length > 0) {
@@ -2343,7 +2343,7 @@ function loadDivisiOptionsRevCC() {
         });
         return;
     }
-    
+
     // Strategy 4: AJAX as last resort
     console.log('Loading divisi via AJAX');
     $.ajax({
@@ -2351,9 +2351,9 @@ function loadDivisiOptionsRevCC() {
         method: 'GET',
         success: function(response) {
             console.log('AJAX response:', response);
-            
+
             let divisiData = null;
-            
+
             // Try different response structures
             if (response && response.success && response.data && response.data.divisi) {
                 divisiData = response.data.divisi;
@@ -2364,7 +2364,7 @@ function loadDivisiOptionsRevCC() {
             } else if (Array.isArray(response)) {
                 divisiData = response;
             }
-            
+
             if (divisiData && Array.isArray(divisiData) && divisiData.length > 0) {
                 divisiData.forEach(function(div) {
                     select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
@@ -2740,7 +2740,7 @@ $(document).ready(function() {
 
 function updateHiddenInputs() {
   const hiddenContainer = document.getElementById('divisiHiddenInputs');
-  
+
   // ✅ FIX: Null check
   if (!hiddenContainer) {
     console.warn('hiddenContainer not found, skipping update');
@@ -2873,7 +2873,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (ln 2876): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   }
@@ -2912,7 +2912,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (2915): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   }
@@ -3510,7 +3510,286 @@ function setSelectedDivisi(divisiIds) {
     handleImportPreview(currentFormData, currentImportType);
   });
 
+  // NOTE: EXPERIMENTING
+  const ROWS_PER_CHUNK = 5000;
+  const SIZE_THRESHOLD = 5 * 1024 * 1024;
+
   function handleImportPreview(formData, importType) {
+    console.log('📤 Sending to /import/preview:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+
+    showLoading('Memproses file...');
+
+    file = formData.get('file');
+
+    if (!file) {
+        alert('No file selected');
+        return;
+    }
+
+    console.log('📊 File info:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
+
+    if (file.size > SIZE_THRESHOLD) {
+      console.log('📦 Large file detected, using row-based chunked upload');
+      uploadCSVInRowChunks(file, importType, formData);
+    } else {
+      console.log('📤 Small file, using direct upload');
+      uploadFileDirect(formData, importType);
+    }
+
+    // $.ajax({
+    //   url: '/revenue-data/import/preview',
+    //   method: 'POST',
+    //   data: formData,
+    //   processData: false,
+    //   contentType: false,
+    //   headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+    //   success: function(response) {
+    //     hideLoading();
+
+    //     if (response.success) {
+    //       previewData = response.data;
+    //       currentSessionId = response.session_id;
+    //       console.log('✅ Preview loaded, session_id:', currentSessionId);
+
+    //       showPreviewModal(previewData, importType);
+
+    //       bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+    //     } else {
+    //       alert('Error: ' + response.message);
+    //     }
+    //   },
+    //   error: function(xhr) {
+    //     hideLoading();
+    //     console.error('❌ Preview failed:', xhr.responseJSON);
+    //     alert('Terjadi kesalahan di revenueData (ln 3550): ' + (xhr.responseJSON?.message || xhr.statusText));
+    //   }
+    // });
+  }
+
+  /**
+   * ✅ NEW: Upload CSV in row-based chunks
+   * Reads CSV, splits by rows, maintains headers and order
+   */
+  async function uploadCSVInRowChunks(file, importType, originalFormData) {
+    showLoading('Membaca file CSV...');
+
+    try {
+      // Read entire file as text
+      const csvText = await readFileAsText(file);
+      const lines = csvText.split('\n');
+
+      // Remove empty lines at the end
+      while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
+        lines.pop();
+      }
+
+      if (lines.length === 0) {
+        throw new Error('File CSV kosong');
+      }
+
+      // Separate headers and data rows
+      const headers = lines[0];
+      const dataRows = lines.slice(1);
+
+      console.log('📊 CSV Analysis:', {
+        totalLines: lines.length,
+        headers: headers.substring(0, 100) + '...',
+        dataRowCount: dataRows.length,
+        firstDataRow: dataRows[0]?.substring(0, 100) + '...'
+      });
+
+      // Calculate chunks
+      const totalChunks = Math.ceil(dataRows.length / ROWS_PER_CHUNK);
+      const sessionId = generateSessionId();
+
+      console.log(`📦 Will upload ${totalChunks} chunks (${ROWS_PER_CHUNK} rows each)`);
+
+      // Upload chunks
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * ROWS_PER_CHUNK;
+        const end = Math.min(start + ROWS_PER_CHUNK, dataRows.length);
+        const chunkRows = dataRows.slice(start, end);
+
+        // Build CSV chunk
+        let chunkCSV;
+        if (chunkIndex === 0) {
+          // First chunk: include headers
+          chunkCSV = headers + '\n' + chunkRows.join('\n');
+        } else {
+          // Other chunks: headers + data (backend will handle header merging)
+          chunkCSV = headers + '\n' + chunkRows.join('\n');
+        }
+
+        const progress = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+        showLoading(`Mengunggah File ${chunkIndex + 1}/${totalChunks} (${progress}%)...`);
+
+        console.log(`📤 Sending chunk ${chunkIndex + 1}/${totalChunks}:`, {
+          rowsInChunk: chunkRows.length,
+          chunkSize: chunkCSV.length
+        });
+
+        // Create blob from CSV text
+        const chunkBlob = new Blob([chunkCSV], { type: 'text/csv' });
+
+        // Send chunk
+        const chunkFormData = new FormData();
+        chunkFormData.append('file_chunk', chunkBlob, `chunk_${chunkIndex}.csv`);
+        chunkFormData.append('chunk_index', chunkIndex);
+        chunkFormData.append('total_chunks', totalChunks);
+        chunkFormData.append('session_id', sessionId);
+        chunkFormData.append('file_name', file.name);
+        chunkFormData.append('import_type', importType);
+        chunkFormData.append('is_first_chunk', chunkIndex === 0 ? '1' : '0');
+        chunkFormData.append('rows_in_chunk', chunkRows.length);
+
+        // Add any other fields from original formData
+        for (let [key, value] of originalFormData.entries()) {
+          if (!(value instanceof File) && key !== 'file') {
+            chunkFormData.append(key, value);
+          }
+        }
+
+        await sendChunk(chunkFormData);
+      }
+
+      // All chunks uploaded, now request preview
+      console.log('✅ All chunks uploaded successfully');
+      showLoading('Memproses data...');
+      await requestPreviewAfterChunks(sessionId, importType, originalFormData);
+
+    } catch (error) {
+      hideLoading();
+      console.error('❌ Upload failed:', error);
+      alert('Terjadi kesalahan saat mengunggah file: ' + error.message);
+    }
+  }
+
+  /**
+   * Read file as text using FileReader
+   */
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        resolve(e.target.result);
+      };
+
+      reader.onerror = function(e) {
+        reject(new Error('Gagal membaca file: ' + e.target.error));
+      };
+
+      reader.readAsText(file, 'UTF-8');
+    });
+  }
+
+  function sendChunk(chunkFormData, chunkIndex, totalChunks) {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: '/revenue-data/import/upload-chunk',
+        method: 'POST',
+        data: chunkFormData,
+        processData: false,
+        contentType: false,
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        timeout: 60000,
+        success: function(response) {
+          if (response.success) {
+            console.log('✅ Chunk uploaded:', response);
+            resolve(response);
+          } else {
+            reject(new Error(response.message || 'Chunk upload failed'));
+          }
+        },
+        error: function(xhr) {
+          console.error('❌ Chunk upload error:', xhr);
+          reject(new Error(xhr.responseJSON?.message || xhr.statusText));
+        }
+      });
+    });
+  }
+
+  /**
+   * Request preview after all chunks uploaded
+   */
+  function requestPreviewAfterChunks(sessionId, importType, originalFormData) {
+    return new Promise((resolve, reject) => {
+      // Build request data with session_id instead of file
+      const requestData = {
+        session_id: sessionId,
+        import_type: importType,
+        year: originalFormData.get('year'),
+        month: originalFormData.get('month'),
+        divisi_id: originalFormData.get('divisi_id'),
+        jenis_data: originalFormData.get('jenis_data'),
+
+      };
+
+      // Add any additional params (year, month, divisi_id, jenis_data, etc.)
+      for (let [key, value] of originalFormData.entries()) {
+        if (!(value instanceof File) && key !== 'file') {
+          requestData[key] = value;
+        }
+      }
+
+      console.log('📊 Requesting preview with:', requestData);
+
+      $.ajax({
+        url: '/revenue-data/import/preview',
+        method: 'POST',
+        data: requestData,
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        timeout: 120000, // 2 minute timeout for preview generation
+        success: function(response) {
+          hideLoading();
+
+          if (response.success) {
+            previewData = response.data;
+            currentSessionId = response.session_id;
+            console.log('✅ Preview loaded:', {
+              session_id: currentSessionId,
+              rowCount: response.data?.preview?.length || 0
+            });
+
+            showPreviewModal(previewData, importType);
+
+            const importModal = document.getElementById('importModal');
+            if (importModal) {
+              const modalInstance = bootstrap.Modal.getInstance(importModal);
+              if (modalInstance) {
+                modalInstance.hide();
+              }
+            }
+
+            resolve(response);
+          } else {
+            reject(new Error(response.message));
+          }
+        },
+        error: function(xhr) {
+          hideLoading();
+          console.error('❌ Preview failed:', xhr);
+          reject(new Error(xhr.responseJSON?.message || xhr.statusText));
+        }
+      });
+    });
+  }
+
+  /**
+   * EXISTING: Direct upload for small files (unchanged)
+   */
+  function uploadFileDirect(formData, importType) {
     console.log('📤 Sending to /import/preview:');
     for (let [key, value] of formData.entries()) {
       if (value instanceof File) {
@@ -3529,6 +3808,7 @@ function setSelectedDivisi(divisiIds) {
       processData: false,
       contentType: false,
       headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+      timeout: 120000,
       success: function(response) {
         hideLoading();
 
@@ -3539,7 +3819,13 @@ function setSelectedDivisi(divisiIds) {
 
           showPreviewModal(previewData, importType);
 
-          bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+          const importModal = document.getElementById('importModal');
+          if (importModal) {
+            const modalInstance = bootstrap.Modal.getInstance(importModal);
+            if (modalInstance) {
+              modalInstance.hide();
+            }
+          }
         } else {
           alert('Error: ' + response.message);
         }
@@ -3550,6 +3836,10 @@ function setSelectedDivisi(divisiIds) {
         alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
+  }
+
+  function generateSessionId() {
+    return 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
   function showPreviewModal(data, importType) {
@@ -3723,7 +4013,7 @@ function setSelectedDivisi(divisiIds) {
       error: function(xhr) {
         hideLoading();
         console.error('❌ Import execution failed:', xhr);
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (3726): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   }
@@ -3865,7 +4155,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (3868): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -3888,7 +4178,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (3891): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -3913,7 +4203,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (3916): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -3936,7 +4226,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (3939): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -3947,7 +4237,7 @@ function setSelectedDivisi(divisiIds) {
 // ========================================
 function toggleTeldaField(role) {
   const teldaWrapper = document.getElementById('editDataAMTeldaWrapper');
-  
+
   // ✅ FIX: Null check
   if (!teldaWrapper) {
     console.warn('editDataAMTeldaWrapper not found');
@@ -3987,7 +4277,7 @@ window.editDataAM = function(id) {
 
       const data = response.data;
       const modalEl = document.getElementById('modalEditDataAM');
-      
+
       if (!modalEl) {
         console.error('❌ Modal not found!');
         return;
@@ -4002,7 +4292,7 @@ window.editDataAM = function(id) {
           // ✅ FORCE SHOW TAB CONTENT
           $('#tab-edit-data').addClass('show active');
           $('#tab-change-password').removeClass('show active');
-          
+
           // ✅ FORCE SHOW TABS NAV (jika registered)
           if (data.is_registered) {
             $('#editDataAMTabs').show().css('display', 'flex');
@@ -4023,7 +4313,7 @@ window.editDataAM = function(id) {
           if ($('#divisiButtonGroup').children().length === 0) {
             initDivisiButtonGroup();
           }
-          
+
           if (data.divisi && Array.isArray(data.divisi)) {
             const divisiIds = data.divisi.map(d => d.id);
             setTimeout(() => setSelectedDivisi(divisiIds), 100);
@@ -4040,7 +4330,7 @@ window.editDataAM = function(id) {
     },
     error: function(xhr) {
       console.error('❌ AJAX Error:', xhr);
-      alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+      alert('Terjadi kesalahan di revenueData (4043): ' + (xhr.responseJSON?.message || xhr.statusText));
     }
   });
 };
@@ -4063,7 +4353,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (4066): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -4086,7 +4376,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (4089): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -4119,7 +4409,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (4122): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4149,7 +4439,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (4152): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4188,7 +4478,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (4191): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4225,7 +4515,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (4228): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4254,7 +4544,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan di revenueData (4257): ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });

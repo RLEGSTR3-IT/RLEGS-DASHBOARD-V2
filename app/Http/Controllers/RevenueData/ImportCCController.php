@@ -42,7 +42,7 @@ class ImportCCController extends Controller
                     ['76590002', 'PEMKOT SEMARANG', 'GOVERNMENT PUBLIC SERVICE', 'SEMARANG JATENG UTARA', '195000000', 'HO']
                 ]
             ],
-            
+
             'revenue-cc-dgs-target' => [
                 'filename' => 'template_revenue_target_dgs.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
@@ -61,7 +61,7 @@ class ImportCCController extends Controller
                     ['76590010', 'PT TELKOM INDONESIA', 'DIGITAL SUSTAINABILITY SERVICE', 'SEMARANG JATENG UTARA', '250000000', 'HO']
                 ]
             ],
-            
+
             'revenue-cc-dss-target' => [
                 'filename' => 'template_revenue_target_dss.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'TARGET_REVENUE', 'SOURCE_DATA'],
@@ -80,7 +80,7 @@ class ImportCCController extends Controller
                     ['76590001', 'BANK JATIM', 'FINANCIAL SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '920000000', 'BILL']
                 ]
             ],
-            
+
             'revenue-cc-dps-target' => [
                 'filename' => 'template_revenue_target_dps.csv',
                 'headers' => ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO', 'WITEL_HO', 'WITEL_BILL', 'TARGET_REVENUE', 'SOURCE_DATA'],
@@ -243,7 +243,6 @@ class ImportCCController extends Controller
                     'rows' => $detailedRows
                 ]
             ];
-
         } catch (\Exception $e) {
             Log::error('Preview Data CC Error: ' . $e->getMessage());
             return [
@@ -327,7 +326,6 @@ class ImportCCController extends Controller
                     }
 
                     $statistics['success_count']++;
-
                 } catch (\Exception $e) {
                     $statistics['failed_count']++;
                     $statistics['failed_rows'][] = [
@@ -366,7 +364,6 @@ class ImportCCController extends Controller
                 ],
                 'error_log_path' => $errorLogPath
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Import Data CC Error: ' . $e->getMessage());
@@ -388,6 +385,8 @@ class ImportCCController extends Controller
      */
     public function previewRevenueCC($tempFilePath, $divisiId, $jenisData, $year = null, $month = null)
     {
+        Log::info("ICCC - Commencing previewRevenueCC");
+
         try {
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
@@ -436,6 +435,9 @@ class ImportCCController extends Controller
             $errorCount = 0;
             $detailedRows = [];
 
+            Log::info("ICCC - previewRev: GIGA foreach process SOON");
+
+            // NOTE: this is where the devil lays down its work
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
 
@@ -518,6 +520,8 @@ class ImportCCController extends Controller
                 }
             }
 
+            Log::info("ICCC - previewRev: GIGA foreach process DONE");
+
             return [
                 'success' => true,
                 'message' => 'Preview berhasil',
@@ -531,7 +535,6 @@ class ImportCCController extends Controller
                     'rows' => $detailedRows
                 ]
             ];
-
         } catch (\Exception $e) {
             Log::error('Preview Revenue CC Error: ' . $e->getMessage());
             return [
@@ -790,7 +793,6 @@ class ImportCCController extends Controller
                         ]);
 
                         $statistics['am_revenues_recalculated'] += $amRecalculated;
-
                     } else {
                         // Insert new
                         if (strtolower($jenisData) === 'target') {
@@ -839,7 +841,6 @@ class ImportCCController extends Controller
                     }
 
                     $statistics['success_count']++;
-
                 } catch (\Exception $e) {
                     $statistics['failed_count']++;
                     $statistics['failed_rows'][] = [
@@ -896,7 +897,6 @@ class ImportCCController extends Controller
                 ],
                 'error_log_path' => $errorLogPath
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Import Revenue CC Error: ' . $e->getMessage(), [
@@ -938,7 +938,7 @@ class ImportCCController extends Controller
      */
     private function validateHeaders($headers, $requiredColumns)
     {
-        $cleanHeaders = array_map(function($h) {
+        $cleanHeaders = array_map(function ($h) {
             return strtoupper(str_replace([' ', '_', '.'], '', trim($h)));
         }, $headers);
 
@@ -1013,7 +1013,7 @@ class ImportCCController extends Controller
         return asset('storage/import_logs/' . $filename);
     }
 
-        /**
+    /**
      * ✅ ENHANCED: Recalculate AM Revenues - ALWAYS UPDATE
      *
      * SIMPLE LOGIC: Always recalculate ALL fields with NEW values
@@ -1031,9 +1031,16 @@ class ImportCCController extends Controller
      * @param float $newRealRevenue NEW real revenue (will be applied)
      * @return int Number of AM revenues recalculated
      */
-    private function recalculateAMRevenuesForCC($ccId, $divisiId, $bulan, $tahun,
-        $oldTargetRevenue, $oldRealRevenue, $newTargetRevenue, $newRealRevenue)
-    {
+    private function recalculateAMRevenuesForCC(
+        $ccId,
+        $divisiId,
+        $bulan,
+        $tahun,
+        $oldTargetRevenue,
+        $oldRealRevenue,
+        $newTargetRevenue,
+        $newRealRevenue
+    ) {
         try {
             Log::info('🔍 recalculateAMRevenuesForCC CALLED', [
                 'cc_id' => $ccId,
@@ -1110,7 +1117,6 @@ class ImportCCController extends Controller
             ]);
 
             return $updatedCount;
-
         } catch (\Exception $e) {
             Log::error('❌ Recalculate Error: ' . $e->getMessage(), [
                 'cc_id' => $ccId,
@@ -1120,21 +1126,20 @@ class ImportCCController extends Controller
         }
     }
 
-/**
- * ============================================================
- * END OF METHOD
- * ============================================================
- *
- * SETELAH PASTE:
- * 1. Save file
- * 2. Run: php artisan config:clear
- * 3. Run: php artisan cache:clear
- * 4. Test import Revenue CC
- *
- * Expected result:
- * "Import Revenue CC selesai (1 data di-update, 2 AM revenues recalculated)"
- *
- * ============================================================
- */
-
+    /**
+     * ============================================================
+     * END OF METHOD
+     * ============================================================
+     *
+     * SETELAH PASTE:
+     * 1. Save file
+     * 2. Run: php artisan config:clear
+     * 3. Run: php artisan cache:clear
+     * 4. Test import Revenue CC
+     *
+     * Expected result:
+     * "Import Revenue CC selesai (1 data di-update, 2 AM revenues recalculated)"
+     *
+     * ============================================================
+     */
 }

@@ -59,38 +59,116 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
     // Alternative column names
     private $alternativeColumns = [
         'nama_am' => [
-            'nama am', 'nama_am', 'account_manager', 'account manager', 'NAMA AM',
-            'Nama AM', 'Name AM', 'AM Name', 'am_name', 'namaAM', 'nama account manager',
-            'account_manager_name', 'AM_NAME', 'nama_account_manager'
+            'nama am',
+            'nama_am',
+            'account_manager',
+            'account manager',
+            'NAMA AM',
+            'Nama AM',
+            'Name AM',
+            'AM Name',
+            'am_name',
+            'namaAM',
+            'nama account manager',
+            'account_manager_name',
+            'AM_NAME',
+            'nama_account_manager'
         ],
         'nik' => [
-            'nik', 'NIK', 'Nik', 'employee_id', 'emp_id', 'id_karyawan', 'NIK_AM',
-            'nik_am', 'employee_number', 'emp_number'
+            'nik',
+            'NIK',
+            'Nik',
+            'employee_id',
+            'emp_id',
+            'id_karyawan',
+            'NIK_AM',
+            'nik_am',
+            'employee_number',
+            'emp_number'
         ],
         'standard_name' => [
-            'standard_name', 'standard name', 'STANDARD NAME', 'Standard Name',
-            'nama customer', 'nama_customer', 'corporate customer', 'corporate_customer',
-            'customer_name', 'Customer Name', 'CUSTOMER NAME', 'nama_corporate',
-            'nama', 'NAMA', 'Nama', 'name', 'Name', 'NAME', 'company_name',
-            'Company Name', 'COMPANY NAME', 'company', 'Company', 'COMPANY',
-            'customer', 'Customer', 'CUSTOMER'
+            'standard_name',
+            'standard name',
+            'STANDARD NAME',
+            'Standard Name',
+            'nama customer',
+            'nama_customer',
+            'corporate customer',
+            'corporate_customer',
+            'customer_name',
+            'Customer Name',
+            'CUSTOMER NAME',
+            'nama_corporate',
+            'nama',
+            'NAMA',
+            'Nama',
+            'name',
+            'Name',
+            'NAME',
+            'company_name',
+            'Company Name',
+            'COMPANY NAME',
+            'company',
+            'Company',
+            'COMPANY',
+            'customer',
+            'Customer',
+            'CUSTOMER'
         ],
         'nipnas' => [
-            'nipnas', 'NIPNAS', 'Nipnas', 'customer_id', 'cust_id', 'id_customer',
-            'CUSTOMER_ID', 'CUST_ID', 'ID_CUSTOMER', 'customer code', 'CUSTOMER CODE',
-            'customer_code', 'code', 'Code', 'CODE', 'CUSTOMER_CODE'
+            'nipnas',
+            'NIPNAS',
+            'Nipnas',
+            'customer_id',
+            'cust_id',
+            'id_customer',
+            'CUSTOMER_ID',
+            'CUST_ID',
+            'ID_CUSTOMER',
+            'customer code',
+            'CUSTOMER CODE',
+            'customer_code',
+            'code',
+            'Code',
+            'CODE',
+            'CUSTOMER_CODE'
         ],
         'divisi' => [
-            'divisi', 'DIVISI', 'Divisi', 'divisi_id', 'division', 'Division', 'DIVISION',
-            'nama_divisi', 'NAMA_DIVISI', 'nama divisi', 'NAMA DIVISI'
+            'divisi',
+            'DIVISI',
+            'Divisi',
+            'divisi_id',
+            'division',
+            'Division',
+            'DIVISION',
+            'nama_divisi',
+            'NAMA_DIVISI',
+            'nama divisi',
+            'NAMA DIVISI'
         ],
         'witel' => [
-            'witel', 'WITEL', 'Witel', 'witel_ho', 'WITEL HO', 'Witel HO',
-            'witel_name', 'WITEL_NAME', 'nama_witel', 'NAMA_WITEL'
+            'witel',
+            'WITEL',
+            'Witel',
+            'witel_ho',
+            'WITEL HO',
+            'Witel HO',
+            'witel_name',
+            'WITEL_NAME',
+            'nama_witel',
+            'NAMA_WITEL'
         ],
         'regional' => [
-            'regional', 'REGIONAL', 'Regional', 'treg', 'TREG', 'Treg',
-            'nama_regional', 'NAMA_REGIONAL', 'regional_name', 'REGIONAL_NAME'
+            'regional',
+            'REGIONAL',
+            'Regional',
+            'treg',
+            'TREG',
+            'Treg',
+            'nama_regional',
+            'NAMA_REGIONAL',
+            'regional_name',
+            'REGIONAL_NAME'
         ]
     ];
 
@@ -167,7 +245,8 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                 ->get();
 
             foreach ($existingRevenues as $revenue) {
-                $key = sprintf('%d_%d_%d_%s',
+                $key = sprintf(
+                    '%d_%d_%d_%s',
                     $revenue->account_manager_id,
                     $revenue->corporate_customer_id,
                     $revenue->divisi_id,
@@ -190,7 +269,6 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                 'year' => $this->year,
                 'existing_records' => count($existingRevenues)
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Error loading existing data cache: ' . $e->getMessage());
             $this->existingDataCache = [];
@@ -254,7 +332,6 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                 'witel' => count($witelList),
                 'regional' => count($regionalList)
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Error loading master data: ' . $e->getMessage());
             throw new \Exception('Gagal memuat master data: ' . $e->getMessage());
@@ -332,7 +409,6 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                 'skipped' => $this->skippedCount,
                 'processed_rows' => $this->processedRows
             ]);
-
         } catch (\Exception $e) {
             $this->errorCount++;
             $this->errorDetails[] = "❌ Error processing file: " . $e->getMessage();
@@ -355,8 +431,10 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                 foreach ($alternatives as $alternative) {
                     $normalizedAlternative = $this->normalizeString($alternative);
 
-                    if ($normalizedHeader === $normalizedAlternative ||
-                        strpos($normalizedHeader, $normalizedAlternative) !== false) {
+                    if (
+                        $normalizedHeader === $normalizedAlternative ||
+                        strpos($normalizedHeader, $normalizedAlternative) !== false
+                    ) {
                         $columnMap[$standardKey] = $header;
                         break 2; // Break both loops
                     }
@@ -530,7 +608,7 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
 
         // Handle array values (from Excel import)
         if (is_array($value)) {
-            $numericValues = array_filter($value, function($v) {
+            $numericValues = array_filter($value, function ($v) {
                 return is_numeric($v) || (is_string($v) && preg_match('/^-?[\d,.]+$/', trim($v)));
             });
 
@@ -633,7 +711,8 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                     ]);
 
                     // Update cache
-                    $cacheKey = sprintf('%d_%d_%d_%s',
+                    $cacheKey = sprintf(
+                        '%d_%d_%d_%s',
                         $existingData['account_manager_id'] ?? 0,
                         $existingData['corporate_customer_id'] ?? 0,
                         $existingData['divisi_id'] ?? 0,
@@ -655,7 +734,6 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
 
                     $this->successDetails[] = "✅ Baris {$rowNumber}, {$monthName}: Data diupdate - " . implode(', ', $changeInfo);
                     return ['action' => 'updated'];
-
                 } catch (\Exception $e) {
                     $this->errorDetails[] = "❌ Baris {$rowNumber}, {$monthName}: Gagal update - " . $e->getMessage();
                     $this->errorCount++;
@@ -664,7 +742,7 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
         }
     }
 
-/**
+    /**
      * Detect monthly column pairs dengan lebih fleksibel
      */
     private function detectMonthlyColumns($headers)
@@ -755,14 +833,14 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
         }
 
         // Sort by month number
-        usort($monthlyPairs, function($a, $b) {
+        usort($monthlyPairs, function ($a, $b) {
             return $a['month'] - $b['month'];
         });
 
         Log::info('📅 Monthly column pairs detected', [
             'year' => $this->year,
             'pairs_found' => count($monthlyPairs),
-            'pairs' => array_map(function($pair) {
+            'pairs' => array_map(function ($pair) {
                 $real = $pair['real_column'] ?? 'N/A';
                 $target = $pair['target_column'] ?? 'N/A';
                 return $pair['month_name'] . ': Real=' . $real . ', Target=' . $target;
@@ -803,8 +881,11 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
         }
 
         // INFO: Log successful validation
-        $this->successDetails[] = sprintf("✅ Validasi berhasil: %d kolom wajib dan %d pasangan bulan ditemukan",
-            count($requiredColumns), count($this->monthlyPairs));
+        $this->successDetails[] = sprintf(
+            "✅ Validasi berhasil: %d kolom wajib dan %d pasangan bulan ditemukan",
+            count($requiredColumns),
+            count($this->monthlyPairs)
+        );
     }
 
     /**
@@ -833,13 +914,12 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                 gc_collect_cycles();
                 Log::info("Memory cleanup after chunk {$chunkIndex}, processed rows: {$this->processedRows}");
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
             $this->errorCount++;
             $errorMsg = "❌ Error chunk {$chunkIndex}: " . $e->getMessage();
             $this->errorDetails[] = $errorMsg;
-            Log::error($errorMsg, ['exception' => $e]);
+            Log::error("RevenueImport" + $errorMsg, ['exception' => $e]);
         }
     }
 
@@ -874,12 +954,11 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
             } else {
                 $this->warningDetails[] = "⚠️ Baris {$rowNumber}: Tidak ada data revenue bulanan yang diproses";
             }
-
         } catch (\Exception $e) {
             $this->errorCount++;
             $errorMsg = "❌ Baris {$rowNumber}: " . $e->getMessage();
             $this->errorDetails[] = $errorMsg;
-            Log::error($errorMsg, ['exception' => $e]);
+            Log::error("RevenueImport" + $errorMsg, ['exception' => $e]);
         }
     }
 
@@ -926,7 +1005,8 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
 
             try {
                 // Safe cache key generation
-                $cacheKey = sprintf('%s_%s_%s_%s',
+                $cacheKey = sprintf(
+                    '%s_%s_%s_%s',
                     (string)$accountManagerId,
                     (string)$corporateCustomerId,
                     (string)$divisiId,
@@ -952,7 +1032,6 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                     } elseif ($conflictResult['action'] === 'duplicate') {
                         $this->duplicateCount++;
                     }
-
                 } else {
                     // Create new revenue record
                     $newRevenue = Revenue::create([
@@ -994,7 +1073,6 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
 
                     $this->successDetails[] = $message;
                 }
-
             } catch (\Exception $e) {
                 $this->errorCount++;
                 $this->errorDetails[] = "❌ Baris {$rowNumber}, Bulan {$monthPair['month_name']}: Gagal menyimpan revenue - " . $e->getMessage();
@@ -1059,3 +1137,4 @@ class RevenueImport implements ToCollection, WithHeadingRow, WithValidation, Ski
         ];
     }
 }
+

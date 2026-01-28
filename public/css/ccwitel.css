@@ -38,6 +38,7 @@ body {
     border-right: 1px solid #e1e7ef;
     border-left: 1px solid #e1e7ef;
     border-bottom: 1px solid #e1e7ef;
+    font-weight: 500;
 }
 
 .header-title-section {
@@ -52,18 +53,20 @@ body {
     justify-content: center;
     width: 48px;
     height: 48px;
+    flex-shrink: 0;
     background: linear-gradient(to bottom right, #3b82f6, #6366f1);
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
 }
 
 .header-title {
-    font-size: 2.0rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 500;
     color: #111827;
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    line-height: 1.2;
 }
 
 .header-subtitle {
@@ -214,6 +217,7 @@ body {
     display: flex;
     gap: 1.5rem; /* 24px between columns */
     align-items: stretch; /* This makes both columns equal height */
+    overflow-x: auto;
 }
 
 .witel-list-pane {
@@ -342,7 +346,7 @@ body {
 
 #witel-cc-leaderboard-loading {
     font-size: 1.125rem; /* lg */
-    font-weight: 700; /* bold */
+    font-weight: 500; /* bold */
     color: #1f2937; /* gray-800 */
     text-align: center;
     margin-bottom: 12px;
@@ -350,7 +354,7 @@ body {
 
 #witel-detail-name {
     font-size: 1.125rem; /* lg */
-    font-weight: 700; /* bold */
+    font-weight: 500; /* bold */
     color: #1f2937; /* gray-800 */
     text-align: center;
 }
@@ -541,7 +545,7 @@ body {
     justify-content: center;
     padding: 0.2em 0.6em; /* Adjusted padding */
     border-radius: 0.375rem; /* Rounded corners */
-    font-weight: 600; /* Semibold */
+    font-weight: 500; /* Semibold */
     line-height: 1;
     white-space: nowrap;
     background-color: #f0f0f0; /* Default neutral grey */
@@ -599,7 +603,7 @@ body {
 
 .customer-list-header-label {
     font-size: 0.75rem; /* 12px */
-    font-weight: 600;
+    font-weight: 500;
     color: #6b7280; /* text-gray-500 */
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -704,14 +708,14 @@ body {
 
 [data-el="revenue"], [data-el="target"] {
     font-size: 0.9rem; /* 14px */
-    font-weight: 600;
+    font-weight: 500;
     color: #646b7a;
     text-align: right;
 }
 
 [data-el="witel-name"] {
     font-size: 1.0rem; /* 14px */
-    font-weight: 600;
+    font-weight: 500;
     color: #1f2937;
     text-align: right;
 }
@@ -724,7 +728,7 @@ body {
     display: grid;
     place-items: center;
     font-size: 0.8rem;
-    font-weight: 700;
+    font-weight: 500;
     flex-shrink: 0;
 }
 
@@ -931,7 +935,7 @@ body {
     display: grid;
     place-items: center;
     font-size: 0.8rem;
-    font-weight: 700;
+    font-weight: 500;
     flex-shrink: 0;
 }
 
@@ -976,7 +980,7 @@ body {
 }
 
 [data-el="name"] {
-    font-weight: 600; /* Semibold */
+    font-weight: 500; /* Semibold */
     font-size: 0.9rem;
     color: #1f2937; /* Darker text */
     display: block; /* Ensure truncation works */
@@ -990,7 +994,7 @@ body {
 
 /* Right Group: Revenue */
 .customer-revenue {
-    font-weight: 600; /* Semibold */
+    font-weight: 500; /* Semibold */
     font-size: 0.9rem;
     color: #1f2937;
     flex-shrink: 0; /* Prevent shrinking */
@@ -1003,7 +1007,7 @@ body {
     margin-left: 1rem;
 }
 .customer-revenue-group [data-el="revenue"] {
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.9rem;
     color: #1f2937;
     display: block; /* Place on its own line */
@@ -1113,7 +1117,7 @@ body {
 .custom-select-option.selected {
     background-color: #fff1f2; /* Light red background */
     color: #ef4444; /* Red text */
-    font-weight: 600;
+    font-weight: 500;
     /* Red dashed border */
     border: 2px dashed #ef4444;
     padding: calc(0.6rem - 2px); /* Adjust padding to account for border */

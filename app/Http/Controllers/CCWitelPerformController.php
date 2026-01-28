@@ -14,7 +14,7 @@ class CCWitelPerformController extends Controller
     {
         $months = Carbon::now()->startOfYear()->toPeriod(Carbon::now()->endOfYear(), '1 month');
 
-        Log::info("CCW Controller - Accessing CC W Page");
+        // Log::info("CCW Controller - Accessing CC W Page");
 
         return view('cc_witel.cc-witel-performance', [
             'months' => $months
@@ -41,7 +41,7 @@ class CCWitelPerformController extends Controller
                 ->where(DB::raw("CONCAT(tahun, '-', LPAD(bulan, 2, '0'), '-01')"), '<=', $request->end_date)
                 ->get();
 
-            Log::info("CCW Controller", ['fetched_trend_data' => $revenueData]);
+            // Log::info("CCW Controller", ['fetched_trend_data' => $revenueData]);
 
             return response()->json($revenueData);
         } catch (\Exception $e) {
@@ -93,9 +93,9 @@ class CCWitelPerformController extends Controller
 
         // Get all Witels
         $witels = DB::table('witel')->select('id', 'nama')->get()->keyBy('id');
-        Log::info('CCW Controller', ['witels_fetched' => $witels]);
+        // Log::info('CCW Controller', ['witels_fetched' => $witels]);
 
-        Log::info('CCW Controller - Get ready to fetch buddy');
+        // Log::info('CCW Controller - Get ready to fetch buddy');
 
         // Get Annual Target Revenue for all Witels
         $targetsSubquery = DB::table('cc_revenues')
@@ -106,7 +106,7 @@ class CCWitelPerformController extends Controller
         //$targets = DB::query()->fromSub($targetsSubquery, 't')->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
         $targets = DB::query()->fromSub($targetsSubquery, 't')->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
 
-        Log::info('CCW Controller', ['wp_leaderboard_targets' => $targets]);
+        // Log::info('CCW Controller', ['wp_leaderboard_targets' => $targets]);
 
         // Get YTD Real Revenue for all Witels
         $revenueSubquery = DB::table('cc_revenues')
@@ -117,7 +117,7 @@ class CCWitelPerformController extends Controller
         //$revenues = DB::query()->fromSub($revenueSubquery, 'r')->whereNotNull('witel_id')->pluck('revenueM', 'witel_id');
         $revenues = DB::query()->fromSub($revenueSubquery, 'r')->whereNotNull('witel_id')->pluck('revenueM', 'witel_id');
 
-        Log::info('CCW Controller', ['wp_leaderboard_revenues' => $revenues]);
+        // Log::info('CCW Controller', ['wp_leaderboard_revenues' => $revenues]);
 
         // Get ALL Customers for ALL Witels for the selected MONTH
         //$allCustomers = DB::table('cc_revenues')
@@ -147,7 +147,7 @@ class CCWitelPerformController extends Controller
         $this->applyDateFilters($customersQuery, $mode, $year, $month);
         $allCustomers = DB::query()->fromSub($customersQuery, 't')->whereNotNull('witel_id')->get();
 
-        Log::info('CCW Controller', ['wp_leaderboard_allCustomers' => $allCustomers]);
+        // Log::info('CCW Controller', ['wp_leaderboard_allCustomers' => $allCustomers]);
 
         // Process customers into a map for easy lookup
         $customerMap = [];
@@ -180,7 +180,7 @@ class CCWitelPerformController extends Controller
             return $b['revenueM'] <=> $a['revenueM'];
         });
 
-        Log::info("CCW Controller", ['returned_leaderboard' => $leaderboard]);
+        // Log::info("CCW Controller", ['returned_leaderboard' => $leaderboard]);
 
         return response()->json($leaderboard);
     }
@@ -239,7 +239,7 @@ class CCWitelPerformController extends Controller
                     return $customer;
                 });
 
-            Log::info('CCW Controller - Top Customers Fetch:', ['fetched_customers_leaderboard' => $allCustomers]);
+            // Log::info('CCW Controller - Top Customers Fetch:', ['fetched_customers_leaderboard' => $allCustomers]);
 
             return response()->json($allCustomers);
         } catch (\Exception $e) {

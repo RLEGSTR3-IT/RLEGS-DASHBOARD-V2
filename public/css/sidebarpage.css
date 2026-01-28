@@ -673,16 +673,40 @@ html { scroll-behavior: smooth; }
 #sidebar.expand ~ #content-wrapper { margin-left: var(--sb-expanded); }
 
 
-/* ===== Center icons when sidebar is collapsed ===== */
+/* ===== Center icons when sidebar is collapsed - FIXED VERSION ===== */
 #sidebar:not(.expand) .sidebar-link {
   justify-content: center;     /* center the icon horizontally */
   align-items: center;          /* keep it vertically centered */
-  padding: 12px 0;              /* equal top/bottom, no side bias */
-  margin: 6px 10px;             /* even inset on both sides */
-  border-left: 0;               /* remove left accent so it's truly centered */
+  padding: 10px 0;              /* equal top/bottom, no side bias */
+  margin: 4px 0;                /* remove left/right margin */
+  border-left: 0 !important;    /* REMOVE left border completely */
+  border-radius: 0 !important;  /* REMOVE border-radius to prevent white spots */
+  background: transparent !important; /* ensure no background */
   gap: 0;                       /* no gap since the label is hidden */
 }
 
+/* Remove hover effects that might show background in collapsed mode */
+#sidebar:not(.expand) .sidebar-link:hover {
+  background: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Only show subtle icon color change on hover */
+#sidebar:not(.expand) .sidebar-link:hover i {
+  color: var(--red-700);
+  transform: scale(1.1);
+}
+
+/* Active state in collapsed mode - only icon color change */
+#sidebar:not(.expand) .sidebar-link.active {
+  background: transparent !important;
+  border-left: 0 !important;
+}
+
+#sidebar:not(.expand) .sidebar-link.active i {
+  color: var(--red-700);
+}
 
 #sidebar:not(.expand) .sidebar-link i {
   flex: 0 0 auto;               /* don't reserve 24px column on the left */
@@ -694,6 +718,11 @@ html { scroll-behavior: smooth; }
 
 #sidebar:not(.expand) .sidebar-link span {
   display: none !important;     /* hide labels in collapsed mode */
+}
+
+/* Remove tooltip in collapsed mode to prevent clutter */
+#sidebar:not(.expand) .sidebar-link:hover::after {
+  display: none !important;
 }
 
 /* === Top navbar hover styles === */
@@ -747,4 +776,3 @@ header#top .nav-link:hover i {
 #sidebar.expand ~ #content-wrapper {
   margin-left: var(--sb-expanded);
 }
-

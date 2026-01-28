@@ -8,7 +8,6 @@
     margin-left: 45px;
     width: calc(100% - 90px);
     min-height: 100vh;
-    background: #f8fafc;
     font-family: 'Poppins', sans-serif;
 }
 
@@ -55,8 +54,8 @@
 }
 
 .profile-name {
-    font-size: 2.5rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 550;
     color: #dc2626;
     margin: 0;
     letter-spacing: -0.02em;
@@ -88,13 +87,13 @@
 }
 
 .meta-label {
-    font-weight: 700;
+    font-weight: 500;
     color: #64748b;
     white-space: nowrap;
 }
 
 .meta-value {
-    font-weight: 600;
+    font-weight: 500;
     color: #0f172a;
 }
 
@@ -102,7 +101,7 @@
     padding: 6px 14px;
     border-radius: 10px;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 500;
     color: #ffffff !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     white-space: nowrap;
@@ -151,7 +150,7 @@
 
 .revenue-card-title {
     font-size: 0.875rem;
-    font-weight: 700;
+    font-weight: 500;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -183,8 +182,8 @@
 }
 
 .revenue-card-value {
-    font-size: 2.25rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 500;
     color: #0f172a;
     margin-bottom: 8px;
     line-height: 1.1;
@@ -193,7 +192,7 @@
 .revenue-card-period {
     font-size: 0.875rem;
     color: #64748b;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 /* Content Wrapper */
@@ -219,7 +218,7 @@
     border-bottom: 3px solid transparent;
     padding: 24px 32px;
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 500;
     color: #64748b !important;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -230,7 +229,7 @@
 }
 
 .tab-button i {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     color: #94a3b8;
 }
 
@@ -274,7 +273,7 @@
 
 .tab-content-title {
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 500;
     color: #0f172a;
     display: flex;
     align-items: center;
@@ -283,7 +282,7 @@
 
 .tab-content-title i {
     color: #dc2626;
-    font-size: 1.75rem;
+    font-size: 1.55rem;
 }
 
 /* FIXED: Filters Wrapper - Better Layout */
@@ -309,7 +308,7 @@
     background: transparent;
     color: #64748b !important;
     font-size: 0.875rem;
-    font-weight: 700;
+    font-weight: 500;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -354,14 +353,14 @@
     border: none !important;
     padding: 0 20px !important;
     border-radius: 12px !important;
-    font-weight: 700 !important;
+    font-weight: 500 !important;
     font-size: 0.875rem !important;
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25) !important;
     transition: all 0.3s ease !important;
     font-family: 'Poppins', sans-serif !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: flex-end !important;
     line-height: 44px !important;
 }
 
@@ -385,7 +384,7 @@
 
 .bootstrap-select > .dropdown-toggle .filter-option-inner-inner {
     color: #ffffff !important;
-    font-weight: 700 !important;
+    font-weight: 500 !important;
     font-family: 'Poppins', sans-serif !important;
     line-height: 1 !important;
 }
@@ -408,7 +407,7 @@
     padding: 12px 20px;
     border-radius: 10px;
     font-size: 0.875rem;
-    font-weight: 600;
+    font-weight: 500;
     color: #475569;
     transition: all 0.2s ease;
     font-family: 'Poppins', sans-serif;
@@ -446,7 +445,7 @@
     background: #f8fafc;
     padding: 20px 24px;
     text-align: left;
-    font-weight: 800;
+    font-weight: 500;
     font-size: 0.75rem;
     color: #64748b;
     text-transform: uppercase;
@@ -468,17 +467,17 @@
     border-bottom: 1px solid #f1f5f9;
     font-size: 0.9375rem;
     color: #475569;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .row-number {
-    font-weight: 800;
+    font-weight: 500;
     color: #dc2626;
     text-align: center;
 }
 
 .customer-name {
-    font-weight: 700;
+    font-weight: 500;
     color: #0f172a;
 }
 
@@ -492,7 +491,7 @@
     padding: 6px 14px;
     border-radius: 12px;
     font-size: 0.8125rem;
-    font-weight: 700;
+    font-weight: 500;
     background: #f1f5f9;
     color: #475569;
     min-width: 90px;
@@ -504,7 +503,7 @@
     padding: 6px 14px;
     border-radius: 12px;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 500;
     color: #ffffff;
     text-transform: uppercase;
     min-width: 70px;
@@ -524,7 +523,7 @@
     padding: 6px 14px;
     border-radius: 12px;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 500;
     color: #ffffff;
     text-transform: uppercase;
     min-width: 85px;
@@ -544,7 +543,7 @@
     padding: 8px 16px;
     border-radius: 24px;
     font-size: 0.8125rem;
-    font-weight: 700;
+    font-weight: 500;
     min-width: 80px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -586,7 +585,7 @@
 .empty-text {
     color: #64748b;
     font-size: 1.125rem;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 /* Insight Summary */
@@ -607,7 +606,7 @@
 }
 
 .insight-header i {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     color: #dc2626;
     background: linear-gradient(135deg, #ffffff 0%, #fee2e2 100%);
     width: 64px;
@@ -620,8 +619,8 @@
 }
 
 .insight-header h4 {
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 500;
     color: #991b1b;
     margin: 0;
     margin-top: 12px;
@@ -644,7 +643,7 @@
 
 .insight-body strong {
     color: #dc2626;
-    font-weight: 800;
+    font-weight: 500;
 }
 
 /* Insight Metrics */
@@ -693,14 +692,14 @@
     font-size: 0.875rem;
     color: #64748b;
     margin-bottom: 12px;
-    font-weight: 700;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
 
 .metric-value {
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 500;
     color: #0f172a;
     line-height: 1.2;
 }
@@ -709,7 +708,7 @@
     font-size: 0.875rem;
     color: #64748b;
     margin-top: 6px;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 /* Chart Container */
@@ -733,7 +732,7 @@
 
 .chart-title {
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 500;
     color: #0f172a;
     display: flex;
     align-items: center;
@@ -765,17 +764,17 @@
 /* Text Utilities */
 .text-success {
     color: #059669 !important;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .text-danger {
     color: #dc2626 !important;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .text-warning {
     color: #d97706 !important;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .text-muted {
@@ -1332,7 +1331,7 @@
     padding: 16px 20px;
     border-radius: 12px;
     font-size: 0.9375rem;
-    font-weight: 600;
+    font-weight: 500;
     display: flex;
     align-items: center;
     gap: 12px;

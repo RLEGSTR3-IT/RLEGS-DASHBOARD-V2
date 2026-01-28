@@ -1,6 +1,7 @@
 /* ===================================
    ENHANCED PROFESSIONAL DASHBOARD STYLES
    Modern Clean Design with Professional Layout
+   FIXED: Removed navbar interference
    =================================== */
 
 /* ===== ROOT VARIABLES ===== */
@@ -108,12 +109,63 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.01em;
+    padding-top: 50px; /* Fix: Reduced to bring content closer to navbar */
+}
+
+/* ===== FIX: FORCE NAVBAR PROPER SIZE ===== */
+/* Navbar dari layout.blade.php harus punya ukuran yang konsisten */
+.navbar.navbar-expand-lg.navbar-light.bg-light.fixed-top {
+    min-height: 56px !important;
+    height: auto !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 1rem !important;
+}
+
+.navbar .container-fluid {
+    min-height: 56px !important;
+}
+
+.navbar .navbar-nav {
+    font-size: 1rem !important;
+}
+
+.navbar .nav-link {
+    font-size: 1rem !important;
+    padding: 0.5rem 1rem !important;
+}
+
+.navbar .nav-item {
+    font-size: 1rem !important;
+}
+
+.navbar .nav-link span {
+    font-size: 1rem !important;
+}
+
+.navbar .dropdown-toggle {
+    font-size: 1rem !important;
+}
+
+.navbar .avatar-container {
+    width: 35px !important;
+    height: 35px !important;
+}
+
+.navbar .avatar-container img {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Prevent navbar from being scaled down */
+.navbar {
+    transform: none !important;
+    scale: 1 !important;
+    zoom: 1 !important;
 }
 
 .card-title,
 .table-modern thead th,
 .table-modern tbody td,
-.navbar,
 .sidebar-link,
 .dropdown-item,
 .btn,
@@ -385,53 +437,6 @@ body {
   display: none !important;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1400px) {
-  .header-actions {
-    gap: 10px;
-  }
-  .filter-group {
-    gap: 6px;
-  }
-}
-
-@media (max-width: 992px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .header-actions {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-  .filter-group {
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 640px) {
-  .header-dashboard {
-    padding: 16px;
-  }
-  .header-title {
-    font-size: 1.75rem;
-  }
-  .header-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .filter-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .select-pill {
-    width: 100%;
-    max-width: 100%;
-  }
-}
-
 /* ===== ENHANCED STATS CARDS ===== */
 .stats-card {
     position: relative;
@@ -673,6 +678,12 @@ body {
     overflow-x: auto; /* Allow horizontal scroll on mobile */
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    display: flex; /* CRITICAL: Force horizontal layout */
+    flex-wrap: nowrap; /* CRITICAL: Prevent wrapping */
+}
+
+.performance-tabs .nav-item {
+    flex-shrink: 0; /* CRITICAL: Prevent tab shrinking */
 }
 
 .performance-tabs .nav-link {
@@ -1627,8 +1638,17 @@ button:focus,
     .table-modern {
         min-width: 900px;
     }
+
+    /* Responsive adjustments for header */
+    .header-actions {
+        gap: 10px;
+    }
+    .filter-group {
+        gap: 6px;
+    }
 }
 
+/* ===== NEW: TABLET RESPONSIVE (1200px - 992px) ===== */
 @media (max-width: 1200px) {
     .main-content {
         padding: 20px 24px;
@@ -1640,6 +1660,64 @@ button:focus,
         margin-left: 60px;
         width: calc(100% - 60px);
     }
+    
+    /* Header responsive for tablet */
+    .header-dashboard {
+        padding: 24px 28px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .header-text {
+        width: 100%;
+    }
+    
+    .header-title {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+    
+    .header-subtitle {
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+    
+    /* Stack period text on new line if too long */
+    .header-subtitle .period-text {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.8125rem;
+    }
+    
+    /* Header actions full width on tablet */
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .filter-group {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .select-pill {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 150px;
+    }
+    
+    .export-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Stats card adjustments */
     .stats-card {
         height: 160px;
         padding: 28px;
@@ -1677,6 +1755,21 @@ button:focus,
     .table-modern thead th,
     .table-modern tbody td {
         padding: 12px 14px;
+    }
+
+    /* Header responsive */
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+    .filter-group {
+        flex-wrap: wrap;
     }
 }
 
@@ -1781,6 +1874,47 @@ button:focus,
     .chart-container {
         min-height: 340px;
         padding-bottom: 52px;
+    }
+
+    /* Header mobile responsive */
+    .header-dashboard {
+        padding: 20px 16px;
+    }
+    .header-title {
+        font-size: 1.75rem;
+    }
+    .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .select-pill {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .header-dashboard {
+        padding: 16px;
+    }
+    .header-title {
+        font-size: 1.75rem;
+    }
+    .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .select-pill {
+        width: 100%;
+        max-width: 100%;
     }
 }
 

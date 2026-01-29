@@ -9,8 +9,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
-
-
         /* ===== EXISTING STYLES - PRESERVED ===== */
 
         /* Additional styles for result modal */
@@ -90,8 +88,6 @@
             transition: width 0.5s ease;
         }
 
-
-
         /* ✅ Force show tab content in modal */
         #modalEditDataAM .tab-content {
             display: block !important;
@@ -104,7 +100,6 @@
         #modalEditDataAM .tab-pane.active {
             display: block !important;
         }
-
 
         .result-modal-info {
             background: #e7f3ff;
@@ -165,7 +160,6 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-
 
         /* Checkbox column */
         .table thead th:first-child,
@@ -619,7 +613,7 @@
         /* ✅ Preview Summary Cards - MERAH */
         .preview-summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -627,13 +621,19 @@
         .preview-card {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1.25rem;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease;
+        }
+
+        .preview-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
 
         .preview-card .icon {
-            font-size: 2rem;
+            font-size: 1.75rem;
             margin-bottom: 0.5rem;
         }
 
@@ -642,9 +642,11 @@
         .preview-card.update .icon { color: #c82333; }
         .preview-card.conflict .icon { color: #a71d2a; }
         .preview-card.skip .icon { color: #6c757d; }
+        .preview-card.total .icon { color: #0066cc; }
+        .preview-card.unique .icon { color: #667eea; }
 
         .preview-card h3 {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
             margin: 0.5rem 0 0.25rem 0;
             color: #212529;
@@ -653,7 +655,8 @@
         .preview-card p {
             margin: 0;
             color: #6c757d;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
         /* ✅ Preview Actions - MERAH */
@@ -786,7 +789,142 @@
             font-weight: 600;
         }
 
-        /* Loading Overlay */
+        /* ==========================================
+           ✨ NEW: PROGRESS SNACKBAR (Pojok Kanan Bawah)
+           ========================================== */
+        .progress-snackbar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            z-index: 9999;
+            display: none;
+            overflow: hidden;
+        }
+
+        .progress-snackbar.active {
+            display: block;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(450px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .progress-snackbar.minimized {
+            width: auto;
+        }
+
+        .progress-snackbar.minimized .snackbar-body {
+            display: none;
+        }
+
+        .snackbar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .progress-snackbar.minimized .snackbar-header {
+            border-radius: 12px;
+        }
+
+        .snackbar-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .snackbar-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-minimize,
+        .btn-close-snackbar {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-minimize:hover,
+        .btn-close-snackbar:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .snackbar-body {
+            padding: 1.25rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 32px;
+            background: #e9ecef;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: width 0.3s ease;
+            min-width: 32px;
+        }
+
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .progress-status {
+            font-size: 0.875rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .progress-percentage {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        /* Loading Overlay (Old - Keep for compatibility) */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -797,7 +935,7 @@
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
+            z-index: 9998;
         }
 
         .loading-overlay.active {
@@ -871,19 +1009,43 @@
             color: #dc3545;
             background: #fff5f5;
         }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .progress-snackbar {
+                width: calc(100% - 40px);
+                right: 20px;
+                left: 20px;
+            }
+
+            .preview-summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .progress-snackbar {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                width: calc(100% - 20px);
+            }
+
+            .preview-summary {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 @endsection
 
 @section('content')
 <div class="rlegs-container">
-
     <!-- ===== Page Header / Action Bar ===== -->
     <div class="page-header card-shadow">
         <div class="page-title">
             <h1>Data Revenue RLEGS</h1>
             <p>Kelola data Corporate Customer dan Account Manager RLEGS.</p>
         </div>
-
         <div class="page-actions">
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importModal">
                 <i class="fa-solid fa-file-import me-2"></i>Import
@@ -893,7 +1055,6 @@
                 <i class="fa-solid fa-file-export me-2"></i> Export
             </a>
             </div>
-
         </div>
     </div>
 
@@ -917,13 +1078,11 @@
         </div>
         <div class="filter-group">
             <label>Segment</label>
-
             <!-- Select asli (hidden, untuk form submit) -->
             <select class="form-select" id="filter-segment" name="segment">
                 <option value="all">Semua Segment</option>
                 <!-- Options dari database akan diisi via JS -->
             </select>
-
             <!-- UI custom dengan tabs (akan di-generate via JS) -->
             <div class="seg-select" id="segSelect">
                 <!-- Tombol trigger -->
@@ -931,7 +1090,6 @@
                     <span class="seg-select__label">Semua Segment</span>
                     <span class="seg-select__caret"></span>
                 </button>
-
                 <!-- Menu dropdown (akan diisi via JS) -->
                 <div class="seg-menu" id="segMenu" role="listbox">
                     <div class="seg-tabs" id="segTabs" role="tablist">
@@ -943,7 +1101,6 @@
                 </div>
             </div>
         </div>
-
         <!-- === Periode: MONTHPICKER (pilih bulan & tahun) === -->
         <div class="filter-group" id="filterPeriodeGroup">
             <label>Periode</label>
@@ -951,7 +1108,6 @@
             <input type="hidden" id="filter-month" name="month" value="{{ date('m') }}">
             <input type="hidden" id="filter-year"  name="year"  value="{{ date('Y') }}">
         </div>
-
         <div class="filter-actions">
             <button class="btn btn-primary" id="btn-apply-filter">
                 <i class="fa-solid fa-check me-1"></i>Terapkan
@@ -1497,8 +1653,9 @@
 <!-- ==========================================
      ✨ PREVIEW MODAL
      ========================================== -->
-<div class="modal fade" id="previewModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- =================== ✅ REDESIGNED PREVIEW MODAL (NO TABLE) =================== -->
+<div class="modal fade" id="previewModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -1508,57 +1665,194 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <!-- Summary Cards -->
                 <div class="preview-summary" id="previewSummary"></div>
 
-                <div class="preview-actions">
-                    <i class="fa-solid fa-info-circle"></i>
-                    <div style="flex: 1;">
-                        <strong>Pilih data yang akan diimport:</strong>
-                        <div class="btn-group mt-2">
-                            <button class="btn btn-sm" id="btnSelectAll">
-                                <i class="fa-solid fa-check-double me-1"></i>Pilih Semua
-                            </button>
-                            <button class="btn btn-sm" id="btnDeselectAll">
-                                <i class="fa-solid fa-times me-1"></i>Batal Semua
-                            </button>
-                            <button class="btn btn-sm" id="btnSelectNew">
-                                <i class="fa-solid fa-plus me-1"></i>Pilih Baru Saja
-                            </button>
-                            <button class="btn btn-sm" id="btnSelectUpdates">
-                                <i class="fa-solid fa-edit me-1"></i>Pilih Update Saja
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Info Banner for Large Datasets -->
+                <div id="previewInfo" class="mt-3" style="display: none;"></div>
 
-                <div class="preview-table-container">
-                    <table class="preview-table table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px;">
-                                    <input type="checkbox" id="selectAllPreview">
-                                </th>
-                                <th>Status</th>
-                                <th>Data</th>
-                                <th>Nilai</th>
-                            </tr>
-                        </thead>
-                        <tbody id="previewTableBody"></tbody>
-                    </table>
+                <!-- Action Buttons -->
+                <div class="import-actions mt-4">
+                    <div class="alert alert-info">
+                        <i class="fa-solid fa-info-circle me-2"></i>
+                        <strong>Pilih jenis data yang akan diimport:</strong>
+                    </div>
+                    
+                    <div class="d-grid gap-3">
+                        <!-- Import All Button -->
+                        <button type="button" class="btn btn-lg btn-primary d-flex align-items-center justify-content-between" 
+                                id="btnImportAll">
+                            <span>
+                                <i class="fa-solid fa-check-double me-2"></i>
+                                <strong>Import Semua</strong>
+                            </span>
+                            <span class="badge bg-light text-dark" id="badgeAllCount">0 data</span>
+                        </button>
+
+                        <!-- Import New Only Button -->
+                        <button type="button" class="btn btn-lg btn-success d-flex align-items-center justify-content-between" 
+                                id="btnImportNew">
+                            <span>
+                                <i class="fa-solid fa-plus me-2"></i>
+                                <strong>Import Data Baru Saja</strong>
+                            </span>
+                            <span class="badge bg-light text-dark" id="badgeNewCount">0 data</span>
+                        </button>
+
+                        <!-- Import Update Only Button -->
+                        <button type="button" class="btn btn-lg btn-warning d-flex align-items-center justify-content-between" 
+                                id="btnImportUpdate">
+                            <span>
+                                <i class="fa-solid fa-edit me-2"></i>
+                                <strong>Import Update Saja</strong>
+                            </span>
+                            <span class="badge bg-light text-dark" id="badgeUpdateCount">0 data</span>
+                        </button>
+                    </div>
+
+                    <!-- Error Info -->
+                    <div class="alert alert-danger mt-3" id="errorInfo" style="display: none;">
+                        <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                        <span id="errorMessage"></span>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                     <i class="fa-solid fa-times me-2"></i>Batal
                 </button>
-                <button type="button" class="btn btn-execute" id="btnExecuteImport">
-                    <i class="fa-solid fa-check me-2"></i>
-                    Lanjutkan Import (<span id="selectedCount">0</span> dipilih)
-                </button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.import-actions .btn {
+    padding: 1rem 1.5rem;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.import-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.import-actions .btn-primary {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.import-actions .btn-success {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.import-actions .btn-warning {
+    background: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.import-actions .badge {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+}
+
+.preview-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.preview-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 2px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.preview-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.preview-card .icon {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.5rem;
+}
+
+.preview-card.total {
+    border-color: #667eea;
+}
+
+.preview-card.total .icon {
+    background: #667eea;
+    color: white;
+}
+
+.preview-card.unique {
+    border-color: #3498db;
+}
+
+.preview-card.unique .icon {
+    background: #3498db;
+    color: white;
+}
+
+.preview-card.update {
+    border-color: #ffc107;
+}
+
+.preview-card.update .icon {
+    background: #ffc107;
+    color: white;
+}
+
+.preview-card.new {
+    border-color: #28a745;
+}
+
+.preview-card.new .icon {
+    background: #28a745;
+    color: white;
+}
+
+.preview-card.conflict {
+    border-color: #dc3545;
+}
+
+.preview-card.conflict .icon {
+    background: #dc3545;
+    color: white;
+}
+
+.preview-card h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+    color: #2c3e50;
+}
+
+.preview-card p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+</style>
 
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
@@ -1777,6 +2071,31 @@
     </div>
 </div>
 
+<!-- ✨ NEW: Progress Snackbar (Pojok Kanan Bawah) -->
+<div id="progressSnackbar" class="progress-snackbar">
+    <div class="snackbar-header" onclick="toggleSnackbar()">
+        <span class="snackbar-title">
+            <i class="fa-solid fa-upload"></i>
+            <span id="snackbarTitleText">Importing Data...</span>
+        </span>
+        <div class="snackbar-actions">
+            <button class="btn-minimize" onclick="event.stopPropagation(); toggleSnackbar()">
+                <i class="fa-solid fa-minus"></i>
+            </button>
+        </div>
+    </div>
+    <div class="snackbar-body">
+        <div class="progress-container">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 0%">
+                <span id="progressText">0%</span>
+            </div>
+        </div>
+        <div class="progress-details">
+            <small class="progress-status" id="progressStatus">Memulai import...</small>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -1806,11 +2125,15 @@ $(document).ready(function() {
   // Store TELDA data globally for modal
   let allTeldaData = [];
 
-  // ✨ NEW: Preview Import State
+  // ✨ Preview Import State (REDESIGNED - No checkbox state needed)
   let previewData = null;
   let currentImportType = null;
   let currentFormData = null;
   let currentSessionId = null;
+
+  // ✅ Year/month for revenue imports
+  let currentImportYear = null;
+  let currentImportMonth = null;
 
   // ========================================
   // FLATPICKR MONTH YEAR PICKER
@@ -2274,138 +2597,135 @@ $(document).ready(function() {
     }
   })();
 
+  // ============================================
+  // REVENUE CC - FIX DIVISI LOADING
+  // ============================================
 
-
-// ============================================
-// REVENUE CC - FIX DIVISI LOADING
-// ============================================
-
-/**
- * Update template links
- */
-function updateRevenueCCTemplateLinks() {
+  /**
+   * Update template links
+   */
+  function updateRevenueCCTemplateLinks() {
     const jenisData = $('#revCCJenisDataImport').val() || 'target';
 
     let templateDGSDSS, templateDPS, textDGSDSS, textDPS;
 
     if (jenisData === 'revenue') {
-        templateDGSDSS = 'revenue-cc-dgs-real';
-        templateDPS = 'revenue-cc-dps-real';
-        textDGSDSS = 'Real DGS/DSS';
-        textDPS = 'Real DPS';
+      templateDGSDSS = 'revenue-cc-dgs-real';
+      templateDPS = 'revenue-cc-dps-real';
+      textDGSDSS = 'Real DGS/DSS';
+      textDPS = 'Real DPS';
     } else {
-        templateDGSDSS = 'revenue-cc-dgs-target';
-        templateDPS = 'revenue-cc-dps-target';
-        textDGSDSS = 'Target DGS/DSS';
-        textDPS = 'Target DPS';
+      templateDGSDSS = 'revenue-cc-dgs-target';
+      templateDPS = 'revenue-cc-dps-target';
+      textDGSDSS = 'Target DGS/DSS';
+      textDPS = 'Target DPS';
     }
 
     $('#linkTemplateDGSDSS')
-        .attr('href', `/revenue-data/template/${templateDGSDSS}`)
-        .find('#textTemplateDGSDSS').text(textDGSDSS);
+      .attr('href', `/revenue-data/template/${templateDGSDSS}`)
+      .find('#textTemplateDGSDSS').text(textDGSDSS);
 
     $('#linkTemplateDPS')
-        .attr('href', `/revenue-data/template/${templateDPS}`)
-        .find('#textTemplateDPS').text(textDPS);
-}
+      .attr('href', `/revenue-data/template/${templateDPS}`)
+      .find('#textTemplateDPS').text(textDPS);
+  }
 
-/**
- * Load divisi - MULTIPLE FALLBACK STRATEGIES
- */
-function loadDivisiOptionsRevCC() {
+  /**
+   * Load divisi - MULTIPLE FALLBACK STRATEGIES
+   */
+  function loadDivisiOptionsRevCC() {
     const select = $('#revCCDivisiImport');
     select.empty().append('<option value="">Pilih Divisi</option>');
 
     // Strategy 1: Use global allDivisiData
     if (typeof allDivisiData !== 'undefined' && Array.isArray(allDivisiData) && allDivisiData.length > 0) {
-        console.log('Using allDivisiData:', allDivisiData);
-        allDivisiData.forEach(function(div) {
-            select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
-        });
-        return;
+      console.log('Using allDivisiData:', allDivisiData);
+      allDivisiData.forEach(function(div) {
+        select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
+      });
+      return;
     }
 
     // Strategy 2: Use window.allDivisiData
     if (typeof window.allDivisiData !== 'undefined' && Array.isArray(window.allDivisiData) && window.allDivisiData.length > 0) {
-        console.log('Using window.allDivisiData:', window.allDivisiData);
-        window.allDivisiData.forEach(function(div) {
-            select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
-        });
-        return;
+      console.log('Using window.allDivisiData:', window.allDivisiData);
+      window.allDivisiData.forEach(function(div) {
+        select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
+      });
+      return;
     }
 
     // Strategy 3: Copy from main filter dropdown
     const mainDivisiOptions = $('#divisiFilter option:not(:first)');
     if (mainDivisiOptions.length > 0) {
-        console.log('Cloning from #divisiFilter');
-        mainDivisiOptions.each(function() {
-            select.append($(this).clone());
-        });
-        return;
+      console.log('Cloning from #divisiFilter');
+      mainDivisiOptions.each(function() {
+        select.append($(this).clone());
+      });
+      return;
     }
 
     // Strategy 4: AJAX as last resort
     console.log('Loading divisi via AJAX');
     $.ajax({
-        url: '/revenue-data/filter-options',
-        method: 'GET',
-        success: function(response) {
-            console.log('AJAX response:', response);
+      url: '/revenue-data/filter-options',
+      method: 'GET',
+      success: function(response) {
+        console.log('AJAX response:', response);
 
-            let divisiData = null;
+        let divisiData = null;
 
-            // Try different response structures
-            if (response && response.success && response.data && response.data.divisi) {
-                divisiData = response.data.divisi;
-            } else if (response && response.data && Array.isArray(response.data)) {
-                divisiData = response.data;
-            } else if (response && response.divisi) {
-                divisiData = response.divisi;
-            } else if (Array.isArray(response)) {
-                divisiData = response;
-            }
-
-            if (divisiData && Array.isArray(divisiData) && divisiData.length > 0) {
-                divisiData.forEach(function(div) {
-                    select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
-                });
-            } else {
-                console.error('No divisi data found in response:', response);
-            }
-        },
-        error: function(xhr) {
-            console.error('AJAX error:', xhr);
+        // Try different response structures
+        if (response && response.success && response.data && response.data.divisi) {
+          divisiData = response.data.divisi;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          divisiData = response.data;
+        } else if (response && response.divisi) {
+          divisiData = response.divisi;
+        } else if (Array.isArray(response)) {
+          divisiData = response;
         }
+
+        if (divisiData && Array.isArray(divisiData) && divisiData.length > 0) {
+          divisiData.forEach(function(div) {
+            select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
+          });
+        } else {
+          console.error('No divisi data found in response:', response);
+        }
+      },
+      error: function(xhr) {
+        console.error('AJAX error:', xhr);
+      }
     });
-}
+  }
 
-// Event listeners
-$(document).on('change', '#revCCJenisDataImport', updateRevenueCCTemplateLinks);
+  // Event listeners
+  $(document).on('change', '#revCCJenisDataImport', updateRevenueCCTemplateLinks);
 
-// Load on modal show
-$('#importModal').on('shown.bs.modal', function() {
+  // Load on modal show
+  $('#importModal').on('shown.bs.modal', function() {
     if ($('#imp-rev-cc').hasClass('active')) {
-        loadDivisiOptionsRevCC();
-        updateRevenueCCTemplateLinks();
+      loadDivisiOptionsRevCC();
+      updateRevenueCCTemplateLinks();
     }
-});
+  });
 
-// Load on tab click
-$(document).on('click', '[data-imp="imp-rev-cc"]', function() {
+  // Load on tab click
+  $(document).on('click', '[data-imp="imp-rev-cc"]', function() {
     setTimeout(function() {
-        loadDivisiOptionsRevCC();
-        updateRevenueCCTemplateLinks();
+      loadDivisiOptionsRevCC();
+      updateRevenueCCTemplateLinks();
     }, 200);
-});
+  });
 
-// Initialize
-$(document).ready(function() {
+  // Initialize
+  $(document).ready(function() {
     updateRevenueCCTemplateLinks();
-});
-
+  });
 
   // ========================================
-  // ✅ FIX #1: BUILD SEGMENT DROPDOWN UI + INTERACTIONS
+  // ✅ BUILD SEGMENT DROPDOWN UI + INTERACTIONS
   // ========================================
   function buildSegmentUI(segments) {
     const nativeSelect = document.getElementById('filter-segment');
@@ -2709,79 +3029,77 @@ $(document).ready(function() {
   // ✨ DIVISI BUTTON GROUP HANDLER
   // ========================================
   function initDivisiButtonGroup() {
-  const buttonGroup = document.getElementById('divisiButtonGroup');
-  const hiddenContainer = document.getElementById('divisiHiddenInputs');
+    const buttonGroup = document.getElementById('divisiButtonGroup');
+    const hiddenContainer = document.getElementById('divisiHiddenInputs');
 
-  if (!buttonGroup || !hiddenContainer) {
-    console.warn('Divisi button group elements not found');
-    return;
-  }
+    if (!buttonGroup || !hiddenContainer) {
+      console.warn('Divisi button group elements not found');
+      return;
+    }
 
-  buttonGroup.innerHTML = '';
-  hiddenContainer.innerHTML = '';
+    buttonGroup.innerHTML = '';
+    hiddenContainer.innerHTML = '';
 
-  allDivisiData.forEach(divisi => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    const kodeRingkas = divisi.kode.substring(0, 3).toUpperCase();
-    btn.className = `divisi-toggle-btn ${kodeRingkas.toLowerCase()}`;
-    btn.dataset.divisiId = divisi.id;
-    btn.dataset.divisiKode = divisi.kode;
-    btn.textContent = kodeRingkas;
+    allDivisiData.forEach(divisi => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const kodeRingkas = divisi.kode.substring(0, 3).toUpperCase();
+      btn.className = `divisi-toggle-btn ${kodeRingkas.toLowerCase()}`;
+      btn.dataset.divisiId = divisi.id;
+      btn.dataset.divisiKode = divisi.kode;
+      btn.textContent = kodeRingkas;
 
-    btn.addEventListener('click', function() {
-      this.classList.toggle('active');
-      updateHiddenInputs();
-    });
+      btn.addEventListener('click', function() {
+        this.classList.toggle('active');
+        updateHiddenInputs();
+      });
 
-    buttonGroup.appendChild(btn);
-  });
-}
-
-function updateHiddenInputs() {
-  const hiddenContainer = document.getElementById('divisiHiddenInputs');
-
-  // ✅ FIX: Null check
-  if (!hiddenContainer) {
-    console.warn('hiddenContainer not found, skipping update');
-    return;
-  }
-
-  const activeButtons = document.querySelectorAll('.divisi-toggle-btn.active');
-  hiddenContainer.innerHTML = '';
-
-  activeButtons.forEach(btn => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'divisi_ids[]';
-    input.value = btn.dataset.divisiId;
-    hiddenContainer.appendChild(input);
-  });
-}
-
-function setSelectedDivisi(divisiIds) {
-  // ✅ FIX: Null check untuk buttons
-  const buttons = document.querySelectorAll('.divisi-toggle-btn');
-  if (!buttons || buttons.length === 0) {
-    console.warn('Divisi buttons not found');
-    return;
-  }
-
-  // Reset all buttons
-  buttons.forEach(btn => btn.classList.remove('active'));
-
-  // Set active buttons
-  if (Array.isArray(divisiIds)) {
-    divisiIds.forEach(id => {
-      const btn = document.querySelector(`.divisi-toggle-btn[data-divisi-id="${id}"]`);
-      if (btn) {
-        btn.classList.add('active');
-      }
+      buttonGroup.appendChild(btn);
     });
   }
 
-  updateHiddenInputs();
-}
+  function updateHiddenInputs() {
+    const hiddenContainer = document.getElementById('divisiHiddenInputs');
+
+    if (!hiddenContainer) {
+      console.warn('hiddenContainer not found, skipping update');
+      return;
+    }
+
+    const activeButtons = document.querySelectorAll('.divisi-toggle-btn.active');
+    hiddenContainer.innerHTML = '';
+
+    activeButtons.forEach(btn => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'divisi_ids[]';
+      input.value = btn.dataset.divisiId;
+      hiddenContainer.appendChild(input);
+    });
+  }
+
+  function setSelectedDivisi(divisiIds) {
+    const buttons = document.querySelectorAll('.divisi-toggle-btn');
+    if (!buttons || buttons.length === 0) {
+      console.warn('Divisi buttons not found');
+      return;
+    }
+
+    // Reset all buttons
+    buttons.forEach(btn => btn.classList.remove('active'));
+
+    // Set active buttons
+    if (Array.isArray(divisiIds)) {
+      divisiIds.forEach(id => {
+        const btn = document.querySelector(`.divisi-toggle-btn[data-divisi-id="${id}"]`);
+        if (btn) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    updateHiddenInputs();
+  }
 
   // ========================================
   // CHECKBOX & BULK DELETE LOGIC
@@ -2873,7 +3191,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (ln 2876): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   }
@@ -2912,7 +3230,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (2915): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   }
@@ -2941,7 +3259,6 @@ function setSelectedDivisi(divisiIds) {
         allDivisiData = response.divisions;
         initDivisiButtonGroup();
 
-        // ✅ FIX #1: Build Segment UI and init interactions
         if (response.segments && response.segments.length > 0) {
           buildSegmentUI(response.segments);
         }
@@ -3104,7 +3421,6 @@ function setSelectedDivisi(divisiIds) {
       const divisiDisplay = divisiKode !== '-' ? divisiKode.substring(0, 3).toUpperCase() : '-';
       const divisiClass = divisiDisplay !== '-' ? `badge-div ${divisiDisplay.toLowerCase()}` : '';
 
-      // ✅ FIX #2: TELDA display - show "-" for AM, actual value for HOTDA
       const teldaDisplay = role === 'HOTDA' ? (item.telda_nama || '-') : '-';
       const achievementPercent = item.achievement ? parseFloat(item.achievement).toFixed(2) : '0.00';
 
@@ -3380,21 +3696,71 @@ function setSelectedDivisi(divisiIds) {
     loadData();
   });
 
-  // ✅ FIX #2: AM Mode Toggle with TELDA Column Visibility
   $('.am-btn[data-mode]').click(function() {
     $('.am-btn[data-mode]').removeClass('active');
     $(this).addClass('active');
     const mode = $(this).data('mode');
     currentFilters.role = mode;
 
-    // ✅ TELDA column always visible (data will show "-" for AM role)
-    // No need to hide/show column anymore
-
     currentPage = 1;
     loadData();
   });
 
-// ========================================
+  // ========================================
+  // ✅ PROGRESS SNACKBAR FUNCTIONS (NEW)
+  // ========================================
+  let progressSnackbar = null;
+
+  function showProgressSnackbar(title) {
+    progressSnackbar = document.getElementById('progressSnackbar');
+    if (!progressSnackbar) {
+      console.warn('Progress snackbar element not found');
+      return;
+    }
+
+    // Set title
+    const titleText = document.getElementById('snackbarTitleText');
+    if (titleText) {
+      titleText.textContent = title || 'Importing Data...';
+    }
+
+    progressSnackbar.classList.add('active');
+    progressSnackbar.classList.remove('minimized');
+    updateProgress(0, 'Memulai import...');
+  }
+
+  function updateProgress(percent, status) {
+    const progressBarFill = document.getElementById('progressBarFill');
+    const progressText = document.getElementById('progressText');
+    const progressStatus = document.getElementById('progressStatus');
+
+    if (progressBarFill) {
+      progressBarFill.style.width = percent + '%';
+    }
+
+    if (progressText) {
+      progressText.textContent = Math.round(percent) + '%';
+    }
+
+    if (progressStatus) {
+      progressStatus.textContent = status || '';
+    }
+  }
+
+  function hideProgressSnackbar() {
+    if (progressSnackbar) {
+      progressSnackbar.classList.remove('active');
+    }
+  }
+
+  // ✅ Make toggleSnackbar global for onclick handler
+  window.toggleSnackbar = function() {
+    if (progressSnackbar) {
+      progressSnackbar.classList.toggle('minimized');
+    }
+  };
+
+  // ========================================
   // ✅ FIXED: 2-STEP IMPORT WITH PREVIEW
   // ========================================
 
@@ -3418,20 +3784,18 @@ function setSelectedDivisi(divisiIds) {
     handleImportPreview(currentFormData, currentImportType);
   });
 
-  // ✅ FIXED: Revenue CC Form Submit Handler
+  // ✅ FIX #2: Revenue CC Form Submit Handler
   $('#formRevenueCC').submit(function(e) {
     e.preventDefault();
 
     currentFormData = new FormData($(this)[0]);
     currentImportType = currentFormData.get('import_type');
 
-    // ✅ FIXED: Menggunakan ID selector yang BENAR
     const year = $('#import-cc-year').val();
     const month = $('#import-cc-month').val();
-    const divisi = $('#revCCDivisiImport').val();        // ✅ FIXED: ID yang benar
-    const jenisData = $('#revCCJenisDataImport').val();  // ✅ FIXED: ID yang benar
+    const divisi = $('#revCCDivisiImport').val();
+    const jenisData = $('#revCCJenisDataImport').val();
 
-    // ✅ Debug log untuk validasi
     console.log('📋 Revenue CC Form Values:', {
       year: year,
       month: month,
@@ -3440,50 +3804,42 @@ function setSelectedDivisi(divisiIds) {
       file: currentFormData.get('file')?.name
     });
 
-    // Validation 1: Periode
+    // Validation
     if (!year || !month) {
       alert('❌ Pilih Periode terlebih dahulu!');
-      console.error('Validation failed: Periode kosong');
       return;
     }
 
-    // Validation 2: Divisi
     if (!divisi || divisi === '') {
       alert('❌ Pilih Divisi terlebih dahulu!');
-      console.error('Validation failed: Divisi kosong', {
-        divisi_value: divisi,
-        selector: '#revCCDivisiImport'
-      });
       return;
     }
 
-    // Validation 3: Jenis Data
     if (!jenisData || jenisData === '') {
       alert('❌ Pilih Jenis Data (Real Revenue/Target Revenue) terlebih dahulu!');
-      console.error('Validation failed: Jenis Data kosong', {
-        jenisData_value: jenisData,
-        selector: '#revCCJenisDataImport'
-      });
       return;
     }
 
-    // Set params to FormData
-    currentFormData.set('year', year);
-    currentFormData.set('month', month);
+    // ✅ FIX: Parse to integer to remove leading zero (01 → 1)
+    currentFormData.set('year', parseInt(year));
+    currentFormData.set('month', parseInt(month));
+
+    // ✅ FIX #2: Store year/month globally for execute
+    currentImportYear = parseInt(year);
+    currentImportMonth = parseInt(month);
 
     console.log('✅ All validations passed');
     console.log('📤 Submitting Revenue CC with:', {
-      year: year,
-      month: month,
+      year: currentImportYear,
+      month: currentImportMonth,
       divisi_id: divisi,
-      jenis_data: jenisData,
-      file: currentFormData.get('file')?.name
+      jenis_data: jenisData
     });
 
     handleImportPreview(currentFormData, currentImportType);
   });
 
-  // Revenue AM Form Submit Handler
+  // ✅ FIX #2: Revenue AM Form Submit Handler
   $('#formRevenueAM').submit(function(e) {
     e.preventDefault();
 
@@ -3498,19 +3854,23 @@ function setSelectedDivisi(divisiIds) {
       return;
     }
 
-    currentFormData.set('year', year);
-    currentFormData.set('month', month);
+    // ✅ FIX: Parse to integer to remove leading zero (01 → 1)
+    currentFormData.set('year', parseInt(year));
+    currentFormData.set('month', parseInt(month));
+
+    // ✅ FIX #2: Store year/month globally for execute
+    currentImportYear = parseInt(year);
+    currentImportMonth = parseInt(month);
 
     console.log('📤 Submitting Revenue AM with:', {
-      year: year,
-      month: month,
+      year: currentImportYear,
+      month: currentImportMonth,
       file: currentFormData.get('file')?.name
     });
 
     handleImportPreview(currentFormData, currentImportType);
   });
 
-  // NOTE: EXPERIMENTING
   const ROWS_PER_CHUNK = 5000;
   const SIZE_THRESHOLD = 5 * 1024 * 1024;
 
@@ -3524,13 +3884,16 @@ function setSelectedDivisi(divisiIds) {
       }
     }
 
-    showLoading('Memproses file...');
+    // ✅ FIX #3: Use progress snackbar instead of showLoading
+    showProgressSnackbar('Memproses file...');
+    updateProgress(5, 'Memulai...');
 
     file = formData.get('file');
 
     if (!file) {
-        alert('No file selected');
-        return;
+      hideProgressSnackbar();
+      alert('No file selected');
+      return;
     }
 
     console.log('📊 File info:', {
@@ -3546,43 +3909,13 @@ function setSelectedDivisi(divisiIds) {
       console.log('📤 Small file, using direct upload');
       uploadFileDirect(formData, importType);
     }
-
-    // $.ajax({
-    //   url: '/revenue-data/import/preview',
-    //   method: 'POST',
-    //   data: formData,
-    //   processData: false,
-    //   contentType: false,
-    //   headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-    //   success: function(response) {
-    //     hideLoading();
-
-    //     if (response.success) {
-    //       previewData = response.data;
-    //       currentSessionId = response.session_id;
-    //       console.log('✅ Preview loaded, session_id:', currentSessionId);
-
-    //       showPreviewModal(previewData, importType);
-
-    //       bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
-    //     } else {
-    //       alert('Error: ' + response.message);
-    //     }
-    //   },
-    //   error: function(xhr) {
-    //     hideLoading();
-    //     console.error('❌ Preview failed:', xhr.responseJSON);
-    //     alert('Terjadi kesalahan di revenueData (ln 3550): ' + (xhr.responseJSON?.message || xhr.statusText));
-    //   }
-    // });
   }
 
   /**
-   * ✅ NEW: Upload CSV in row-based chunks
-   * Reads CSV, splits by rows, maintains headers and order
+   * ✅ Upload CSV in row-based chunks
    */
   async function uploadCSVInRowChunks(file, importType, originalFormData) {
-    showLoading('Membaca file CSV...');
+    updateProgress(10, 'Membaca file CSV...');
 
     try {
       // Read entire file as text
@@ -3624,15 +3957,13 @@ function setSelectedDivisi(divisiIds) {
         // Build CSV chunk
         let chunkCSV;
         if (chunkIndex === 0) {
-          // First chunk: include headers
           chunkCSV = headers + '\n' + chunkRows.join('\n');
         } else {
-          // Other chunks: headers + data (backend will handle header merging)
           chunkCSV = headers + '\n' + chunkRows.join('\n');
         }
 
-        const progress = Math.round(((chunkIndex + 1) / totalChunks) * 100);
-        showLoading(`Mengunggah File ${chunkIndex + 1}/${totalChunks} (${progress}%)...`);
+        const progress = 10 + Math.round(((chunkIndex + 1) / totalChunks) * 70);
+        updateProgress(progress, `Mengunggah chunk ${chunkIndex + 1}/${totalChunks}...`);
 
         console.log(`📤 Sending chunk ${chunkIndex + 1}/${totalChunks}:`, {
           rowsInChunk: chunkRows.length,
@@ -3665,11 +3996,11 @@ function setSelectedDivisi(divisiIds) {
 
       // All chunks uploaded, now request preview
       console.log('✅ All chunks uploaded successfully');
-      showLoading('Memproses data...');
+      updateProgress(85, 'Memproses data...');
       await requestPreviewAfterChunks(sessionId, importType, originalFormData);
 
     } catch (error) {
-      hideLoading();
+      hideProgressSnackbar();
       console.error('❌ Upload failed:', error);
       alert('Terjadi kesalahan saat mengunggah file: ' + error.message);
     }
@@ -3729,14 +4060,13 @@ function setSelectedDivisi(divisiIds) {
       const requestData = {
         session_id: sessionId,
         import_type: importType,
-        year: originalFormData.get('year'),
-        month: originalFormData.get('month'),
+        year: parseInt(originalFormData.get('year')),  // ✅ Parse to integer
+        month: parseInt(originalFormData.get('month')), // ✅ Parse to integer
         divisi_id: originalFormData.get('divisi_id'),
         jenis_data: originalFormData.get('jenis_data'),
-
       };
 
-      // Add any additional params (year, month, divisi_id, jenis_data, etc.)
+      // Add any additional params
       for (let [key, value] of originalFormData.entries()) {
         if (!(value instanceof File) && key !== 'file') {
           requestData[key] = value;
@@ -3744,15 +4074,16 @@ function setSelectedDivisi(divisiIds) {
       }
 
       console.log('📊 Requesting preview with:', requestData);
+      updateProgress(90, 'Generating preview...');
 
       $.ajax({
         url: '/revenue-data/import/preview',
         method: 'POST',
         data: requestData,
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        timeout: 120000, // 2 minute timeout for preview generation
+        timeout: 120000,
         success: function(response) {
-          hideLoading();
+          hideProgressSnackbar();
 
           if (response.success) {
             previewData = response.data;
@@ -3778,7 +4109,7 @@ function setSelectedDivisi(divisiIds) {
           }
         },
         error: function(xhr) {
-          hideLoading();
+          hideProgressSnackbar();
           console.error('❌ Preview failed:', xhr);
           reject(new Error(xhr.responseJSON?.message || xhr.statusText));
         }
@@ -3787,7 +4118,7 @@ function setSelectedDivisi(divisiIds) {
   }
 
   /**
-   * EXISTING: Direct upload for small files (unchanged)
+   * Direct upload for small files
    */
   function uploadFileDirect(formData, importType) {
     console.log('📤 Sending to /import/preview:');
@@ -3799,7 +4130,7 @@ function setSelectedDivisi(divisiIds) {
       }
     }
 
-    showLoading('Memproses file...');
+    updateProgress(20, 'Mengunggah file...');
 
     $.ajax({
       url: '/revenue-data/import/preview',
@@ -3809,29 +4140,44 @@ function setSelectedDivisi(divisiIds) {
       contentType: false,
       headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
       timeout: 120000,
-      success: function(response) {
-        hideLoading();
-
-        if (response.success) {
-          previewData = response.data;
-          currentSessionId = response.session_id;
-          console.log('✅ Preview loaded, session_id:', currentSessionId);
-
-          showPreviewModal(previewData, importType);
-
-          const importModal = document.getElementById('importModal');
-          if (importModal) {
-            const modalInstance = bootstrap.Modal.getInstance(importModal);
-            if (modalInstance) {
-              modalInstance.hide();
-            }
+      xhr: function() {
+        const xhr = new window.XMLHttpRequest();
+        // Track upload progress
+        xhr.upload.addEventListener("progress", function(evt) {
+          if (evt.lengthComputable) {
+            const percentComplete = 20 + (evt.loaded / evt.total) * 60;
+            updateProgress(percentComplete, 'Mengunggah file...');
           }
-        } else {
-          alert('Error: ' + response.message);
-        }
+        }, false);
+        return xhr;
+      },
+      success: function(response) {
+        updateProgress(100, 'Preview siap!');
+
+        setTimeout(() => {
+          hideProgressSnackbar();
+
+          if (response.success) {
+            previewData = response.data;
+            currentSessionId = response.session_id;
+            console.log('✅ Preview loaded, session_id:', currentSessionId);
+
+            showPreviewModal(previewData, importType);
+
+            const importModal = document.getElementById('importModal');
+            if (importModal) {
+              const modalInstance = bootstrap.Modal.getInstance(importModal);
+              if (modalInstance) {
+                modalInstance.hide();
+              }
+            }
+          } else {
+            alert('Error: ' + response.message);
+          }
+        }, 500);
       },
       error: function(xhr) {
-        hideLoading();
+        hideProgressSnackbar();
         console.error('❌ Preview failed:', xhr.responseJSON);
         alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
@@ -3842,181 +4188,249 @@ function setSelectedDivisi(divisiIds) {
     return 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
+  // ✅ FIX #4: Show Preview Modal - Handle 5 rows + unique count
+  // =================== ✅ REDESIGNED PREVIEW & IMPORT (NO CHECKBOXES) ===================
+  
+  /**
+   * Show preview modal with summary and filter buttons
+   */
   function showPreviewModal(data, importType) {
-    const summaryHTML = `
-      <div class="preview-card new">
-        <div class="icon"><i class="fa-solid fa-plus"></i></div>
-        <h3>${data.summary.new_count || 0}</h3>
-        <p>Data Baru</p>
-      </div>
-      <div class="preview-card update">
-        <div class="icon"><i class="fa-solid fa-edit"></i></div>
-        <h3>${data.summary.update_count || 0}</h3>
-        <p>Akan Di-update</p>
-      </div>
-      <div class="preview-card conflict">
-        <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
-        <h3>${data.summary.error_count || 0}</h3>
-        <p>Error/Konflik</p>
-      </div>
-    `;
-    $('#previewSummary').html(summaryHTML);
+    previewData = data;
 
-    const tableBody = $('#previewTableBody');
-    tableBody.empty();
+    console.log('📊 Preview modal data:', { importType, data });
 
-    data.rows.forEach((row, index) => {
-      const statusClass = row.status || 'new';
-      const statusText = {
-        'new': 'Baru',
-        'update': 'Update',
-        'error': 'Error',
-        'skip': 'Skip'
-      }[statusClass] || 'Baru';
+    // Build summary cards HTML
+    let summaryHTML = '';
 
-      let dataDisplay = '';
-      let valueDisplay = '';
+    if (data.summary) {
+      // Total rows card
+      summaryHTML += `
+        <div class="preview-card total">
+          <div class="icon"><i class="fa-solid fa-file-lines"></i></div>
+          <h3>${data.summary.total_rows || 0}</h3>
+          <p>Total Baris Data</p>
+        </div>
+      `;
 
-      if (importType === 'data_cc') {
-        dataDisplay = `<strong>${row.data.NIPNAS || '-'}</strong><br><small>${row.data.STANDARD_NAME || '-'}</small>`;
-        valueDisplay = row.old_data ? `
-          <div class="value-comparison">
-            <span class="value-old">${row.old_data.nama || '-'}</span>
-            <span class="value-new">${row.data.STANDARD_NAME || '-'}</span>
+      // Unique count card (CC or AM)
+      if (importType === 'revenue_cc' && data.summary.unique_cc_count !== undefined) {
+        summaryHTML += `
+          <div class="preview-card unique">
+            <div class="icon"><i class="fa-solid fa-building"></i></div>
+            <h3>${data.summary.unique_cc_count}</h3>
+            <p>Corporate Customer</p>
           </div>
-        ` : row.data.STANDARD_NAME || '-';
-      } else if (importType === 'data_am') {
-        dataDisplay = `<strong>${row.data.NIK || '-'}</strong><br><small>${row.data.NAMA_AM || '-'}</small>`;
-        valueDisplay = `${row.data.ROLE || '-'} | ${row.data.WITEL || '-'}`;
-      } else if (importType === 'revenue_cc') {
-        dataDisplay = `<strong>${row.data.NIPNAS || '-'}</strong><br><small>${row.data.LSEGMENT_HO || '-'}</small>`;
-        valueDisplay = row.data.REVENUE_SOLD ? `Rp ${parseFloat(row.data.REVENUE_SOLD).toLocaleString('id-ID')}` :
-                       row.data.REVENUE_BILL ? `Rp ${parseFloat(row.data.REVENUE_BILL).toLocaleString('id-ID')}` : '-';
-      } else if (importType === 'revenue_am') {
-        dataDisplay = `<strong>${row.data.NIK_AM || '-'}</strong><br><small>${row.data.NIPNAS || '-'}</small>`;
-        valueDisplay = `${row.data.PROPORSI || 0}%`;
+        `;
+      } else if (importType === 'revenue_am' && data.summary.unique_am_count !== undefined) {
+        summaryHTML += `
+          <div class="preview-card unique">
+            <div class="icon"><i class="fa-solid fa-user-tie"></i></div>
+            <h3>${data.summary.unique_am_count}</h3>
+            <p>Account Manager</p>
+          </div>
+        `;
       }
 
-      const rowHTML = `
-        <tr data-row-index="${index}" data-status="${statusClass}" class="${statusClass === 'error' ? 'table-danger' : ''}">
-          <td>
-            <input type="checkbox" class="preview-row-checkbox"
-                   data-index="${index}"
-                   ${statusClass !== 'error' ? 'checked' : ''}
-                   ${statusClass === 'error' ? 'disabled' : ''}>
-          </td>
-          <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-          <td>${dataDisplay}</td>
-          <td>
-            ${valueDisplay}
-            ${row.error ? `<br><small class="text-danger"><i class="fa-solid fa-warning me-1"></i>${row.error}</small>` : ''}
-          </td>
-        </tr>
+      // Other summary cards
+      summaryHTML += `
+        <div class="preview-card update">
+          <div class="icon"><i class="fa-solid fa-edit"></i></div>
+          <h3>${data.summary.update_count || 0}</h3>
+          <p>Akan Di-update</p>
+        </div>
+        <div class="preview-card new">
+          <div class="icon"><i class="fa-solid fa-plus"></i></div>
+          <h3>${data.summary.new_count || 0}</h3>
+          <p>Data Baru</p>
+        </div>
+        <div class="preview-card conflict">
+          <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
+          <h3>${data.summary.error_count || 0}</h3>
+          <p>Error/Konflik</p>
+        </div>
       `;
-      tableBody.append(rowHTML);
-    });
+    }
 
-    updateSelectedCount();
+    $('#previewSummary').html(summaryHTML);
 
+    // Update button badges with counts
+    const totalCount = (data.summary?.new_count || 0) + (data.summary?.update_count || 0);
+    const newCount = data.summary?.new_count || 0;
+    const updateCount = data.summary?.update_count || 0;
+    const errorCount = data.summary?.error_count || 0;
+
+    $('#badgeAllCount').text(`${totalCount} data`);
+    $('#badgeNewCount').text(`${newCount} data`);
+    $('#badgeUpdateCount').text(`${updateCount} data`);
+
+    // Disable buttons if count = 0
+    $('#btnImportAll').prop('disabled', totalCount === 0);
+    $('#btnImportNew').prop('disabled', newCount === 0);
+    $('#btnImportUpdate').prop('disabled', updateCount === 0);
+
+    // Show error info if any
+    if (errorCount > 0) {
+      $('#errorMessage').text(`${errorCount} baris data mengandung error dan akan diskip.`);
+      $('#errorInfo').show();
+    } else {
+      $('#errorInfo').hide();
+    }
+
+    // Show info banner for large datasets
+    const previewInfo = $('#previewInfo');
+    if (data.full_data_stored && totalCount > 100) {
+      previewInfo.html(`
+        <div class="alert alert-info">
+          <i class="fa-solid fa-info-circle me-2"></i>
+          <strong>Info:</strong> Dataset besar terdeteksi (${totalCount} data). 
+          Import akan memproses semua data sesuai filter yang dipilih.
+        </div>
+      `);
+      previewInfo.show();
+    } else {
+      previewInfo.hide();
+    }
+
+    // Show modal
     const modal = new bootstrap.Modal(document.getElementById('previewModal'));
     modal.show();
+
+    console.log('✅ Preview modal shown', {
+      importType,
+      totalCount,
+      newCount,
+      updateCount,
+      errorCount
+    });
   }
 
-  $('#selectAllPreview').on('change', function() {
-    $('.preview-row-checkbox:not(:disabled)').prop('checked', this.checked);
-    updateSelectedCount();
-  });
-
-  $(document).on('change', '.preview-row-checkbox', function() {
-    updateSelectedCount();
-  });
-
-  $('#btnSelectAll').click(function() {
-    $('.preview-row-checkbox:not(:disabled)').prop('checked', true);
-    $('#selectAllPreview').prop('checked', true);
-    updateSelectedCount();
-  });
-
-  $('#btnDeselectAll').click(function() {
-    $('.preview-row-checkbox:not(:disabled)').prop('checked', false);
-    $('#selectAllPreview').prop('checked', false);
-    updateSelectedCount();
-  });
-
-  $('#btnSelectNew').click(function() {
-    $('.preview-row-checkbox:not(:disabled)').prop('checked', false);
-    $('tr[data-status="new"] .preview-row-checkbox').prop('checked', true);
-    updateSelectedCount();
-  });
-
-  $('#btnSelectUpdates').click(function() {
-    $('.preview-row-checkbox:not(:disabled)').prop('checked', false);
-    $('tr[data-status="update"] .preview-row-checkbox').prop('checked', true);
-    updateSelectedCount();
-  });
-
-  function updateSelectedCount() {
-    const count = $('.preview-row-checkbox:checked').length;
-    $('#selectedCount').text(count);
-    $('#btnExecuteImport').prop('disabled', count === 0);
-  }
-
-  $('#btnExecuteImport').click(function() {
-    const selectedIndexes = $('.preview-row-checkbox:checked').map(function() {
-      return $(this).data('index');
-    }).get();
-
-    if (selectedIndexes.length === 0) {
-      alert('Pilih minimal 1 data untuk diimport');
+  /**
+   * Execute import with filter type
+   */
+  function executeImportWithFilter(filterType) {
+    // Validate filter type
+    if (!['all', 'new', 'update'].includes(filterType)) {
+      alert('Filter type tidak valid');
       return;
     }
 
-    if (!confirm(`Import ${selectedIndexes.length} data terpilih?`)) {
+    // Get count based on filter
+    let count = 0;
+    let filterLabel = '';
+    
+    if (filterType === 'all') {
+      count = (previewData.summary?.new_count || 0) + (previewData.summary?.update_count || 0);
+      filterLabel = 'semua';
+    } else if (filterType === 'new') {
+      count = previewData.summary?.new_count || 0;
+      filterLabel = 'data baru';
+    } else if (filterType === 'update') {
+      count = previewData.summary?.update_count || 0;
+      filterLabel = 'data update';
+    }
+
+    if (count === 0) {
+      alert(`Tidak ada ${filterLabel} untuk diimport`);
       return;
     }
 
-    executeImport(selectedIndexes);
-  });
+    // Confirm import
+    if (!confirm(`Import ${count} ${filterLabel}?`)) {
+      return;
+    }
 
-  function executeImport(selectedIndexes) {
-    showLoading('Mengimport data...');
+    // Close preview modal
+    const previewModal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+    if (previewModal) {
+      previewModal.hide();
+    }
 
+    // Show progress
+    showProgressSnackbar(`Mengimport ${count} data...`);
+    updateProgress(10, 'Mengirim data ke server...');
+
+    // Prepare payload
     const payload = {
       session_id: currentSessionId,
-      selected_rows: selectedIndexes,
+      filter_type: filterType,
       import_type: currentImportType
     };
 
-    console.log('✅ Executing import with payload:', payload);
+    // Add year/month for revenue imports
+    if (currentImportType === 'revenue_am' || currentImportType === 'revenue_cc') {
+      payload.year = currentImportYear;
+      payload.month = currentImportMonth;
+    }
 
+    console.log('✅ Executing import', payload);
+
+    // Execute import
     $.ajax({
       url: '/revenue-data/import/execute',
       method: 'POST',
       data: JSON.stringify(payload),
       contentType: 'application/json',
       headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+      xhr: function() {
+        const xhr = new window.XMLHttpRequest();
+        xhr.upload.addEventListener("progress", function(evt) {
+          if (evt.lengthComputable) {
+            const percentComplete = 10 + (evt.loaded / evt.total) * 80;
+            updateProgress(percentComplete, 'Memproses import...');
+          }
+        }, false);
+        return xhr;
+      },
       success: function(response) {
-        hideLoading();
+        updateProgress(100, 'Import selesai!');
 
-        if (response.success) {
-          console.log('✅ Import executed successfully');
+        setTimeout(() => {
+          hideProgressSnackbar();
 
-          bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide();
-
-          showImportResult(response);
-
-          loadData();
-        } else {
-          alert('Error: ' + response.message);
-        }
+          if (response.success) {
+            console.log('✅ Import completed successfully', response);
+            showImportResult(response);
+            
+            // Reload table data
+            if (typeof loadRevenueData === 'function') {
+              loadRevenueData();
+            }
+          } else {
+            alert('Import gagal: ' + (response.message || 'Unknown error'));
+          }
+        }, 500);
       },
       error: function(xhr) {
-        hideLoading();
-        console.error('❌ Import execution failed:', xhr);
-        alert('Terjadi kesalahan di revenueData (3726): ' + (xhr.responseJSON?.message || xhr.statusText));
+        hideProgressSnackbar();
+        console.error('❌ Import failed', xhr);
+        
+        let errorMsg = 'Terjadi kesalahan saat import';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errorMsg = xhr.responseJSON.message;
+        }
+        alert('Error: ' + errorMsg);
       }
     });
   }
+
+  /**
+   * Button click handlers for filter import
+   */
+  $('#btnImportAll').click(function() {
+    executeImportWithFilter('all');
+  });
+
+  $('#btnImportNew').click(function() {
+    executeImportWithFilter('new');
+  });
+
+  $('#btnImportUpdate').click(function() {
+    executeImportWithFilter('update');
+  });
+
+  console.log('✅ Redesigned preview & import system loaded');
+
+  // =================== END REDESIGNED PREVIEW & IMPORT ===================
 
   function showLoading(text) {
     $('#loadingText').text(text || 'Memproses...');
@@ -4132,10 +4546,6 @@ function setSelectedDivisi(divisiIds) {
     modal.show();
   }
 
-  // ========================================
-  // EDIT & DELETE FUNCTIONS
-  // ========================================
-
   window.editRevenueCC = function(id) {
     $.ajax({
       url: `/revenue-data/revenue-cc/${id}`,
@@ -4155,7 +4565,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (3868): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -4178,7 +4588,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (3891): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -4203,7 +4613,7 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (3916): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -4226,114 +4636,97 @@ function setSelectedDivisi(divisiIds) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (3939): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
 
+  function toggleTeldaField(role) {
+    const teldaWrapper = document.getElementById('editDataAMTeldaWrapper');
 
-// ========================================
-// ✅ TOGGLE TELDA FIELD - FIXED
-// ========================================
-function toggleTeldaField(role) {
-  const teldaWrapper = document.getElementById('editDataAMTeldaWrapper');
-
-  // ✅ FIX: Null check
-  if (!teldaWrapper) {
-    console.warn('editDataAMTeldaWrapper not found');
-    return;
-  }
-
-  if (role === 'HOTDA') {
-    teldaWrapper.classList.remove('hidden');
-    teldaWrapper.style.display = 'block';
-  } else {
-    teldaWrapper.classList.add('hidden');
-    teldaWrapper.style.display = 'none';
-  }
-}
-
-// ========================================
-// ✅ EVENT LISTENER - ROLE CHANGE
-// ========================================
-$('#editDataAMRole').on('change', function() {
-  const role = $(this).val();
-  toggleTeldaField(role);
-});
-
-
-// ========================================
-// ✅ EDIT DATA AM - FORCE SHOW CONTENT
-// ========================================
-window.editDataAM = function(id) {
-  $.ajax({
-    url: `/revenue-data/data-am/${id}`,
-    method: 'GET',
-    success: function(response) {
-      if (!response.success) {
-        alert('Error: ' + response.message);
-        return;
-      }
-
-      const data = response.data;
-      const modalEl = document.getElementById('modalEditDataAM');
-
-      if (!modalEl) {
-        console.error('❌ Modal not found!');
-        return;
-      }
-
-      const modal = new bootstrap.Modal(modalEl);
-
-      $(modalEl).one('shown.bs.modal', function() {
-        setTimeout(function() {
-          console.log('✅ Populating fields with data:', data);
-
-          // ✅ FORCE SHOW TAB CONTENT
-          $('#tab-edit-data').addClass('show active');
-          $('#tab-change-password').removeClass('show active');
-
-          // ✅ FORCE SHOW TABS NAV (jika registered)
-          if (data.is_registered) {
-            $('#editDataAMTabs').show().css('display', 'flex');
-          } else {
-            $('#editDataAMTabs').hide();
-          }
-
-          // Set values
-          $('#editDataAMId').val(data.id);
-          $('#changePasswordAMId').val(data.id);
-          $('#editDataAMNama').val(data.nama);
-          $('#editDataAMNik').val(data.nik);
-          $('#editDataAMRole').val(data.role);
-          $('#editDataAMWitel').val(data.witel_id);
-          $('#editDataAMTelda').val(data.telda_id || '');
-
-          // Divisi
-          if ($('#divisiButtonGroup').children().length === 0) {
-            initDivisiButtonGroup();
-          }
-
-          if (data.divisi && Array.isArray(data.divisi)) {
-            const divisiIds = data.divisi.map(d => d.id);
-            setTimeout(() => setSelectedDivisi(divisiIds), 100);
-          }
-
-          // TELDA toggle
-          toggleTeldaField(data.role);
-
-          console.log('✅ All fields populated!');
-        }, 200);
-      });
-
-      modal.show();
-    },
-    error: function(xhr) {
-      console.error('❌ AJAX Error:', xhr);
-      alert('Terjadi kesalahan di revenueData (4043): ' + (xhr.responseJSON?.message || xhr.statusText));
+    if (!teldaWrapper) {
+      console.warn('editDataAMTeldaWrapper not found');
+      return;
     }
+
+    if (role === 'HOTDA') {
+      teldaWrapper.classList.remove('hidden');
+      teldaWrapper.style.display = 'block';
+    } else {
+      teldaWrapper.classList.add('hidden');
+      teldaWrapper.style.display = 'none';
+    }
+  }
+
+  $('#editDataAMRole').on('change', function() {
+    const role = $(this).val();
+    toggleTeldaField(role);
   });
-};
+
+  window.editDataAM = function(id) {
+    $.ajax({
+      url: `/revenue-data/data-am/${id}`,
+      method: 'GET',
+      success: function(response) {
+        if (!response.success) {
+          alert('Error: ' + response.message);
+          return;
+        }
+
+        const data = response.data;
+        const modalEl = document.getElementById('modalEditDataAM');
+
+        if (!modalEl) {
+          console.error('❌ Modal not found!');
+          return;
+        }
+
+        const modal = new bootstrap.Modal(modalEl);
+
+        $(modalEl).one('shown.bs.modal', function() {
+          setTimeout(function() {
+            console.log('✅ Populating fields with data:', data);
+
+            $('#tab-edit-data').addClass('show active');
+            $('#tab-change-password').removeClass('show active');
+
+            if (data.is_registered) {
+              $('#editDataAMTabs').show().css('display', 'flex');
+            } else {
+              $('#editDataAMTabs').hide();
+            }
+
+            $('#editDataAMId').val(data.id);
+            $('#changePasswordAMId').val(data.id);
+            $('#editDataAMNama').val(data.nama);
+            $('#editDataAMNik').val(data.nik);
+            $('#editDataAMRole').val(data.role);
+            $('#editDataAMWitel').val(data.witel_id);
+            $('#editDataAMTelda').val(data.telda_id || '');
+
+            if ($('#divisiButtonGroup').children().length === 0) {
+              initDivisiButtonGroup();
+            }
+
+            if (data.divisi && Array.isArray(data.divisi)) {
+              const divisiIds = data.divisi.map(d => d.id);
+              setTimeout(() => setSelectedDivisi(divisiIds), 100);
+            }
+
+            toggleTeldaField(data.role);
+
+            console.log('✅ All fields populated!');
+          }, 200);
+        });
+
+        modal.show();
+      },
+      error: function(xhr) {
+        console.error('❌ AJAX Error:', xhr);
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+      }
+    });
+  };
 
   window.editDataCC = function(id) {
     $.ajax({
@@ -4353,7 +4746,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (4066): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
@@ -4376,14 +4769,10 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (4089): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   };
-
-  // ========================================
-  // FORM SUBMIT HANDLERS
-  // ========================================
 
   $('#formEditRevenueCC').on('submit', function(e) {
     e.preventDefault();
@@ -4409,7 +4798,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (4122): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4439,7 +4828,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (4152): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4478,7 +4867,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (4191): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4515,7 +4904,7 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (4228): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
@@ -4544,14 +4933,11 @@ window.editDataAM = function(id) {
         }
       },
       error: function(xhr) {
-        alert('Terjadi kesalahan di revenueData (4257): ' + (xhr.responseJSON?.message || xhr.statusText));
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   });
 
-  // ========================================
-  // UTILITY FUNCTIONS
-  // ========================================
   function formatCurrency(value) {
     if (!value) return 'Rp 0';
     return 'Rp ' + parseFloat(value).toLocaleString('id-ID', { maximumFractionDigits: 0 });
@@ -4561,9 +4947,6 @@ window.editDataAM = function(id) {
     alert(message);
   }
 
-  // ========================================
-  // INITIALIZATION
-  // ========================================
   loadFilterOptions();
   loadData();
 

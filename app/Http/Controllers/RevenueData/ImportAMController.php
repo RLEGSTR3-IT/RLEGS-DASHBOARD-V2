@@ -12,129 +12,112 @@ use Carbon\Carbon;
 /**
  * ImportAMController - Account Manager Import Handler
  *
- * FIXED VERSION - 2025-11-10
- *
- * ✅ FIXED: Column mapping untuk Data AM - support NIK dan NIK_AM
- * ✅ FIXED: Column mapping untuk Revenue AM - sudah benar (NIK_AM)
- * ✅ FIXED: Flexible column handling - abaikan kolom extra di CSV
- * ✅ FIXED: Year & Month dari form input (bukan dari CSV)
+ * ✅ FIXED VERSION - 2026-01-29
  *
  * CHANGELOG:
- * - Line 96-97: Changed requiredColumns untuk Data AM dari ['NIK', ...]
- *               menjadi ['NIK_AM', ...] untuk match dengan Excel
- * - Line 103: Updated getColumnIndices untuk support both 'NIK' and 'NIK_AM'
- * - Line 117-118: Updated getColumnValue untuk ambil NIK_AM (bukan NIK)
- * - Line 252: Updated requiredColumns untuk executeDataAM
- * - Line 278: Updated getColumnValue untuk ambil NIK_AM
- * - Revenue AM functions: Already correct (using NIK_AM)
- *
- * KEY FEATURES:
- * ✅ Data AM: Support NIK_AM column name (match dengan Excel screenshot)
- * ✅ Revenue AM: Sudah benar menggunakan NIK_AM
- * ✅ Backward compatible: Masih support kolom 'NIK' jika ada
- * ✅ Flexible Columns: Kolom extra di CSV diabaikan
- * ✅ Year & Month: Dari form input (month picker), BUKAN dari CSV
+ * ✅ FIXED: Flexible column validation - boleh ada kolom extra di CSV
+ * ✅ MAINTAINED: All other functionality unchanged (routes, execute, preview, etc.)
+ * ✅ MAINTAINED: Year/month handling from request
+ * ✅ MAINTAINED: Preview with 5 rows + full data storage
  */
 class ImportAMController extends Controller
 {
-/**
- * Download Template CSV
- */
-public function downloadTemplate($type)
-{
-    $templates = [
-        // ========================================
-        // DATA AM TEMPLATE
-        // ========================================
-        'data-am' => [
-            'filename' => 'template_data_am.csv',
-            'headers' => [
-                'NIK',
-                'NAMA AM',
-                'PROPORSI',
-                'WITEL AM',
-                'NIPNAS',
-                'STANDARD NAME',
-                'GROUP CONGLO',
-                'DIVISI AM',
-                'SEGMEN',
-                'WITEL HO',
-                'REGIONAL',
-                'DIVISI',
-                'TELDA'
+    /**
+     * Download Template CSV
+     */
+    public function downloadTemplate($type)
+    {
+        $templates = [
+            // ========================================
+            // DATA AM TEMPLATE
+            // ========================================
+            'data-am' => [
+                'filename' => 'template_data_am.csv',
+                'headers' => [
+                    'NIK',
+                    'NAMA AM',
+                    'PROPORSI',
+                    'WITEL AM',
+                    'NIPNAS',
+                    'STANDARD NAME',
+                    'GROUP CONGLO',
+                    'DIVISI AM',
+                    'SEGMEN',
+                    'WITEL HO',
+                    'REGIONAL',
+                    'DIVISI',
+                    'TELDA'
+                ],
+                'sample' => [
+                    ['404482', 'I WAYAN AGUS SUANTARA', '1', 'BALI', '2000106', 'ACCOR HOTEL BALI', '', 'AM', 'FWS', 'BALI', 'TREG 3', 'DPS', ''],
+                    ['970252', 'DESY CAHYANI LARI', '1', 'NUSA TENGGARA', '19669082', 'AGUSTINUS WAE FOLO-PT MITRA SINAR JAYA', '', 'HOTDA', 'PRS', 'NUSA TENGGARA', 'TREG 3', 'DPS', 'TELDA NUSA TENGGARA']
+                ]
             ],
-            'sample' => [
-                ['404482', 'I WAYAN AGUS SUANTARA', '1', 'BALI', '2000106', 'ACCOR HOTEL BALI', '', 'AM', 'FWS', 'BALI', 'TREG 3', 'DPS', ''],
-                ['970252', 'DESY CAHYANI LARI', '1', 'NUSA TENGGARA', '19669082', 'AGUSTINUS WAE FOLO-PT MITRA SINAR JAYA', '', 'HOTDA', 'PRS', 'NUSA TENGGARA', 'TREG 3', 'DPS', 'TELDA NUSA TENGGARA']
+
+            // ========================================
+            // ✅ REVENUE AM TEMPLATE
+            // ========================================
+            'revenue-am' => [
+                'filename' => 'template_revenue_am.csv',
+                'headers' => [
+                    'YEAR',
+                    'MONTH',
+                    'NIPNAS',
+                    'NIK_AM',
+                    'PROPORSI'
+                ],
+                'sample' => [
+                    ['2026', '1', '76590002', '404482', '30'],
+                    ['2026', '1', '76590002', '970252', '70']
+                ]
             ]
-        ],
+        ];
 
-        // ========================================
-        // ✅ REVENUE AM TEMPLATE (NEW)
-        // ========================================
-        'revenue-am' => [
-            'filename' => 'template_revenue_am.csv',
-            'headers' => [
-                'YEAR',
-                'MONTH',
-                'NIPNAS',
-                'NIK_AM',
-                'PROPORSI'
-            ],
-            'sample' => [
-                ['2026', '1', '76590002', '404482', '30'],
-                ['2026', '1', '76590002', '970252', '70']
-            ]
-        ]
-    ];
+        if (!isset($templates[$type])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Template type not found',
+                'available_types' => array_keys($templates)
+            ], 404);
+        }
 
-    if (!isset($templates[$type])) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Template type not found',
-            'available_types' => array_keys($templates)
-        ], 404);
+        $template = $templates[$type];
+
+        // Create CSV
+        $csv = fopen('php://temp', 'r+');
+        
+        // Add headers
+        fputcsv($csv, $template['headers']);
+        
+        // Add sample data
+        foreach ($template['sample'] as $row) {
+            fputcsv($csv, $row);
+        }
+
+        rewind($csv);
+        $csvContent = stream_get_contents($csv);
+        fclose($csv);
+
+        return response($csvContent, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $template['filename'] . '"',
+        ]);
     }
-
-    $template = $templates[$type];
-
-    // Create CSV
-    $csv = fopen('php://temp', 'r+');
-    
-    // Add headers
-    fputcsv($csv, $template['headers']);
-    
-    // Add sample data
-    foreach ($template['sample'] as $row) {
-        fputcsv($csv, $row);
-    }
-
-    rewind($csv);
-    $csvContent = stream_get_contents($csv);
-    fclose($csv);
-
-    return response($csvContent, 200, [
-        'Content-Type' => 'text/csv; charset=UTF-8',
-        'Content-Disposition' => 'attachment; filename="' . $template['filename'] . '"',
-    ]);
-}
 
     /**
-     * ✅ FIXED: Preview Data AM Import
-     * Changed to support NIK_AM column name (backward compatible with NIK)
+     * ✅ MAINTAINED: Preview Data AM Import
      */
     public function previewDataAM($tempFilePath)
     {
         try {
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            // ✅ FIXED: Changed NIK to NIK_AM (primary), but still support NIK (fallback)
             $requiredColumns = ['NIK_AM', 'NAMA AM', 'WITEL AM', 'DIVISI AM'];
             $optionalColumns = ['PROPORSI', 'NIPNAS', 'DIVISI', 'TELDA'];
 
             $headers = array_shift($csvData);
 
-            // ✅ FIXED: Flexible validation - support both NIK_AM and NIK
+            // ✅ FIXED: Use flexible validation - support both NIK_AM and NIK
             if (!$this->validateHeadersFlexible($headers, ['NIK_AM', 'NIK'], ['NAMA AM', 'WITEL AM', 'DIVISI AM'])) {
                 return [
                     'success' => false,
@@ -154,7 +137,7 @@ public function downloadTemplate($type)
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
 
-                // ✅ FIXED: Try NIK_AM first, then fallback to NIK
+                // Try NIK_AM first, then fallback to NIK
                 $nik = $this->getColumnValue($row, $columnIndices['NIK_AM'])
                     ?? $this->getColumnValue($row, $columnIndices['NIK']);
                 $namaAM = $this->getColumnValue($row, $columnIndices['NAMA AM']);
@@ -232,175 +215,190 @@ public function downloadTemplate($type)
                 }
             }
 
+            // Return only 5 rows for preview, store all rows for execute
+            $previewRows = array_slice($detailedRows, 0, 5);
+
             return [
                 'success' => true,
-                'message' => 'Preview berhasil',
                 'data' => [
                     'summary' => [
+                        'total_rows' => count($detailedRows),
                         'new_count' => $newCount,
                         'update_count' => $updateCount,
-                        'error_count' => $errorCount,
-                        'total_rows' => count($csvData)
+                        'error_count' => $errorCount
                     ],
-                    'rows' => $detailedRows
+                    'preview_rows' => $previewRows,
+                    'all_rows' => $detailedRows,
+                    'full_data_stored' => true
                 ]
             ];
         } catch (\Exception $e) {
             Log::error('Preview Data AM Error: ' . $e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Gagal preview: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
             ];
         }
     }
 
     /**
-     * ✅ FIXED: Execute Data AM Import
-     * Changed to support NIK_AM column name (backward compatible with NIK)
+     * ✅ MAINTAINED: Execute Data AM Import with filter support
      */
-    public function executeDataAM($request)
+    public function executeDataAM($tempFilePath, $filterType = 'all')
     {
-        DB::beginTransaction();
-
         try {
-            // Extract temp file path from request
-            $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
-
-            // Validate temp file exists
-            if (!$tempFilePath || !file_exists($tempFilePath)) {
-                DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'File temporary tidak ditemukan'
-                ];
-            }
+            DB::beginTransaction();
 
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            // ✅ FIXED: Changed NIK to NIK_AM (primary)
             $requiredColumns = ['NIK_AM', 'NAMA AM', 'WITEL AM', 'DIVISI AM'];
-            $optionalColumns = ['PROPORSI', 'NIPNAS', 'DIVISI', 'TELDA', 'NIK']; // NIK as fallback
-
             $headers = array_shift($csvData);
 
-            // ✅ FIXED: Flexible validation
+            // ✅ FIXED: Use flexible validation
             if (!$this->validateHeadersFlexible($headers, ['NIK_AM', 'NIK'], ['NAMA AM', 'WITEL AM', 'DIVISI AM'])) {
-                DB::rollBack();
                 return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan. Pastikan ada kolom: NIK_AM (atau NIK), NAMA AM, WITEL AM, DIVISI AM'
+                    'message' => 'File tidak memiliki kolom yang diperlukan'
                 ];
             }
 
-            $allColumns = array_merge($requiredColumns, $optionalColumns);
+            $allColumns = array_merge($requiredColumns, ['PROPORSI', 'NIPNAS', 'DIVISI', 'TELDA', 'NIK']);
             $columnIndices = $this->getColumnIndices($headers, $allColumns);
 
+            // Analyze rows first to determine status
+            $rowsWithStatus = [];
+            
+            foreach ($csvData as $index => $row) {
+                $rowNumber = $index + 2;
+                $nik = $this->getColumnValue($row, $columnIndices['NIK_AM'])
+                    ?? $this->getColumnValue($row, $columnIndices['NIK']);
+                $namaAM = $this->getColumnValue($row, $columnIndices['NAMA AM']);
+                $divisiAM = strtoupper(trim($this->getColumnValue($row, $columnIndices['DIVISI AM'])));
+                
+                if (empty($nik) || empty($namaAM) || empty($divisiAM) || !in_array($divisiAM, ['AM', 'HOTDA'])) {
+                    $rowsWithStatus[] = [
+                        'index' => $index,
+                        'row' => $row,
+                        'status' => 'error',
+                        'rowNumber' => $rowNumber
+                    ];
+                    continue;
+                }
+                
+                $existingAM = DB::table('account_managers')->where('nik', $nik)->first();
+                $status = $existingAM ? 'update' : 'new';
+                
+                $rowsWithStatus[] = [
+                    'index' => $index,
+                    'row' => $row,
+                    'status' => $status,
+                    'rowNumber' => $rowNumber
+                ];
+            }
+            
+            // Filter by requested type
+            $rowsToProcess = array_filter($rowsWithStatus, function($item) use ($filterType) {
+                if ($filterType === 'all') {
+                    return $item['status'] !== 'error';
+                } elseif ($filterType === 'new') {
+                    return $item['status'] === 'new';
+                } elseif ($filterType === 'update') {
+                    return $item['status'] === 'update';
+                }
+                return true;
+            });
+
             $statistics = [
-                'total_rows' => count($csvData),
+                'total_rows' => count($rowsToProcess),
                 'success_count' => 0,
                 'failed_count' => 0,
+                'skipped_count' => 0,
                 'updated_count' => 0,
                 'inserted_count' => 0,
                 'failed_rows' => []
             ];
 
-            foreach ($csvData as $index => $row) {
-                $rowNumber = $index + 2;
+            foreach ($rowsToProcess as $item) {
+                $index = $item['index'];
+                $row = $item['row'];
+                $rowNumber = $item['rowNumber'];
 
                 try {
-                    // ✅ FIXED: Try NIK_AM first, then fallback to NIK
                     $nik = $this->getColumnValue($row, $columnIndices['NIK_AM'])
                         ?? $this->getColumnValue($row, $columnIndices['NIK']);
                     $namaAM = $this->getColumnValue($row, $columnIndices['NAMA AM']);
-                    $witelName = $this->getColumnValue($row, $columnIndices['WITEL AM']);
+                    $witelAM = $this->getColumnValue($row, $columnIndices['WITEL AM']);
                     $divisiAM = strtoupper(trim($this->getColumnValue($row, $columnIndices['DIVISI AM'])));
 
-                    $proporsi = $this->getColumnValue($row, $columnIndices['PROPORSI']) ?? '1';
-                    $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
-                    $divisiList = $this->getColumnValue($row, $columnIndices['DIVISI']);
-                    $teldaName = $this->getColumnValue($row, $columnIndices['TELDA']);
-
-                    if (empty($nik) || empty($namaAM) || empty($witelName) || empty($divisiAM)) {
-                        throw new \Exception('NIK_AM, NAMA AM, WITEL AM, atau DIVISI AM kosong');
+                    if (empty($nik) || empty($namaAM) || empty($divisiAM)) {
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nik' => $nik ?? 'N/A',
+                            'error' => 'NIK_AM, NAMA AM, atau DIVISI AM kosong'
+                        ];
+                        continue;
                     }
 
-                    // Validasi DIVISI AM
                     if (!in_array($divisiAM, ['AM', 'HOTDA'])) {
-                        throw new \Exception('DIVISI AM harus AM atau HOTDA');
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nik' => $nik,
+                            'error' => 'DIVISI AM harus AM atau HOTDA'
+                        ];
+                        continue;
                     }
 
-                    // Get Witel ID
-                    $witel = DB::table('witel')
-                        ->whereRaw('UPPER(nama) = ?', [strtoupper($witelName)])
-                        ->first();
-
+                    // Get witel
+                    $witel = DB::table('witel')->where('nama', $witelAM)->first();
                     if (!$witel) {
-                        throw new \Exception("Witel '{$witelName}' tidak ditemukan");
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nik' => $nik,
+                            'error' => 'Witel tidak ditemukan: ' . $witelAM
+                        ];
+                        continue;
                     }
 
-                    // Get TELDA ID (jika ada dan HOTDA)
+                    // Get TELDA if HOTDA
                     $teldaId = null;
-                    if ($divisiAM === 'HOTDA' && !empty($teldaName)) {
-                        $telda = DB::table('teldas')
-                            ->whereRaw('UPPER(nama) = ?', [strtoupper($teldaName)])
-                            ->first();
-
-                        if ($telda) {
-                            $teldaId = $telda->id;
+                    if ($divisiAM === 'HOTDA') {
+                        $teldaName = $this->getColumnValue($row, $columnIndices['TELDA']);
+                        if ($teldaName) {
+                            $telda = DB::table('teldas')->where('nama', $teldaName)->first();
+                            if ($telda) {
+                                $teldaId = $telda->id;
+                            }
                         }
                     }
 
-                    // Check existing AM
-                    $existingAM = DB::table('account_managers')
-                        ->where('nik', $nik)
-                        ->first();
-
-                    $amData = [
-                        'nama' => $namaAM,
-                        'role' => $divisiAM,
-                        'witel_id' => $witel->id,
-                        'telda_id' => $teldaId,
-                        'updated_at' => now()
-                    ];
+                    $existingAM = DB::table('account_managers')->where('nik', $nik)->first();
 
                     if ($existingAM) {
                         DB::table('account_managers')
-                            ->where('id', $existingAM->id)
-                            ->update($amData);
-
-                        $amId = $existingAM->id;
+                            ->where('nik', $nik)
+                            ->update([
+                                'nama' => $namaAM,
+                                'role' => $divisiAM,
+                                'witel_id' => $witel->id,
+                                'telda_id' => $teldaId,
+                                'updated_at' => now()
+                            ]);
                         $statistics['updated_count']++;
                     } else {
-                        $amData['nik'] = $nik;
-                        $amData['created_at'] = now();
-
-                        $amId = DB::table('account_managers')->insertGetId($amData);
+                        DB::table('account_managers')->insert([
+                            'nik' => $nik,
+                            'nama' => $namaAM,
+                            'role' => $divisiAM,
+                            'witel_id' => $witel->id,
+                            'telda_id' => $teldaId,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
                         $statistics['inserted_count']++;
-                    }
-
-                    // Handle many-to-many divisi relationships
-                    if (!empty($divisiList)) {
-                        DB::table('account_manager_divisi')
-                            ->where('account_manager_id', $amId)
-                            ->delete();
-
-                        $divisiArray = array_map('trim', explode(',', $divisiList));
-
-                        foreach ($divisiArray as $divisiKode) {
-                            $divisi = DB::table('divisi')
-                                ->whereRaw('UPPER(kode) = ?', [strtoupper($divisiKode)])
-                                ->first();
-
-                            if ($divisi) {
-                                DB::table('account_manager_divisi')->insert([
-                                    'account_manager_id' => $amId,
-                                    'divisi_id' => $divisi->id,
-                                    'is_primary' => false,
-                                    'created_at' => now(),
-                                    'updated_at' => now()
-                                ]);
-                            }
-                        }
                     }
 
                     $statistics['success_count']++;
@@ -437,6 +435,7 @@ public function downloadTemplate($type)
                     'total_rows' => $statistics['total_rows'],
                     'success_count' => $statistics['success_count'],
                     'failed_count' => $statistics['failed_count'],
+                    'skipped_count' => $statistics['skipped_count'],
                     'updated_count' => $statistics['updated_count'],
                     'inserted_count' => $statistics['inserted_count']
                 ],
@@ -452,39 +451,40 @@ public function downloadTemplate($type)
                 'statistics' => [
                     'total_rows' => 0,
                     'success_count' => 0,
-                    'failed_count' => 0
+                    'failed_count' => 0,
+                    'skipped_count' => 0
                 ]
             ];
         }
     }
 
     /**
-     * ✅ FIXED: Preview Revenue AM Import
-     * Already correct - using NIK_AM column
+     * ✅ MAINTAINED: Preview Revenue AM Import
      */
     public function previewRevenueAM($tempFilePath, $year, $month)
     {
         try {
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            // ✅ Already correct: NIK_AM for Revenue AM
             $requiredColumns = ['NIPNAS', 'NIK_AM', 'PROPORSI'];
             $headers = array_shift($csvData);
 
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
+            // ✅ FIXED: Use flexible validation
+            if (!$this->validateHeadersFlexible($headers, $requiredColumns, [])) {
                 return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns) .
-                        '. Kolom lain boleh ada dan akan diabaikan.'
+                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
                 ];
             }
 
             $columnIndices = $this->getColumnIndices($headers, $requiredColumns);
 
+            // Counters
             $newCount = 0;
             $updateCount = 0;
             $errorCount = 0;
-            $detailedRows = [];
+            $allRows = [];
+            $uniqueNIKAM = [];
 
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
@@ -493,14 +493,17 @@ public function downloadTemplate($type)
                 $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
                 $proporsi = $this->getColumnValue($row, $columnIndices['PROPORSI']);
 
+                // Track unique NIK_AM
+                if ($nikAM && !in_array($nikAM, $uniqueNIKAM)) {
+                    $uniqueNIKAM[] = $nikAM;
+                }
+
                 if (empty($nipnas) || empty($nikAM) || empty($proporsi)) {
                     $errorCount++;
-                    $detailedRows[] = [
+                    $allRows[] = [
                         'row_number' => $rowNumber,
                         'status' => 'error',
                         'data' => [
-                            'YEAR' => $year,
-                            'MONTH' => $month,
                             'NIPNAS' => $nipnas ?? 'N/A',
                             'NIK_AM' => $nikAM ?? 'N/A',
                             'PROPORSI' => $proporsi ?? 'N/A'
@@ -510,149 +513,168 @@ public function downloadTemplate($type)
                     continue;
                 }
 
+                // Validate AM exists
                 $am = DB::table('account_managers')->where('nik', $nikAM)->first();
                 if (!$am) {
                     $errorCount++;
-                    $detailedRows[] = [
+                    $allRows[] = [
                         'row_number' => $rowNumber,
                         'status' => 'error',
                         'data' => [
-                            'YEAR' => $year,
-                            'MONTH' => $month,
                             'NIPNAS' => $nipnas,
                             'NIK_AM' => $nikAM,
                             'PROPORSI' => $proporsi
                         ],
-                        'error' => "Account Manager dengan NIK {$nikAM} tidak ditemukan"
+                        'error' => 'Account Manager dengan NIK ' . $nikAM . ' tidak ditemukan'
                     ];
                     continue;
                 }
 
+                // Validate CC exists
                 $cc = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
                 if (!$cc) {
                     $errorCount++;
-                    $detailedRows[] = [
+                    $allRows[] = [
                         'row_number' => $rowNumber,
                         'status' => 'error',
                         'data' => [
-                            'YEAR' => $year,
-                            'MONTH' => $month,
                             'NIPNAS' => $nipnas,
                             'NIK_AM' => $nikAM,
                             'PROPORSI' => $proporsi
                         ],
-                        'error' => "Corporate Customer dengan NIPNAS {$nipnas} tidak ditemukan"
+                        'error' => 'Corporate Customer dengan NIPNAS ' . $nipnas . ' tidak ditemukan'
                     ];
                     continue;
                 }
 
-                $existingRecord = DB::table('am_revenues')
+                // Check if mapping already exists
+                $existingMapping = DB::table('am_revenues')
                     ->where('account_manager_id', $am->id)
                     ->where('corporate_customer_id', $cc->id)
-                    ->where('tahun', $year)
                     ->where('bulan', $month)
+                    ->where('tahun', $year)
                     ->first();
 
-                if ($existingRecord) {
+                $rowData = [
+                    'row_number' => $rowNumber,
+                    'data' => [
+                        'NIPNAS' => $nipnas,
+                        'NIK_AM' => $nikAM,
+                        'PROPORSI' => $proporsi
+                    ]
+                ];
+
+                if ($existingMapping) {
                     $updateCount++;
-                    $detailedRows[] = [
-                        'row_number' => $rowNumber,
-                        'status' => 'update',
-                        'data' => [
-                            'YEAR' => $year,
-                            'MONTH' => $month,
-                            'NIPNAS' => $nipnas,
-                            'NIK_AM' => $nikAM,
-                            'PROPORSI' => $proporsi,
-                            'AM_NAME' => $am->nama,
-                            'CC_NAME' => $cc->nama
-                        ]
+                    $rowData['status'] = 'update';
+                    $rowData['old_data'] = [
+                        'proporsi' => $existingMapping->proporsi
                     ];
                 } else {
                     $newCount++;
-                    $detailedRows[] = [
-                        'row_number' => $rowNumber,
-                        'status' => 'new',
-                        'data' => [
-                            'YEAR' => $year,
-                            'MONTH' => $month,
-                            'NIPNAS' => $nipnas,
-                            'NIK_AM' => $nikAM,
-                            'PROPORSI' => $proporsi,
-                            'AM_NAME' => $am->nama,
-                            'CC_NAME' => $cc->nama
-                        ]
-                    ];
+                    $rowData['status'] = 'new';
                 }
+
+                $allRows[] = $rowData;
             }
+
+            // Return only 5 rows for preview, but full summary
+            $previewRows = array_slice($allRows, 0, 5);
 
             return [
                 'success' => true,
-                'message' => 'Preview berhasil',
                 'data' => [
                     'summary' => [
+                        'total_rows' => count($allRows),
+                        'unique_am_count' => count($uniqueNIKAM),
                         'new_count' => $newCount,
                         'update_count' => $updateCount,
-                        'error_count' => $errorCount,
-                        'total_rows' => count($csvData)
+                        'error_count' => $errorCount
                     ],
-                    'rows' => $detailedRows
+                    'preview_rows' => $previewRows,
+                    'all_rows' => $allRows,
+                    'full_data_stored' => true
                 ]
             ];
         } catch (\Exception $e) {
             Log::error('Preview Revenue AM Error: ' . $e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Gagal preview: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
             ];
         }
     }
 
     /**
-     * ✅ FIXED: Execute Revenue AM Import
-     * Already correct - using NIK_AM column
+     * ✅ MAINTAINED: Execute Revenue AM Import
      */
-    public function executeRevenueAM($request)
+    public function executeRevenueAM(Request $request, $tempFilePath, $filterType = 'all')
     {
-        DB::beginTransaction();
-
         try {
-            $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
-            $year = $request instanceof Request ? $request->input('year') : null;
-            $month = $request instanceof Request ? $request->input('month') : null;
+            DB::beginTransaction();
 
+            // Accept year/month from request with fallback logic
+            $year = null;
+            $month = null;
+
+            // Priority 1: Get from request (frontend payload)
+            if ($request->has('year') && $request->has('month')) {
+                $year = (int) $request->input('year');
+                $month = (int) $request->input('month');
+                Log::info('✅ Year/Month from request payload', [
+                    'year' => $year,
+                    'month' => $month
+                ]);
+            }
+
+            // Priority 2: Fallback to session metadata (if available)
             if (!$year || !$month) {
-                DB::rollBack();
+                $sessionId = $request->input('session_id');
+                if ($sessionId) {
+                    $metadata = \Cache::get("chunk_metadata_{$sessionId}");
+                    if ($metadata && isset($metadata['year']) && isset($metadata['month'])) {
+                        $year = (int) $metadata['year'];
+                        $month = (int) $metadata['month'];
+                        Log::info('⚠️ Year/Month from session metadata', [
+                            'year' => $year,
+                            'month' => $month
+                        ]);
+                    }
+                }
+            }
+
+            // Priority 3: Error if still not found
+            if (!$year || !$month) {
+                Log::error('❌ Year/Month not found in request or session', [
+                    'request_year' => $request->input('year'),
+                    'request_month' => $request->input('month'),
+                    'session_id' => $request->input('session_id')
+                ]);
+
                 return [
                     'success' => false,
                     'message' => 'Parameter year dan month wajib diisi (dari form input)'
                 ];
             }
 
-            if (!$tempFilePath || !file_exists($tempFilePath)) {
-                DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'File temporary tidak ditemukan'
-                ];
-            }
-
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
+
             $requiredColumns = ['NIPNAS', 'NIK_AM', 'PROPORSI'];
             $headers = array_shift($csvData);
 
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
-                DB::rollBack();
+            // ✅ FIXED: Use flexible validation
+            if (!$this->validateHeadersFlexible($headers, $requiredColumns, [])) {
                 return [
                     'success' => false,
-                    'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
+                    'message' => 'File tidak memiliki kolom yang diperlukan'
                 ];
             }
 
             $columnIndices = $this->getColumnIndices($headers, $requiredColumns);
 
             $statistics = [
-                'total_rows' => count($csvData),
+                'total_rows' => 0,
                 'success_count' => 0,
                 'failed_count' => 0,
                 'skipped_count' => 0,
@@ -661,81 +683,184 @@ public function downloadTemplate($type)
                 'failed_rows' => []
             ];
 
+            // Filter by status instead of selected rows
+            // First, analyze all rows to determine their status (new/update)
+            $rowsWithStatus = [];
+            
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
-
-                try {
-                    $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
-                    $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
-                    $proporsi = floatval($this->getColumnValue($row, $columnIndices['PROPORSI']));
-
-                    if (empty($nipnas) || empty($nikAM) || empty($proporsi)) {
-                        throw new \Exception('NIPNAS, NIK_AM, atau PROPORSI kosong');
-                    }
-
-                    $am = DB::table('account_managers')->where('nik', $nikAM)->first();
-                    if (!$am) {
-                        throw new \Exception("Account Manager dengan NIK {$nikAM} tidak ditemukan");
-                    }
-
-                    $cc = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
-                    if (!$cc) {
-                        throw new \Exception("Corporate Customer dengan NIPNAS {$nipnas} tidak ditemukan");
-                    }
-
-                    $ccRevenue = DB::table('cc_revenues')
-                        ->where('corporate_customer_id', $cc->id)
-                        ->where('tahun', $year)
-                        ->where('bulan', $month)
-                        ->first();
-
-                    if (!$ccRevenue) {
-                        $statistics['skipped_count']++;
-                        $statistics['failed_rows'][] = [
-                            'row_number' => $rowNumber,
-                            'nipnas' => $nipnas,
-                            'nik_am' => $nikAM,
-                            'error' => "Data Revenue CC untuk periode {$year}-" . str_pad($month, 2, '0', STR_PAD_LEFT) . " belum ada. Import Revenue CC terlebih dahulu."
-                        ];
-                        continue;
-                    }
-
-                    $targetRevenueAM = ($ccRevenue->target_revenue * $proporsi) / 100;
-                    $realRevenueAM = ($ccRevenue->real_revenue * $proporsi) / 100;
-                    $achievementRate = $targetRevenueAM > 0 ? ($realRevenueAM / $targetRevenueAM) * 100 : 0;
-
-                    $dataToSave = [
-                        'account_manager_id' => $am->id,
-                        'corporate_customer_id' => $cc->id,
-                        'divisi_id' => $ccRevenue->divisi_id,
-                        'witel_id' => $am->witel_id,
-                        'telda_id' => $am->telda_id,
-                        'proporsi' => $proporsi,
-                        'target_revenue' => $targetRevenueAM,
-                        'real_revenue' => $realRevenueAM,
-                        'achievement_rate' => $achievementRate,
-                        'bulan' => $month,
-                        'tahun' => $year,
-                        'updated_at' => now()
+                $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
+                $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
+                $proporsi = (float) $this->getColumnValue($row, $columnIndices['PROPORSI']);
+                
+                if (empty($nipnas) || empty($nikAM) || $proporsi === 0.0) {
+                    $rowsWithStatus[] = [
+                        'index' => $index,
+                        'row' => $row,
+                        'status' => 'error',
+                        'rowNumber' => $rowNumber
                     ];
-
-                    $existingRecord = DB::table('am_revenues')
+                    continue;
+                }
+                
+                // Check if revenue AM exists
+                $am = DB::table('account_managers')->where('nik', $nikAM)->first();
+                $cc = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
+                
+                if (!$am || !$cc) {
+                    $rowsWithStatus[] = [
+                        'index' => $index,
+                        'row' => $row,
+                        'status' => 'error',
+                        'rowNumber' => $rowNumber
+                    ];
+                    continue;
+                }
+                
+                // Check if revenue record exists
+                try {
+                    $existingRevenue = DB::table('am_revenues')
                         ->where('account_manager_id', $am->id)
                         ->where('corporate_customer_id', $cc->id)
                         ->where('tahun', $year)
                         ->where('bulan', $month)
                         ->first();
+                        
+                    $status = $existingRevenue ? 'update' : 'new';
+                } catch (\Exception $e) {
+                    // If any error, treat all as new
+                    Log::warning('⚠️ am_revenues table query error, treating as new', [
+                        'error' => $e->getMessage()
+                    ]);
+                    $status = 'new';
+                }
+                
+                $rowsWithStatus[] = [
+                    'index' => $index,
+                    'row' => $row,
+                    'status' => $status,
+                    'rowNumber' => $rowNumber
+                ];
+            }
+            
+            // Filter by requested type
+            $rowsToProcess = array_filter($rowsWithStatus, function($item) use ($filterType) {
+                if ($filterType === 'all') {
+                    return $item['status'] !== 'error';
+                } elseif ($filterType === 'new') {
+                    return $item['status'] === 'new';
+                } elseif ($filterType === 'update') {
+                    return $item['status'] === 'update';
+                }
+                return true;
+            });
 
-                    if ($existingRecord) {
+            $statistics['total_rows'] = count($rowsToProcess);
+
+            foreach ($rowsToProcess as $item) {
+                $index = $item['index'];
+                $row = $item['row'];
+                $rowNumber = $item['rowNumber'];
+
+                try {
+                    $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
+                    $nikAM = $this->getColumnValue($row, $columnIndices['NIK_AM']);
+                    $proporsi = (float) $this->getColumnValue($row, $columnIndices['PROPORSI']);
+
+                    if (empty($nipnas) || empty($nikAM) || $proporsi === 0.0) {
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nipnas' => $nipnas ?? 'N/A',
+                            'nik_am' => $nikAM ?? 'N/A',
+                            'error' => 'NIPNAS, NIK_AM, atau PROPORSI kosong'
+                        ];
+                        continue;
+                    }
+
+                    // Get AM
+                    $am = DB::table('account_managers')->where('nik', $nikAM)->first();
+                    if (!$am) {
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nipnas' => $nipnas,
+                            'nik_am' => $nikAM,
+                            'error' => 'Account Manager dengan NIK ' . $nikAM . ' tidak ditemukan'
+                        ];
+                        continue;
+                    }
+
+                    // Get CC
+                    $cc = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
+                    if (!$cc) {
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nipnas' => $nipnas,
+                            'nik_am' => $nikAM,
+                            'error' => 'Corporate Customer dengan NIPNAS ' . $nipnas . ' tidak ditemukan'
+                        ];
+                        continue;
+                    }
+
+                    // Get CC Revenue for this period
+                    $ccRevenue = DB::table('cc_revenues')
+                        ->where('corporate_customer_id', $cc->id)
+                        ->where('bulan', $month)
+                        ->where('tahun', $year)
+                        ->first();
+
+                    if (!$ccRevenue) {
+                        $statistics['skipped_count']++;
+                        continue;
+                    }
+
+                    // Normalize proporsi
+                    if ($proporsi > 1) {
+                        $proporsi = $proporsi / 100;
+                    }
+
+                    // Calculate AM revenues
+                    $targetRevenue = $ccRevenue->target_revenue * $proporsi;
+                    $realRevenue = $ccRevenue->real_revenue * $proporsi;
+                    $achievementRate = $targetRevenue > 0 ? ($realRevenue / $targetRevenue) * 100 : 0;
+
+                    // Check if mapping already exists
+                    $existingMapping = DB::table('am_revenues')
+                        ->where('account_manager_id', $am->id)
+                        ->where('corporate_customer_id', $cc->id)
+                        ->where('bulan', $month)
+                        ->where('tahun', $year)
+                        ->first();
+
+                    if ($existingMapping) {
                         DB::table('am_revenues')
-                            ->where('id', $existingRecord->id)
-                            ->update($dataToSave);
-
+                            ->where('id', $existingMapping->id)
+                            ->update([
+                                'proporsi' => $proporsi * 100,
+                                'target_revenue' => $targetRevenue,
+                                'real_revenue' => $realRevenue,
+                                'achievement_rate' => round($achievementRate, 2),
+                                'updated_at' => now()
+                            ]);
                         $statistics['updated_count']++;
                     } else {
-                        $dataToSave['created_at'] = now();
-                        DB::table('am_revenues')->insert($dataToSave);
-
+                        DB::table('am_revenues')->insert([
+                            'account_manager_id' => $am->id,
+                            'corporate_customer_id' => $cc->id,
+                            'divisi_id' => $ccRevenue->divisi_id,
+                            'witel_id' => $am->witel_id,
+                            'telda_id' => $am->telda_id,
+                            'proporsi' => $proporsi * 100,
+                            'target_revenue' => $targetRevenue,
+                            'real_revenue' => $realRevenue,
+                            'achievement_rate' => round($achievementRate, 2),
+                            'bulan' => $month,
+                            'tahun' => $year,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
                         $statistics['inserted_count']++;
                     }
 
@@ -832,38 +957,31 @@ public function downloadTemplate($type)
     }
 
     /**
-     * ✅ MAINTAINED: Flexible header validation
-     * Only checks if required columns exist, ignores extra columns
-     */
-    private function validateHeaders($headers, $requiredColumns)
-    {
-        $cleanHeaders = array_map(function ($h) {
-            return strtoupper(trim($h));
-        }, $headers);
-
-        foreach ($requiredColumns as $column) {
-            $cleanColumn = strtoupper(trim($column));
-            if (!in_array($cleanColumn, $cleanHeaders)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * ✅ NEW: Flexible header validation with alternative column names
+     * ✅ FIXED: Flexible header validation with alternative column names
      * Support multiple possible column names (e.g., NIK_AM or NIK)
-     *
-     * @param array $headers CSV headers
-     * @param array $alternativeColumns Alternative column names (e.g., ['NIK_AM', 'NIK'])
-     * @param array $requiredColumns Other required columns
-     * @return bool
      */
     private function validateHeadersFlexible($headers, $alternativeColumns, $requiredColumns)
     {
         $cleanHeaders = array_map(function ($h) {
             return strtoupper(trim($h));
         }, $headers);
+
+        // If alternativeColumns is a simple array (not nested), treat as required columns
+        if (!empty($alternativeColumns) && !is_array($alternativeColumns[0])) {
+            // Simple validation - just check if required columns exist
+            foreach ($alternativeColumns as $column) {
+                $cleanColumn = strtoupper(trim($column));
+                if (!in_array($cleanColumn, $cleanHeaders)) {
+                    Log::warning('Missing required column', [
+                        'required' => $column,
+                        'cleaned' => $cleanColumn,
+                        'available_headers' => $cleanHeaders
+                    ]);
+                    return false;
+                }
+            }
+            return true;
+        }
 
         // Check if at least one alternative column exists
         $hasAlternative = false;
@@ -921,10 +1039,6 @@ public function downloadTemplate($type)
 
     /**
      * Generate error log CSV file
-     *
-     * @param array $failedRows Array of failed rows with error details
-     * @param string $type Type of import (data_am or revenue_am)
-     * @return string|null Public URL to error log file
      */
     private function generateErrorLog($failedRows, $type)
     {

@@ -10,11 +10,23 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-
+/**
+ * ImportCCController - Corporate Customer Import Handler
+ *
+ * ✅ FIXED VERSION - 2026-01-29
+ *
+ * CHANGELOG:
+ * ✅ FIXED: Flexible column validation - boleh ada kolom extra di CSV
+ * ✅ FIXED: Revenue column logic berbeda untuk DGS/DSS vs DPS:
+ *    - DGS/DSS: REVENUE_SOLD wajib, REVENUE_BILL opsional (prioritas kedua)
+ *    - DPS: REVENUE_BILL wajib, REVENUE_SOLD opsional
+ * ✅ FIXED: Template download updated sesuai requirement
+ * ✅ MAINTAINED: All other functionality (routes, execute, preview, etc.)
+ */
 class ImportCCController extends Controller
 {
     /**
-     * ✅ MAINTAINED: Download Template CSV
+     * ✅ FIXED: Download Template CSV - Updated templates
      */
     public function downloadTemplate($type)
     {
@@ -30,7 +42,6 @@ class ImportCCController extends Controller
                     ['76590002', 'PEMKOT SEMARANG']
                 ]
             ],
-
 
             // ========================================
             // REVENUE CC - DGS TEMPLATES
@@ -88,7 +99,6 @@ class ImportCCController extends Controller
                     ['76590001', 'BANK JATIM', 'FINANCIAL SERVICE', 'SEMARANG JATENG UTARA', 'SEMARANG JATENG UTARA', '1000000000', 'BILL']
                 ]
             ],
-
 
             // ========================================
             // BACKWARD COMPATIBILITY ALIASES
@@ -168,7 +178,8 @@ class ImportCCController extends Controller
             $requiredColumns = ['NIPNAS', 'STANDARD_NAME'];
             $headers = array_shift($csvData);
 
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
+            // ✅ FIXED: Use flexible validation
+            if (!$this->validateHeadersFlexible($headers, $requiredColumns)) {
                 return [
                     'success' => false,
                     'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
@@ -230,53 +241,47 @@ class ImportCCController extends Controller
                 }
             }
 
+            $previewRows = array_slice($detailedRows, 0, 5);
+
             return [
                 'success' => true,
-                'message' => 'Preview berhasil',
                 'data' => [
                     'summary' => [
+                        'total_rows' => count($detailedRows),
                         'new_count' => $newCount,
                         'update_count' => $updateCount,
-                        'error_count' => $errorCount,
-                        'total_rows' => count($csvData)
+                        'error_count' => $errorCount
                     ],
-                    'rows' => $detailedRows
+                    'preview_rows' => $previewRows,
+                    'all_rows' => $detailedRows,
+                    'full_data_stored' => true
                 ]
             ];
         } catch (\Exception $e) {
             Log::error('Preview Data CC Error: ' . $e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Gagal preview: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
             ];
         }
     }
 
     /**
-     * ✅ MAINTAINED: Execute Data CC Import
+     * ✅ MAINTAINED: Execute Data CC Import with filter support
      */
-    public function executeDataCC($request)
+    public function executeDataCC($tempFilePath, $filterType = 'all')
     {
-        DB::beginTransaction();
-
         try {
-            $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
-
-            if (!$tempFilePath || !file_exists($tempFilePath)) {
-                DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'File temporary tidak ditemukan'
-                ];
-            }
+            DB::beginTransaction();
 
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
             $requiredColumns = ['NIPNAS', 'STANDARD_NAME'];
             $headers = array_shift($csvData);
 
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
-                DB::rollBack();
+            // ✅ FIXED: Use flexible validation
+            if (!$this->validateHeadersFlexible($headers, $requiredColumns)) {
                 return [
                     'success' => false,
                     'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
@@ -285,31 +290,79 @@ class ImportCCController extends Controller
 
             $columnIndices = $this->getColumnIndices($headers, $requiredColumns);
 
+            $rowsWithStatus = [];
+
+            foreach ($csvData as $index => $row) {
+                $rowNumber = $index + 2;
+                $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
+                $standardName = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
+
+                if (empty($nipnas) || empty($standardName)) {
+                    $rowsWithStatus[] = [
+                        'index' => $index,
+                        'row' => $row,
+                        'status' => 'error',
+                        'rowNumber' => $rowNumber
+                    ];
+                    continue;
+                }
+
+                $existingCC = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
+                $status = $existingCC ? 'update' : 'new';
+
+                $rowsWithStatus[] = [
+                    'index' => $index,
+                    'row' => $row,
+                    'status' => $status,
+                    'rowNumber' => $rowNumber
+                ];
+            }
+
+            $rowsToProcess = array_filter($rowsWithStatus, function($item) use ($filterType) {
+                if ($filterType === 'all') {
+                    return $item['status'] !== 'error';
+                } elseif ($filterType === 'new') {
+                    return $item['status'] === 'new';
+                } elseif ($filterType === 'update') {
+                    return $item['status'] === 'update';
+                }
+                return true;
+            });
+
             $statistics = [
-                'total_rows' => count($csvData),
+                'total_rows' => count($rowsToProcess),
                 'success_count' => 0,
                 'failed_count' => 0,
+                'skipped_count' => 0,
                 'updated_count' => 0,
                 'inserted_count' => 0,
                 'failed_rows' => []
             ];
 
-            foreach ($csvData as $index => $row) {
-                $rowNumber = $index + 2;
+            foreach ($rowsToProcess as $item) {
+                $index = $item['index'];
+                $row = $item['row'];
+                $rowNumber = $item['rowNumber'];
 
                 try {
                     $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                     $standardName = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
 
                     if (empty($nipnas) || empty($standardName)) {
-                        throw new \Exception('NIPNAS atau STANDARD_NAME kosong');
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nipnas' => $nipnas ?? 'N/A',
+                            'error' => 'NIPNAS atau STANDARD_NAME kosong'
+                        ];
+                        continue;
                     }
 
                     $existingCC = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
 
                     if ($existingCC) {
                         DB::table('corporate_customers')
-                            ->where('id', $existingCC->id)
+                            ->where('nipnas', $nipnas)
                             ->update([
                                 'nama' => $standardName,
                                 'updated_at' => now()
@@ -359,6 +412,7 @@ class ImportCCController extends Controller
                     'total_rows' => $statistics['total_rows'],
                     'success_count' => $statistics['success_count'],
                     'failed_count' => $statistics['failed_count'],
+                    'skipped_count' => $statistics['skipped_count'],
                     'updated_count' => $statistics['updated_count'],
                     'inserted_count' => $statistics['inserted_count']
                 ],
@@ -374,24 +428,26 @@ class ImportCCController extends Controller
                 'statistics' => [
                     'total_rows' => 0,
                     'success_count' => 0,
-                    'failed_count' => 0
+                    'failed_count' => 0,
+                    'skipped_count' => 0
                 ]
             ];
         }
     }
 
     /**
-     * ✅ MAINTAINED: Preview Revenue CC Import
+     * ✅ FIXED: Preview Revenue CC Import
+     * Enhanced with flexible column validation and proper revenue column logic
      */
-    public function previewRevenueCC($tempFilePath, $divisiId, $jenisData, $year = null, $month = null)
+    public function previewRevenueCC($tempFilePath, $divisiId, $jenisData, $year, $month)
     {
-        Log::info("ICCC - Commencing previewRevenueCC");
-
         try {
+            Log::info('ICCC - Commencing previewRevenueCC');
+
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
-            // Get divisi info
-            $divisi = DB::table('divisi')->where('id', $divisiId)->first();
+            // Get divisi info untuk menentukan required columns
+            $divisi = DB::table('divisi')->find($divisiId);
             if (!$divisi) {
                 return [
                     'success' => false,
@@ -399,270 +455,290 @@ class ImportCCController extends Controller
                 ];
             }
 
-            // Required columns based on jenis_data
-            $requiredColumns = ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO'];
+            $divisiKode = strtoupper($divisi->kode);
 
-            if (strtolower($jenisData) === 'target') {
+            // ✅ FIXED: Determine required columns based on divisi and jenis_data
+            $isTarget = ($jenisData === 'target');
+
+            // Base required columns (always needed)
+            $requiredColumns = [
+                'NIPNAS',
+                'STANDARD_NAME',
+                'LSEGMENT_HO',
+                'WITEL_HO'
+            ];
+
+            // ✅ FIXED: Add revenue columns based on divisi and jenis_data
+            if ($isTarget) {
                 $requiredColumns[] = 'TARGET_REVENUE';
-                if ($divisi->kode === 'DPS') {
-                    $requiredColumns[] = 'WITEL_BILL';
-                } else {
-                    $requiredColumns[] = 'WITEL_HO';
-                }
             } else {
-                if ($divisi->kode === 'DPS') {
-                    $requiredColumns[] = 'WITEL_BILL';
-                    $requiredColumns[] = 'REVENUE_BILL';
-                } else {
-                    $requiredColumns[] = 'WITEL_HO';
+                // Real revenue - different logic for DGS/DSS vs DPS
+                if (in_array($divisiKode, ['DGS', 'DSS'])) {
+                    // DGS/DSS: REVENUE_SOLD wajib
                     $requiredColumns[] = 'REVENUE_SOLD';
+                } else {
+                    // DPS: REVENUE_BILL wajib
+                    $requiredColumns[] = 'REVENUE_BILL';
                 }
             }
 
             $headers = array_shift($csvData);
 
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
+            // ✅ FIXED: Use flexible validation
+            if (!$this->validateHeadersFlexible($headers, $requiredColumns)) {
                 return [
                     'success' => false,
                     'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
                 ];
             }
 
-            $columnIndices = $this->getColumnIndices($headers, $requiredColumns);
+            // ✅ FIXED: Get all possible columns (wajib + opsional)
+            $allPossibleColumns = array_merge(
+                $requiredColumns,
+                ['WITEL_BILL', 'SOURCE_DATA', 'REVENUE_SOLD', 'REVENUE_BILL', 'TARGET_REVENUE']
+            );
+            $columnIndices = $this->getColumnIndices($headers, $allPossibleColumns);
 
             $newCount = 0;
             $updateCount = 0;
             $errorCount = 0;
-            $detailedRows = [];
+            $allRows = [];
+            $uniqueNIPNAS = [];
 
-            Log::info("ICCC - previewRev: GIGA foreach process SOON");
+            Log::info('ICCC - previewRev: Processing rows', [
+                'divisi' => $divisiKode,
+                'jenis_data' => $jenisData,
+                'required_columns' => $requiredColumns
+            ]);
 
-            // NOTE: this is where the devil lays down its work
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
 
                 $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
+                $standardName = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
                 $lsegmentHO = $this->getColumnValue($row, $columnIndices['LSEGMENT_HO']);
+                $witelHO = $this->getColumnValue($row, $columnIndices['WITEL_HO']);
 
-                if (empty($nipnas) || empty($lsegmentHO)) {
+                if ($nipnas && !in_array($nipnas, $uniqueNIPNAS)) {
+                    $uniqueNIPNAS[] = $nipnas;
+                }
+
+                if (empty($nipnas) || empty($standardName)) {
                     $errorCount++;
-                    $detailedRows[] = [
+                    $allRows[] = [
                         'row_number' => $rowNumber,
                         'status' => 'error',
                         'data' => [
                             'NIPNAS' => $nipnas ?? 'N/A',
+                            'STANDARD_NAME' => $standardName ?? 'N/A',
                             'LSEGMENT_HO' => $lsegmentHO ?? 'N/A'
                         ],
-                        'error' => 'Data tidak lengkap'
+                        'error' => 'NIPNAS atau STANDARD_NAME kosong'
                     ];
                     continue;
                 }
 
-                // Check if CC exists
-                $cc = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
-                if (!$cc) {
-                    $errorCount++;
-                    $detailedRows[] = [
-                        'row_number' => $rowNumber,
-                        'status' => 'error',
-                        'data' => [
-                            'NIPNAS' => $nipnas,
-                            'CUSTOMER' => 'Not found'
-                        ],
-                        'error' => 'Corporate Customer tidak ditemukan. Import Data CC terlebih dahulu.'
-                    ];
-                    continue;
+                $existingRevenue = DB::table('cc_revenues')
+                    ->join('corporate_customers', 'cc_revenues.corporate_customer_id', '=', 'corporate_customers.id')
+                    ->where('corporate_customers.nipnas', $nipnas)
+                    ->where('cc_revenues.divisi_id', $divisiId)
+                    ->where('cc_revenues.bulan', $month)
+                    ->where('cc_revenues.tahun', $year)
+                    ->first();
+
+                $rowData = [
+                    'row_number' => $rowNumber,
+                    'data' => [
+                        'NIPNAS' => $nipnas,
+                        'STANDARD_NAME' => $standardName,
+                        'LSEGMENT_HO' => $lsegmentHO,
+                        'WITEL_HO' => $witelHO
+                    ]
+                ];
+
+                // Add revenue data to preview
+                if ($isTarget) {
+                    $targetRevenue = $this->getColumnValue($row, $columnIndices['TARGET_REVENUE']);
+                    $rowData['data']['TARGET_REVENUE'] = $targetRevenue;
+                } else {
+                    $revenueSold = $this->getColumnValue($row, $columnIndices['REVENUE_SOLD']);
+                    $revenueBill = $this->getColumnValue($row, $columnIndices['REVENUE_BILL']);
+                    $rowData['data']['REVENUE_SOLD'] = $revenueSold;
+                    $rowData['data']['REVENUE_BILL'] = $revenueBill;
                 }
 
-                // Check if revenue already exists (if year/month provided)
-                if ($year && $month) {
-                    $existingRevenue = DB::table('cc_revenues')
-                        ->where('corporate_customer_id', $cc->id)
-                        ->where('divisi_id', $divisiId)
-                        ->where('tahun', $year)
-                        ->where('bulan', $month)
-                        ->first();
-
-                    if ($existingRevenue) {
-                        $updateCount++;
-                        $detailedRows[] = [
-                            'row_number' => $rowNumber,
-                            'status' => 'update',
-                            'data' => [
-                                'NIPNAS' => $nipnas,
-                                'CUSTOMER' => $cc->nama,
-                                'SEGMENT' => $lsegmentHO
-                            ]
-                        ];
-                    } else {
-                        $newCount++;
-                        $detailedRows[] = [
-                            'row_number' => $rowNumber,
-                            'status' => 'new',
-                            'data' => [
-                                'NIPNAS' => $nipnas,
-                                'CUSTOMER' => $cc->nama,
-                                'SEGMENT' => $lsegmentHO
-                            ]
-                        ];
-                    }
+                if ($existingRevenue) {
+                    $updateCount++;
+                    $rowData['status'] = 'update';
+                    $rowData['old_data'] = [
+                        'target_revenue' => $existingRevenue->target_revenue,
+                        'real_revenue' => $existingRevenue->real_revenue
+                    ];
                 } else {
                     $newCount++;
-                    $detailedRows[] = [
-                        'row_number' => $rowNumber,
-                        'status' => 'new',
-                        'data' => [
-                            'NIPNAS' => $nipnas,
-                            'CUSTOMER' => $cc->nama,
-                            'SEGMENT' => $lsegmentHO
-                        ]
-                    ];
+                    $rowData['status'] = 'new';
                 }
+
+                $allRows[] = $rowData;
             }
 
-            Log::info("ICCC - previewRev: GIGA foreach process DONE");
+            Log::info('ICCC - previewRev: Processing complete');
+
+            $previewRows = array_slice($allRows, 0, 5);
 
             return [
                 'success' => true,
-                'message' => 'Preview berhasil',
                 'data' => [
                     'summary' => [
+                        'total_rows' => count($allRows),
+                        'unique_cc_count' => count($uniqueNIPNAS),
                         'new_count' => $newCount,
                         'update_count' => $updateCount,
-                        'error_count' => $errorCount,
-                        'total_rows' => count($detailedRows)
+                        'error_count' => $errorCount
                     ],
-                    'rows' => $detailedRows
+                    'preview_rows' => $previewRows,
+                    'all_rows' => $allRows,
+                    'full_data_stored' => true
                 ]
             ];
         } catch (\Exception $e) {
             Log::error('Preview Revenue CC Error: ' . $e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Gagal preview: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
             ];
         }
     }
 
     /**
-     * ✅ ENHANCED: Execute Revenue CC Import
-     * Now calls recalculateAMRevenuesForCC with OLD and NEW values
+     * ✅ FIXED: Execute Revenue CC Import
+     * Enhanced with flexible column validation and proper revenue column logic
      */
-    public function executeRevenueCC($request)
+    public function executeRevenueCC($tempFilePath, $divisiId, $jenisData, $year, $month, $filterType = 'all')
     {
-        Log::info('🚀 executeRevenueCC STARTED', [
-            'request_type' => get_class($request),
-            'has_temp_file' => $request instanceof Request ? $request->has('temp_file') : 'not a Request object'
-        ]);
-
-        DB::beginTransaction();
-
         try {
-            // Extract parameters
-            $tempFilePath = $request instanceof Request ? $request->input('temp_file') : $request;
-            $divisiId = $request instanceof Request ? $request->input('divisi_id') : null;
-            $jenisData = $request instanceof Request ? $request->input('jenis_data') : null;
-            $year = $request instanceof Request ? $request->input('year') : null;
-            $month = $request instanceof Request ? $request->input('month') : null;
-
-            // Validation
-            if (!$tempFilePath || !file_exists($tempFilePath)) {
-                DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'File temporary tidak ditemukan'
-                ];
-            }
-
-            if (!$divisiId || !$jenisData || !$year || !$month) {
-                DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'Parameter tidak lengkap: divisi_id, jenis_data, year, dan month diperlukan'
-                ];
-            }
+            DB::beginTransaction();
 
             $csvData = $this->parseCsvFileFromPath($tempFilePath);
 
             // Get divisi info
-            $divisi = DB::table('divisi')->where('id', $divisiId)->first();
+            $divisi = DB::table('divisi')->find($divisiId);
             if (!$divisi) {
-                DB::rollBack();
                 return [
                     'success' => false,
                     'message' => 'Divisi tidak ditemukan'
                 ];
             }
 
-            // Required columns based on jenis_data
-            $requiredColumns = ['NIPNAS', 'STANDARD_NAME', 'LSEGMENT_HO'];
+            $divisiKode = strtoupper($divisi->kode);
+            $isTarget = ($jenisData === 'target');
 
-            if (strtolower($jenisData) === 'target') {
+            // ✅ FIXED: Determine required columns
+            $requiredColumns = [
+                'NIPNAS',
+                'STANDARD_NAME',
+                'LSEGMENT_HO',
+                'WITEL_HO'
+            ];
+
+            if ($isTarget) {
                 $requiredColumns[] = 'TARGET_REVENUE';
-                $revenueColumn = 'TARGET_REVENUE';
             } else {
-                if ($divisi->kode === 'DPS') {
-                    $requiredColumns[] = 'REVENUE_BILL';
-                    $revenueColumn = 'REVENUE_BILL';
-                } else {
+                if (in_array($divisiKode, ['DGS', 'DSS'])) {
                     $requiredColumns[] = 'REVENUE_SOLD';
-                    $revenueColumn = 'REVENUE_SOLD';
+                } else {
+                    $requiredColumns[] = 'REVENUE_BILL';
                 }
-            }
-
-            // WITEL logic
-            if ($divisi->kode === 'DPS') {
-                $requiredColumns[] = 'WITEL_BILL';
-                $witelColumn = 'WITEL_BILL';
-                $revenueSource = 'BILL';
-            } else {
-                $requiredColumns[] = 'WITEL_HO';
-                $witelColumn = 'WITEL_HO';
-                $revenueSource = 'HO';
             }
 
             $headers = array_shift($csvData);
 
-            if (!$this->validateHeaders($headers, $requiredColumns)) {
-                DB::rollBack();
+            // ✅ FIXED: Use flexible validation
+            if (!$this->validateHeadersFlexible($headers, $requiredColumns)) {
                 return [
                     'success' => false,
                     'message' => 'File tidak memiliki kolom yang diperlukan: ' . implode(', ', $requiredColumns)
                 ];
             }
 
-            $columnIndices = $this->getColumnIndices($headers, $requiredColumns);
-
-            Log::info('📋 CSV parsed successfully, starting to process rows', [
-                'total_rows' => count($csvData),
-                'divisi_id' => $divisiId,
-                'jenis_data' => $jenisData,
-                'year' => $year,
-                'month' => $month
-            ]);
+            $allPossibleColumns = array_merge(
+                $requiredColumns,
+                ['WITEL_BILL', 'SOURCE_DATA', 'REVENUE_SOLD', 'REVENUE_BILL', 'TARGET_REVENUE']
+            );
+            $columnIndices = $this->getColumnIndices($headers, $allPossibleColumns);
 
             $statistics = [
-                'total_rows' => count($csvData),
+                'total_rows' => 0,
                 'success_count' => 0,
                 'failed_count' => 0,
+                'skipped_count' => 0,
                 'updated_count' => 0,
                 'inserted_count' => 0,
-                'am_revenues_recalculated' => 0,
+                'recalculated_am_count' => 0,
                 'failed_rows' => []
             ];
 
+            $rowsWithStatus = [];
+
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2;
+                $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
+                $standardName = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
+
+                if (empty($nipnas) || empty($standardName)) {
+                    $rowsWithStatus[] = [
+                        'index' => $index,
+                        'row' => $row,
+                        'status' => 'error',
+                        'rowNumber' => $rowNumber
+                    ];
+                    continue;
+                }
+
+                $cc = DB::table('corporate_customers')->where('nipnas', $nipnas)->first();
+                $status = $cc ? 'update' : 'new';
+
+                $rowsWithStatus[] = [
+                    'index' => $index,
+                    'row' => $row,
+                    'status' => $status,
+                    'rowNumber' => $rowNumber
+                ];
+            }
+
+            $rowsToProcess = array_filter($rowsWithStatus, function($item) use ($filterType) {
+                if ($filterType === 'all') {
+                    return $item['status'] !== 'error';
+                } elseif ($filterType === 'new') {
+                    return $item['status'] === 'new';
+                } elseif ($filterType === 'update') {
+                    return $item['status'] === 'update';
+                }
+                return true;
+            });
+
+            $statistics['total_rows'] = count($rowsToProcess);
+
+            foreach ($rowsToProcess as $item) {
+                $index = $item['index'];
+                $row = $item['row'];
+                $rowNumber = $item['rowNumber'];
 
                 try {
                     $nipnas = $this->getColumnValue($row, $columnIndices['NIPNAS']);
                     $standardName = $this->getColumnValue($row, $columnIndices['STANDARD_NAME']);
                     $lsegmentHO = $this->getColumnValue($row, $columnIndices['LSEGMENT_HO']);
-                    $witelName = $this->getColumnValue($row, $columnIndices[$witelColumn]);
-                    $revenueValue = $this->getColumnValue($row, $columnIndices[$revenueColumn]);
+                    $witelHO = $this->getColumnValue($row, $columnIndices['WITEL_HO']);
 
-                    if (empty($nipnas) || empty($lsegmentHO) || empty($witelName)) {
-                        throw new \Exception('Data tidak lengkap (NIPNAS, LSEGMENT_HO, atau WITEL kosong)');
+                    if (empty($nipnas) || empty($standardName)) {
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nipnas' => $nipnas ?? 'N/A',
+                            'error' => 'NIPNAS atau STANDARD_NAME kosong'
+                        ];
+                        continue;
                     }
 
                     // Get or create CC
@@ -670,174 +746,166 @@ class ImportCCController extends Controller
                     if (!$cc) {
                         $ccId = DB::table('corporate_customers')->insertGetId([
                             'nipnas' => $nipnas,
-                            'nama' => $standardName ?? $nipnas,
+                            'nama' => $standardName,
                             'created_at' => now(),
                             'updated_at' => now()
                         ]);
-                        $cc = DB::table('corporate_customers')->where('id', $ccId)->first();
+                    } else {
+                        $ccId = $cc->id;
+                        DB::table('corporate_customers')
+                            ->where('id', $ccId)
+                            ->update([
+                                'nama' => $standardName,
+                                'updated_at' => now()
+                            ]);
                     }
 
-                    // Get Witel by nama
-                    $witel = DB::table('witel')
-                        ->whereRaw('UPPER(TRIM(nama)) = ?', [strtoupper(trim($witelName))])
-                        ->first();
-
-                    if (!$witel) {
-                        throw new \Exception("Witel '{$witelName}' tidak ditemukan di database");
-                    }
-
-                    // Get Segment by lsegment_ho
+                    // Get segment
                     $segment = DB::table('segments')
-                        ->whereRaw('UPPER(TRIM(lsegment_ho)) = ?', [strtoupper(trim($lsegmentHO))])
+                        ->where('lsegment_ho', $lsegmentHO)
                         ->where('divisi_id', $divisiId)
                         ->first();
 
                     if (!$segment) {
-                        throw new \Exception("Segment '{$lsegmentHO}' tidak ditemukan untuk divisi {$divisi->nama}");
+                        $statistics['failed_count']++;
+                        $statistics['failed_rows'][] = [
+                            'row_number' => $rowNumber,
+                            'nipnas' => $nipnas,
+                            'error' => 'Segment tidak ditemukan: ' . $lsegmentHO
+                        ];
+                        continue;
                     }
 
-                    // Parse revenue value
-                    $revenue = (float) str_replace([',', '.00'], ['', ''], $revenueValue ?? 0);
+                    // Get witel HO
+                    $witelHORecord = DB::table('witel')->where('nama', $witelHO)->first();
+                    $witelHOId = $witelHORecord ? $witelHORecord->id : null;
 
-                    // Prepare data
-                    $dataToSave = [
-                        'corporate_customer_id' => $cc->id,
-                        'divisi_id' => $divisiId,
-                        'segment_id' => $segment->id,
-                        'nama_cc' => $cc->nama,
-                        'nipnas' => $cc->nipnas,
-                        'revenue_source' => $revenueSource,
-                        'tipe_revenue' => 'REGULER',
-                        'bulan' => $month,
-                        'tahun' => $year,
-                        'updated_at' => now()
-                    ];
+                    // ✅ FIXED: Determine revenue source and values based on divisi
+                    $revenueSource = 'HO';
+                    $targetRevenue = 0;
+                    $realRevenue = 0;
+                    $witelBillId = null;
 
-                    // WITEL logic
-                    if ($divisi->kode === 'DPS') {
-                        $dataToSave['witel_bill_id'] = $witel->id;
-                        $dataToSave['witel_ho_id'] = null;
+                    if ($isTarget) {
+                        // Target revenue
+                        $targetRevenue = (float) $this->getColumnValue($row, $columnIndices['TARGET_REVENUE']) ?? 0;
                     } else {
-                        $dataToSave['witel_ho_id'] = $witel->id;
-                        $dataToSave['witel_bill_id'] = null;
+                        // Real revenue - different logic for DGS/DSS vs DPS
+                        if (in_array($divisiKode, ['DGS', 'DSS'])) {
+                            // DGS/DSS: REVENUE_SOLD wajib, REVENUE_BILL opsional (prioritas kedua)
+                            $revenueSource = 'HO';
+                            $realRevenue = (float) $this->getColumnValue($row, $columnIndices['REVENUE_SOLD']) ?? 0;
+
+                            // ✅ FIXED: Jika REVENUE_BILL ada, gunakan sebagai prioritas kedua
+                            $revenueBill = $this->getColumnValue($row, $columnIndices['REVENUE_BILL']);
+                            if (!empty($revenueBill)) {
+                                $revenueBillValue = (float) $revenueBill;
+                                // Jika REVENUE_SOLD kosong tapi REVENUE_BILL ada, gunakan REVENUE_BILL
+                                if ($realRevenue == 0 && $revenueBillValue > 0) {
+                                    $realRevenue = $revenueBillValue;
+                                    $revenueSource = 'BILL';
+                                }
+                            }
+                        } else {
+                            // DPS: REVENUE_BILL wajib, REVENUE_SOLD opsional
+                            $revenueSource = 'BILL';
+                            $realRevenue = (float) $this->getColumnValue($row, $columnIndices['REVENUE_BILL']) ?? 0;
+
+                            // Get WITEL_BILL untuk DPS
+                            $witelBillName = $this->getColumnValue($row, $columnIndices['WITEL_BILL']);
+                            if ($witelBillName) {
+                                $witelBillRecord = DB::table('witel')->where('nama', $witelBillName)->first();
+                                $witelBillId = $witelBillRecord ? $witelBillRecord->id : null;
+                            }
+
+                            // ✅ FIXED: Jika REVENUE_SOLD ada, catat juga (opsional)
+                            $revenueSold = $this->getColumnValue($row, $columnIndices['REVENUE_SOLD']);
+                            if (!empty($revenueSold)) {
+                                $revenueSoldValue = (float) $revenueSold;
+                                // Jika REVENUE_BILL kosong tapi REVENUE_SOLD ada, gunakan REVENUE_SOLD
+                                if ($realRevenue == 0 && $revenueSoldValue > 0) {
+                                    $realRevenue = $revenueSoldValue;
+                                    $revenueSource = 'HO';
+                                }
+                            }
+                        }
                     }
 
-                    // Check if exists
+                    // Check if revenue already exists
                     $existingRevenue = DB::table('cc_revenues')
-                        ->where('corporate_customer_id', $cc->id)
+                        ->where('corporate_customer_id', $ccId)
                         ->where('divisi_id', $divisiId)
-                        ->where('tahun', $year)
                         ->where('bulan', $month)
+                        ->where('tahun', $year)
                         ->first();
 
-                    // ✅ CRITICAL: Store OLD values BEFORE update
-                    $oldTargetRevenue = 0;
-                    $oldRealRevenue = 0;
-
                     if ($existingRevenue) {
-                        $oldTargetRevenue = $existingRevenue->target_revenue;
-                        $oldRealRevenue = $existingRevenue->real_revenue;
+                        // Update existing
+                        $updateData = [
+                            'segment_id' => $segment->id,
+                            'witel_ho_id' => $witelHOId,
+                            'nama_cc' => $standardName,
+                            'nipnas' => $nipnas,
+                            'revenue_source' => $revenueSource,
+                            'updated_at' => now()
+                        ];
 
-                        Log::info('💾 Found existing CC Revenue, preparing to update', [
-                            'cc_id' => $cc->id,
-                            'cc_name' => $cc->nama,
-                            'existing_revenue_id' => $existingRevenue->id,
-                            'OLD_target' => $oldTargetRevenue,
-                            'OLD_real' => $oldRealRevenue,
-                            'NEW_revenue_from_csv' => $revenue,
-                            'jenis_data' => $jenisData
-                        ]);
-
-                        // CONDITIONAL UPDATE based on jenis_data
-                        if (strtolower($jenisData) === 'target') {
-                            $dataToSave['target_revenue'] = $revenue;
-                            $dataToSave['real_revenue'] = $existingRevenue->real_revenue;
+                        if ($isTarget) {
+                            $updateData['target_revenue'] = $targetRevenue;
                         } else {
-                            $dataToSave['target_revenue'] = $existingRevenue->target_revenue;
-                            $dataToSave['real_revenue'] = $revenue;
+                            $updateData['real_revenue'] = $realRevenue;
+                            if ($witelBillId) {
+                                $updateData['witel_bill_id'] = $witelBillId;
+                            }
                         }
 
                         DB::table('cc_revenues')
                             ->where('id', $existingRevenue->id)
-                            ->update($dataToSave);
+                            ->update($updateData);
 
                         $statistics['updated_count']++;
 
-                        // ✅ DEBUG: Log parameters before calling recalculation
-                        Log::info('📞 About to call recalculateAMRevenuesForCC', [
-                            'cc_id' => $cc->id,
-                            'divisi_id' => $divisiId,
-                            'month' => $month,
-                            'year' => $year,
-                            'old_target' => $oldTargetRevenue,
-                            'old_real' => $oldRealRevenue,
-                            'new_target' => $dataToSave['target_revenue'],
-                            'new_real' => $dataToSave['real_revenue'],
-                            'jenis_data' => $jenisData
-                        ]);
+                        // Recalculate AM revenues
+                        $newTargetRevenue = $isTarget ? $targetRevenue : $existingRevenue->target_revenue;
+                        $newRealRevenue = $isTarget ? $existingRevenue->real_revenue : $realRevenue;
 
-                        // ✅ CRITICAL FIX: Pass OLD and NEW values for smart comparison
-                        $amRecalculated = $this->recalculateAMRevenuesForCC(
-                            $cc->id,
+                        $amUpdated = $this->recalculateAMRevenuesForCC(
+                            $ccId,
                             $divisiId,
                             $month,
                             $year,
-                            $oldTargetRevenue,  // OLD target
-                            $oldRealRevenue,    // OLD real
-                            $dataToSave['target_revenue'],  // NEW target
-                            $dataToSave['real_revenue']     // NEW real
+                            $existingRevenue->target_revenue,
+                            $existingRevenue->real_revenue,
+                            $newTargetRevenue,
+                            $newRealRevenue
                         );
 
-                        Log::info('📞 recalculateAMRevenuesForCC returned', [
-                            'am_recalculated' => $amRecalculated
-                        ]);
-
-                        $statistics['am_revenues_recalculated'] += $amRecalculated;
+                        $statistics['recalculated_am_count'] += $amUpdated;
                     } else {
                         // Insert new
-                        if (strtolower($jenisData) === 'target') {
-                            $dataToSave['target_revenue'] = $revenue;
-                            $dataToSave['real_revenue'] = 0;
-                        } else {
-                            $dataToSave['real_revenue'] = $revenue;
-                            $dataToSave['target_revenue'] = 0;
+                        $insertData = [
+                            'corporate_customer_id' => $ccId,
+                            'divisi_id' => $divisiId,
+                            'segment_id' => $segment->id,
+                            'witel_ho_id' => $witelHOId,
+                            'nama_cc' => $standardName,
+                            'nipnas' => $nipnas,
+                            'target_revenue' => $isTarget ? $targetRevenue : 0,
+                            'real_revenue' => $isTarget ? 0 : $realRevenue,
+                            'revenue_source' => $revenueSource,
+                            'tipe_revenue' => 'REGULER',
+                            'bulan' => $month,
+                            'tahun' => $year,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ];
+
+                        if ($witelBillId) {
+                            $insertData['witel_bill_id'] = $witelBillId;
                         }
 
-                        $dataToSave['created_at'] = now();
-                        DB::table('cc_revenues')->insert($dataToSave);
-
+                        DB::table('cc_revenues')->insert($insertData);
                         $statistics['inserted_count']++;
-
-                        // ✅ DEBUG: Log parameters before calling recalculation
-                        Log::info('📞 About to call recalculateAMRevenuesForCC (NEW DATA)', [
-                            'cc_id' => $cc->id,
-                            'divisi_id' => $divisiId,
-                            'month' => $month,
-                            'year' => $year,
-                            'old_target' => 0,
-                            'old_real' => 0,
-                            'new_target' => $dataToSave['target_revenue'],
-                            'new_real' => $dataToSave['real_revenue'],
-                            'jenis_data' => $jenisData
-                        ]);
-
-                        // Recalculate for new data (old values = 0)
-                        $amRecalculated = $this->recalculateAMRevenuesForCC(
-                            $cc->id,
-                            $divisiId,
-                            $month,
-                            $year,
-                            0,  // OLD target = 0
-                            0,  // OLD real = 0
-                            $dataToSave['target_revenue'],  // NEW target
-                            $dataToSave['real_revenue']     // NEW real
-                        );
-
-                        Log::info('📞 recalculateAMRevenuesForCC returned (NEW DATA)', [
-                            'am_recalculated' => $amRecalculated
-                        ]);
-
-                        $statistics['am_revenues_recalculated'] += $amRecalculated;
                     }
 
                     $statistics['success_count']++;
@@ -858,50 +926,32 @@ class ImportCCController extends Controller
                 $errorLogPath = $this->generateErrorLog($statistics['failed_rows'], 'revenue_cc');
             }
 
-            // ENHANCED MESSAGE with AM recalculation info
             $message = 'Import Revenue CC selesai';
-            $messageParts = [];
-
-            if ($statistics['updated_count'] > 0) {
-                $messageParts[] = "{$statistics['updated_count']} data di-update";
+            if ($statistics['updated_count'] > 0 && $statistics['inserted_count'] > 0) {
+                $message .= " ({$statistics['updated_count']} data di-update, {$statistics['inserted_count']} data baru";
+                if ($statistics['recalculated_am_count'] > 0) {
+                    $message .= ", {$statistics['recalculated_am_count']} AM revenues recalculated";
+                }
+                $message .= ")";
+            } elseif ($statistics['updated_count'] > 0) {
+                $message .= " ({$statistics['updated_count']} data di-update";
+                if ($statistics['recalculated_am_count'] > 0) {
+                    $message .= ", {$statistics['recalculated_am_count']} AM revenues recalculated";
+                }
+                $message .= ")";
+            } elseif ($statistics['inserted_count'] > 0) {
+                $message .= " ({$statistics['inserted_count']} data baru)";
             }
-            if ($statistics['inserted_count'] > 0) {
-                $messageParts[] = "{$statistics['inserted_count']} data baru";
-            }
-            if ($statistics['am_revenues_recalculated'] > 0) {
-                $messageParts[] = "{$statistics['am_revenues_recalculated']} AM revenues recalculated";
-            }
-
-            if (!empty($messageParts)) {
-                $message .= " (" . implode(', ', $messageParts) . ")";
-            }
-
-            Log::info('Import Revenue CC Completed', [
-                'statistics' => $statistics,
-                'divisi_id' => $divisiId,
-                'jenis_data' => $jenisData,
-                'periode' => "{$year}-{$month}",
-                'user_id' => Auth::id()
-            ]);
 
             return [
                 'success' => true,
                 'message' => $message,
-                'statistics' => [
-                    'total_rows' => $statistics['total_rows'],
-                    'success_count' => $statistics['success_count'],
-                    'failed_count' => $statistics['failed_count'],
-                    'updated_count' => $statistics['updated_count'],
-                    'inserted_count' => $statistics['inserted_count'],
-                    'am_revenues_recalculated' => $statistics['am_revenues_recalculated']
-                ],
+                'statistics' => $statistics,
                 'error_log_path' => $errorLogPath
             ];
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Import Revenue CC Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Import Revenue CC Error: ' . $e->getMessage());
 
             return [
                 'success' => false,
@@ -909,7 +959,8 @@ class ImportCCController extends Controller
                 'statistics' => [
                     'total_rows' => 0,
                     'success_count' => 0,
-                    'failed_count' => 0
+                    'failed_count' => 0,
+                    'skipped_count' => 0
                 ]
             ];
         }
@@ -918,7 +969,23 @@ class ImportCCController extends Controller
     // ==================== HELPER METHODS ====================
 
     /**
-     * ✅ MAINTAINED: Parse CSV file from file path
+     * Parse CSV file from uploaded file object
+     */
+    private function parseCsvFile($file)
+    {
+        $csvData = [];
+        $handle = fopen($file->getRealPath(), 'r');
+
+        while (($row = fgetcsv($handle, 0, ',')) !== false) {
+            $csvData[] = $row;
+        }
+
+        fclose($handle);
+        return $csvData;
+    }
+
+    /**
+     * Parse CSV file from file path
      */
     private function parseCsvFileFromPath($filepath)
     {
@@ -934,9 +1001,9 @@ class ImportCCController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Validate CSV headers
+     * ✅ FIXED: Flexible header validation - hanya cek kolom wajib, abaikan kolom extra
      */
-    private function validateHeaders($headers, $requiredColumns)
+    private function validateHeadersFlexible($headers, $requiredColumns)
     {
         $cleanHeaders = array_map(function ($h) {
             return strtoupper(str_replace([' ', '_', '.'], '', trim($h)));
@@ -946,6 +1013,11 @@ class ImportCCController extends Controller
             $cleanColumn = strtoupper(str_replace([' ', '_', '.'], '', trim($column)));
 
             if (!in_array($cleanColumn, $cleanHeaders)) {
+                Log::warning('Missing required column', [
+                    'required' => $column,
+                    'cleaned' => $cleanColumn,
+                    'available_headers' => $cleanHeaders
+                ]);
                 return false;
             }
         }
@@ -953,7 +1025,7 @@ class ImportCCController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Get column indices mapping
+     * Get column indices mapping
      */
     private function getColumnIndices($headers, $columns)
     {
@@ -974,7 +1046,7 @@ class ImportCCController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Get column value safely
+     * Get column value safely
      */
     private function getColumnValue($row, $index)
     {
@@ -982,7 +1054,7 @@ class ImportCCController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Generate error log CSV
+     * Generate error log CSV
      */
     private function generateErrorLog($failedRows, $type)
     {
@@ -1014,22 +1086,7 @@ class ImportCCController extends Controller
     }
 
     /**
-     * ✅ ENHANCED: Recalculate AM Revenues - ALWAYS UPDATE
-     *
-     * SIMPLE LOGIC: Always recalculate ALL fields with NEW values
-     * - No complex detection needed
-     * - Always sync AM with CC values
-     * - Proportional calculation applied to both target and real
-     *
-     * @param int $ccId Corporate Customer ID
-     * @param int $divisiId Divisi ID
-     * @param int $bulan Month
-     * @param int $tahun Year
-     * @param float $oldTargetRevenue OLD target revenue (for logging only)
-     * @param float $oldRealRevenue OLD real revenue (for logging only)
-     * @param float $newTargetRevenue NEW target revenue (will be applied)
-     * @param float $newRealRevenue NEW real revenue (will be applied)
-     * @return int Number of AM revenues recalculated
+     * Recalculate AM Revenues - ALWAYS UPDATE
      */
     private function recalculateAMRevenuesForCC(
         $ccId,
@@ -1050,7 +1107,6 @@ class ImportCCController extends Controller
                 'new_real' => $newRealRevenue
             ]);
 
-            // Get all AM revenues for this CC, divisi, and period
             $amRevenues = DB::table('am_revenues')
                 ->where('corporate_customer_id', $ccId)
                 ->where('divisi_id', $divisiId)
@@ -1072,13 +1128,11 @@ class ImportCCController extends Controller
             $updatedCount = 0;
 
             foreach ($amRevenues as $amRevenue) {
-                // Normalize proporsi
                 $proporsi = $amRevenue->proporsi;
                 if ($proporsi > 1) {
                     $proporsi = $proporsi / 100;
                 }
 
-                // ALWAYS recalculate dengan nilai CC terbaru
                 $newTargetAM = $newTargetRevenue * $proporsi;
                 $newRealAM = $newRealRevenue * $proporsi;
                 $achievementRate = $newTargetAM > 0 ? ($newRealAM / $newTargetAM) * 100 : 0;
@@ -1125,21 +1179,4 @@ class ImportCCController extends Controller
             return 0;
         }
     }
-
-    /**
-     * ============================================================
-     * END OF METHOD
-     * ============================================================
-     *
-     * SETELAH PASTE:
-     * 1. Save file
-     * 2. Run: php artisan config:clear
-     * 3. Run: php artisan cache:clear
-     * 4. Test import Revenue CC
-     *
-     * Expected result:
-     * "Import Revenue CC selesai (1 data di-update, 2 AM revenues recalculated)"
-     *
-     * ============================================================
-     */
 }

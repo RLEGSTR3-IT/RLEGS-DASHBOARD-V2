@@ -566,15 +566,15 @@
         }
 
         /* ==========================================
-           ✨ PREVIEW MODAL - FIXED COLORS (MERAH SEMUA)
+           ✨ REDESIGNED PREVIEW MODAL - PROFESSIONAL & CLEAN
            ========================================== */
 
         #previewModal .modal-dialog {
-            max-width: 90%;
+            max-width: 900px;
             margin: 1.75rem auto;
         }
 
-        /* ✅ HEADER MERAH dengan TEXT PUTIH */
+        /* Header - Tetap Merah */
         #previewModal .modal-header {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
@@ -610,200 +610,234 @@
             overflow-y: auto;
         }
 
-        /* ✅ Preview Summary Cards - MERAH */
+        /* ✅ FIXED: Preview Summary Cards - FORCE 1 ROW */
         .preview-summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.875rem;
             margin-bottom: 2rem;
         }
 
         .preview-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: white;
+            border: 2px solid #e9ecef;
             border-radius: 12px;
-            padding: 1.25rem;
+            padding: 1rem;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: transform 0.2s ease;
+            transition: all 0.2s ease;
+            min-width: 0;
         }
 
         .preview-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         .preview-card .icon {
-            font-size: 1.75rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            margin-bottom: 0.625rem;
+            color: #6c757d;
         }
 
-        /* ✅ SEMUA MERAH dengan intensitas berbeda */
-        .preview-card.new .icon { color: #dc3545; }
-        .preview-card.update .icon { color: #c82333; }
-        .preview-card.conflict .icon { color: #a71d2a; }
-        .preview-card.skip .icon { color: #6c757d; }
-        .preview-card.total .icon { color: #0066cc; }
-        .preview-card.unique .icon { color: #667eea; }
+        /* Icon colors - Subtle & Professional */
+        .preview-card.total .icon { color: #495057; }
+        .preview-card.unique .icon { color: #6c757d; }
+        .preview-card.update .icon { color: #ffc107; }
+        .preview-card.new .icon { color: #28a745; }
+        .preview-card.conflict .icon { color: #dc3545; }
 
         .preview-card h3 {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            margin: 0.5rem 0 0.25rem 0;
+            margin: 0.375rem 0 0.25rem 0;
             color: #212529;
         }
 
         .preview-card p {
             margin: 0;
             color: #6c757d;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 500;
+            line-height: 1.3;
         }
 
-        /* ✅ Preview Actions - MERAH */
-        .preview-actions {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: #fff5f5;
-            border-radius: 8px;
-            align-items: center;
-            border-left: 4px solid #dc3545;
+        /* ✅ Responsive: Stack on smaller screens */
+        @media (max-width: 992px) {
+            #previewModal .modal-dialog {
+                max-width: 720px;
+            }
+
+            .preview-summary {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .preview-card {
+                padding: 0.875rem;
+            }
+
+            .preview-card .icon {
+                font-size: 1.35rem;
+            }
+
+            .preview-card h3 {
+                font-size: 1.35rem;
+            }
+
+            .preview-card p {
+                font-size: 0.75rem;
+            }
         }
 
-        .preview-actions i {
-            font-size: 1.25rem;
-            color: #dc3545;
+        @media (max-width: 768px) {
+            .preview-summary {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .preview-card {
+                padding: 0.75rem;
+            }
         }
 
-        .preview-actions .btn-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+        @media (max-width: 480px) {
+            .preview-summary {
+                grid-template-columns: 1fr;
+            }
         }
 
-        /* ✅ Button Group - MERAH */
-        .preview-actions .btn {
+        /* ✅ Import Actions - Simplified & Professional */
+        .import-actions {
+            margin-top: 1.5rem;
+        }
+
+        .import-actions .alert {
+            background: #f8f9fa;
             border: 2px solid #e9ecef;
-            background: white;
-            color: #6c757d;
+            border-left: 4px solid #dc3545;
+            color: #495057;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .import-actions .alert i {
+            color: #dc3545;
+            margin-right: 0.5rem;
+        }
+
+        /* ✅ Button Group - Consistent Red Theme */
+        .import-actions .d-grid {
+            gap: 0.75rem;
+        }
+
+        .import-actions .btn {
+            padding: 0.875rem 1.5rem;
             font-weight: 600;
-            font-size: 0.875rem;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            transition: all 0.2s;
+            font-size: 0.95rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .preview-actions .btn:hover {
-            background: #dc3545;
-            color: white;
-            border-color: #dc3545;
-            transform: translateY(-1px);
-        }
-
-        /* Preview Table */
-        .preview-table-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        }
-
-        .preview-table {
-            width: 100%;
-            margin: 0;
-        }
-
-        /* ✅ Table Header MERAH */
-        .preview-table thead {
+        /* Primary Action - Red Gradient */
+        #btnImportAll {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
+            border-color: #dc3545;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
         }
 
-        .preview-table thead th {
-            padding: 1rem;
-            font-weight: 600;
-            text-align: left;
-            border: none;
-            color: white;
+        #btnImportAll:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 53, 69, 0.35);
         }
 
-        .preview-table tbody tr {
-            border-bottom: 1px solid #e9ecef;
-            transition: background 0.2s;
-        }
-
-        .preview-table tbody tr:hover {
-            background: #fff5f5;
-        }
-
-        .preview-table tbody td {
-            padding: 1rem;
-            vertical-align: middle;
-        }
-
-        /* ✅ Status Badges - MERAH */
-        .status-badge {
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-badge.new {
-            background: #ffd6d9;
-            color: #a71d2a;
-        }
-
-        .status-badge.update {
-            background: #ffe6e8;
-            color: #c82333;
-        }
-
-        .status-badge.conflict {
-            background: #dc3545;
-            color: white;
-        }
-
-        .status-badge.skip {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        /* Comparison Display */
-        .value-comparison {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .value-old {
+        /* Secondary Actions - Red Outline */
+        #btnImportNew,
+        #btnImportUpdate {
+            background: white;
             color: #dc3545;
-            text-decoration: line-through;
-            font-size: 0.875rem;
+            border: 2px solid #dc3545;
         }
 
-        .value-new {
-            color: #28a745;
+        #btnImportNew:hover:not(:disabled),
+        #btnImportUpdate:hover:not(:disabled) {
+            background: #fff5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+        }
+
+        /* Disabled State */
+        .import-actions .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Badge inside buttons */
+        .import-actions .badge {
+            background: rgba(0, 0, 0, 0.1);
+            color: inherit;
+            padding: 0.375rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
             font-weight: 600;
+        }
+
+        #btnImportAll .badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        /* Error Info */
+        .import-actions .alert-danger {
+            background: #fff5f5;
+            border: 2px solid #ffc9c9;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        /* ✅ Preview Modal Footer */
+        #previewModal .modal-footer {
+            border-top: 2px solid #e9ecef;
+            padding: 1.5rem 2rem;
+            background: #f8f9fa;
+        }
+
+        #previewModal .modal-footer .btn-light {
+            background: white;
+            border: 2px solid #e9ecef;
+            color: #6c757d;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 10px;
+        }
+
+        #previewModal .modal-footer .btn-light:hover {
+            border-color: #dc3545;
+            color: #dc3545;
+            background: #fff5f5;
         }
 
         /* ==========================================
-           ✨ NEW: PROGRESS SNACKBAR (Pojok Kanan Bawah)
+           ✨ PROGRESS SNACKBAR - MODERN & CLEAN
            ========================================== */
         .progress-snackbar {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 400px;
+            bottom: 24px;
+            right: 24px;
+            width: 420px;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 9999;
             display: none;
             overflow: hidden;
+            border: 1px solid #e9ecef;
         }
 
         .progress-snackbar.active {
@@ -853,6 +887,10 @@
             gap: 0.5rem;
         }
 
+        .snackbar-title i {
+            font-size: 1rem;
+        }
+
         .snackbar-actions {
             display: flex;
             gap: 0.5rem;
@@ -871,12 +909,12 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            font-size: 0.875rem;
         }
 
         .btn-minimize:hover,
         .btn-close-snackbar:hover {
             background: rgba(255,255,255,0.3);
-            transform: scale(1.1);
         }
 
         .snackbar-body {
@@ -886,7 +924,7 @@
         .progress-container {
             width: 100%;
             height: 32px;
-            background: #e9ecef;
+            background: #f1f3f5;
             border-radius: 16px;
             overflow: hidden;
             margin-bottom: 0.75rem;
@@ -919,12 +957,12 @@
         }
 
         .progress-percentage {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 700;
             color: #212529;
         }
 
-        /* Loading Overlay (Old - Keep for compatibility) */
+        /* Loading Overlay (Fallback) */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -963,53 +1001,6 @@
             font-weight: 600;
         }
 
-        /* ✅ Preview Modal Footer - MERAH */
-        #previewModal .modal-footer {
-            border-top: 2px solid #e9ecef;
-            padding: 1.5rem 2rem;
-            background: #f8f9fa;
-        }
-
-        #previewModal .btn-execute {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            border: none;
-            padding: 0.875rem 2rem;
-            font-weight: 600;
-            border-radius: 10px;
-            color: white;
-            box-shadow: 0 4px 14px rgba(220, 53, 69, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        #previewModal .btn-execute:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-            background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
-        }
-
-        #previewModal .btn-execute:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        #previewModal .btn-light {
-            border: 2px solid #e9ecef;
-            background: white;
-            color: #6c757d;
-            padding: 0.875rem 2rem;
-            font-weight: 600;
-            border-radius: 10px;
-            transition: all 0.3s;
-        }
-
-        #previewModal .btn-light:hover {
-            border-color: #dc3545;
-            color: #dc3545;
-            background: #fff5f5;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .progress-snackbar {
@@ -1017,26 +1008,24 @@
                 right: 20px;
                 left: 20px;
             }
-
-            .preview-summary {
-                grid-template-columns: repeat(2, 1fr);
-            }
         }
 
         @media (max-width: 480px) {
             .progress-snackbar {
-                bottom: 10px;
-                right: 10px;
-                left: 10px;
-                width: calc(100% - 20px);
+                bottom: 16px;
+                right: 16px;
+                left: 16px;
+                width: calc(100% - 32px);
             }
 
-            .preview-summary {
-                grid-template-columns: 1fr;
+            .import-actions .btn {
+                font-size: 0.875rem;
+                padding: 0.75rem 1rem;
             }
         }
     </style>
 @endsection
+
 
 @section('content')
 <div class="rlegs-container">
@@ -1651,9 +1640,8 @@
 </div>
 
 <!-- ==========================================
-     ✨ PREVIEW MODAL
+     ✨ REDESIGNED PREVIEW MODAL - PROFESSIONAL & CLEAN
      ========================================== -->
-<!-- =================== ✅ REDESIGNED PREVIEW MODAL (NO TABLE) =================== -->
 <div class="modal fade" id="previewModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1665,53 +1653,50 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- Summary Cards -->
+                <!-- ✅ Summary Cards - Clean & Minimal -->
                 <div class="preview-summary" id="previewSummary"></div>
 
                 <!-- Info Banner for Large Datasets -->
-                <div id="previewInfo" class="mt-3" style="display: none;"></div>
+                <div id="previewInfo" style="display: none;"></div>
 
-                <!-- Action Buttons -->
-                <div class="import-actions mt-4">
-                    <div class="alert alert-info">
-                        <i class="fa-solid fa-info-circle me-2"></i>
+                <!-- ✅ Action Buttons - Simplified & Professional -->
+                <div class="import-actions">
+                    <div class="alert">
+                        <i class="fa-solid fa-info-circle"></i>
                         <strong>Pilih jenis data yang akan diimport:</strong>
                     </div>
                     
-                    <div class="d-grid gap-3">
-                        <!-- Import All Button -->
-                        <button type="button" class="btn btn-lg btn-primary d-flex align-items-center justify-content-between" 
-                                id="btnImportAll">
+                    <div class="d-grid">
+                        <!-- Import All Button - Red Gradient -->
+                        <button type="button" class="btn" id="btnImportAll">
                             <span>
                                 <i class="fa-solid fa-check-double me-2"></i>
-                                <strong>Import Semua</strong>
+                                <strong>Import Semua Data</strong>
                             </span>
-                            <span class="badge bg-light text-dark" id="badgeAllCount">0 data</span>
+                            <span class="badge" id="badgeAllCount">0 data</span>
                         </button>
 
-                        <!-- Import New Only Button -->
-                        <button type="button" class="btn btn-lg btn-success d-flex align-items-center justify-content-between" 
-                                id="btnImportNew">
+                        <!-- Import New Only Button - Red Outline -->
+                        <button type="button" class="btn" id="btnImportNew">
                             <span>
                                 <i class="fa-solid fa-plus me-2"></i>
                                 <strong>Import Data Baru Saja</strong>
                             </span>
-                            <span class="badge bg-light text-dark" id="badgeNewCount">0 data</span>
+                            <span class="badge" id="badgeNewCount">0 data</span>
                         </button>
 
-                        <!-- Import Update Only Button -->
-                        <button type="button" class="btn btn-lg btn-warning d-flex align-items-center justify-content-between" 
-                                id="btnImportUpdate">
+                        <!-- Import Update Only Button - Red Outline -->
+                        <button type="button" class="btn" id="btnImportUpdate">
                             <span>
                                 <i class="fa-solid fa-edit me-2"></i>
-                                <strong>Import Update Saja</strong>
+                                <strong>Import Data Update Saja</strong>
                             </span>
-                            <span class="badge bg-light text-dark" id="badgeUpdateCount">0 data</span>
+                            <span class="badge" id="badgeUpdateCount">0 data</span>
                         </button>
                     </div>
 
                     <!-- Error Info -->
-                    <div class="alert alert-danger mt-3" id="errorInfo" style="display: none;">
+                    <div class="alert alert-danger" id="errorInfo" style="display: none;">
                         <i class="fa-solid fa-exclamation-triangle me-2"></i>
                         <span id="errorMessage"></span>
                     </div>
@@ -1725,134 +1710,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.import-actions .btn {
-    padding: 1rem 1.5rem;
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
-}
-
-.import-actions .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.import-actions .btn-primary {
-    background: #667eea;
-    border-color: #667eea;
-    color: white;
-}
-
-.import-actions .btn-success {
-    background: #28a745;
-    border-color: #28a745;
-    color: white;
-}
-
-.import-actions .btn-warning {
-    background: #ffc107;
-    border-color: #ffc107;
-    color: #000;
-}
-
-.import-actions .badge {
-    font-size: 1rem;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
-}
-
-.preview-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.preview-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border: 2px solid #f0f0f0;
-    transition: all 0.3s ease;
-}
-
-.preview-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-}
-
-.preview-card .icon {
-    width: 50px;
-    height: 50px;
-    margin: 0 auto 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-size: 1.5rem;
-}
-
-.preview-card.total {
-    border-color: #667eea;
-}
-
-.preview-card.total .icon {
-    background: #667eea;
-    color: white;
-}
-
-.preview-card.unique {
-    border-color: #3498db;
-}
-
-.preview-card.unique .icon {
-    background: #3498db;
-    color: white;
-}
-
-.preview-card.update {
-    border-color: #ffc107;
-}
-
-.preview-card.update .icon {
-    background: #ffc107;
-    color: white;
-}
-
-.preview-card.new {
-    border-color: #28a745;
-}
-
-.preview-card.new .icon {
-    background: #28a745;
-    color: white;
-}
-
-.preview-card.conflict {
-    border-color: #dc3545;
-}
-
-.preview-card.conflict .icon {
-    background: #dc3545;
-    color: white;
-}
-
-.preview-card h3 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0.5rem 0;
-    color: #2c3e50;
-}
-
-.preview-card p {
-    margin: 0;
-    color: #7f8c8d;
-    font-size: 0.9rem;
-}
-</style>
 
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
@@ -2071,7 +1928,7 @@
     </div>
 </div>
 
-<!-- ✨ NEW: Progress Snackbar (Pojok Kanan Bawah) -->
+<!-- ✨ Progress Snackbar (Pojok Kanan Bawah) -->
 <div id="progressSnackbar" class="progress-snackbar">
     <div class="snackbar-header" onclick="toggleSnackbar()">
         <span class="snackbar-title">

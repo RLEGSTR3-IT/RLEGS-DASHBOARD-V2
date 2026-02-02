@@ -6,6 +6,8 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Notifications\CustomVerifyEmail;
+use App\Notifications\CustomResetPassword;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -30,6 +32,39 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * =====================================================
+     * TAMBAHKAN 2 METHOD INI KE USER MODEL ANDA
+     * =====================================================
+     */
+
+    /**
+     * Send the email verification notification (CUSTOM).
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new CustomVerifyEmail);
+    }
+
+    /**
+     * Send the password reset notification (CUSTOM).
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new CustomResetPassword($token));
+    }
+
+    /**
+     * =====================================================
+     * KODE DI BAWAH INI SUDAH ADA, TIDAK PERLU DIUBAH
+     * =====================================================
+     */
 
     // Role checking methods
     public function isAdmin(): bool
@@ -80,4 +115,3 @@ class User extends Authenticatable implements MustVerifyEmail
         return asset('storage/' . $this->profile_image);
     }
 }
-

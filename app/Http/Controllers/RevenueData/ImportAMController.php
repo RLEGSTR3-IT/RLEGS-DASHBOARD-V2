@@ -957,56 +957,54 @@ class ImportAMController extends Controller
     }
 
     /**
-     * ✅ FIXED: Flexible header validation with alternative column names
-     * Support multiple possible column names (e.g., NIK_AM or NIK)
-     */
-    private function validateHeadersFlexible($headers, $alternativeColumns, $requiredColumns)
-    {
-        $cleanHeaders = array_map(function ($h) {
-            return strtoupper(trim($h));
-        }, $headers);
+ * ✅ FIXED (REAL): Flexible header validation with alternative column names (OR logic)
+ * - alternativeColumns: minimal salah satu kolom harus ada (contoh: NIK_AM atau NIK)
+ * - requiredColumns: semua kolom wajib harus ada (contoh: NAMA AM, WITEL AM, DIVISI AM)
+ */
+private function validateHeadersFlexible($headers, $alternativeColumns, $requiredColumns)
+{
+    $cleanHeaders = array_map(function ($h) {
+        return strtoupper(trim($h));
+    }, $headers);
 
-        // If alternativeColumns is a simple array (not nested), treat as required columns
-        if (!empty($alternativeColumns) && !is_array($alternativeColumns[0])) {
-            // Simple validation - just check if required columns exist
-            foreach ($alternativeColumns as $column) {
-                $cleanColumn = strtoupper(trim($column));
-                if (!in_array($cleanColumn, $cleanHeaders)) {
-                    Log::warning('Missing required column', [
-                        'required' => $column,
-                        'cleaned' => $cleanColumn,
-                        'available_headers' => $cleanHeaders
-                    ]);
-                    return false;
-                }
-            }
-            return true;
+    // Normalize input arrays (biar aman kalau null/empty)
+    $alternativeColumns = is_array($alternativeColumns) ? $alternativeColumns : [];
+    $requiredColumns    = is_array($requiredColumns) ? $requiredColumns : [];
+
+    // 1) ✅ OR check: at least one of alternative columns exists
+    $hasAlternative = false;
+    foreach ($alternativeColumns as $altCol) {
+        $cleanAltCol = strtoupper(trim($altCol));
+        if ($cleanAltCol !== '' && in_array($cleanAltCol, $cleanHeaders)) {
+            $hasAlternative = true;
+            break;
         }
+    }
 
-        // Check if at least one alternative column exists
-        $hasAlternative = false;
-        foreach ($alternativeColumns as $altCol) {
-            $cleanAltCol = strtoupper(trim($altCol));
-            if (in_array($cleanAltCol, $cleanHeaders)) {
-                $hasAlternative = true;
-                break;
-            }
-        }
+    if (!$hasAlternative && count($alternativeColumns) > 0) {
+        Log::warning('Missing alternative required column (need one of these)', [
+            'required_one_of'   => $alternativeColumns,
+            'available_headers' => $cleanHeaders
+        ]);
+        return false;
+    }
 
-        if (!$hasAlternative) {
+    // 2) ✅ AND check: all required columns must exist
+    foreach ($requiredColumns as $column) {
+        $cleanColumn = strtoupper(trim($column));
+        if ($cleanColumn !== '' && !in_array($cleanColumn, $cleanHeaders)) {
+            Log::warning('Missing required column', [
+                'required'          => $column,
+                'available_headers' => $cleanHeaders
+            ]);
             return false;
         }
-
-        // Check all other required columns
-        foreach ($requiredColumns as $column) {
-            $cleanColumn = strtoupper(trim($column));
-            if (!in_array($cleanColumn, $cleanHeaders)) {
-                return false;
-            }
-        }
-
-        return true;
     }
+
+    return true;
+}
+
+
 
     /**
      * Get column indices from headers

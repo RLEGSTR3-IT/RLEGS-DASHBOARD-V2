@@ -202,12 +202,18 @@
     <div class="email-container">
         <!-- Header with Logos -->
         <div class="header">
-            <div class="logo-container">
-                {{-- Logo Telkom di kiri --}}
-                <img src="{{ $message->embed(public_path('img/logo-telkom.png')) }}" alt="Telkom Indonesia" class="logo-left">
-                {{-- Logo TR3 di kanan --}}
-                <img src="{{ $message->embed(public_path('img/logo-treg3.png')) }}" alt="TREG 3" class="logo-right">
-            </div>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="left" valign="top" width="50%">
+                        {{-- Logo Telkom di kiri --}}
+                        <img src="{{ $message->embed(public_path('img/logo-telkom.png')) }}" alt="Telkom Indonesia" class="logo-left" style="max-height: 50px; width: auto; display: block;">
+                    </td>
+                    <td align="right" valign="top" width="50%">
+                        {{-- Logo TR3 di kanan --}}
+                        <img src="{{ $message->embed(public_path('img/logo-treg3.png')) }}" alt="TREG 3" class="logo-right" style="max-height: 50px; width: auto; display: block;">
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <!-- Main Content -->

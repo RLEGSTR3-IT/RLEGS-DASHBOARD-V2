@@ -225,7 +225,7 @@
             <h1 class="title">Verifikasi Alamat Email Anda</h1>
 
             <p class="message">
-                Terima kasih telah mendaftar di sistem RLEGS. Untuk menyelesaikan proses pendaftaran, silakan verifikasi alamat email Anda dengan mengklik tombol di bawah ini.
+                Terima kasih telah mendaftar di Dashboard RLEGS 2.0. Untuk menyelesaikan proses pendaftaran, silakan verifikasi alamat email Anda dengan mengklik tombol di bawah ini.
             </p>
 
             <div class="button-container">

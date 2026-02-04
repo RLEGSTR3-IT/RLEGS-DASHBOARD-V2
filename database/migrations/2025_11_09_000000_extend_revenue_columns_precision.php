@@ -7,17 +7,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Migration: Extend Revenue Columns Precision
+ * Migration: Extend Revenue Columns Precision (UPDATED)
  *
  * PURPOSE: Support unlimited digits for revenue values
  * - FROM: DECIMAL(15,2) = max 999 billion
- * - TO: DECIMAL(20,2) = max 999 trillion
+ * - TO: DECIMAL(25,2) = max 999 quadrillion (update dari 20 ke 25 untuk future-proof)
  *
  * AFFECTED TABLES:
- * - cc_revenues: target_revenue, real_revenue
+ * - cc_revenues: target_revenue, real_revenue (OLD)
+ *                + real_revenue_sold, real_revenue_bill (NEW - akan ditambah migration lain)
+ *                + target_revenue_sold, target_revenue_bill (NEW - akan ditambah migration lain)
  * - am_revenues: target_revenue, real_revenue
  *
- * DATE: 2025-11-09
+ * NOTE: Kolom baru (sold/bill) akan ditambahkan oleh migration restructure,
+ *       migration ini hanya extend precision kolom yang sudah ada
+ *
+ * DATE: 2025-11-09 (Updated 2026-02-03)
  */
 return new class extends Migration
 {
@@ -29,7 +34,10 @@ return new class extends Migration
         try {
             Log::info('🚀 Starting migration: Extend revenue columns precision');
 
-            // Check current column types
+            // ========================================
+            // STEP 1: Check current column types
+            // ========================================
+            
             $ccRevenueColumns = DB::select("
                 SELECT COLUMN_NAME, COLUMN_TYPE, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE
                 FROM INFORMATION_SCHEMA.COLUMNS
@@ -46,35 +54,74 @@ return new class extends Migration
                 AND COLUMN_NAME IN ('target_revenue', 'real_revenue')
             ");
 
-            Log::info('📋 Current column types', [
+            Log::info('📋 Current column types (BEFORE)', [
                 'cc_revenues' => $ccRevenueColumns,
                 'am_revenues' => $amRevenueColumns
             ]);
 
-            // Modify CC Revenues table
+            // ========================================
+            // STEP 2: Modify CC Revenues table (OLD COLUMNS)
+            // ========================================
+            
             Schema::table('cc_revenues', function (Blueprint $table) {
-                $table->decimal('target_revenue', 20, 2)->default(0)->change();
-                $table->decimal('real_revenue', 20, 2)->default(0)->change();
+                // Extend old columns (tetap dipertahankan untuk backward compatibility)
+                $table->decimal('target_revenue', 25, 2)->default(0)->change();
+                $table->decimal('real_revenue', 25, 2)->default(0)->change();
             });
 
-            Log::info('✅ Modified cc_revenues columns to DECIMAL(20,2)');
+            Log::info('✅ Modified cc_revenues OLD columns to DECIMAL(25,2)');
 
-            // Modify AM Revenues table
+            // ========================================
+            // STEP 3: Check if NEW columns exist (sold/bill)
+            // ========================================
+            // NOTE: Kolom ini akan ada setelah migration restructure
+            
+            $hasNewColumns = Schema::hasColumns('cc_revenues', [
+                'real_revenue_sold', 
+                'real_revenue_bill', 
+                'target_revenue_sold', 
+                'target_revenue_bill'
+            ]);
+
+            if ($hasNewColumns) {
+                Log::info('🔍 Detected NEW columns (sold/bill), extending precision...');
+                
+                // Extend NEW columns jika sudah ada
+                Schema::table('cc_revenues', function (Blueprint $table) {
+                    $table->decimal('real_revenue_sold', 25, 2)->default(0)->change();
+                    $table->decimal('real_revenue_bill', 25, 2)->default(0)->change();
+                    $table->decimal('target_revenue_sold', 25, 2)->default(0)->change();
+                    $table->decimal('target_revenue_bill', 25, 2)->default(0)->change();
+                });
+
+                Log::info('✅ Modified cc_revenues NEW columns to DECIMAL(25,2)');
+            } else {
+                Log::info('⚠️ NEW columns not found yet (will be added by restructure migration)');
+            }
+
+            // ========================================
+            // STEP 4: Modify AM Revenues table
+            // ========================================
+            
             Schema::table('am_revenues', function (Blueprint $table) {
-                $table->decimal('target_revenue', 20, 2)->default(0)->change();
-                $table->decimal('real_revenue', 20, 2)->default(0)->change();
+                $table->decimal('target_revenue', 25, 2)->default(0)->change();
+                $table->decimal('real_revenue', 25, 2)->default(0)->change();
                 $table->decimal('achievement_rate', 8, 2)->default(0)->change();
             });
 
-            Log::info('✅ Modified am_revenues columns to DECIMAL(20,2)');
+            Log::info('✅ Modified am_revenues columns to DECIMAL(25,2)');
 
-            // Verify changes
+            // ========================================
+            // STEP 5: Verify changes
+            // ========================================
+            
             $ccRevenueColumnsAfter = DB::select("
                 SELECT COLUMN_NAME, COLUMN_TYPE, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE
                 FROM INFORMATION_SCHEMA.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE()
                 AND TABLE_NAME = 'cc_revenues'
-                AND COLUMN_NAME IN ('target_revenue', 'real_revenue')
+                AND COLUMN_NAME LIKE '%revenue%'
+                ORDER BY ORDINAL_POSITION
             ");
 
             $amRevenueColumnsAfter = DB::select("
@@ -85,12 +132,24 @@ return new class extends Migration
                 AND COLUMN_NAME IN ('target_revenue', 'real_revenue', 'achievement_rate')
             ");
 
-            Log::info('📋 Column types after migration', [
+            Log::info('📋 Column types AFTER migration', [
                 'cc_revenues' => $ccRevenueColumnsAfter,
                 'am_revenues' => $amRevenueColumnsAfter
             ]);
 
-            Log::info('✅ Migration completed successfully: Revenue columns extended to DECIMAL(20,2)');
+            // ========================================
+            // STEP 6: Summary
+            // ========================================
+            
+            $summary = [
+                'cc_revenues_old_columns' => 'DECIMAL(25,2)',
+                'cc_revenues_new_columns' => $hasNewColumns ? 'DECIMAL(25,2)' : 'Not exists yet',
+                'am_revenues_columns' => 'DECIMAL(25,2)',
+                'max_value_supported' => '999,999,999,999,999,999,999,999.99 (999 quadrillion)'
+            ];
+
+            Log::info('📊 Migration Summary:', $summary);
+            Log::info('✅✅✅ Migration completed successfully!');
 
         } catch (\Exception $e) {
             Log::error('❌ Migration failed: ' . $e->getMessage(), [
@@ -108,15 +167,43 @@ return new class extends Migration
         try {
             Log::info('🔄 Reverting migration: Restore revenue columns to DECIMAL(15,2)');
 
-            // Revert CC Revenues table
+            // ========================================
+            // STEP 1: Revert CC Revenues table (OLD COLUMNS)
+            // ========================================
+            
             Schema::table('cc_revenues', function (Blueprint $table) {
                 $table->decimal('target_revenue', 15, 2)->default(0)->change();
                 $table->decimal('real_revenue', 15, 2)->default(0)->change();
             });
 
-            Log::info('✅ Reverted cc_revenues columns to DECIMAL(15,2)');
+            Log::info('✅ Reverted cc_revenues OLD columns to DECIMAL(15,2)');
 
-            // Revert AM Revenues table
+            // ========================================
+            // STEP 2: Revert NEW COLUMNS (if exist)
+            // ========================================
+            
+            $hasNewColumns = Schema::hasColumns('cc_revenues', [
+                'real_revenue_sold', 
+                'real_revenue_bill', 
+                'target_revenue_sold', 
+                'target_revenue_bill'
+            ]);
+
+            if ($hasNewColumns) {
+                Schema::table('cc_revenues', function (Blueprint $table) {
+                    $table->decimal('real_revenue_sold', 15, 2)->default(0)->change();
+                    $table->decimal('real_revenue_bill', 15, 2)->default(0)->change();
+                    $table->decimal('target_revenue_sold', 15, 2)->default(0)->change();
+                    $table->decimal('target_revenue_bill', 15, 2)->default(0)->change();
+                });
+
+                Log::info('✅ Reverted cc_revenues NEW columns to DECIMAL(15,2)');
+            }
+
+            // ========================================
+            // STEP 3: Revert AM Revenues table
+            // ========================================
+            
             Schema::table('am_revenues', function (Blueprint $table) {
                 $table->decimal('target_revenue', 15, 2)->default(0)->change();
                 $table->decimal('real_revenue', 15, 2)->default(0)->change();

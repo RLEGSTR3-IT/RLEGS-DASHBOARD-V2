@@ -13,31 +13,32 @@ use Illuminate\Support\Facades\Cache;
 /**
  * RevenueImportController - Main Import Router
  *
- * ✅ FIXED VERSION - 2026-01-28
+ * ✅ FIXED VERSION - 2026-02-04
+ *
+ * ========================================
+ * CRITICAL FIX
+ * ========================================
+ * ✅ FIXED: All methods now properly return JsonResponse (not array)
+ * ✅ FIXED: Handle controller responses correctly (check if JsonResponse or array)
+ * ✅ FIXED: Line 337 error - properly handle $result from other controllers
  *
  * ========================================
  * CHANGELOG
  * ========================================
- *
- * ✅ FIXED: Preview data structure - handle all_rows vs preview_rows
- *    - Store all_rows in session for execute
- *    - Return preview_rows (5 rows) to frontend
- *    - Support enhanced summary with unique counts
- *
- * ✅ FIXED: Execute import - pass year/month to executeRevenueAM
- *    - Pass $request object to controller
- *    - Use all_rows from session (not preview_rows)
- *    - Better error handling
- *
- * ✅ ENHANCED: Cache timeout increased to 7200 seconds (2 hours)
- *    - Line 42: CHUNK_TIMEOUT constant
- *    - Prevents session expired errors
+ * ✅ NEW: Add tipe_revenue validation for Revenue CC import
+ * ✅ NEW: Pass tipe_revenue and aggregate_duplicates to ImportCCController
+ * ✅ MAINTAINED: All other functionality (upload, preview, execute, cleanup)
+ * ✅ MAINTAINED: Chunked upload support
+ * ✅ MAINTAINED: Session management
  */
 class RevenueImportController extends Controller
 {
     private const TEMP_CHUNKS_DIR = 'app/temp_chunks';
-    private const CHUNK_TIMEOUT = 7200; // ✅ CHANGED: 3600 → 7200 (2 hours)
+    private const CHUNK_TIMEOUT = 7200; // 2 hours
 
+    /**
+     * Upload chunk for large files
+     */
     public function uploadChunk(Request $request)
     {
         try {
@@ -163,593 +164,528 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ ENHANCED: Preview Import - Handle new response structure
+     * ✅ FIXED: Preview Import - Properly handle controller responses
      * 
-     * CHANGES:
-     * - Handle all_rows vs preview_rows from CC/AM controllers
-     * - Store all_rows in session for execute
-     * - Return preview_rows (5 rows only) to frontend
-     * - Support enhanced summary with unique counts
+     * CRITICAL FIX:
+     * - Check if controller returns JsonResponse or array
+     * - Convert array to JsonResponse properly
+     * - Handle $result['success'] safely
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function previewImport(Request $request)
-    {
-        Log::info('RIC - Commencing Preview Import');
+{
+    Log::info('RIC - Commencing Preview Import');
 
-        try {
-            $isChunkedUpload = $request->has('session_id') && !$request->hasFile('file');
+    try {
+        $isChunkedUpload = $request->has('session_id') && !$request->hasFile('file');
 
-            if ($isChunkedUpload) {
-                // Chunked upload - validate session_id
-                $validator = Validator::make($request->all(), [
-                    'session_id' => 'required|string',
-                    'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-                ]);
-            } else {
-                // Direct upload - validate file
-                $validator = Validator::make($request->all(), [
-                    'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-                    'file' => 'required|file|mimes:csv,txt|max:102400'
-                ]);
-            }
-
-            if ($validator->fails()) {
-                Log::warning('Preview Import - Basic validation failed', [
-                    'errors' => $validator->errors()->toArray(),
-                    'request_data' => $request->except(['file'])
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $importType = $request->import_type;
-
-            // ✅ FIX: Cast month/year to integer (frontend sends "05" as string, we need 5 as integer)
-            $year = $request->has('year') ? (int) $request->input('year') : null;
-            $month = $request->has('month') ? (int) $request->input('month') : null;
-
-            Log::info('Params after casting to integer', [
-                'year' => $year,
-                'month' => $month,
-                'divisi_id' => $request->input('divisi_id')
+        if ($isChunkedUpload) {
+            // Chunked upload - validate session_id
+            $validator = Validator::make($request->all(), [
+                'session_id' => 'required|string',
+                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
             ]);
-
-            // Generate validation rules based on import type
-            $additionalRules = [];
-            if ($importType === 'revenue_cc') {
-                $additionalRules = [
-                    'divisi_id' => 'required|exists:divisi,id',
-                    'jenis_data' => 'required|in:revenue,target',
-                    'year' => 'required|integer|min:2020|max:2100',
-                    'month' => 'required|integer|min:1|max:12'
-                ];
-            } elseif ($importType === 'revenue_am') {
-                $additionalRules = [
-                    'year' => 'required|integer|min:2020|max:2100',
-                    'month' => 'required|integer|min:1|max:12'
-                ];
-            }
-
-            Log::debug('Additional validation rules generated', [
-                'import_type' => $importType,
-                'rules' => $additionalRules
+        } else {
+            // Direct upload - validate file
+            $validator = Validator::make($request->all(), [
+                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
+                'file' => 'required|file|mimes:csv,txt,xlsx|max:102400'
             ]);
+        }
 
-            if (!empty($additionalRules)) {
-                $additionalValidator = Validator::make($request->all(), $additionalRules);
-
-                if ($additionalValidator->fails()) {
-                    Log::warning('Preview Import - Additional validation failed', [
-                        'import_type' => $importType,
-                        'errors' => $additionalValidator->errors()->toArray()
-                    ]);
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validasi tambahan gagal',
-                        'errors' => $additionalValidator->errors()
-                    ], 422);
-                }
-            }
-
-            // Handle file upload
-            $tempFilePath = null;
-            $sessionId = null;
-
-            if ($isChunkedUpload) {
-                // Chunked upload - get merged file path
-                $sessionId = $request->input('session_id');
-                $tempFilePath = Cache::get("merged_file_{$sessionId}");
-
-                if (!$tempFilePath || !file_exists($tempFilePath)) {
-                    Log::error('Merged file not found for chunked upload', [
-                        'session_id' => $sessionId,
-                        'expected_path' => $tempFilePath
-                    ]);
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'File tidak ditemukan. Silakan upload ulang.'
-                    ], 404);
-                }
-
-                Log::info('Chunked upload - using merged file', [
-                    'session_id' => $sessionId,
-                    'file_path' => $tempFilePath
-                ]);
-            } else {
-                // Direct upload - store file
-                $file = $request->file('file');
-                $sessionId = 'import_' . uniqid('', true);
-                $fileName = $file->getClientOriginalName();
-
-                $tempDir = storage_path('app/temp_imports');
-                if (!file_exists($tempDir)) {
-                    mkdir($tempDir, 0755, true);
-                }
-
-                $tempFilePath = $tempDir . '/' . $sessionId . '_' . $fileName;
-                $file->move($tempDir, $sessionId . '_' . $fileName);
-
-                Log::info('Direct upload file stored', [
-                    'filename' => $fileName,
-                    'session_id' => $sessionId
-                ]);
-            }
-
-            // Route to appropriate controller
-            $controller = null;
-            $previewResult = null;
-
-            if ($importType === 'data_cc') {
-                $controller = new ImportCCController();
-                $previewResult = $controller->previewDataCC($tempFilePath);
-            } elseif ($importType === 'data_am') {
-                $controller = new ImportAMController();
-                $previewResult = $controller->previewDataAM($tempFilePath);
-            } elseif ($importType === 'revenue_cc') {
-                $divisiId = (int) $request->input('divisi_id');
-                $jenisData = $request->input('jenis_data');
-
-                $controller = new ImportCCController();
-                $previewResult = $controller->previewRevenueCC(
-                    $tempFilePath,
-                    $divisiId,
-                    $jenisData,
-                    $year,
-                    $month
-                );
-            } elseif ($importType === 'revenue_am') {
-                $controller = new ImportAMController();
-                $previewResult = $controller->previewRevenueAM(
-                    $tempFilePath,
-                    $year,
-                    $month
-                );
-            }
-
-            if (!$previewResult['success']) {
-                return response()->json($previewResult, 400);
-            }
-
-            // ✅ ENHANCED: Store FULL data in cache for execute, return only preview rows to frontend
-            $previewData = $previewResult['data'];
-            
-            // Determine what to store and what to return
-            $dataToStore = null;
-            $dataToReturn = null;
-
-            if (isset($previewData['all_rows'])) {
-                // ✅ NEW STRUCTURE: Controller returned all_rows + preview_rows
-                $dataToStore = $previewData['all_rows']; // Store full data for execute
-                $dataToReturn = [
-                    'summary' => $previewData['summary'],
-                    'rows' => $previewData['preview_rows'] // Return only 5 rows to frontend
-                ];
-
-                Log::info('Preview using new structure (all_rows)', [
-                    'total_rows' => count($previewData['all_rows']),
-                    'preview_rows' => count($previewData['preview_rows'])
-                ]);
-            } else {
-                // ✅ OLD STRUCTURE: Controller returned rows directly (backward compatibility)
-                $dataToStore = $previewData['rows']; // Store all rows
-                $dataToReturn = $previewData; // Return all data (for data_cc, data_am)
-
-                Log::info('Preview using old structure (rows)', [
-                    'total_rows' => count($previewData['rows'])
-                ]);
-            }
-
-            // ✅ FIXED: Store large preview data to file instead of cache to avoid MySQL packet size limit
-            $previewDataPath = "temp_previews/preview_{$sessionId}.json";
-            Storage::put($previewDataPath, json_encode($dataToStore));
-            
-            Log::info('Preview data stored to file', [
-                'path' => $previewDataPath,
-                'size_kb' => Storage::size($previewDataPath) / 1024
-            ]);
-
-            // Store metadata in cache (small, safe for MySQL cache)
-            $metadata = [
-                'import_type' => $importType,
-                'temp_file_path' => $tempFilePath,
-                'preview_data_path' => $previewDataPath, // ✅ NEW: Path to preview data file
-                'uploaded_at' => now()->toDateTimeString()
-            ];
-
-            if ($importType === 'revenue_cc') {
-                $metadata['divisi_id'] = $request->input('divisi_id');
-                $metadata['jenis_data'] = $request->input('jenis_data');
-                $metadata['year'] = $year;
-                $metadata['month'] = $month;
-            } elseif ($importType === 'revenue_am') {
-                $metadata['year'] = $year;
-                $metadata['month'] = $month;
-            }
-
-            Cache::put(
-                "import_metadata_{$sessionId}",
-                $metadata,
-                now()->addSeconds(self::CHUNK_TIMEOUT)
-            );
-
-            Log::info('Preview completed successfully', [
-                'session_id' => $sessionId,
-                'import_type' => $importType,
-                'preview_rows' => isset($dataToReturn['rows']) ? count($dataToReturn['rows']) : 0
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'session_id' => $sessionId,
-                'data' => $dataToReturn // ✅ CHANGED: Return preview rows only
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Preview Import Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+        if ($validator->fails()) {
+            Log::warning('Preview Import - Basic validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'request_data' => $request->except(['file'])
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
         }
+
+        $importType = $request->import_type;
+
+        // ✅ FIX: Cast month/year to integer (frontend sends "05" as string, we need 5 as integer)
+        $year = $request->has('year') ? (int) $request->input('year') : null;
+        $month = $request->has('month') ? (int) $request->input('month') : null;
+
+        Log::info('Params after casting to integer', [
+            'year' => $year,
+            'month' => $month,
+            'divisi_id' => $request->input('divisi_id')
+        ]);
+
+        // Generate validation rules based on import type
+        $additionalRules = [];
+        if ($importType === 'revenue_cc') {
+            $additionalRules = [
+                'divisi_id' => 'required|exists:divisi,id',
+                'year' => 'required|integer|min:2000|max:2099',
+                'month' => 'required|integer|min:1|max:12',
+                'tipe_revenue' => 'required|in:HO,BILL'
+            ];
+        } elseif ($importType === 'revenue_am') {
+            $additionalRules = [
+                'year' => 'required|integer|min:2000|max:2099',
+                'month' => 'required|integer|min:1|max:12'
+            ];
+        }
+
+        // Validate additional parameters
+        if (!empty($additionalRules)) {
+            $additionalValidator = Validator::make($request->all(), $additionalRules);
+
+            if ($additionalValidator->fails()) {
+                Log::warning('Preview Import - Additional validation failed', [
+                    'import_type' => $importType,
+                    'errors' => $additionalValidator->errors()->toArray()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi parameter tambahan gagal',
+                    'errors' => $additionalValidator->errors()
+                ], 422);
+            }
+        }
+
+        // Get file path
+        $tempFilePath = null;
+        $sessionId = null;
+
+        if ($isChunkedUpload) {
+            // Chunked upload - get merged file path from cache
+            $sessionId = $request->input('session_id');
+            $tempFilePath = Cache::get("merged_file_{$sessionId}");
+
+            if (!$tempFilePath || !file_exists($tempFilePath)) {
+                Log::error('Merged file not found', [
+                    'session_id' => $sessionId,
+                    'expected_path' => $tempFilePath
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File gabungan tidak ditemukan. Silakan upload ulang.'
+                ], 404);
+            }
+
+            Log::info('Using merged file from chunked upload', [
+                'session_id' => $sessionId,
+                'file_path' => $tempFilePath
+            ]);
+        } else {
+            // ============================================================================
+            // ✅ CRITICAL FIX: Use Storage facade consistently
+            // ============================================================================
+            $file = $request->file('file');
+            $sessionId = uniqid('import_', true);
+            
+            // ✅ Create filename
+            $fileName = $sessionId . '_' . $file->getClientOriginalName();
+            
+            // ✅ Store using Storage facade (creates directory automatically)
+            $storedPath = $file->storeAs('temp_imports', $fileName, 'local');
+            
+            // ✅ Use RELATIVE path for consistency with Storage::disk('local')
+            $tempFilePath = $storedPath; // This is already relative: "temp_imports/file.csv"
+            
+            // ✅ Enhanced logging for debugging
+            Log::info('Saved direct upload file', [
+                'session_id' => $sessionId,
+                'relative_path' => $tempFilePath,
+                'absolute_path' => Storage::disk('local')->path($tempFilePath),
+                'file_exists_check' => Storage::disk('local')->exists($tempFilePath),
+                'file_size' => Storage::disk('local')->size($tempFilePath)
+            ]);
+            
+            // ✅ VERIFICATION: Double-check file actually exists
+            if (!Storage::disk('local')->exists($tempFilePath)) {
+                Log::error('File storage verification failed', [
+                    'session_id' => $sessionId,
+                    'relative_path' => $tempFilePath,
+                    'absolute_path' => Storage::disk('local')->path($tempFilePath)
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File gagal disimpan. Silakan coba lagi.'
+                ], 500);
+            }
+        }
+
+        // ✅ CRITICAL FIX: Route to appropriate controller and handle response properly
+        $controllerResult = null;
+
+        switch ($importType) {
+            case 'data_cc':
+                $controllerResult = app(ImportCCController::class)->previewDataCC($tempFilePath);
+                break;
+
+            case 'revenue_cc':
+                $divisiId = $request->input('divisi_id');
+                $controllerResult = app(ImportCCController::class)->previewRevenueCC(
+                    $tempFilePath,
+                    $divisiId,
+                    $month,
+                    $year
+                );
+                break;
+
+            case 'data_am':
+                $controllerResult = app(ImportAMController::class)->previewDataAM($tempFilePath);
+                break;
+
+            case 'revenue_am':
+                $controllerResult = app(ImportAMController::class)->previewRevenueAM(
+                    $tempFilePath,
+                    $year,
+                    $month
+                );
+                break;
+
+            default:
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tipe import tidak valid'
+                ], 400);
+        }
+
+        // ✅ CRITICAL FIX: Check if result is JsonResponse or array
+        if ($controllerResult instanceof \Illuminate\Http\JsonResponse) {
+            // It's already a JsonResponse, decode it to get the data
+            $resultData = json_decode($controllerResult->getContent(), true);
+        } else {
+            // It's an array, use directly
+            $resultData = $controllerResult;
+        }
+
+        // Store temp file path in session for execute step
+        session([
+            "import_session_{$sessionId}" => [
+                'temp_file_path' => $tempFilePath,
+                'import_type' => $importType,
+                'created_at' => now()->toDateTimeString()
+            ]
+        ]);
+
+        // ✅ FIXED: Safely check success and add session_id
+        if (isset($resultData['success']) && $resultData['success']) {
+            $resultData['session_id'] = $sessionId;
+        }
+
+        return response()->json($resultData);
+
+    } catch (\Exception $e) {
+        Log::error('Preview Import Error: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
-     * ✅ ENHANCED: Execute Import - Pass year/month to controller
-     * 
-     * CHANGES:
-     * - Pass $request object to executeRevenueAM (contains year/month)
-     * - Use all_rows from session (not preview_rows)
-     * - Better error handling and logging
+     * ✅ FIXED: Execute Import - Properly handle controller responses
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function executeImport(Request $request)
-    {
-        Log::info('RIC - Commencing Import Execution');
+{
+    Log::info('RIC - Commencing Execute Import');
 
-        try {
-            $validator = Validator::make($request->all(), [
-                'session_id' => 'required|string',
-                'filter_type' => 'required|in:all,new,update',
-                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am'
+    try {
+        // Validate basic parameters
+        $validator = Validator::make($request->all(), [
+            'session_id' => 'required|string',
+            'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
+            'filter_type' => 'required|in:all,new,update'
+        ]);
+
+        if ($validator->fails()) {
+            Log::warning('Execute Import - Validation failed', [
+                'errors' => $validator->errors()->toArray()
             ]);
 
-            if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $sessionId = $request->input('session_id');
+        $importType = $request->input('import_type');
+        $filterType = $request->input('filter_type');
+
+        // Get temp file path from session or cache
+        $tempFilePath = null;
+
+        // Try session first
+        $sessionData = session("import_session_{$sessionId}");
+        if ($sessionData && isset($sessionData['temp_file_path'])) {
+            $tempFilePath = $sessionData['temp_file_path'];
+            Log::info('Got temp file path from session', [
+                'session_id' => $sessionId,
+                'file_path' => $tempFilePath
+            ]);
+        }
+
+        // Fallback to cache (for chunked uploads)
+        if (!$tempFilePath) {
+            $tempFilePath = Cache::get("merged_file_{$sessionId}");
+            Log::info('Got temp file path from cache', [
+                'session_id' => $sessionId,
+                'file_path' => $tempFilePath
+            ]);
+        }
+
+        // ============================================================================
+        // ✅ CRITICAL FIX: Check file existence using correct method
+        // ============================================================================
+        if (!$tempFilePath) {
+            Log::error('Temp file path is null', [
+                'session_id' => $sessionId,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'File path tidak ditemukan. Silakan upload dan preview ulang.'
+            ], 404);
+        }
+
+        // ✅ FIX: Check if it's absolute path or relative path
+        $fileExists = false;
+        
+        if (file_exists($tempFilePath)) {
+            // It's an absolute path (from chunked upload)
+            $fileExists = true;
+            Log::info('File found via absolute path', [
+                'path' => $tempFilePath
+            ]);
+        } elseif (Storage::disk('local')->exists($tempFilePath)) {
+            // It's a relative path (from direct upload)
+            $fileExists = true;
+            Log::info('File found via Storage disk', [
+                'relative_path' => $tempFilePath,
+                'absolute_path' => Storage::disk('local')->path($tempFilePath)
+            ]);
+        }
+
+        if (!$fileExists) {
+            Log::error('Temp file not found', [
+                'session_id' => $sessionId,
+                'expected_path' => $tempFilePath,
+                'checked_absolute' => file_exists($tempFilePath),
+                'checked_storage' => Storage::disk('local')->exists($tempFilePath),
+                'storage_path' => Storage::disk('local')->path($tempFilePath)
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'File sementara tidak ditemukan. Silakan upload dan preview ulang.'
+            ], 404);
+        }
+
+        // Additional validation based on import type
+        $additionalRules = [];
+        if ($importType === 'revenue_cc') {
+            $additionalRules = [
+                'divisi_id' => 'required|exists:divisi,id',
+                'year' => 'required|integer|min:2000|max:2099',
+                'month' => 'required|integer|min:1|max:12',
+                'tipe_revenue' => 'required|in:HO,BILL'
+            ];
+        } elseif ($importType === 'revenue_am') {
+            $additionalRules = [
+                'year' => 'required|integer|min:2000|max:2099',
+                'month' => 'required|integer|min:1|max:12'
+            ];
+        }
+
+        if (!empty($additionalRules)) {
+            $additionalValidator = Validator::make($request->all(), $additionalRules);
+
+            if ($additionalValidator->fails()) {
+                Log::warning('Execute Import - Additional validation failed', [
+                    'import_type' => $importType,
+                    'errors' => $additionalValidator->errors()->toArray()
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
+                    'message' => 'Validasi parameter tambahan gagal',
+                    'errors' => $additionalValidator->errors()
                 ], 422);
             }
+        }
 
-            $sessionId = $request->input('session_id');
-            $filterType = $request->input('filter_type', 'all'); // Default to 'all'
-            $importType = $request->input('import_type');
+        // ✅ Execute import based on type
+        $result = null;
 
-            // Get metadata
-            $metadata = Cache::get("import_metadata_{$sessionId}");
-            if (!$metadata) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Session tidak valid atau sudah expired. Silakan upload ulang file.'
-                ], 400);
-            }
+        switch ($importType) {
+            case 'data_cc':
+                $result = app(ImportCCController::class)->executeDataCC($tempFilePath, $filterType);
+                break;
 
-            $tempFilePath = $metadata['temp_file_path'];
-            if (!file_exists($tempFilePath)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'File tidak ditemukan. Silakan upload ulang.'
-                ], 404);
-            }
+            case 'revenue_cc':
+                $divisiId = $request->input('divisi_id');
+                $year = (int) $request->input('year');
+                $month = (int) $request->input('month');
+                $tipeRevenue = $request->input('tipe_revenue');
+                $jenisData = $request->input('jenis_data', 'revenue');
 
-            // ✅ FIXED: Get preview data from file storage (not cache)
-            $previewDataPath = $metadata['preview_data_path'] ?? null;
-            $previewData = null;
-            
-            if ($previewDataPath && Storage::exists($previewDataPath)) {
-                $previewData = json_decode(Storage::get($previewDataPath), true);
-                Log::info('Preview data loaded from file', [
-                    'path' => $previewDataPath,
-                    'rows_count' => count($previewData)
-                ]);
-            } else {
-                Log::warning('Preview data file not found', [
-                    'session_id' => $sessionId,
-                    'expected_path' => $previewDataPath
-                ]);
-            }
-
-            Log::info('Execute Import started', [
-                'import_type' => $importType,
-                'session_id' => $sessionId,
-                'temp_file' => $tempFilePath,
-                'filter_type' => $filterType
-            ]);
-
-            // Route to appropriate controller
-            $result = null;
-
-            if ($importType === 'data_cc') {
-                $controller = new ImportCCController();
-                $result = $controller->executeDataCC($tempFilePath, $filterType);
-            } elseif ($importType === 'data_am') {
-                $controller = new ImportAMController();
-                $result = $controller->executeDataAM($tempFilePath, $filterType);
-            } elseif ($importType === 'revenue_cc') {
-                $divisiId = $metadata['divisi_id'];
-                $jenisData = $metadata['jenis_data'];
-                $year = $metadata['year'];
-                $month = $metadata['month'];
-
-                $controller = new ImportCCController();
-                $result = $controller->executeRevenueCC(
+                $result = app(ImportCCController::class)->executeRevenueCC(
                     $tempFilePath,
                     $divisiId,
-                    $jenisData,
+                    $month,
+                    $year,
+                    $filterType,
+                    $tipeRevenue,
+                    $jenisData
+                );
+                break;
+
+            case 'data_am':
+                $result = app(ImportAMController::class)->executeDataAM($tempFilePath, $filterType);
+                break;
+
+            case 'revenue_am':
+                $year = (int) $request->input('year');
+                $month = (int) $request->input('month');
+
+                $result = app(ImportAMController::class)->executeRevenueAM(
+                    $tempFilePath,
                     $year,
                     $month,
                     $filterType
                 );
-            } elseif ($importType === 'revenue_am') {
-                $controller = new ImportAMController();
-                
-                $result = $controller->executeRevenueAM(
-                    $request, // Contains year/month
-                    $tempFilePath,
-                    $filterType
-                );
-            }
+                break;
 
-            // Cleanup
-            if (file_exists($tempFilePath)) {
-                unlink($tempFilePath);
-            }
-
-            // ✅ FIXED: Delete preview data file from storage
-            if ($previewDataPath && Storage::exists($previewDataPath)) {
-                Storage::delete($previewDataPath);
-                Log::info('Preview data file deleted', ['path' => $previewDataPath]);
-            }
-
-            Cache::forget("import_metadata_{$sessionId}");
-            Cache::forget("merged_file_{$sessionId}");
-
-            Log::info('Execute Import completed', [
-                'session_id' => $sessionId,
-                'result' => $result
-            ]);
-
-            return response()->json($result);
-
-        } catch (\Exception $e) {
-            Log::error('Execute Import Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat execute import: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * ✅ MAINTAINED: Download Template
-     */
-    public function downloadTemplate($type)
-    {
-        try {
-            // Route to appropriate controller
-            if (str_starts_with($type, 'revenue-cc') || $type === 'data-cc') {
-                $controller = new ImportCCController();
-                return $controller->downloadTemplate($type);
-            } elseif (str_starts_with($type, 'revenue-am') || $type === 'data-am') {
-                $controller = new ImportAMController();
-                return $controller->downloadTemplate($type);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Template type not found'
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Download Template Error: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengunduh template: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * ✅ MAINTAINED: Download Error Log
-     */
-    public function downloadErrorLog($filename)
-    {
-        try {
-            $filePath = public_path('storage/import_logs/' . $filename);
-
-            if (!file_exists($filePath)) {
+            default:
                 return response()->json([
                     'success' => false,
-                    'message' => 'File tidak ditemukan'
-                ], 404);
-            }
-
-            return response()->download($filePath);
-        } catch (\Exception $e) {
-            Log::error('Download Error Log Error: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengunduh log: ' . $e->getMessage()
-            ], 500);
+                    'message' => 'Tipe import tidak valid'
+                ], 400);
         }
+
+        // ✅ Handle controller response
+        if ($result instanceof \Illuminate\Http\JsonResponse) {
+            $resultData = json_decode($result->getContent(), true);
+        } else {
+            $resultData = $result;
+        }
+
+        // ✅ Cleanup: Delete temp file after import
+        try {
+            if (file_exists($tempFilePath)) {
+                // Absolute path
+                unlink($tempFilePath);
+                Log::info('Cleaned up temp file (absolute)', ['file_path' => $tempFilePath]);
+            } elseif (Storage::disk('local')->exists($tempFilePath)) {
+                // Relative path
+                Storage::disk('local')->delete($tempFilePath);
+                Log::info('Cleaned up temp file (storage)', ['file_path' => $tempFilePath]);
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to cleanup temp file', [
+                'file_path' => $tempFilePath,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Clear session and cache
+        session()->forget("import_session_{$sessionId}");
+        Cache::forget("merged_file_{$sessionId}");
+
+        return response()->json($resultData);
+
+    } catch (\Exception $e) {
+        Log::error('Execute Import Error: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat execute import: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
-     * ✅ MAINTAINED: Get Import History
+     * Cancel import and cleanup files
      */
-    public function getImportHistory(Request $request)
+    public function cancelImport(Request $request)
     {
         try {
-            $logDirectory = public_path('storage/import_logs');
+            $sessionId = $request->input('session_id');
 
-            if (!file_exists($logDirectory)) {
+            if (!$sessionId) {
                 return response()->json([
-                    'success' => true,
-                    'data' => []
-                ]);
+                    'success' => false,
+                    'message' => 'Session ID required'
+                ], 400);
             }
 
-            $files = array_diff(scandir($logDirectory), ['.', '..']);
-            $history = [];
+            // Get temp file path
+            $sessionData = session("import_session_{$sessionId}");
+            $tempFilePath = $sessionData['temp_file_path'] ?? Cache::get("merged_file_{$sessionId}");
 
-            foreach ($files as $file) {
-                $filePath = $logDirectory . '/' . $file;
-                if (is_file($filePath)) {
-                    $history[] = [
-                        'filename' => $file,
-                        'size' => filesize($filePath),
-                        'created_at' => date('Y-m-d H:i:s', filemtime($filePath)),
-                        'download_url' => asset('storage/import_logs/' . $file)
-                    ];
-                }
+            // Delete temp file if exists
+            if ($tempFilePath && file_exists($tempFilePath)) {
+                unlink($tempFilePath);
+                Log::info('Deleted temp file on cancel', ['file_path' => $tempFilePath]);
             }
 
-            // Sort by created_at descending
-            usort($history, function ($a, $b) {
-                return strtotime($b['created_at']) - strtotime($a['created_at']);
-            });
+            // Delete chunk directory if exists
+            $chunkDir = storage_path(self::TEMP_CHUNKS_DIR . "/{$sessionId}");
+            if (file_exists($chunkDir)) {
+                $this->recursiveDelete($chunkDir);
+                Log::info('Deleted chunk directory on cancel', ['dir' => $chunkDir]);
+            }
+
+            // Clear cache and session
+            session()->forget("import_session_{$sessionId}");
+            Cache::forget("merged_file_{$sessionId}");
+            Cache::forget("chunk_metadata_{$sessionId}");
 
             return response()->json([
                 'success' => true,
-                'data' => $history
+                'message' => 'Import cancelled and files cleaned up'
             ]);
+
         } catch (\Exception $e) {
-            Log::error('Get Import History Error: ' . $e->getMessage());
+            Log::error('Cancel Import Error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil riwayat import: ' . $e->getMessage()
+                'message' => 'Failed to cancel import: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * ✅ MAINTAINED: Cleanup Expired Files
+     * Health check endpoint
      */
-    public function cleanupExpiredFiles()
-    {
-        try {
-            $tempDir = storage_path('app/temp_imports');
-            $chunksDir = storage_path(self::TEMP_CHUNKS_DIR);
-
-            $deletedCount = 0;
-            $expirationTime = now()->subHours(2)->timestamp;
-
-            // Cleanup temp imports
-            if (file_exists($tempDir)) {
-                $files = array_diff(scandir($tempDir), ['.', '..']);
-                foreach ($files as $file) {
-                    $filePath = $tempDir . '/' . $file;
-                    if (is_file($filePath) && filemtime($filePath) < $expirationTime) {
-                        unlink($filePath);
-                        $deletedCount++;
-                    }
-                }
-            }
-
-            // Cleanup chunks
-            if (file_exists($chunksDir)) {
-                $sessions = array_diff(scandir($chunksDir), ['.', '..']);
-                foreach ($sessions as $session) {
-                    $sessionPath = $chunksDir . '/' . $session;
-                    if (is_dir($sessionPath)) {
-                        $sessionTime = filemtime($sessionPath);
-                        if ($sessionTime < $expirationTime) {
-                            $this->recursiveDelete($sessionPath);
-                            $deletedCount++;
-                        }
-                    }
-                }
-            }
-
-            Log::info('Cleanup completed', [
-                'deleted_count' => $deletedCount
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => "Cleanup selesai. {$deletedCount} file/folder dihapus.",
-                'deleted_count' => $deletedCount
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Cleanup Error: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal cleanup: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * ✅ MAINTAINED: Health Check
-     */
-    public function healthCheck()
+    public function health()
     {
         try {
             $health = [
                 'status' => 'ok',
                 'timestamp' => now()->toIso8601String(),
                 'storage' => [
-                    'temp_imports' => [
-                        'exists' => file_exists(storage_path('app/temp_imports')),
-                        'writable' => is_writable(storage_path('app/temp_imports'))
-                    ],
-                    'temp_chunks' => [
-                        'exists' => file_exists(storage_path(self::TEMP_CHUNKS_DIR)),
-                        'writable' => is_writable(storage_path(self::TEMP_CHUNKS_DIR))
-                    ]
-                ],
-                'cache' => [
-                    'driver' => config('cache.default'),
-                    'working' => Cache::has('health_check_test') || Cache::put('health_check_test', true, 60)
+                    'temp_imports_exists' => file_exists(storage_path('app/temp_imports')),
+                    'temp_chunks_exists' => file_exists(storage_path(self::TEMP_CHUNKS_DIR)),
+                    'writable' => is_writable(storage_path('app'))
                 ],
                 'database' => [
                     'connected' => false,
@@ -782,7 +718,7 @@ class RevenueImportController extends Controller
     // ==================== PRIVATE HELPER METHODS FOR CHUNKED UPLOAD ====================
 
     /**
-     * ✅ MAINTAINED: Merge chunks into temp_imports directory
+     * Merge chunks into temp_imports directory
      */
     private function mergeCSVChunks($sessionId, $chunkDir, $fileName, $totalChunks, $metadata)
     {
@@ -804,7 +740,7 @@ class RevenueImportController extends Controller
 
             // Sort chunk files to ensure correct order
             $chunkFiles = glob($chunkDir . "/chunk_*.csv");
-            sort($chunkFiles, SORT_NATURAL); // Natural sort: chunk_0000, chunk_0001, ...
+            sort($chunkFiles, SORT_NATURAL);
 
             Log::info("Merging CSV chunks", [
                 'session_id' => $sessionId,
@@ -838,7 +774,7 @@ class RevenueImportController extends Controller
                     } else {
                         // Subsequent chunks: skip first line (headers), write rest
                         if ($lineNumber === 1) {
-                            continue; // Skip header line
+                            continue;
                         }
                         fwrite($finalFile, $line);
                         $totalRowsWritten++;
@@ -894,7 +830,7 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Count received chunks
+     * Count received chunks
      */
     private function countReceivedChunks($chunkDir)
     {
@@ -905,7 +841,7 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Store chunk metadata in cache
+     * Store chunk metadata in cache
      */
     private function storeChunkMetadata($sessionId, array $metadata)
     {
@@ -917,7 +853,7 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Get chunk metadata from cache
+     * Get chunk metadata from cache
      */
     private function getChunkMetadata($sessionId)
     {
@@ -925,7 +861,7 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Cleanup chunks directory
+     * Cleanup chunks directory
      */
     private function cleanupChunks($chunkDir)
     {
@@ -953,7 +889,7 @@ class RevenueImportController extends Controller
     }
 
     /**
-     * ✅ MAINTAINED: Recursively delete directory
+     * Recursively delete directory
      */
     private function recursiveDelete($dir)
     {

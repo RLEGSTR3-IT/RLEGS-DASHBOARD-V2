@@ -9,9 +9,82 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
-        /* ===== EXISTING STYLES - PRESERVED ===== */
+        /* ===================================================
+           🎨 ADDITIONAL STYLES - DO NOT MODIFY EXISTING CSS
+           =================================================== */
 
-        /* Additional styles for result modal */
+        /* ===================================================
+           ✅ FIX #1: REVENUE BADGE POSITIONING (RESPONSIVE ZOOM)
+           Fixed: Badges now stay aligned in column at all zoom levels
+           =================================================== */
+        .revenue-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .revenue-cell .revenue-value {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #212529;
+        }
+
+        .revenue-cell .revenue-badges {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            width: 100%;
+            align-items: center;
+        }
+
+        /* Ensure parent td alignment */
+        td.text-end {
+            text-align: right !important;
+        }
+
+        /* ===================================================
+           ✅ FIX #2: MONTH PICKER ACTIVE HOVER STATE
+           Fixed: Active button hover shows RED text on WHITE bg
+           =================================================== */
+        .mp-month-btn.active:hover {
+            background: white !important;
+            color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            font-weight: 600;
+        }
+
+        /* ===================================================
+           ✅ POLISH: SMOOTH TRANSITIONS & BETTER UX
+           =================================================== */
+        .table tbody tr {
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15);
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        /* ===================================================
+           EXISTING STYLES BELOW - DO NOT MODIFY
+           =================================================== */
+
+        /* Result Modal Stats */
         .result-modal-stats-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -88,7 +161,7 @@
             transition: width 0.5s ease;
         }
 
-        /* ✅ Force show tab content in modal */
+        /* Tab Content Visibility Fix */
         #modalEditDataAM .tab-content {
             display: block !important;
         }
@@ -125,7 +198,7 @@
             margin-bottom: 0.25rem;
         }
 
-        /* Better badge colors for Role & Status */
+        /* Badge Styles for Role & Status */
         .badge-role-am {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -161,7 +234,7 @@
             font-weight: 600;
         }
 
-        /* Checkbox column */
+        /* Checkbox & Action Columns */
         .table thead th:first-child,
         .table tbody td:first-child {
             width: 48px !important;
@@ -179,7 +252,6 @@
             margin: 0 auto !important;
         }
 
-        /* Aksi column wider for buttons */
         .table thead th:last-child,
         .table tbody td:last-child {
             width: 150px !important;
@@ -194,7 +266,7 @@
             align-items: center;
         }
 
-        /* Tab button active state - MERAH bukan biru */
+        /* Tab Active State - RED not blue */
         .tab-btn.active {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
             color: white !important;
@@ -206,11 +278,295 @@
             color: white !important;
         }
 
-        /* ==========================================
-           ✨ MODERN IMPORT MODAL STYLES
-           ========================================== */
+        .mp-header-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 0 8px;
+        }
 
-        /* Import Modal Header */
+        .mp-year-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: #fff;
+          font-size: 1.125rem;
+          font-weight: 700;
+          text-align: center;
+          cursor: text;
+          padding: 8px;
+          border-radius: 6px;
+          transition: all 0.2s;
+          width: 80px;
+          min-width: 80px;
+          max-width: 100px;
+        }
+
+        .mp-year-input:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mp-year-input:focus {
+          outline: none;
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .mp-nav-btn {
+          background: transparent;
+          border: none;
+          color: #fff;
+          font-size: 1.25rem;
+          cursor: pointer;
+          padding: 8px 12px;
+          border-radius: 6px;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .mp-nav-btn:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mp-nav-btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+
+        /* Hide flatpickr default year dropdown */
+        .flatpickr-current-month .numInputWrapper {
+          display: none !important;
+        }
+
+        .flatpickr-current-month .cur-year {
+          display: none !important;
+        }
+
+        .flatpickr-current-month .numInput {
+          display: none !important;
+        }
+
+        .flatpickr-current-month .arrowUp,
+        .flatpickr-current-month .arrowDown {
+          display: none !important;
+        }
+
+
+
+        .mp-nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .mp-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .mp-year-display {
+            font-weight: 600;
+            font-size: 1.1rem;
+            flex: 1;
+            text-align: center;
+            user-select: none;
+        }
+
+        .month-picker-body {
+            padding: 1rem;
+        }
+
+        .mp-month-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .mp-month-btn {
+            padding: 0.75rem 0.5rem;
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+
+        .mp-month-btn:hover:not(:disabled) {
+            background: #e9ecef;
+            border-color: #dc3545;
+        }
+
+        .mp-month-btn.active {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-color: #dc3545;
+            font-weight: 600;
+        }
+
+        .mp-month-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ===================================================
+           📋 SEGMENT CUSTOM DROPDOWN
+           =================================================== */
+
+        .seg-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .seg-select__btn {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .seg-select__btn:hover {
+            border-color: #dc3545;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.1);
+        }
+
+        .seg-select__label {
+            flex: 1;
+            text-align: left;
+            color: #333;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .seg-select__caret {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #666;
+            margin-left: 0.5rem;
+            transition: transform 0.2s;
+        }
+
+        .seg-menu.open .seg-select__caret {
+            transform: rotate(180deg);
+        }
+
+        .seg-menu {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            width: 100%;
+            min-width: 300px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+            animation: fadeInScale 0.2s ease;
+        }
+
+        .seg-menu.open {
+            display: block;
+        }
+
+        .seg-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .seg-tab {
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: #666;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .seg-tab:hover {
+            background: rgba(220, 53, 69, 0.05);
+            color: #dc3545;
+        }
+
+        .seg-tab.active {
+            background: white;
+            border-bottom-color: #dc3545;
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .seg-panels {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .seg-panel {
+            display: none;
+            padding: 0.5rem;
+        }
+
+        .seg-panel.active {
+            display: block;
+        }
+
+        .seg-option {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: white;
+            border: none;
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .seg-option:hover {
+            background: #f8f9fa;
+            color: #dc3545;
+            font-weight: 500;
+        }
+
+        #filter-segment {
+            display: none !important;
+        }
+
+        .seg-select {
+            display: block !important;
+        }
+
+        /* ===================================================
+           📥 IMPORT MODAL - MODERN DESIGN
+           =================================================== */
+
         #importModal .modal-header {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
@@ -235,13 +591,12 @@
             opacity: 1;
         }
 
-        /* Import Modal Body */
         #importModal .modal-body {
             padding: 2rem;
             background: #f8f9fa;
         }
 
-        /* ✨ TYPE SELECTOR - Modern Tabs Style (SAMA dengan tabs utama) */
+        /* Type Selector - Modern Tabs */
         .type-selector {
             display: flex;
             gap: 0;
@@ -287,7 +642,7 @@
             font-size: 1.1rem;
         }
 
-        /* Import Panel (Form Container) */
+        /* Import Panel Forms */
         .imp-panel {
             display: none;
             background: white;
@@ -312,7 +667,6 @@
             }
         }
 
-        /* Alert Boxes in Import Form */
         .imp-panel .alert {
             border: none;
             border-radius: 10px;
@@ -349,7 +703,6 @@
             margin-bottom: 0.5rem;
         }
 
-        /* Form Controls in Import Modal */
         .imp-panel .form-label {
             font-weight: 600;
             color: #2c3e50;
@@ -387,7 +740,6 @@
             border-color: #dee2e6;
         }
 
-        /* Month Picker in Import Form (SAMA dengan filter) */
         .imp-panel .datepicker-control {
             background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23dc3545' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") no-repeat right 1rem center;
             background-size: 20px;
@@ -396,7 +748,6 @@
             font-weight: 500;
         }
 
-        /* Small Text (Template Link) */
         .imp-panel .text-muted {
             font-size: 0.875rem;
             margin-top: 0.5rem;
@@ -415,7 +766,6 @@
             text-decoration: underline;
         }
 
-        /* Submit Button in Import Form */
         .imp-panel .btn-primary {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             border: none;
@@ -442,7 +792,7 @@
             margin-right: 0.5rem;
         }
 
-        /* Modal form styling */
+        /* Modal Form Styling */
         .modal-body .form-label {
             font-weight: 600;
             color: #333;
@@ -480,7 +830,9 @@
             background: transparent;
         }
 
-        /* ✨ NEW: Divisi Button Group Styling */
+        /* ===================================================
+           🎨 DIVISI BUTTON GROUP
+           =================================================== */
         .divisi-button-group {
             display: flex;
             gap: 0.5rem;
@@ -532,31 +884,29 @@
         }
 
         .divisi-toggle-btn.dps.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: #667eea;
+            background: var(--gradient-blue, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            border-color: var(--dps-primary, #667eea);
         }
 
         .divisi-toggle-btn.dss.active {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-color: #f093fb;
+            background: var(--gradient-pink, linear-gradient(135deg, #f093fb 0%, #f5576c 100%));
+            border-color: var(--dss-primary, #f093fb);
         }
 
         .divisi-toggle-btn.dgs.active {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-color: #4facfe;
+            background: var(--gradient-cyan, linear-gradient(135deg, #4facfe 0%, #00f2fe 100%));
+            border-color: var(--dgs-primary, #4facfe);
         }
 
         .divisi-toggle-btn.des.active {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            border-color: #fa709a;
+            background: var(--gradient-yellow, linear-gradient(135deg, #fa709a 0%, #fee140 100%));
+            border-color: var(--des-primary, #fa709a);
         }
 
-        /* Hidden helper for form submission */
         .divisi-hidden-container {
             display: none;
         }
 
-        /* ✨ TELDA Field - Conditional Display */
         #editDataAMTeldaWrapper {
             transition: all 0.3s ease;
         }
@@ -565,16 +915,15 @@
             display: none;
         }
 
-        /* ==========================================
-           ✨ REDESIGNED PREVIEW MODAL - PROFESSIONAL & CLEAN
-           ========================================== */
+        /* ===================================================
+           👁️ PREVIEW MODAL - REDESIGNED
+           =================================================== */
 
         #previewModal .modal-dialog {
             max-width: 900px;
             margin: 1.75rem auto;
         }
 
-        /* Header - Tetap Merah */
         #previewModal .modal-header {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
@@ -610,7 +959,6 @@
             overflow-y: auto;
         }
 
-        /* ✅ FIXED: Preview Summary Cards - FORCE 1 ROW */
         .preview-summary {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -639,7 +987,6 @@
             color: #6c757d;
         }
 
-        /* Icon colors - Subtle & Professional */
         .preview-card.total .icon { color: #495057; }
         .preview-card.unique .icon { color: #6c757d; }
         .preview-card.update .icon { color: #ffc107; }
@@ -661,7 +1008,6 @@
             line-height: 1.3;
         }
 
-        /* ✅ Responsive: Stack on smaller screens */
         @media (max-width: 992px) {
             #previewModal .modal-dialog {
                 max-width: 720px;
@@ -705,7 +1051,48 @@
             }
         }
 
-        /* ✅ Import Actions - Simplified & Professional */
+        .aggregate-warning {
+            background: #fff8e6;
+            border: 2px solid #ffc107;
+            border-left: 4px solid #ff9800;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .aggregate-warning .warning-text {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #995c00;
+            font-weight: 600;
+        }
+
+        .aggregate-warning .warning-text i {
+            font-size: 1.25rem;
+            color: #ff9800;
+        }
+
+        .aggregate-warning label {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #995c00;
+        }
+
+        .aggregate-warning input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
         .import-actions {
             margin-top: 1.5rem;
         }
@@ -724,7 +1111,6 @@
             margin-right: 0.5rem;
         }
 
-        /* ✅ Button Group - Consistent Red Theme */
         .import-actions .d-grid {
             gap: 0.75rem;
         }
@@ -741,7 +1127,6 @@
             justify-content: space-between;
         }
 
-        /* Primary Action - Red Gradient */
         #btnImportAll {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
@@ -754,7 +1139,6 @@
             box-shadow: 0 6px 16px rgba(220, 53, 69, 0.35);
         }
 
-        /* Secondary Actions - Red Outline */
         #btnImportNew,
         #btnImportUpdate {
             background: white;
@@ -769,7 +1153,6 @@
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
         }
 
-        /* Disabled State */
         .import-actions .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -777,7 +1160,6 @@
             box-shadow: none;
         }
 
-        /* Badge inside buttons */
         .import-actions .badge {
             background: rgba(0, 0, 0, 0.1);
             color: inherit;
@@ -792,7 +1174,6 @@
             color: white;
         }
 
-        /* Error Info */
         .import-actions .alert-danger {
             background: #fff5f5;
             border: 2px solid #ffc9c9;
@@ -800,7 +1181,6 @@
             color: #721c24;
         }
 
-        /* ✅ Preview Modal Footer */
         #previewModal .modal-footer {
             border-top: 2px solid #e9ecef;
             padding: 1.5rem 2rem;
@@ -822,9 +1202,9 @@
             background: #fff5f5;
         }
 
-        /* ==========================================
-           ✨ PROGRESS SNACKBAR - MODERN & CLEAN
-           ========================================== */
+        /* ===================================================
+           ⏳ PROGRESS SNACKBAR
+           =================================================== */
         .progress-snackbar {
             position: fixed;
             bottom: 24px;
@@ -962,7 +1342,6 @@
             color: #212529;
         }
 
-        /* Loading Overlay (Fallback) */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -1001,8 +1380,137 @@
             font-weight: 600;
         }
 
-        /* Responsive */
+        /* ===================================================
+           🆕 NEW FEATURES - BADGES & VIEW MODE
+           =================================================== */
+
+        .badge-revenue-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-left: 6px;
+        }
+
+        .badge-revenue-type.ho {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .badge-revenue-type.bill {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .badge-revenue-source {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-left: 6px;
+        }
+
+        .badge-revenue-source.reguler {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .badge-revenue-source.ngtma {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .view-mode-toggle {
+            display: inline-flex;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .view-mode-toggle button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .view-mode-toggle button:hover:not(.active) {
+            background: #f8f9fa;
+            color: #495057;
+        }
+
+        .view-mode-toggle button.active {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.25);
+        }
+
+        .table-wrap.all-columns {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-wrap.all-columns table {
+            min-width: 1200px;
+        }
+
+        .tipe-revenue-select {
+            position: relative;
+        }
+
+        .tipe-revenue-select select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23dc3545' d='M6 9L1 4h10z'/%3E%3C/svg%3E") no-repeat right 1rem center;
+            background-size: 12px;
+            padding-right: 2.5rem;
+        }
+
+        .currency-short {
+            font-weight: 600;
+        }
+
+        .currency-short .unit {
+            font-size: 0.85em;
+            font-weight: 500;
+            color: #6c757d;
+            margin-left: 2px;
+        }
+
         @media (max-width: 768px) {
+            .table-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .view-mode-toggle {
+                width: 100%;
+            }
+
+            .view-mode-toggle button {
+                flex: 1;
+            }
+
+            .badge-revenue-type,
+            .badge-revenue-source {
+                font-size: 0.65rem;
+                padding: 2px 6px;
+            }
+
             .progress-snackbar {
                 width: calc(100% - 40px);
                 right: 20px;
@@ -1022,14 +1530,18 @@
                 font-size: 0.875rem;
                 padding: 0.75rem 1rem;
             }
+
+            .aggregate-warning {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 @endsection
 
-
 @section('content')
 <div class="rlegs-container">
-    <!-- ===== Page Header / Action Bar ===== -->
+    <!-- Page Header -->
     <div class="page-header card-shadow">
         <div class="page-title">
             <h1>Data Revenue RLEGS</h1>
@@ -1040,19 +1552,19 @@
                 <i class="fa-solid fa-file-import me-2"></i>Import
             </button>
             <div class="export-group">
-            <a href="/export/excel" class="btn btn-primary">
-                <i class="fa-solid fa-file-export me-2"></i> Export
-            </a>
+                <a href="/export/excel" class="btn btn-primary">
+                    <i class="fa-solid fa-file-export me-2"></i> Export
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- ===== Filters Line ===== -->
+    <!-- Filters -->
     <div class="filters card-shadow">
-         <form class="searchbar" action="#" method="GET" id="searchForm" onsubmit="return false;">
-                <input type="search" class="search-input" id="searchInput" placeholder="Cari data...">
-                <button class="search-btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-            </form>
+        <form class="searchbar" action="#" method="GET" id="searchForm" onsubmit="return false;">
+            <input type="search" class="search-input" id="searchInput" placeholder="Cari data...">
+            <button class="search-btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </form>
         <div class="filter-group">
             <label>Witel</label>
             <select class="form-select" id="filterWitel">
@@ -1067,47 +1579,34 @@
         </div>
         <div class="filter-group">
             <label>Segment</label>
-            <!-- Select asli (hidden, untuk form submit) -->
-            <select class="form-select" id="filter-segment" name="segment">
+            <select class="form-select" id="filter-segment" name="segment" style="display: none;">
                 <option value="all">Semua Segment</option>
-                <!-- Options dari database akan diisi via JS -->
             </select>
-            <!-- UI custom dengan tabs (akan di-generate via JS) -->
             <div class="seg-select" id="segSelect">
-                <!-- Tombol trigger -->
                 <button type="button" class="seg-select__btn" aria-haspopup="listbox">
                     <span class="seg-select__label">Semua Segment</span>
                     <span class="seg-select__caret"></span>
                 </button>
-                <!-- Menu dropdown (akan diisi via JS) -->
                 <div class="seg-menu" id="segMenu" role="listbox">
-                    <div class="seg-tabs" id="segTabs" role="tablist">
-                        <!-- Tabs akan di-generate via JS -->
-                    </div>
-                    <div class="seg-panels" id="segPanels">
-                        <!-- Panels akan di-generate via JS -->
-                    </div>
+                    <div class="seg-tabs" id="segTabs" role="tablist"></div>
+                    <div class="seg-panels" id="segPanels"></div>
                 </div>
             </div>
         </div>
-        <!-- === Periode: MONTHPICKER (pilih bulan & tahun) === -->
         <div class="filter-group" id="filterPeriodeGroup">
             <label>Periode</label>
             <input type="text" id="filter-date" class="form-control datepicker-control" placeholder="Pilih bulan & tahun" autocomplete="off" readonly>
             <input type="hidden" id="filter-month" name="month" value="{{ date('m') }}">
-            <input type="hidden" id="filter-year"  name="year"  value="{{ date('Y') }}">
+            <input type="hidden" id="filter-year" name="year" value="{{ date('Y') }}">
         </div>
         <div class="filter-actions">
-            <button class="btn btn-primary" id="btn-apply-filter">
-                <i class="fa-solid fa-check me-1"></i>Terapkan
-            </button>
             <button class="btn btn-secondary" id="btn-reset-filter">
                 <i class="fa-solid fa-rotate-left me-1"></i>Reset
             </button>
         </div>
     </div>
 
-    <!-- ===== Tabs ===== -->
+    <!-- Tabs -->
     <div class="tabs card-shadow">
         <button class="tab-btn active" data-tab="tab-cc-revenue">
             <i class="fa-solid fa-chart-line me-2"></i>Revenue CC
@@ -1127,7 +1626,7 @@
         </button>
     </div>
 
-    <!-- ===== Tab: Revenue CC ===== -->
+    <!-- Tab: Revenue CC -->
     <div id="tab-cc-revenue" class="tab-panel card-shadow active">
         <div class="panel-header">
             <div class="left">
@@ -1135,13 +1634,21 @@
                 <p class="muted">Gunakan <i>option button</i> untuk melihat kategori Revenue CC</p>
             </div>
             <div class="right" style="display: flex; gap: 1rem; align-items: center;">
+                <div class="view-mode-toggle" id="viewModeToggle">
+                    <button class="active" data-mode="default">
+                        <i class="fa-solid fa-table-cells me-1"></i>Default
+                    </button>
+                    <button data-mode="all">
+                        <i class="fa-solid fa-table-columns me-1"></i>All Columns
+                    </button>
+                </div>
                 <button class="btn btn-danger btn-sm" id="btnDeleteSelectedCC" disabled>
                     <i class="fa-solid fa-trash-can me-2"></i>Hapus Terpilih
                 </button>
                 <button class="btn btn-outline-danger btn-sm" id="btnBulkDeleteCC">
                     <i class="fa-solid fa-trash-alt me-2"></i>Hapus Semua
                 </button>
-                <div class="btn-segmentation" role="group" aria-label="Revenue Type">
+                <div class="btn-segmentation" role="group">
                     <button class="seg-btn active" data-revtype="REGULER">Reguler</button>
                     <button class="seg-btn" data-revtype="NGTMA">NGTMA</button>
                     <button class="seg-btn" data-revtype="KOMBINASI">Kombinasi</button>
@@ -1149,27 +1656,27 @@
             </div>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap" id="revenueTableWrap">
             <table class="table modern">
                 <thead>
                     <tr>
-                        <th style="width: 48px; min-width: 48px; text-align: center;"><input type="checkbox" id="selectAllCC"></th>
+                        <th style="width: 48px;"><input type="checkbox" id="selectAllCC"></th>
                         <th>Nama CC</th>
                         <th>Segment</th>
                         <th class="text-end">Target Revenue</th>
-                        <th class="text-end">
+                        <th class="text-end revenue-col-default">
                             Revenue
-                            <i class="fa-regular fa-circle-question ms-1 text-muted"
-                               data-bs-toggle="tooltip"
-                               title="Nilai ini menampilkan Revenue sesuai kategori (Reguler/NGTMA/Kombinasi). Hover pada angka untuk detail: Revenue Sold/Bill."></i>
+                            <i class="fa-regular fa-circle-question ms-1 text-muted" data-bs-toggle="tooltip" title="Nilai menampilkan Revenue sesuai kategori (Reguler/NGTMA/Kombinasi)"></i>
                         </th>
+                        <th class="text-end revenue-col-all" style="display: none;">Revenue Sold</th>
+                        <th class="text-end revenue-col-all" style="display: none;">Revenue Bill</th>
                         <th>Bulan</th>
-                        <th class="text-center" style="width: 150px; min-width: 150px;">Aksi</th>
+                        <th class="text-center" style="width: 150px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="tableRevenueCC">
                     <tr>
-                        <td colspan="7" class="text-center">
+                        <td colspan="9" class="text-center">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
@@ -1194,7 +1701,7 @@
         </div>
     </div>
 
-    <!-- ===== Tab: Revenue AM ===== -->
+    <!-- Tab: Revenue AM -->
     <div id="tab-am-revenue" class="tab-panel card-shadow">
         <div class="panel-header">
             <div class="left">
@@ -1222,20 +1729,15 @@
             <table class="table modern" id="table-am">
                 <thead>
                     <tr>
-                        <th style="width: 48px; min-width: 48px; text-align: center;"><input type="checkbox" id="selectAllAM"></th>
-                        <th style="width: auto;">Nama AM</th>
-                        <th style="width: auto;">Corporate Customer</th>
-                        <th class="text-end" style="width: 140px;">Target Revenue</th>
-                        <th class="text-end" style="width: 140px;">
-                            Revenue
-                            <i class="fa-regular fa-circle-question ms-1 text-muted"
-                               data-bs-toggle="tooltip"
-                               title="Nilai revenue mengikuti mode (AM/HOTDA)."></i>
-                        </th>
-                        <th class="text-end" style="width: 100px;">Achievement</th>
-                        <th style="width: 100px;">Bulan</th>
-                        <th class="telda-col" style="width: auto;">TELDA</th>
-                        <th class="text-center" style="width: 150px; min-width: 150px;">Aksi</th>
+                        <th style="width: 48px;"><input type="checkbox" id="selectAllAM"></th>
+                        <th>Nama AM</th>
+                        <th>Corporate Customer</th>
+                        <th class="text-end">Target Revenue</th>
+                        <th class="text-end">Revenue</th>
+                        <th class="text-end">Achievement</th>
+                        <th>Bulan</th>
+                        <th class="telda-col">TELDA</th>
+                        <th class="text-center" style="width: 150px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="tableRevenueAM">
@@ -1265,14 +1767,14 @@
         </div>
     </div>
 
-    <!-- ===== Tab: Data AM ===== -->
+    <!-- Tab: Data AM -->
     <div id="tab-data-am" class="tab-panel card-shadow">
         <div class="panel-header">
             <div class="left">
                 <h3>Data Account Manager</h3>
                 <p class="muted">Daftar Account Manager yang terdaftar di sistem</p>
             </div>
-            <div class="right" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="right" style="display: flex; gap: 1rem;">
                 <button class="btn btn-danger btn-sm" id="btnDeleteSelectedDataAM" disabled>
                     <i class="fa-solid fa-trash-can me-2"></i>Hapus Terpilih
                 </button>
@@ -1286,13 +1788,13 @@
             <table class="table modern">
                 <thead>
                     <tr>
-                        <th style="width: 48px; min-width: 48px; text-align: center;"><input type="checkbox" id="selectAllDataAM"></th>
+                        <th style="width: 48px;"><input type="checkbox" id="selectAllDataAM"></th>
                         <th>Nama AM</th>
                         <th>Witel</th>
                         <th>Role</th>
                         <th>TELDA</th>
                         <th>Status Registrasi</th>
-                        <th class="text-center" style="width: 150px; min-width: 150px;">Aksi</th>
+                        <th class="text-center" style="width: 150px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="tableDataAM">
@@ -1322,14 +1824,14 @@
         </div>
     </div>
 
-    <!-- ===== Tab: Data CC ===== -->
+    <!-- Tab: Data CC -->
     <div id="tab-data-cc" class="tab-panel card-shadow">
         <div class="panel-header">
             <div class="left">
                 <h3>Data Corporate Customer</h3>
                 <p class="muted">Detail Corporate Customer</p>
             </div>
-            <div class="right" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="right" style="display: flex; gap: 1rem;">
                 <button class="btn btn-danger btn-sm" id="btnDeleteSelectedDataCC" disabled>
                     <i class="fa-solid fa-trash-can me-2"></i>Hapus Terpilih
                 </button>
@@ -1343,10 +1845,10 @@
             <table class="table modern">
                 <thead>
                     <tr>
-                        <th style="width: 48px; min-width: 48px; text-align: center;"><input type="checkbox" id="selectAllDataCC"></th>
+                        <th style="width: 48px;"><input type="checkbox" id="selectAllDataCC"></th>
                         <th>Nama CC</th>
                         <th>NIPNAS</th>
-                        <th class="text-center" style="width: 150px; min-width: 150px;">Aksi</th>
+                        <th class="text-center" style="width: 150px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="tableDataCC">
@@ -1378,9 +1880,9 @@
 
 </div>
 
-<!-- ========================================
-     ✨ MODERN IMPORT MODAL - FULLY UPDATED & COMPACT
-     ======================================== -->
+<!-- ===================================================
+     🎯 IMPORT MODAL - WITH 5 TABS
+     =================================================== -->
 <div class="modal fade" id="importModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -1393,7 +1895,6 @@
       </div>
 
       <div class="modal-body">
-        <!-- ✨ Modern Type Selector -->
         <div class="type-selector">
           <button class="type-btn active" data-imp="imp-data-cc">
               <i class="fa-solid fa-building"></i>
@@ -1411,13 +1912,14 @@
               <i class="fa-solid fa-user-tie"></i>
               Revenue AM
           </button>
+          <button class="type-btn" data-imp="imp-target-witel">
+              <i class="fa-solid fa-chart-column"></i>
+              Target Bill Witel
+          </button>
         </div>
 
-        <!-- ==========================================
-             ✅ FORM 1: DATA CC
-             ========================================== -->
+        <!-- FORM 1: DATA CC -->
         <div id="imp-data-cc" class="imp-panel active">
-            <!-- Compact Info -->
             <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
                 <div class="d-flex gap-2 align-items-start">
                     <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
@@ -1440,7 +1942,7 @@
                         <i class="fa-solid fa-file-csv me-1"></i>
                         Upload File CSV <span class="text-danger">*</span>
                     </label>
-                    <input type="file" class="form-control" name="file" accept=".csv" required>
+                    <input type="file" class="form-control" name="file" accept=".csv,.txt" required>
                     <small class="form-text text-muted">
                         <a href="{{ route('revenue.template', ['type' => 'data-cc']) }}" class="text-decoration-none">
                             <i class="fa-solid fa-download me-1"></i>Download Template
@@ -1454,19 +1956,16 @@
             </form>
         </div>
 
-        <!-- ==========================================
-             ✅ FORM 2: DATA AM
-             ========================================== -->
+        <!-- FORM 2: DATA AM -->
         <div id="imp-data-am" class="imp-panel">
-            <!-- Compact Info -->
             <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
                 <div class="d-flex gap-2 align-items-start">
                     <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
                     <div class="flex-grow-1">
                         <strong class="d-block mb-1">Format CSV Data AM</strong>
                         <div class="text-muted" style="font-size: 0.85rem; line-height: 1.5;">
-                            <strong>Kolom:</strong> NIK, NAMA AM, PROPORSI, WITEL AM, NIPNAS, STANDARD NAME, GROUP CONGLO, DIVISI AM, SEGMEN, WITEL HO, REGIONAL, DIVISI, TELDA<br>
-                            <strong>Aturan:</strong> HOTDA wajib isi TELDA | AM kosongkan TELDA | Total proporsi per NIPNAS = 1
+                            <strong>Kolom:</strong> NIK, NAMA AM, WITEL AM, DIVISI AM, REGIONAL, DIVISI, TELDA<br>
+                            <strong>Aturan:</strong> HOTDA wajib isi TELDA | AM kosongkan TELDA
                         </div>
                     </div>
                 </div>
@@ -1481,7 +1980,7 @@
                         <i class="fa-solid fa-file-csv me-1"></i>
                         Upload File CSV <span class="text-danger">*</span>
                     </label>
-                    <input type="file" class="form-control" name="file" accept=".csv" required>
+                    <input type="file" class="form-control" name="file" accept=".csv,.txt" required>
                     <small class="form-text text-muted">
                         <a href="{{ route('revenue.template', ['type' => 'data-am']) }}" class="text-decoration-none">
                             <i class="fa-solid fa-download me-1"></i>Download Template
@@ -1495,89 +1994,93 @@
             </form>
         </div>
 
-        <!-- ==========================================
-     ✅ FORM 3: REVENUE CC - FINAL COMPACT
-     ========================================== -->
-<div id="imp-rev-cc" class="imp-panel">
-    <!-- Ultra Compact Info -->
-  <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.8rem;">
-        <div class="d-flex gap-2">
-            <i class="fa-solid fa-info-circle text-primary"></i>
-            <div class="flex-grow-1">
-                <strong class="d-block mb-1">Format CSV</strong>
-                  <div class="text-muted" style="font-size: 0.75rem; line-height: 1.6;">
-                      <strong class="text-success">Real:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, REVENUE_SOLD | DPS → tambah WITEL_BILL, REVENUE_BILL<br>
-                      <strong class="text-warning">Target:</strong> DGS/DSS → NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, TARGET_REVENUE | DPS → tambah WITEL_BILL
-                  </div>
+        <!-- FORM 3: REVENUE CC - UNIFIED TEMPLATE -->
+        <div id="imp-rev-cc" class="imp-panel">
+            <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.8rem;">
+                <div class="d-flex gap-2">
+                    <i class="fa-solid fa-info-circle text-primary"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block mb-1">Format CSV (Sama untuk DGS/DSS/DPS)</strong>
+                        <div class="text-muted" style="font-size: 0.75rem; line-height: 1.6;">
+                            <strong>Kolom:</strong> NIPNAS, STANDARD_NAME, LSEGMENT_HO, WITEL_HO, REVENUE_SOLD, TARGET_REVENUE_SOLD, WITEL_BILL, REVENUE_BILL, SOURCE_DATA<br>
+                            <strong>Pilih Tipe:</strong> HO (pakai REVENUE_SOLD) atau BILL (pakai REVENUE_BILL)
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <form id="formRevenueCC" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="import_type" value="revenue_cc">
+
+                <div class="row g-2 mb-2">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-calendar me-1"></i>Periode <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="import-cc-periode" class="form-control form-control-sm datepicker-control" placeholder="Pilih Periode" readonly required>
+                        <input type="hidden" name="month" id="import-cc-month">
+                        <input type="hidden" name="year" id="import-cc-year">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-sitemap me-1"></i>Divisi <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm" name="divisi_id" id="revCCDivisiImport" required>
+                            <option value="">Pilih Divisi</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 tipe-revenue-select">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-tags me-1"></i>Tipe Revenue <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm" name="tipe_revenue" id="revCCTipeRevenueImport" required>
+                            <option value="">Pilih Tipe</option>
+                            <option value="HO">Revenue Sold (HO)</option>
+                            <option value="BILL">Revenue Bill</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-tag me-1"></i>Jenis Data <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm" name="jenis_data" id="revCCJenisDataImport" required>
+                            <option value="">Pilih Jenis</option>
+                            <option value="revenue">Real Revenue</option>
+                            <option value="target">Target Revenue</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            <i class="fa-solid fa-file me-1"></i>Upload CSV <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" class="form-control form-control-sm" name="file" accept=".csv,.txt" required>
+                    </div>
+                </div>
+
+                <!-- ✅ FIX: Dynamic Template Links (2 buttons) -->
+                <div class="mb-3" style="font-size: 0.82rem; display: flex; gap: 1rem;">
+                    <span class="text-muted">Template:</span>
+                    <a href="{{ route('revenue.template', ['type' => 'revenue-cc']) }}" class="text-decoration-none" target="_blank" id="linkTemplateRealRevCC">
+                        <i class="fa-solid fa-download me-1"></i>Unduh Template Real Revenue CC
+                    </a>
+                    <a href="{{ route('revenue.template', ['type' => 'revenue-cc']) }}" class="text-decoration-none" target="_blank" id="linkTemplateTargetRevCC">
+                        <i class="fa-solid fa-download me-1"></i>Unduh Template Target Revenue CC
+                    </a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-upload me-1"></i>Import Revenue CC
+                </button>
+            </form>
         </div>
-    </div>
 
-    <form id="formRevenueCC" enctype="multipart/form-data">
-        @csrf
-        <input type="hidden" name="import_type" value="revenue_cc">
-
-        <div class="row g-2 mb-2">
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-calendar me-1"></i>Periode <span class="text-danger">*</span>
-                </label>
-                <input type="text" id="import-cc-periode" class="form-control form-control-sm datepicker-control" placeholder="Pilih Periode" readonly required>
-                <input type="hidden" name="month" id="import-cc-month">
-                <input type="hidden" name="year" id="import-cc-year">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-sitemap me-1"></i>Divisi <span class="text-danger">*</span>
-                </label>
-                <select class="form-select form-select-sm" name="divisi_id" id="revCCDivisiImport" required>
-                    <option value="">Pilih Divisi</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-tag me-1"></i>Jenis Data <span class="text-danger">*</span>
-                </label>
-                <select class="form-select form-select-sm" name="jenis_data" id="revCCJenisDataImport" required>
-                    <option value="">Pilih Jenis</option>
-                    <option value="revenue">Real Revenue</option>
-                    <option value="target">Target Revenue</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">
-                    <i class="fa-solid fa-file me-1"></i>Upload CSV <span class="text-danger">*</span>
-                </label>
-                <input type="file" class="form-control form-control-sm" name="file" accept=".csv" required>
-            </div>
-        </div>
-
-        <!-- Template Horizontal - 1 Baris -->
-        <div class="mb-3" style="font-size: 0.82rem;">
-            <span class="text-muted me-2">Template:</span>
-            <a href="#" id="linkTemplateDGSDSS" class="text-decoration-none me-2">
-                <i class="fa-solid fa-download me-1"></i><span id="textTemplateDGSDSS">DGS/DSS</span>
-            </a>
-            <span class="text-muted mx-1">|</span>
-            <a href="#" id="linkTemplateDPS" class="text-decoration-none">
-                <i class="fa-solid fa-download me-1"></i><span id="textTemplateDPS">DPS</span>
-            </a>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-sm">
-            <i class="fa-solid fa-upload me-1"></i>Import Revenue CC
-        </button>
-    </form>
-</div>
-
-        <!-- ==========================================
-             ✅ FORM 4: REVENUE AM
-             ========================================== -->
+        <!-- FORM 4: REVENUE AM -->
         <div id="imp-rev-map" class="imp-panel">
-            <!-- Compact Info -->
             <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
                 <div class="d-flex gap-2 align-items-start">
                     <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
@@ -1585,7 +2088,7 @@
                         <strong class="d-block mb-1">Format CSV Revenue AM</strong>
                         <div class="text-muted" style="font-size: 0.85rem; line-height: 1.5;">
                             <strong>Kolom:</strong> NIPNAS, NIK_AM, PROPORSI<br>
-                            <strong>Aturan:</strong> Revenue CC harus ada dulu | Proporsi dalam persen (60 = 60%) | Total per NIPNAS = 100
+                            <strong>Aturan:</strong> Revenue CC harus ada dulu | Total per NIPNAS = 100
                         </div>
                     </div>
                 </div>
@@ -1596,30 +2099,22 @@
                 <input type="hidden" name="import_type" value="revenue_am">
 
                 <div class="row g-3 mb-3">
-                    <!-- Periode -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">
                             <i class="fa-solid fa-calendar-days me-1"></i>
                             Periode <span class="text-danger">*</span>
                         </label>
-                        <input type="text"
-                               id="import-am-periode"
-                               class="form-control datepicker-control"
-                               placeholder="Pilih Bulan & Tahun"
-                               autocomplete="off"
-                               readonly
-                               required>
+                        <input type="text" id="import-am-periode" class="form-control datepicker-control" placeholder="Pilih Bulan & Tahun" autocomplete="off" readonly required>
                         <input type="hidden" name="month" id="import-am-month">
                         <input type="hidden" name="year" id="import-am-year">
                     </div>
 
-                    <!-- Upload File -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">
                             <i class="fa-solid fa-file-csv me-1"></i>
                             Upload File CSV <span class="text-danger">*</span>
                         </label>
-                        <input type="file" class="form-control" name="file" accept=".csv" required>
+                        <input type="file" class="form-control" name="file" accept=".csv,.txt" required>
                         <small class="form-text text-muted">
                             <a href="{{ route('revenue.template', ['type' => 'revenue-am']) }}" class="text-decoration-none">
                                 <i class="fa-solid fa-download me-1"></i>Download Template
@@ -1634,14 +2129,72 @@
             </form>
         </div>
 
+        <!-- FORM 5: TARGET BILL WITEL -->
+        <div id="imp-target-witel" class="imp-panel">
+            <div class="alert alert-light border mb-3 py-2 px-3" style="font-size: 0.875rem;">
+                <div class="d-flex gap-2 align-items-start">
+                    <i class="fa-solid fa-info-circle text-primary" style="margin-top: 2px;"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block mb-1">Format CSV Target Bill Witel</strong>
+                        <div class="text-muted" style="font-size: 0.85rem; line-height: 1.5;">
+                            <strong>Kolom:</strong> WITEL, TARGET_REVENUE<br>
+                            <strong>Catatan:</strong> Hanya untuk divisi DPS/DSS
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="formTargetWitel" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="import_type" value="target_witel">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-calendar-days me-1"></i>
+                            Periode <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="import-witel-periode" class="form-control datepicker-control" placeholder="Pilih Bulan & Tahun" autocomplete="off" readonly required>
+                        <input type="hidden" name="month" id="import-witel-month">
+                        <input type="hidden" name="year" id="import-witel-year">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-sitemap me-1"></i>
+                            Divisi <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" name="divisi_id" id="targetWitelDivisiImport" required>
+                            <option value="">Pilih Divisi</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-file-csv me-1"></i>
+                            Upload File CSV <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" class="form-control" name="file" accept=".csv,.txt" required>
+                        <small class="form-text text-muted">
+                            <a href="{{ route('revenue.template', ['type' => 'witel-target-bill']) }}" class="text-decoration-none">
+                                <i class="fa-solid fa-download me-1"></i>Download Template
+                            </a>
+                        </small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-upload me-2"></i>Import Target Bill Witel
+                </button>
+            </form>
+        </div>
+
       </div>
     </div>
   </div>
 </div>
 
-<!-- ==========================================
-     ✨ REDESIGNED PREVIEW MODAL - PROFESSIONAL & CLEAN
-     ========================================== -->
+<!-- PREVIEW MODAL -->
 <div class="modal fade" id="previewModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1653,13 +2206,21 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- ✅ Summary Cards - Clean & Minimal -->
                 <div class="preview-summary" id="previewSummary"></div>
 
-                <!-- Info Banner for Large Datasets -->
+                <div class="aggregate-warning" id="aggregateWarning" style="display: none;">
+                    <div class="warning-text">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        <span id="aggregateWarningText">10 CC duplikat ditemukan</span>
+                    </div>
+                    <label>
+                        <input type="checkbox" id="aggregateToggle">
+                        <span>Agregasi (sum revenue)</span>
+                    </label>
+                </div>
+
                 <div id="previewInfo" style="display: none;"></div>
 
-                <!-- ✅ Action Buttons - Simplified & Professional -->
                 <div class="import-actions">
                     <div class="alert">
                         <i class="fa-solid fa-info-circle"></i>
@@ -1667,7 +2228,6 @@
                     </div>
                     
                     <div class="d-grid">
-                        <!-- Import All Button - Red Gradient -->
                         <button type="button" class="btn" id="btnImportAll">
                             <span>
                                 <i class="fa-solid fa-check-double me-2"></i>
@@ -1676,7 +2236,6 @@
                             <span class="badge" id="badgeAllCount">0 data</span>
                         </button>
 
-                        <!-- Import New Only Button - Red Outline -->
                         <button type="button" class="btn" id="btnImportNew">
                             <span>
                                 <i class="fa-solid fa-plus me-2"></i>
@@ -1685,7 +2244,6 @@
                             <span class="badge" id="badgeNewCount">0 data</span>
                         </button>
 
-                        <!-- Import Update Only Button - Red Outline -->
                         <button type="button" class="btn" id="btnImportUpdate">
                             <span>
                                 <i class="fa-solid fa-edit me-2"></i>
@@ -1695,7 +2253,6 @@
                         </button>
                     </div>
 
-                    <!-- Error Info -->
                     <div class="alert alert-danger" id="errorInfo" style="display: none;">
                         <i class="fa-solid fa-exclamation-triangle me-2"></i>
                         <span id="errorMessage"></span>
@@ -1719,7 +2276,7 @@
     </div>
 </div>
 
-<!-- =================== ✅ RESULT MODAL =================== -->
+<!-- RESULT MODAL -->
 <div class="modal fade" id="resultModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1738,42 +2295,65 @@
     </div>
 </div>
 
-<!-- ========================================
-     ✅ EDIT MODALS - IMPROVED
-     ======================================== -->
+<!-- ✅ EDIT MODALS (Will be continued in Part 2 JavaScript) -->
 <!-- Modal Edit Revenue CC -->
 <div class="modal fade" id="modalEditRevenueCC" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Edit Revenue CC</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="formEditRevenueCC">
-                <div class="modal-body">
-                    <input type="hidden" id="editCCRevenueId">
-                    <div class="mb-3">
-                        <label class="form-label">Nama CC</label>
-                        <input type="text" class="form-control" id="editCCNamaCC" readonly>
+            
+            <!-- ✅ NEW: 2 TABS - Data Revenue & Mapping AM -->
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="editRevenueCCTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-revenue-data-tab" data-bs-toggle="tab" data-bs-target="#tab-revenue-data" type="button">Data Revenue</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-mapping-am-tab" data-bs-toggle="tab" data-bs-target="#tab-mapping-am" type="button">Mapping AM</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab 1: Data Revenue -->
+                    <div class="tab-pane fade show active" id="tab-revenue-data">
+                        <form id="formEditRevenueCC">
+                            <input type="hidden" id="editCCRevenueId">
+                            <div class="mb-3">
+                                <label class="form-label">Nama CC</label>
+                                <input type="text" class="form-control" id="editCCNamaCC" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Target Revenue</label>
+                                <input type="number" class="form-control" id="editCCTargetRevenue" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Real Revenue</label>
+                                <input type="number" class="form-control" id="editCCRealRevenue" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Simpan</button>
+                        </form>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Target Revenue</label>
-                        <input type="number" class="form-control" id="editCCTargetRevenue" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Real Revenue</label>
-                        <input type="number" class="form-control" id="editCCRealRevenue" required>
+
+                    <!-- Tab 2: Mapping AM -->
+                    <div class="tab-pane fade" id="tab-mapping-am">
+                        <div id="mappingAmContent">
+                            <!-- Will be populated by JavaScript -->
+                            <div class="text-center text-muted py-5">
+                                <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
+                                <p>Loading mapping AM...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Other Edit Modals (Revenue AM, Data AM, Data CC) -->
 <!-- Modal Edit Revenue AM -->
 <div class="modal fade" id="modalEditRevenueAM" tabindex="-1">
     <div class="modal-dialog">
@@ -1959,9 +2539,27 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 <script>
+/**
+ * ================================================================
+ * REVENUE DATA MANAGEMENT - COMPLETE JAVASCRIPT
+ * ================================================================
+ * Version: 2.1 - FIXED
+ * Date: 2026-02-04
+ * 
+ * FIXES APPLIED:
+ * ✅ Badge counter now uses filtered results (recordsFiltered)
+ * ✅ Revenue badge labels: HO → REVENUE SOLD, BILL → REVENUE BILL
+ * ✅ Removed REGULER/NGTMA badges completely
+ * ✅ showPreviewModal() handles multiple response structures (summary/stats/statistics)
+ * ✅ Month picker active state properly managed (remove all before add)
+ * ✅ Target Witel dropdown includes DGS
+ * ✅ All routes match web.php exactly
+ * ================================================================
+ */
+
 $(document).ready(function() {
   // ========================================
-  // STATE MANAGEMENT
+  // 🎯 STATE MANAGEMENT - COMPLETE
   // ========================================
   let currentTab = 'tab-cc-revenue';
   let currentPage = 1;
@@ -1982,7 +2580,7 @@ $(document).ready(function() {
   // Store TELDA data globally for modal
   let allTeldaData = [];
 
-  // ✨ Preview Import State (REDESIGNED - No checkbox state needed)
+  // ✨ Preview Import State
   let previewData = null;
   let currentImportType = null;
   let currentFormData = null;
@@ -1992,780 +2590,16 @@ $(document).ready(function() {
   let currentImportYear = null;
   let currentImportMonth = null;
 
-  // ========================================
-  // FLATPICKR MONTH YEAR PICKER
-  // ========================================
-  (function initMonthYearPicker() {
-    const dateInput   = document.getElementById('filter-date');
-    const hiddenMonth = document.getElementById('filter-month');
-    const hiddenYear  = document.getElementById('filter-year');
+  // ✅ NEW: Revenue CC import parameters (CRITICAL FIX)
+  let currentImportDivisiId = null;
+  let currentImportTipeRevenue = null;
+  let currentImportJenisData = null;
 
-    if (!dateInput) return;
-
-    const currentYear = new Date().getFullYear();
-    let selectedYear  = currentYear;
-    let selectedMonth = new Date().getMonth();
-
-    const YEAR_FLOOR = 2020;
-    function getYearWindow() {
-      const nowY = new Date().getFullYear();
-      const start = nowY;
-      const end   = Math.max(YEAR_FLOOR, nowY - 5);
-      return { start, end };
-    }
-    function clampSelectedYear() {
-      const { start, end } = getYearWindow();
-      if (selectedYear > start) selectedYear = start;
-      if (selectedYear < end)   selectedYear = end;
-    }
-
-    let isYearView = false;
-    let fpInstance = null;
-
-    function getTriggerEl(instance){
-      return instance?.altInput || dateInput;
-    }
-    function syncCalendarWidth(instance){
-      try{
-        const cal = instance.calendarContainer;
-        const trigger = getTriggerEl(instance);
-        if (!cal || !trigger) return;
-
-        const rect = trigger.getBoundingClientRect();
-        const w = Math.round(rect.width);
-
-        cal.style.boxSizing = 'border-box';
-        cal.style.width     = w + 'px';
-        cal.style.maxWidth  = w + 'px';
-      }catch(e){
-        // no-op
-      }
-    }
-
-    const fp = flatpickr(dateInput, {
-      plugins: [ new monthSelectPlugin({
-        shorthand: true,
-        dateFormat: "Y-m",
-        altFormat: "F Y",
-        theme: "light"
-      })],
-      altInput: true,
-      defaultDate: new Date(),
-      allowInput: false,
-      monthSelectorType: 'static',
-
-      onReady(selectedDates, value, instance) {
-        fpInstance = instance;
-        const d = selectedDates?.[0] || new Date();
-        selectedYear  = d.getFullYear();
-        selectedMonth = d.getMonth();
-
-        clampSelectedYear();
-
-        hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-        hiddenYear.value  = selectedYear;
-
-        instance.calendarContainer.classList.add('fp-compact');
-
-        syncCalendarWidth(instance);
-
-        setupCustomUI(instance);
-      },
-
-      onOpen(selectedDates, value, instance) {
-        fpInstance = instance;
-        isYearView = false;
-
-        clampSelectedYear();
-        renderMonthView(instance);
-
-        syncCalendarWidth(instance);
-
-        setTimeout(() => {
-          const activeMonth = instance.calendarContainer.querySelector('.fp-month-option.selected');
-          if (activeMonth) {
-            activeMonth.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-        }, 100);
-      }
-    });
-
-    window.addEventListener('resize', () => {
-      if (fpInstance && fpInstance.isOpen) {
-        syncCalendarWidth(fpInstance);
-      }
-    });
-
-    function setupCustomUI(instance) {
-      const cal = instance.calendarContainer;
-      const monthsContainer = cal.querySelector('.flatpickr-monthSelect-months, .monthSelect-months');
-      if (monthsContainer) {
-        monthsContainer.style.display = 'none';
-      }
-    }
-
-    function renderMonthView(instance) {
-      const cal = instance.calendarContainer;
-      const header = cal.querySelector('.flatpickr-current-month');
-
-      if (header) {
-        header.innerHTML = `
-          <button type="button" class="fp-year-toggle" style="background:transparent;border:0;color:#fff;font-size:1.25rem;font-weight:700;cursor:pointer;padding:8px 16px;border-radius:8px;">
-            ${selectedYear} <span style="font-size:0.875rem;margin-left:4px;">▼</span>
-          </button>
-        `;
-        const yearToggle = header.querySelector('.fp-year-toggle');
-        yearToggle.addEventListener('click', (e) => {
-          e.preventDefault(); e.stopPropagation();
-          isYearView = true;
-          renderYearView(instance);
-        });
-      }
-
-      let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-monthSelect-months, .monthSelect-months, .flatpickr-innerContainer');
-      if (!container) return;
-
-      container.innerHTML = '';
-      container.className = 'fp-month-grid';
-      container.setAttribute('tabindex', '0');
-
-      const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-
-      monthNames.forEach((name, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'fp-month-option';
-        btn.textContent = name;
-
-        const currentSelectedDate = fp.selectedDates[0] || new Date();
-        if (idx === selectedMonth && selectedYear === currentSelectedDate.getFullYear()) {
-          btn.classList.add('selected');
-        }
-
-        btn.addEventListener('click', (e) => {
-          e.preventDefault(); e.stopPropagation();
-          selectedMonth = idx;
-          const newDate = new Date(selectedYear, selectedMonth, 1);
-          fp.setDate(newDate, true);
-          hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-          hiddenYear.value  = selectedYear;
-
-          currentFilters.periode = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
-          currentPage = 1;
-          loadData();
-
-          setTimeout(() => fp.close(), 150);
-        });
-
-        container.appendChild(btn);
-      });
-
-      const activeMonth = container.querySelector('.fp-month-option.selected');
-      if (activeMonth) {
-        activeMonth.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-
-    function renderYearView(instance) {
-      const cal = instance.calendarContainer;
-      const header = cal.querySelector('.flatpickr-current-month');
-
-      if (header) {
-        header.innerHTML = `
-          <button type="button" class="fp-back-btn" style="background:transparent;border:0;color:#fff;font-size:1.5rem;cursor:pointer;position:absolute;left:16px;top:50%;transform:translateY(-50%);line-height:1;">
-            ‹
-          </button>
-          <span style="color:#fff;font-weight:700;font-size:1.125rem;">Tahun</span>
-        `;
-
-        const backBtn = header.querySelector('.fp-back-btn');
-        backBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          isYearView = false;
-          renderMonthView(instance);
-        });
-      }
-
-      let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-innerContainer');
-      if (!container) return;
-
-      container.innerHTML = '';
-      container.className = 'fp-year-grid';
-
-      const { start, end } = getYearWindow();
-      for (let y = start; y >= end; y--) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'fp-year-option';
-        btn.textContent = y;
-
-        if (y === selectedYear) {
-          btn.classList.add('active');
-        }
-
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          selectedYear = y;
-          hiddenYear.value = selectedYear;
-
-          isYearView = false;
-          renderMonthView(instance);
-        });
-
-        container.appendChild(btn);
-      }
-
-      setTimeout(() => {
-        const activeYear = container.querySelector('.fp-year-option.active');
-        if (activeYear) {
-          activeYear.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 100);
-    }
-
-    const resetBtn = document.getElementById('btn-reset-filter');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        const now = new Date();
-        selectedYear  = now.getFullYear();
-        selectedMonth = now.getMonth();
-
-        clampSelectedYear();
-
-        fp.setDate(now, true);
-        hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-        hiddenYear.value  = selectedYear;
-      });
-    }
-  })();
+  // ✅ View mode state for Revenue CC
+  let currentViewMode = 'default'; // 'default' or 'all'
 
   // ========================================
-  // ✨ FLATPICKR FOR IMPORT MODALS (Revenue CC & AM)
-  // ========================================
-  (function initImportMonthPickers() {
-    const YEAR_FLOOR = 2020;
-
-    function getYearWindow() {
-      const nowY = new Date().getFullYear();
-      const start = nowY;
-      const end = Math.max(YEAR_FLOOR, nowY - 5);
-      return { start, end };
-    }
-
-    function createMonthPicker(inputId, hiddenMonthId, hiddenYearId) {
-      const dateInput = document.getElementById(inputId);
-      const hiddenMonth = document.getElementById(hiddenMonthId);
-      const hiddenYear = document.getElementById(hiddenYearId);
-
-      if (!dateInput) return null;
-
-      let selectedYear = new Date().getFullYear();
-      let selectedMonth = new Date().getMonth();
-      let isYearView = false;
-
-      const fp = flatpickr(dateInput, {
-        plugins: [ new monthSelectPlugin({
-          shorthand: true,
-          dateFormat: "Y-m",
-          altFormat: "F Y",
-          theme: "light"
-        })],
-        altInput: true,
-        defaultDate: new Date(),
-        allowInput: false,
-        monthSelectorType: 'static',
-
-        onReady(selectedDates, value, instance) {
-          const d = selectedDates?.[0] || new Date();
-          selectedYear = d.getFullYear();
-          selectedMonth = d.getMonth();
-
-          hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-          hiddenYear.value = selectedYear;
-
-          instance.calendarContainer.classList.add('fp-compact');
-          setupCustomUI(instance);
-        },
-
-        onOpen(selectedDates, value, instance) {
-          isYearView = false;
-          renderMonthView(instance);
-        }
-      });
-
-      function setupCustomUI(instance) {
-        const cal = instance.calendarContainer;
-        const monthsContainer = cal.querySelector('.flatpickr-monthSelect-months, .monthSelect-months');
-        if (monthsContainer) {
-          monthsContainer.style.display = 'none';
-        }
-      }
-
-      function renderMonthView(instance) {
-        const cal = instance.calendarContainer;
-        const header = cal.querySelector('.flatpickr-current-month');
-
-        if (header) {
-          header.innerHTML = `
-            <button type="button" class="fp-year-toggle" style="background:transparent;border:0;color:#fff;font-size:1.25rem;font-weight:700;cursor:pointer;padding:8px 16px;border-radius:8px;">
-              ${selectedYear} <span style="font-size:0.875rem;margin-left:4px;">▼</span>
-            </button>
-          `;
-          const yearToggle = header.querySelector('.fp-year-toggle');
-          yearToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            isYearView = true;
-            renderYearView(instance);
-          });
-        }
-
-        let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-monthSelect-months, .monthSelect-months, .flatpickr-innerContainer');
-        if (!container) return;
-
-        container.innerHTML = '';
-        container.className = 'fp-month-grid';
-        container.setAttribute('tabindex', '0');
-
-        const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-
-        monthNames.forEach((name, idx) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'fp-month-option';
-          btn.textContent = name;
-
-          if (idx === selectedMonth && selectedYear === fp.selectedDates[0].getFullYear()) {
-            btn.classList.add('selected');
-          }
-
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            selectedMonth = idx;
-            const newDate = new Date(selectedYear, selectedMonth, 1);
-            fp.setDate(newDate, true);
-            hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
-            hiddenYear.value = selectedYear;
-            setTimeout(() => fp.close(), 150);
-          });
-
-          container.appendChild(btn);
-        });
-      }
-
-      function renderYearView(instance) {
-        const cal = instance.calendarContainer;
-        const header = cal.querySelector('.flatpickr-current-month');
-
-        if (header) {
-          header.innerHTML = `
-            <button type="button" class="fp-back-btn" style="background:transparent;border:0;color:#fff;font-size:1.5rem;cursor:pointer;position:absolute;left:16px;top:50%;transform:translateY(-50%);line-height:1;">
-              ‹
-            </button>
-            <span style="color:#fff;font-weight:700;font-size:1.125rem;">Tahun</span>
-          `;
-
-          const backBtn = header.querySelector('.fp-back-btn');
-          backBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            isYearView = false;
-            renderMonthView(instance);
-          });
-        }
-
-        let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-innerContainer');
-        if (!container) return;
-
-        container.innerHTML = '';
-        container.className = 'fp-year-grid';
-
-        const { start, end } = getYearWindow();
-        for (let y = start; y >= end; y--) {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'fp-year-option';
-          btn.textContent = y;
-
-          if (y === selectedYear) {
-            btn.classList.add('active');
-          }
-
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            selectedYear = y;
-            hiddenYear.value = selectedYear;
-            isYearView = false;
-            renderMonthView(instance);
-          });
-
-          container.appendChild(btn);
-        }
-      }
-
-      return fp;
-    }
-
-    let importCCPicker = null;
-    let importAMPicker = null;
-
-    const importModal = document.getElementById('importModal');
-    if (importModal) {
-      importModal.addEventListener('shown.bs.modal', function() {
-        setTimeout(() => {
-          if (importCCPicker) {
-            importCCPicker.destroy();
-            importCCPicker = null;
-          }
-          if (importAMPicker) {
-            importAMPicker.destroy();
-            importAMPicker = null;
-          }
-
-          if (document.getElementById('import-cc-periode')) {
-            importCCPicker = createMonthPicker('import-cc-periode', 'import-cc-month', 'import-cc-year');
-          }
-
-          if (document.getElementById('import-am-periode')) {
-            importAMPicker = createMonthPicker('import-am-periode', 'import-am-month', 'import-am-year');
-          }
-        }, 100);
-      });
-
-      importModal.addEventListener('hidden.bs.modal', function() {
-        if (importCCPicker) {
-          importCCPicker.destroy();
-          importCCPicker = null;
-        }
-        if (importAMPicker) {
-          importAMPicker.destroy();
-          importAMPicker = null;
-        }
-
-        document.querySelectorAll('.imp-panel form').forEach(form => {
-          form.reset();
-        });
-      });
-    }
-  })();
-
-  // ============================================
-  // REVENUE CC - FIX DIVISI LOADING
-  // ============================================
-
-  /**
-   * Update template links
-   */
-  function updateRevenueCCTemplateLinks() {
-    const jenisData = $('#revCCJenisDataImport').val() || 'target';
-
-    let templateDGSDSS, templateDPS, textDGSDSS, textDPS;
-
-    if (jenisData === 'revenue') {
-      templateDGSDSS = 'revenue-cc-dgs-real';
-      templateDPS = 'revenue-cc-dps-real';
-      textDGSDSS = 'Real DGS/DSS';
-      textDPS = 'Real DPS';
-    } else {
-      templateDGSDSS = 'revenue-cc-dgs-target';
-      templateDPS = 'revenue-cc-dps-target';
-      textDGSDSS = 'Target DGS/DSS';
-      textDPS = 'Target DPS';
-    }
-
-    $('#linkTemplateDGSDSS')
-      .attr('href', `/revenue-data/template/${templateDGSDSS}`)
-      .find('#textTemplateDGSDSS').text(textDGSDSS);
-
-    $('#linkTemplateDPS')
-      .attr('href', `/revenue-data/template/${templateDPS}`)
-      .find('#textTemplateDPS').text(textDPS);
-  }
-
-  /**
-   * Load divisi - MULTIPLE FALLBACK STRATEGIES
-   */
-  function loadDivisiOptionsRevCC() {
-    const select = $('#revCCDivisiImport');
-    select.empty().append('<option value="">Pilih Divisi</option>');
-
-    // Strategy 1: Use global allDivisiData
-    if (typeof allDivisiData !== 'undefined' && Array.isArray(allDivisiData) && allDivisiData.length > 0) {
-      console.log('Using allDivisiData:', allDivisiData);
-      allDivisiData.forEach(function(div) {
-        select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
-      });
-      return;
-    }
-
-    // Strategy 2: Use window.allDivisiData
-    if (typeof window.allDivisiData !== 'undefined' && Array.isArray(window.allDivisiData) && window.allDivisiData.length > 0) {
-      console.log('Using window.allDivisiData:', window.allDivisiData);
-      window.allDivisiData.forEach(function(div) {
-        select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
-      });
-      return;
-    }
-
-    // Strategy 3: Copy from main filter dropdown
-    const mainDivisiOptions = $('#divisiFilter option:not(:first)');
-    if (mainDivisiOptions.length > 0) {
-      console.log('Cloning from #divisiFilter');
-      mainDivisiOptions.each(function() {
-        select.append($(this).clone());
-      });
-      return;
-    }
-
-    // Strategy 4: AJAX as last resort
-    console.log('Loading divisi via AJAX');
-    $.ajax({
-      url: '/revenue-data/filter-options',
-      method: 'GET',
-      success: function(response) {
-        console.log('AJAX response:', response);
-
-        let divisiData = null;
-
-        // Try different response structures
-        if (response && response.success && response.data && response.data.divisi) {
-          divisiData = response.data.divisi;
-        } else if (response && response.data && Array.isArray(response.data)) {
-          divisiData = response.data;
-        } else if (response && response.divisi) {
-          divisiData = response.divisi;
-        } else if (Array.isArray(response)) {
-          divisiData = response;
-        }
-
-        if (divisiData && Array.isArray(divisiData) && divisiData.length > 0) {
-          divisiData.forEach(function(div) {
-            select.append(`<option value="${div.id}">${div.nama} (${div.kode})</option>`);
-          });
-        } else {
-          console.error('No divisi data found in response:', response);
-        }
-      },
-      error: function(xhr) {
-        console.error('AJAX error:', xhr);
-      }
-    });
-  }
-
-  // Event listeners
-  $(document).on('change', '#revCCJenisDataImport', updateRevenueCCTemplateLinks);
-
-  // Load on modal show
-  $('#importModal').on('shown.bs.modal', function() {
-    if ($('#imp-rev-cc').hasClass('active')) {
-      loadDivisiOptionsRevCC();
-      updateRevenueCCTemplateLinks();
-    }
-  });
-
-  // Load on tab click
-  $(document).on('click', '[data-imp="imp-rev-cc"]', function() {
-    setTimeout(function() {
-      loadDivisiOptionsRevCC();
-      updateRevenueCCTemplateLinks();
-    }, 200);
-  });
-
-  // Initialize
-  $(document).ready(function() {
-    updateRevenueCCTemplateLinks();
-  });
-
-  // ========================================
-  // ✅ BUILD SEGMENT DROPDOWN UI + INTERACTIONS
-  // ========================================
-  function buildSegmentUI(segments) {
-    const nativeSelect = document.getElementById('filter-segment');
-    const segTabs = document.getElementById('segTabs');
-    const segPanels = document.getElementById('segPanels');
-
-    if (!nativeSelect || !segTabs || !segPanels) return;
-
-    // Clear existing content
-    segTabs.innerHTML = '';
-    segPanels.innerHTML = '';
-
-    // Group segments by divisi
-    const groupedSegments = {};
-    segments.forEach(segment => {
-      const raw = (segment.divisi_kode || segment.divisi || '').toString().trim().toUpperCase();
-      const divisiKode = raw || 'OTHER';
-
-      if (!groupedSegments[divisiKode]) groupedSegments[divisiKode] = [];
-      groupedSegments[divisiKode].push(segment);
-
-      // Add to native select
-      const option = document.createElement('option');
-      option.value = segment.id;
-      option.textContent = segment.lsegment_ho;
-      nativeSelect.appendChild(option);
-    });
-
-    // Define tab order
-    const ORDER = ['DPS', 'DSS', 'DGS', 'DES'];
-    const keys = Object.keys(groupedSegments);
-    const mainDivisi = keys.filter(k => k && k.toUpperCase() !== 'OTHER');
-    const divisiList = [
-      ...ORDER.filter(code => mainDivisi.includes(code)),
-      ...mainDivisi.filter(code => !ORDER.includes(code)).sort()
-    ];
-
-    let firstTab = true;
-    let firstDivisiName = null;
-
-    // Handle case where only OTHER exists
-    if (divisiList.length === 0 && groupedSegments['OTHER']?.length) {
-      divisiList.push('SEGMENT');
-      groupedSegments['SEGMENT'] = [];
-    }
-
-    // Build tabs and panels
-    divisiList.forEach(divisi => {
-      if (firstTab) firstDivisiName = divisi;
-
-      // Create tab button
-      const tabBtn = document.createElement('button');
-      tabBtn.className = `seg-tab${firstTab ? ' active' : ''}`;
-      tabBtn.dataset.tab = divisi;
-      tabBtn.setAttribute('role', 'tab');
-      tabBtn.setAttribute('aria-selected', firstTab ? 'true' : 'false');
-      tabBtn.textContent = divisi;
-      segTabs.appendChild(tabBtn);
-
-      // Create panel
-      const panel = document.createElement('div');
-      panel.className = `seg-panel${firstTab ? ' active' : ''}`;
-      panel.dataset.panel = divisi;
-      panel.setAttribute('role', 'tabpanel');
-
-      // "Semua Segment" option
-      const allOption = document.createElement('button');
-      allOption.className = 'seg-option all';
-      allOption.dataset.value = 'all';
-      allOption.textContent = 'Semua Segment';
-      panel.appendChild(allOption);
-
-      // Add segment options for this divisi
-      (groupedSegments[divisi] || []).forEach(segment => {
-        const optionBtn = document.createElement('button');
-        optionBtn.className = 'seg-option';
-        optionBtn.dataset.value = segment.id;
-        optionBtn.textContent = segment.lsegment_ho;
-        panel.appendChild(optionBtn);
-      });
-
-      segPanels.appendChild(panel);
-      firstTab = false;
-    });
-
-    // Insert OTHER items into first panel (without creating OTHER tab)
-    const otherItems = groupedSegments['OTHER'];
-    if (firstDivisiName && Array.isArray(otherItems) && otherItems.length) {
-      const firstPanel = segPanels.querySelector(`.seg-panel[data-panel="${firstDivisiName}"]`);
-      if (firstPanel) {
-        otherItems.forEach(segment => {
-          const optionBtn = document.createElement('button');
-          optionBtn.className = 'seg-option';
-          optionBtn.dataset.value = segment.id;
-          optionBtn.textContent = segment.lsegment_ho;
-          firstPanel.appendChild(optionBtn);
-        });
-      }
-    }
-
-    // Initialize interactions
-    initSegmentSelectInteractions();
-  }
-
-  function initSegmentSelectInteractions() {
-    const segSelect = document.getElementById('segSelect');
-    if (!segSelect) return;
-
-    const nativeSelect = document.getElementById('filter-segment');
-    const triggerBtn = segSelect.querySelector('.seg-select__btn');
-    const labelSpan = segSelect.querySelector('.seg-select__label');
-
-    // Get elements after UI is built
-    const segTabs = segSelect.querySelectorAll('.seg-tab');
-    const segPanels = segSelect.querySelectorAll('.seg-panel');
-    const segOptions = segSelect.querySelectorAll('.seg-option');
-
-    // Toggle menu
-    triggerBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      segSelect.classList.toggle('open');
-    });
-
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!segSelect.contains(e.target)) {
-        segSelect.classList.remove('open');
-      }
-    });
-
-    // Tab switching
-    segTabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const targetPanel = tab.dataset.tab;
-
-        segTabs.forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
-        });
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-
-        segPanels.forEach(panel => panel.classList.remove('active'));
-        const activePanel = segSelect.querySelector(`.seg-panel[data-panel="${targetPanel}"]`);
-        if (activePanel) activePanel.classList.add('active');
-      });
-    });
-
-    // Option selection
-    segOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        const value = option.dataset.value;
-        const label = option.textContent.trim();
-
-        // Update native select
-        nativeSelect.value = value;
-        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-
-        // Update label
-        labelSpan.textContent = label;
-
-        // Update visual state
-        segOptions.forEach(opt => opt.removeAttribute('aria-selected'));
-        option.setAttribute('aria-selected', 'true');
-
-        // Apply styling based on selection
-        if (value === 'all') {
-          segSelect.classList.add('is-all-selected');
-          segSelect.classList.remove('has-value');
-        } else {
-          segSelect.classList.remove('is-all-selected');
-          segSelect.classList.add('has-value');
-        }
-
-        // Close dropdown
-        setTimeout(() => segSelect.classList.remove('open'), 150);
-      });
-    });
-  }
-
-  // ========================================
-  // CUSTOM SELECT ENHANCEMENT
+  // 🎨 CUSTOM SELECT ENHANCEMENT
   // ========================================
   function enhanceNativeSelect(native, opts = {}) {
     if (!native || native.dataset.enhanced === '1') return;
@@ -2842,9 +2676,11 @@ $(document).ready(function() {
       if (wrap.classList.contains('is-disabled')) return;
       wrap.classList.toggle('is-open');
     });
+    
     document.addEventListener('click', (e) => {
       if (!wrap.contains(e.target)) wrap.classList.remove('is-open');
     });
+    
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') wrap.classList.remove('is-open');
     });
@@ -2883,7 +2719,789 @@ $(document).ready(function() {
   }
 
   // ========================================
-  // ✨ DIVISI BUTTON GROUP HANDLER
+  // 📅 ENHANCED FLATPICKR MONTH YEAR PICKER
+  // UNLIMITED YEAR NAVIGATION (NO LIMITS)
+  // ✅ FIXED: Active state properly managed
+  // ========================================
+  (function initMonthYearPicker() {
+    const dateInput   = document.getElementById('filter-date');
+    const hiddenMonth = document.getElementById('filter-month');
+    const hiddenYear  = document.getElementById('filter-year');
+
+    if (!dateInput) return;
+
+    const currentYear = new Date().getFullYear();
+    let selectedYear  = currentYear;
+    let selectedMonth = new Date().getMonth();
+
+    const YEAR_FLOOR = 2020;
+    const YEAR_CEILING = 2100;
+
+    let fpInstance = null;
+
+    function getTriggerEl(instance){
+      return instance?.altInput || dateInput;
+    }
+    
+    function syncCalendarWidth(instance){
+      try{
+        const cal = instance.calendarContainer;
+        const trigger = getTriggerEl(instance);
+        if (!cal || !trigger) return;
+
+        const rect = trigger.getBoundingClientRect();
+        const w = Math.round(rect.width);
+
+        cal.style.boxSizing = 'border-box';
+        cal.style.width     = w + 'px';
+        cal.style.maxWidth  = w + 'px';
+      }catch(e){
+        // no-op
+      }
+    }
+
+    const fp = flatpickr(dateInput, {
+      plugins: [ new monthSelectPlugin({
+        shorthand: true,
+        dateFormat: "Y-m",
+        altFormat: "F Y",
+        theme: "light"
+      })],
+      altInput: true,
+      defaultDate: new Date(),
+      allowInput: false,
+      monthSelectorType: 'static',
+      onMonthChange: function() {},
+      onYearChange: function() {},
+
+      onReady(selectedDates, value, instance) {
+        fpInstance = instance;
+        const d = selectedDates?.[0] || new Date();
+        selectedYear  = d.getFullYear();
+        selectedMonth = d.getMonth();
+
+        hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
+        hiddenYear.value  = selectedYear;
+
+        instance.calendarContainer.classList.add('fp-compact');
+        syncCalendarWidth(instance);
+        setupCustomUI(instance);
+      },
+
+      onOpen(selectedDates, value, instance) {
+        fpInstance = instance;
+        renderMonthView(instance);
+        syncCalendarWidth(instance);
+
+        setTimeout(() => {
+          const activeMonth = instance.calendarContainer.querySelector('.mp-month-btn.active');
+          if (activeMonth) {
+            activeMonth.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 100);
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (fpInstance && fpInstance.isOpen) {
+        syncCalendarWidth(fpInstance);
+      }
+    });
+
+    function setupCustomUI(instance) {
+      const cal = instance.calendarContainer;
+      
+      const monthsContainer = cal.querySelector('.flatpickr-monthSelect-months, .monthSelect-months');
+      if (monthsContainer) {
+        monthsContainer.style.display = 'none';
+      }
+
+      const numInputWrapper = cal.querySelector('.numInputWrapper');
+      if (numInputWrapper) {
+        numInputWrapper.style.display = 'none';
+      }
+
+      const currentYearElement = cal.querySelector('.cur-year, .numInput');
+      if (currentYearElement) {
+        currentYearElement.style.display = 'none';
+      }
+    }
+
+    // ========================================
+    // ✅ FIXED: RENDER MONTH VIEW - Active State Management
+    // ========================================
+    function renderMonthView(instance) {
+      const cal = instance.calendarContainer;
+      const header = cal.querySelector('.flatpickr-current-month');
+
+      if (header) {
+        header.innerHTML = `
+          <div class="mp-header-wrapper">
+            <button type="button" class="mp-nav-btn mp-prev">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            
+            <input type="text" 
+                   class="mp-year-input" 
+                   id="mp-year-input"
+                   value="${selectedYear}" 
+                   maxlength="4"
+                   inputmode="numeric"
+                   pattern="[0-9]*">
+            
+            <button type="button" class="mp-nav-btn mp-next">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        `;
+
+        const prevBtn = header.querySelector('.mp-prev');
+        const nextBtn = header.querySelector('.mp-next');
+        const yearInput = header.querySelector('#mp-year-input');
+
+        if (prevBtn) {
+          prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            selectedYear--;
+            hiddenYear.value = selectedYear;
+            renderMonthView(instance);
+          });
+        }
+
+        if (nextBtn) {
+          nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            selectedYear++;
+            hiddenYear.value = selectedYear;
+            renderMonthView(instance);
+          });
+        }
+
+        if (yearInput) {
+          yearInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+
+          yearInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+          });
+
+          yearInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              yearInput.blur();
+            }
+          });
+
+          yearInput.addEventListener('blur', (e) => {
+            const newYear = parseInt(e.target.value);
+            
+            if (isNaN(newYear) || newYear < YEAR_FLOOR || newYear > YEAR_CEILING) {
+              e.target.value = selectedYear;
+              alert(`Tahun harus antara ${YEAR_FLOOR} - ${YEAR_CEILING}`);
+              return;
+            }
+
+            if (newYear !== selectedYear) {
+              selectedYear = newYear;
+              hiddenYear.value = selectedYear;
+              renderMonthView(instance);
+            }
+          });
+
+          yearInput.addEventListener('focus', (e) => {
+            e.target.select();
+          });
+        }
+      }
+
+      // ========================================
+      // ✅ FIXED: RENDER MONTH GRID WITH PROPER ACTIVE STATE
+      // ========================================
+      let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-monthSelect-months, .monthSelect-months, .flatpickr-innerContainer');
+      if (!container) return;
+
+      container.innerHTML = '';
+      container.className = 'mp-month-grid';
+      container.setAttribute('tabindex', '0');
+
+      const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+      monthNames.forEach((name, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mp-month-btn';
+        btn.textContent = name;
+
+        const currentSelectedDate = fp.selectedDates[0] || new Date();
+        if (idx === selectedMonth && selectedYear === currentSelectedDate.getFullYear()) {
+          btn.classList.add('active');
+        }
+
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // ✅ FIX: Remove active class from ALL buttons first
+          container.querySelectorAll('.mp-month-btn').forEach(b => b.classList.remove('active'));
+          
+          // Then add active to clicked button
+          btn.classList.add('active');
+          
+          selectedMonth = idx;
+          const newDate = new Date(selectedYear, selectedMonth, 1);
+          fp.setDate(newDate, true);
+          hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
+          hiddenYear.value  = selectedYear;
+
+          currentFilters.periode = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+          currentPage = 1;
+          loadData();
+
+          setTimeout(() => fp.close(), 150);
+        });
+
+        container.appendChild(btn);
+      });
+
+      const activeMonth = container.querySelector('.mp-month-btn.active');
+      if (activeMonth) {
+        activeMonth.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    // ========================================
+    // RESET FILTER HANDLER
+    // ========================================
+    const resetBtn = document.getElementById('btn-reset-filter');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        const now = new Date();
+        selectedYear  = now.getFullYear();
+        selectedMonth = now.getMonth();
+
+        fp.setDate(now, true);
+        hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
+        hiddenYear.value  = selectedYear;
+      });
+    }
+  })();
+
+  // ========================================
+  // 📅 FLATPICKR FOR IMPORT MODALS - UNLIMITED NAVIGATION
+  // ✅ FIXED: Active state properly managed
+  // ========================================
+  (function initImportMonthPickers() {
+    const YEAR_FLOOR = 2020;
+    const YEAR_CEILING = 2100;
+
+    function createMonthPicker(inputId, hiddenMonthId, hiddenYearId) {
+      const dateInput = document.getElementById(inputId);
+      const hiddenMonth = document.getElementById(hiddenMonthId);
+      const hiddenYear = document.getElementById(hiddenYearId);
+
+      if (!dateInput) return null;
+
+      let selectedYear = new Date().getFullYear();
+      let selectedMonth = new Date().getMonth();
+
+      const fp = flatpickr(dateInput, {
+        plugins: [ new monthSelectPlugin({
+          shorthand: true,
+          dateFormat: "Y-m",
+          altFormat: "F Y",
+          theme: "light"
+        })],
+        altInput: true,
+        defaultDate: new Date(),
+        allowInput: false,
+        monthSelectorType: 'static',
+        onMonthChange: function() {},
+        onYearChange: function() {},
+
+        onReady(selectedDates, value, instance) {
+          const d = selectedDates?.[0] || new Date();
+          selectedYear = d.getFullYear();
+          selectedMonth = d.getMonth();
+
+          hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
+          hiddenYear.value = selectedYear;
+
+          instance.calendarContainer.classList.add('fp-compact');
+          setupCustomUI(instance);
+        },
+
+        onOpen(selectedDates, value, instance) {
+          renderMonthView(instance);
+        }
+      });
+
+      function setupCustomUI(instance) {
+        const cal = instance.calendarContainer;
+        
+        const monthsContainer = cal.querySelector('.flatpickr-monthSelect-months, .monthSelect-months');
+        if (monthsContainer) {
+          monthsContainer.style.display = 'none';
+        }
+
+        const numInputWrapper = cal.querySelector('.numInputWrapper');
+        if (numInputWrapper) {
+          numInputWrapper.style.display = 'none';
+        }
+
+        const currentYearElement = cal.querySelector('.cur-year, .numInput');
+        if (currentYearElement) {
+          currentYearElement.style.display = 'none';
+        }
+      }
+
+      function renderMonthView(instance) {
+        const cal = instance.calendarContainer;
+        const header = cal.querySelector('.flatpickr-current-month');
+
+        if (header) {
+          header.innerHTML = `
+            <div class="mp-header-wrapper">
+              <button type="button" class="mp-nav-btn mp-prev">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              
+              <input type="text" 
+                     class="mp-year-input" 
+                     value="${selectedYear}" 
+                     maxlength="4"
+                     inputmode="numeric"
+                     pattern="[0-9]*">
+              
+              <button type="button" class="mp-nav-btn mp-next">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          `;
+
+          const prevBtn = header.querySelector('.mp-prev');
+          const nextBtn = header.querySelector('.mp-next');
+          const yearInput = header.querySelector('.mp-year-input');
+
+          if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              selectedYear--;
+              hiddenYear.value = selectedYear;
+              renderMonthView(instance);
+            });
+          }
+
+          if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              selectedYear++;
+              hiddenYear.value = selectedYear;
+              renderMonthView(instance);
+            });
+          }
+
+          if (yearInput) {
+            yearInput.addEventListener('click', (e) => {
+              e.stopPropagation();
+            });
+
+            yearInput.addEventListener('input', (e) => {
+              e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+
+            yearInput.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                yearInput.blur();
+              }
+            });
+
+            yearInput.addEventListener('blur', (e) => {
+              const newYear = parseInt(e.target.value);
+              
+              if (isNaN(newYear) || newYear < YEAR_FLOOR || newYear > YEAR_CEILING) {
+                e.target.value = selectedYear;
+                alert(`Tahun harus antara ${YEAR_FLOOR} - ${YEAR_CEILING}`);
+                return;
+              }
+
+              if (newYear !== selectedYear) {
+                selectedYear = newYear;
+                hiddenYear.value = selectedYear;
+                renderMonthView(instance);
+              }
+            });
+
+            yearInput.addEventListener('focus', (e) => {
+              e.target.select();
+            });
+          }
+        }
+
+        let container = cal.querySelector('.fp-month-grid, .fp-year-grid, .flatpickr-monthSelect-months, .monthSelect-months, .flatpickr-innerContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        container.className = 'mp-month-grid';
+
+        const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+        monthNames.forEach((name, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'mp-month-btn';
+          btn.textContent = name;
+
+          if (idx === selectedMonth && selectedYear === fp.selectedDates[0].getFullYear()) {
+            btn.classList.add('active');
+          }
+
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // ✅ FIX: Remove active from all buttons first
+            container.querySelectorAll('.mp-month-btn').forEach(b => b.classList.remove('active'));
+            
+            // Then add to clicked button
+            btn.classList.add('active');
+            
+            selectedMonth = idx;
+            const newDate = new Date(selectedYear, selectedMonth, 1);
+            fp.setDate(newDate, true);
+            hiddenMonth.value = String(selectedMonth + 1).padStart(2, '0');
+            hiddenYear.value = selectedYear;
+            setTimeout(() => fp.close(), 150);
+          });
+
+          container.appendChild(btn);
+        });
+      }
+
+      return fp;
+    }
+
+    let importCCPicker = null;
+    let importAMPicker = null;
+    let importWitelPicker = null;
+
+    const importModal = document.getElementById('importModal');
+    if (importModal) {
+      importModal.addEventListener('shown.bs.modal', function() {
+        setTimeout(() => {
+          if (importCCPicker) {
+            importCCPicker.destroy();
+            importCCPicker = null;
+          }
+          if (importAMPicker) {
+            importAMPicker.destroy();
+            importAMPicker = null;
+          }
+          if (importWitelPicker) {
+            importWitelPicker.destroy();
+            importWitelPicker = null;
+          }
+
+          if (document.getElementById('import-cc-periode')) {
+            importCCPicker = createMonthPicker('import-cc-periode', 'import-cc-month', 'import-cc-year');
+          }
+
+          if (document.getElementById('import-am-periode')) {
+            importAMPicker = createMonthPicker('import-am-periode', 'import-am-month', 'import-am-year');
+          }
+
+          if (document.getElementById('import-witel-periode')) {
+            importWitelPicker = createMonthPicker('import-witel-periode', 'import-witel-month', 'import-witel-year');
+          }
+        }, 100);
+      });
+
+      importModal.addEventListener('hidden.bs.modal', function() {
+        if (importCCPicker) {
+          importCCPicker.destroy();
+          importCCPicker = null;
+        }
+        if (importAMPicker) {
+          importAMPicker.destroy();
+          importAMPicker = null;
+        }
+        if (importWitelPicker) {
+          importWitelPicker.destroy();
+          importWitelPicker = null;
+        }
+
+        document.querySelectorAll('.imp-panel form').forEach(form => {
+          form.reset();
+        });
+      });
+    }
+  })();
+
+  // ========================================
+  // 📋 BUILD SEGMENT DROPDOWN UI
+  // ========================================
+  function buildSegmentUI(segments) {
+    const nativeSelect = document.getElementById('filter-segment');
+    const segTabs = document.getElementById('segTabs');
+    const segPanels = document.getElementById('segPanels');
+
+    if (!nativeSelect || !segTabs || !segPanels) {
+      console.error('❌ Required elements not found:', {
+        nativeSelect: !!nativeSelect,
+        segTabs: !!segTabs,
+        segPanels: !!segPanels
+      });
+      return;
+    }
+
+    segTabs.innerHTML = '';
+    segPanels.innerHTML = '';
+    nativeSelect.innerHTML = '<option value="">Semua Segment</option>';
+
+    const groupedSegments = {};
+    segments.forEach(segment => {
+      const raw = (segment.divisi_kode || segment.divisi || '').toString().trim().toUpperCase();
+      const divisiKode = raw || 'OTHER';
+
+      if (!groupedSegments[divisiKode]) {
+        groupedSegments[divisiKode] = [];
+      }
+      groupedSegments[divisiKode].push(segment);
+
+      const option = document.createElement('option');
+      option.value = segment.id;
+      option.textContent = segment.lsegment_ho;
+      nativeSelect.appendChild(option);
+    });
+
+    const ORDER = ['DPS', 'DSS', 'DGS', 'DES'];
+    const keys = Object.keys(groupedSegments);
+    const mainDivisi = keys.filter(k => k && k.toUpperCase() !== 'OTHER');
+    const divisiList = [
+      ...ORDER.filter(code => mainDivisi.includes(code)),
+      ...mainDivisi.filter(code => !ORDER.includes(code)).sort()
+    ];
+
+    if (divisiList.length === 0) {
+      console.warn('⚠️ No valid divisi found for segments');
+      if (segments.length > 0) {
+        console.log('Creating default tab for segments without divisi');
+        const firstKey = Object.keys(groupedSegments)[0];
+        if (firstKey && groupedSegments[firstKey].length > 0) {
+          const panel = document.createElement('div');
+          panel.className = 'seg-panel active';
+          panel.dataset.panel = 'default';
+          panel.setAttribute('role', 'tabpanel');
+
+          const allOption = document.createElement('button');
+          allOption.className = 'seg-option all';
+          allOption.dataset.value = '';
+          allOption.textContent = 'Semua Segment';
+          allOption.type = 'button';
+          panel.appendChild(allOption);
+
+          segments.forEach(segment => {
+            const optionBtn = document.createElement('button');
+            optionBtn.className = 'seg-option';
+            optionBtn.dataset.value = segment.id;
+            optionBtn.textContent = segment.lsegment_ho;
+            optionBtn.type = 'button';
+            panel.appendChild(optionBtn);
+          });
+
+          segPanels.appendChild(panel);
+          
+          setTimeout(() => {
+            initSegmentSelectInteractions();
+          }, 100);
+          
+          console.log('✅ Default segment panel created');
+          return;
+        }
+      }
+      return;
+    }
+
+    let firstTab = true;
+    let firstDivisiName = null;
+
+    divisiList.forEach(divisi => {
+      if (firstTab) {
+        firstDivisiName = divisi;
+      }
+
+      const tabBtn = document.createElement('button');
+      tabBtn.className = `seg-tab${firstTab ? ' active' : ''}`;
+      tabBtn.dataset.tab = divisi;
+      tabBtn.setAttribute('role', 'tab');
+      tabBtn.setAttribute('aria-selected', firstTab ? 'true' : 'false');
+      tabBtn.textContent = divisi;
+      tabBtn.type = 'button';
+      segTabs.appendChild(tabBtn);
+
+      const panel = document.createElement('div');
+      panel.className = `seg-panel${firstTab ? ' active' : ''}`;
+      panel.dataset.panel = divisi;
+      panel.setAttribute('role', 'tabpanel');
+
+      const allOption = document.createElement('button');
+      allOption.className = 'seg-option all';
+      allOption.dataset.value = '';
+      allOption.textContent = 'Semua Segment';
+      allOption.type = 'button';
+      panel.appendChild(allOption);
+
+      const segmentList = groupedSegments[divisi] || [];
+      segmentList.forEach(segment => {
+        const optionBtn = document.createElement('button');
+        optionBtn.className = 'seg-option';
+        optionBtn.dataset.value = segment.id;
+        optionBtn.textContent = segment.lsegment_ho;
+        optionBtn.type = 'button';
+        panel.appendChild(optionBtn);
+      });
+
+      segPanels.appendChild(panel);
+      firstTab = false;
+    });
+
+    const otherItems = groupedSegments['OTHER'];
+    if (firstDivisiName && Array.isArray(otherItems) && otherItems.length > 0) {
+      const firstPanel = segPanels.querySelector(`.seg-panel[data-panel="${firstDivisiName}"]`);
+      if (firstPanel) {
+        otherItems.forEach(segment => {
+          const optionBtn = document.createElement('button');
+          optionBtn.className = 'seg-option';
+          optionBtn.dataset.value = segment.id;
+          optionBtn.textContent = segment.lsegment_ho;
+          optionBtn.type = 'button';
+          firstPanel.appendChild(optionBtn);
+        });
+      }
+    }
+
+    setTimeout(() => {
+      initSegmentSelectInteractions();
+    }, 100);
+
+    console.log('✅ Segment UI built successfully:', {
+      totalSegments: segments.length,
+      divisiTabs: divisiList.length,
+      divisiList: divisiList
+    });
+  }
+
+  function initSegmentSelectInteractions() {
+    const segSelect = document.getElementById('segSelect');
+    
+    if (!segSelect) {
+      console.error('❌ segSelect element not found');
+      return;
+    }
+
+    const nativeSelect = document.getElementById('filter-segment');
+    const triggerBtn = segSelect.querySelector('.seg-select__btn');
+    const labelSpan = segSelect.querySelector('.seg-select__label');
+
+    if (!triggerBtn || !labelSpan || !nativeSelect) {
+      console.error('❌ Required segment select elements not found:', {
+        triggerBtn: !!triggerBtn,
+        labelSpan: !!labelSpan,
+        nativeSelect: !!nativeSelect
+      });
+      return;
+    }
+
+    triggerBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const isOpen = segSelect.classList.contains('open');
+      segSelect.classList.toggle('open');
+      console.log('🔽 Segment dropdown toggled:', !isOpen);
+    };
+
+    document.addEventListener('click', function(e) {
+      if (!segSelect.contains(e.target)) {
+        segSelect.classList.remove('open');
+      }
+    });
+
+    const segTabs = segSelect.querySelectorAll('.seg-tab');
+    const segPanels = segSelect.querySelectorAll('.seg-panel');
+
+    segTabs.forEach(tab => {
+      tab.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const targetPanel = tab.dataset.tab;
+
+        segTabs.forEach(t => {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+
+        segPanels.forEach(panel => {
+          panel.classList.remove('active');
+        });
+        const activePanel = segSelect.querySelector(`.seg-panel[data-panel="${targetPanel}"]`);
+        if (activePanel) {
+          activePanel.classList.add('active');
+        }
+
+        console.log('📑 Tab switched to:', targetPanel);
+      };
+    });
+
+    const segOptions = segSelect.querySelectorAll('.seg-option');
+
+    segOptions.forEach(option => {
+      option.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const value = option.dataset.value;
+        const label = option.textContent.trim();
+
+        console.log('✔️ Option selected:', { value, label });
+
+        nativeSelect.value = value;
+        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+        labelSpan.textContent = label;
+
+        segOptions.forEach(opt => opt.removeAttribute('aria-selected'));
+        option.setAttribute('aria-selected', 'true');
+
+        if (value === '' || value === 'all') {
+          segSelect.classList.add('is-all-selected');
+          segSelect.classList.remove('has-value');
+        } else {
+          segSelect.classList.remove('is-all-selected');
+          segSelect.classList.add('has-value');
+        }
+
+        setTimeout(function() {
+          segSelect.classList.remove('open');
+        }, 150);
+      };
+    });
+
+    console.log('✅ Segment select interactions initialized:', {
+      tabs: segTabs.length,
+      panels: segPanels.length,
+      options: segOptions.length
+    });
+  }
+
+  // ========================================
+  // 🎨 DIVISI BUTTON GROUP HANDLER
   // ========================================
   function initDivisiButtonGroup() {
     const buttonGroup = document.getElementById('divisiButtonGroup');
@@ -2942,10 +3560,8 @@ $(document).ready(function() {
       return;
     }
 
-    // Reset all buttons
     buttons.forEach(btn => btn.classList.remove('active'));
 
-    // Set active buttons
     if (Array.isArray(divisiIds)) {
       divisiIds.forEach(id => {
         const btn = document.querySelector(`.divisi-toggle-btn[data-divisi-id="${id}"]`);
@@ -2959,7 +3575,7 @@ $(document).ready(function() {
   }
 
   // ========================================
-  // CHECKBOX & BULK DELETE LOGIC
+  // ✅ CHECKBOX & BULK DELETE LOGIC
   // ========================================
   $('#selectAllCC').on('change', function() {
     $('.row-checkbox-cc').prop('checked', this.checked);
@@ -3093,45 +3709,64 @@ $(document).ready(function() {
   }
 
   // ========================================
-  // LOAD FILTER OPTIONS FROM BACKEND
+  // ✅ LOAD FILTER OPTIONS FROM BACKEND
+  // ✅ FIXED: Target Witel dropdown includes DGS
   // ========================================
   function loadFilterOptions() {
     $.ajax({
-      url: '{{ route("revenue.api.filter.options") }}',
+      url: '/revenue-data/filter-options',
       method: 'GET',
       success: function(response) {
+        console.log('✅ Filter options loaded:', response);
+
+        // POPULATE WITEL FILTERS
         const witelSelect = $('#filterWitel');
-        response.witels.forEach(function(witel) {
-          witelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
-        });
+        if (response.witels) {
+          response.witels.forEach(function(witel) {
+            witelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
+          });
+        }
 
+        // POPULATE DIVISI FILTERS
         const divisiSelect = $('#filterDivisi');
-        const divisiImport = $('#divisiImport');
-        response.divisions.forEach(function(divisi) {
-          divisiSelect.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
-          divisiImport.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
-        });
+        const revCCDivisiImport = $('#revCCDivisiImport');
+        const targetWitelDivisiImport = $('#targetWitelDivisiImport');
+        
+        if (response.divisions) {
+          response.divisions.forEach(function(divisi) {
+            divisiSelect.append(`<option value="${divisi.id}">${divisi.nama}</option>`);
+            
+            revCCDivisiImport.append(`<option value="${divisi.id}">${divisi.nama} (${divisi.kode})</option>`);
+            
+            // ✅ FIX: Include DGS in Target Witel dropdown
+            if (divisi.kode === 'DGS' || divisi.kode === 'DPS' || divisi.kode === 'DSS') {
+              targetWitelDivisiImport.append(`<option value="${divisi.id}">${divisi.nama} (${divisi.kode})</option>`);
+            }
+          });
 
-        // Store globally for modals
-        allDivisiData = response.divisions;
-        initDivisiButtonGroup();
+          allDivisiData = response.divisions;
+          initDivisiButtonGroup();
+        }
 
+        // POPULATE SEGMENT FILTERS
         if (response.segments && response.segments.length > 0) {
           buildSegmentUI(response.segments);
         }
 
-        // Store TELDA data globally
+        // STORE TELDA DATA GLOBALLY
         if (response.teldas) {
           allTeldaData = response.teldas;
         }
 
-        // Populate edit modal selects
+        // POPULATE EDIT DATA AM MODAL SELECTS
         const editWitelSelect = $('#editDataAMWitel');
         editWitelSelect.empty();
         editWitelSelect.append('<option value="">Pilih Witel</option>');
-        response.witels.forEach(function(witel) {
-          editWitelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
-        });
+        if (response.witels) {
+          response.witels.forEach(function(witel) {
+            editWitelSelect.append(`<option value="${witel.id}">${witel.nama}</option>`);
+          });
+        }
 
         const editTeldaSelect = $('#editDataAMTelda');
         editTeldaSelect.empty();
@@ -3142,43 +3777,76 @@ $(document).ready(function() {
           });
         }
 
-        enhanceFilterBar();
-        enhanceModalDivisi();
+        console.log('🎨 Enhancing custom selects...');
+        
+        setTimeout(() => {
+          enhanceFilterBar();
+          console.log('✅ Filter bar enhanced');
+        }, 100);
+
+        setTimeout(() => {
+          enhanceModalDivisi();
+          console.log('✅ Modal divisi enhanced');
+        }, 100);
+
+        console.log('✅ All filter options populated and enhanced');
       },
       error: function(xhr) {
-        console.error('Error loading filters:', xhr);
+        console.error('❌ Error loading filters:', xhr);
+        alert('Gagal memuat filter options: ' + (xhr.responseJSON?.message || xhr.statusText));
       }
     });
   }
 
   // ========================================
-  // LOAD DATA FROM BACKEND
+  // ✅ LOAD DATA FROM BACKEND - FIXED
   // ========================================
   function loadData() {
     let url = '';
     const params = {
       page: currentPage,
       per_page: perPage,
-      search: currentFilters.search,
-      witel_id: currentFilters.witel_id,
-      divisi_id: currentFilters.divisi_id,
-      segment_id: currentFilters.segment_id
+      search: currentFilters.search
     };
 
-    if (currentTab === 'tab-cc-revenue') {
-      url = '{{ route("revenue.api.cc") }}';
-      params.periode = currentFilters.periode;
-      params.tipe_revenue = currentFilters.tipe_revenue;
-    } else if (currentTab === 'tab-am-revenue') {
-      url = '{{ route("revenue.api.am") }}';
-      params.periode = currentFilters.periode;
-      params.role = currentFilters.role;
-    } else if (currentTab === 'tab-data-am') {
-      url = '{{ route("revenue.api.data.am") }}';
-      params.role = currentFilters.role;
-    } else if (currentTab === 'tab-data-cc') {
-      url = '{{ route("revenue.api.data.cc") }}';
+    // ✅ FIX: Only send filter params if NOT 'all'
+    if (currentFilters.witel_id && currentFilters.witel_id !== 'all') {
+      params.witel_id = currentFilters.witel_id;
     }
+    if (currentFilters.divisi_id && currentFilters.divisi_id !== 'all') {
+      params.divisi_id = currentFilters.divisi_id;
+    }
+    if (currentFilters.segment_id && currentFilters.segment_id !== 'all' && currentFilters.segment_id !== '') {
+      params.segment_id = currentFilters.segment_id;
+    }
+
+    if (currentTab === 'tab-cc-revenue') {
+      url = '/revenue-data/revenue-cc';
+      if (currentFilters.periode) {
+        params.periode = currentFilters.periode;
+      }
+      if (currentFilters.tipe_revenue && currentFilters.tipe_revenue !== 'all') {
+        params.tipe_revenue = currentFilters.tipe_revenue;
+      }
+      params.display_mode = currentViewMode;
+    } else if (currentTab === 'tab-am-revenue') {
+      url = '/revenue-data/revenue-am';
+      if (currentFilters.periode) {
+        params.periode = currentFilters.periode;
+      }
+      if (currentFilters.role && currentFilters.role !== 'all') {
+        params.role = currentFilters.role;
+      }
+    } else if (currentTab === 'tab-data-am') {
+      url = '/revenue-data/data-am';
+      if (currentFilters.role && currentFilters.role !== 'all') {
+        params.role = currentFilters.role;
+      }
+    } else if (currentTab === 'tab-data-cc') {
+      url = '/revenue-data/data-cc';
+    }
+
+    console.log('📤 Loading data:', { tab: currentTab, url, params });
 
     $.ajax({
       url: url,
@@ -3198,26 +3866,32 @@ $(document).ready(function() {
         }
 
         renderPagination(response);
-        updateBadge(currentTab, response.total || 0);
+        
+        // ✅ FIX: Use recordsFiltered for accurate badge count
+        const total = response.recordsFiltered || response.data?.length || 0;
+        updateBadge(currentTab, total);
 
         $('[data-bs-toggle="tooltip"]').tooltip();
       },
       error: function(xhr) {
         console.error('❌ Error loading data for tab:', currentTab, xhr);
-        showAlert('Gagal memuat data: ' + (xhr.responseJSON?.message || xhr.statusText), 'danger');
+        const errorMsg = xhr.responseJSON?.message || xhr.statusText || 'Unknown error';
+        showAlert('Gagal memuat data: ' + errorMsg, 'danger');
       }
     });
   }
 
   // ========================================
-  // RENDER FUNCTIONS
+  // ✅ RENDER FUNCTIONS
+  // ✅ FIXED: Revenue badge labels changed
   // ========================================
   function renderRevenueCC(response) {
     const tbody = $('#tableRevenueCC');
     tbody.empty();
 
     if (!response || !response.data || response.data.length === 0) {
-      tbody.append('<tr><td colspan="7" class="text-center">Tidak ada data</td></tr>');
+      const colCount = currentViewMode === 'all' ? 9 : 8;
+      tbody.append(`<tr><td colspan="${colCount}" class="text-center">Tidak ada data</td></tr>`);
       return;
     }
 
@@ -3226,6 +3900,27 @@ $(document).ready(function() {
       const divisiDisplay = divisiKode !== '-' ? divisiKode.substring(0, 3).toUpperCase() : '-';
       const nipnas = item.nipnas || '-';
       const divisiClass = divisiDisplay !== '-' ? `badge-div ${divisiDisplay.toLowerCase()}` : '';
+
+      const tipeRevenue = item.tipe_revenue || 'HO';
+      const tipeClass = tipeRevenue.toLowerCase();
+
+      let revenueDisplay = '';
+      
+      if (currentViewMode === 'default') {
+        const revenueValue = tipeRevenue === 'HO' ? item.real_revenue_sold : item.real_revenue_bill;
+        
+        // ✅ FIXED: Changed badge labels
+        const tipeLabel = tipeRevenue === 'HO' ? 'REVENUE SOLD' : 'REVENUE BILL';
+        
+        revenueDisplay = `
+          <div class="revenue-cell">
+            <span class="revenue-value">${formatCurrency(revenueValue)}</span>
+            <div class="revenue-badges">
+              <span class="badge-revenue-type ${tipeClass}">${tipeLabel}</span>
+            </div>
+          </div>
+        `;
+      }
 
       const row = `
         <tr>
@@ -3237,12 +3932,12 @@ $(document).ready(function() {
             </small>
           </td>
           <td>${item.segment || '-'}</td>
-          <td class="text-end">${formatCurrency(item.target_revenue)}</td>
-          <td class="text-end">
-            <span data-bs-toggle="tooltip" title="${item.revenue_type || ''}">
-              ${formatCurrency(item.real_revenue)}
-            </span>
-          </td>
+          <td class="text-end">${formatCurrency(item.target_revenue_sold || 0)}</td>
+          ${currentViewMode === 'default' ? `<td class="text-end revenue-col-default">${revenueDisplay}</td>` : ''}
+          ${currentViewMode === 'all' ? `
+            <td class="text-end revenue-col-all">${formatCurrency(item.real_revenue_sold || 0)}</td>
+            <td class="text-end revenue-col-all">${formatCurrency(item.real_revenue_bill || 0)}</td>
+          ` : ''}
           <td>${item.bulan_display}</td>
           <td class="text-center">
             <div class="action-buttons">
@@ -3399,7 +4094,7 @@ $(document).ready(function() {
   }
 
   // ========================================
-  // PAGINATION
+  // ✅ PAGINATION
   // ========================================
   function renderPagination(response) {
     const container = currentTab === 'tab-cc-revenue' ? $('#paginationRevenueCC') :
@@ -3410,7 +4105,7 @@ $(document).ready(function() {
 
     const from = response.from || 0;
     const to = response.to || 0;
-    const total = response.total || 0;
+    const total = response.recordsFiltered || response.recordsTotal || response.total || 0;
     const currentPageNum = response.current_page || 1;
     const lastPage = response.last_page || 1;
 
@@ -3464,7 +4159,7 @@ $(document).ready(function() {
   }
 
   // ========================================
-  // UPDATE BADGE COUNTER
+  // ✅ UPDATE BADGE COUNTER - FIXED
   // ========================================
   function updateBadge(tabId, count) {
     const badgeMapping = {
@@ -3476,12 +4171,14 @@ $(document).ready(function() {
 
     const badgeId = badgeMapping[tabId];
     if (badgeId) {
-      $('#' + badgeId).text(count);
+      // ✅ FIX: Ensure count is never undefined
+      const displayCount = count || 0;
+      $('#' + badgeId).text(displayCount);
     }
   }
 
   // ========================================
-  // TAB SWITCHING
+  // ✅ TAB SWITCHING
   // ========================================
   $('.tab-btn').click(function() {
     const tabId = $(this).data('tab');
@@ -3507,7 +4204,7 @@ $(document).ready(function() {
   }
 
   // ========================================
-  // FILTER HANDLERS
+  // ✅ FILTER HANDLERS
   // ========================================
   $('#searchForm').submit(function(e) {
     e.preventDefault();
@@ -3516,7 +4213,7 @@ $(document).ready(function() {
     loadData();
   });
 
-  $('#btn-apply-filter').click(function() {
+  $('#filterWitel, #filterDivisi, #filter-segment').on('change', function() {
     currentFilters.witel_id = $('#filterWitel').val();
     currentFilters.divisi_id = $('#filterDivisi').val();
     currentFilters.segment_id = $('#filter-segment').val();
@@ -3529,7 +4226,11 @@ $(document).ready(function() {
     $('#filterWitel').val('all');
     $('#filterDivisi').val('all');
     $('#filter-segment').val('all');
-    $('#filter-date').value = '';
+    
+    const segLabel = $('.seg-select__label');
+    if (segLabel) {
+      segLabel.text('Semua Segment');
+    }
 
     currentFilters = {
       search: '',
@@ -3558,13 +4259,41 @@ $(document).ready(function() {
     $(this).addClass('active');
     const mode = $(this).data('mode');
     currentFilters.role = mode;
-
     currentPage = 1;
     loadData();
   });
 
   // ========================================
-  // ✅ PROGRESS SNACKBAR FUNCTIONS (NEW)
+  // ✅ VIEW MODE TOGGLE (Revenue CC)
+  // ========================================
+  $('#viewModeToggle button').click(function() {
+    const mode = $(this).data('mode');
+    
+    if (currentViewMode === mode) return;
+
+    $('#viewModeToggle button').removeClass('active');
+    $(this).addClass('active');
+    currentViewMode = mode;
+
+    const tableWrap = $('#revenueTableWrap');
+    const defaultCols = $('.revenue-col-default');
+    const allCols = $('.revenue-col-all');
+
+    if (mode === 'default') {
+      tableWrap.removeClass('all-columns');
+      defaultCols.show();
+      allCols.hide();
+    } else {
+      tableWrap.addClass('all-columns');
+      defaultCols.hide();
+      allCols.show();
+    }
+
+    loadData();
+  });
+
+  // ========================================
+  // ✅ PROGRESS SNACKBAR FUNCTIONS
   // ========================================
   let progressSnackbar = null;
 
@@ -3575,7 +4304,6 @@ $(document).ready(function() {
       return;
     }
 
-    // Set title
     const titleText = document.getElementById('snackbarTitleText');
     if (titleText) {
       titleText.textContent = title || 'Importing Data...';
@@ -3610,7 +4338,6 @@ $(document).ready(function() {
     }
   }
 
-  // ✅ Make toggleSnackbar global for onclick handler
   window.toggleSnackbar = function() {
     if (progressSnackbar) {
       progressSnackbar.classList.toggle('minimized');
@@ -3618,7 +4345,7 @@ $(document).ready(function() {
   };
 
   // ========================================
-  // ✅ FIXED: 2-STEP IMPORT WITH PREVIEW
+  // ✅ 2-STEP IMPORT WITH PREVIEW - FIXED
   // ========================================
 
   // Type selector
@@ -3632,71 +4359,141 @@ $(document).ready(function() {
   });
 
   // Form submissions
-  $('#formDataCC, #formDataAM').submit(function(e) {
+$('#formDataCC, #formDataAM').submit(function(e) {
     e.preventDefault();
-    currentFormData = new FormData($(this)[0]);
-    currentImportType = currentFormData.get('import_type');
+    
+    const formElement = $(this);
+    const formId = formElement.attr('id');
+    
+    try {
+        currentFormData = new FormData(formElement[0]);
+        currentImportType = currentFormData.get('import_type');
 
-    console.log('📤 Submitting', currentImportType);
-    handleImportPreview(currentFormData, currentImportType);
-  });
+        console.log(`📤 Submitting ${formId}:`, {
+            import_type: currentImportType,
+            file: currentFormData.get('file')?.name,
+            fileSize: currentFormData.get('file')?.size
+        });
 
-  // ✅ FIX #2: Revenue CC Form Submit Handler
-  $('#formRevenueCC').submit(function(e) {
+        // ✅ FIX #1: Validate file exists before submit
+        const file = currentFormData.get('file');
+        if (!file || !(file instanceof File)) {
+            console.error(`❌ ${formId}: No valid file selected`);
+            alert('Silakan pilih file terlebih dahulu');
+            return;
+        }
+
+        // ✅ FIX #2: Validate file size
+        if (file.size <= 0) {
+            console.error(`❌ ${formId}: File is empty`);
+            alert('File yang dipilih kosong atau tidak valid');
+            return;
+        }
+
+        console.log(`✅ ${formId} validation passed, calling handleImportPreview`);
+        handleImportPreview(currentFormData, currentImportType);
+
+    } catch (error) {
+        // ✅ FIX #3: Catch any unexpected errors
+        console.error(`❌ Error in ${formId} submit:`, error);
+        console.error('Error stack:', error.stack);
+        alert('Error: Terjadi kesalahan - ' + error.message);
+    }
+});
+
+ $('#formRevenueCC').submit(function(e) {
     e.preventDefault();
 
-    currentFormData = new FormData($(this)[0]);
-    currentImportType = currentFormData.get('import_type');
+    try {
+        currentFormData = new FormData($(this)[0]);
+        currentImportType = currentFormData.get('import_type');
 
-    const year = $('#import-cc-year').val();
-    const month = $('#import-cc-month').val();
-    const divisi = $('#revCCDivisiImport').val();
-    const jenisData = $('#revCCJenisDataImport').val();
+        const year = $('#import-cc-year').val();
+        const month = $('#import-cc-month').val();
+        const divisi = $('#revCCDivisiImport').val();
+        const tipeRevenue = $('#revCCTipeRevenueImport').val();
+        const jenisData = $('#revCCJenisDataImport').val();
+        const file = currentFormData.get('file');
 
-    console.log('📋 Revenue CC Form Values:', {
-      year: year,
-      month: month,
-      divisi_id: divisi,
-      jenis_data: jenisData,
-      file: currentFormData.get('file')?.name
-    });
+        console.log('📋 Revenue CC Form Values:', {
+            year: year,
+            month: month,
+            divisi_id: divisi,
+            tipe_revenue: tipeRevenue,
+            jenis_data: jenisData,
+            file: file?.name,
+            fileSize: file?.size
+        });
 
-    // Validation
-    if (!year || !month) {
-      alert('❌ Pilih Periode terlebih dahulu!');
-      return;
+        // ✅ FIX #1: Validate all required fields with specific messages
+        if (!year || !month) {
+            console.error('❌ Periode not selected');
+            alert('❌ Pilih Periode terlebih dahulu!');
+            return;
+        }
+
+        if (!divisi || divisi === '') {
+            console.error('❌ Divisi not selected');
+            alert('❌ Pilih Divisi terlebih dahulu!');
+            return;
+        }
+
+        if (!tipeRevenue || tipeRevenue === '') {
+            console.error('❌ Tipe Revenue not selected');
+            alert('❌ Pilih Tipe Revenue terlebih dahulu!');
+            return;
+        }
+
+        if (!jenisData || jenisData === '') {
+            console.error('❌ Jenis Data not selected');
+            alert('❌ Pilih Jenis Data (Real Revenue/Target Revenue) terlebih dahulu!');
+            return;
+        }
+
+        if (!file || !(file instanceof File)) {
+            console.error('❌ File not selected or invalid');
+            alert('❌ Silakan pilih file CSV terlebih dahulu!');
+            return;
+        }
+
+        if (file.size <= 0) {
+            console.error('❌ File is empty');
+            alert('❌ File yang dipilih kosong atau tidak valid');
+            return;
+        }
+
+        // ✅ FIX #2: Set form data with validated values
+        currentFormData.set('year', parseInt(year));
+        currentFormData.set('month', parseInt(month));
+
+        currentImportYear = parseInt(year);
+        currentImportMonth = parseInt(month);
+        
+        currentImportDivisiId = divisi;
+        currentImportTipeRevenue = tipeRevenue;
+        currentImportJenisData = jenisData;
+
+        console.log('✅ All validations passed');
+        console.log('📤 Submitting Revenue CC with:', {
+            year: currentImportYear,
+            month: currentImportMonth,
+            divisi_id: currentImportDivisiId,
+            tipe_revenue: currentImportTipeRevenue,
+            jenis_data: currentImportJenisData,
+            file: file.name
+        });
+
+        handleImportPreview(currentFormData, currentImportType);
+
+    } catch (error) {
+        // ✅ FIX #3: Catch any unexpected errors
+        console.error('❌ Error in formRevenueCC submit:', error);
+        console.error('Error stack:', error.stack);
+        alert('Error: Terjadi kesalahan - ' + error.message);
     }
+});
 
-    if (!divisi || divisi === '') {
-      alert('❌ Pilih Divisi terlebih dahulu!');
-      return;
-    }
 
-    if (!jenisData || jenisData === '') {
-      alert('❌ Pilih Jenis Data (Real Revenue/Target Revenue) terlebih dahulu!');
-      return;
-    }
-
-    // ✅ FIX: Parse to integer to remove leading zero (01 → 1)
-    currentFormData.set('year', parseInt(year));
-    currentFormData.set('month', parseInt(month));
-
-    // ✅ FIX #2: Store year/month globally for execute
-    currentImportYear = parseInt(year);
-    currentImportMonth = parseInt(month);
-
-    console.log('✅ All validations passed');
-    console.log('📤 Submitting Revenue CC with:', {
-      year: currentImportYear,
-      month: currentImportMonth,
-      divisi_id: divisi,
-      jenis_data: jenisData
-    });
-
-    handleImportPreview(currentFormData, currentImportType);
-  });
-
-  // ✅ FIX #2: Revenue AM Form Submit Handler
   $('#formRevenueAM').submit(function(e) {
     e.preventDefault();
 
@@ -3711,11 +4508,9 @@ $(document).ready(function() {
       return;
     }
 
-    // ✅ FIX: Parse to integer to remove leading zero (01 → 1)
     currentFormData.set('year', parseInt(year));
     currentFormData.set('month', parseInt(month));
 
-    // ✅ FIX #2: Store year/month globally for execute
     currentImportYear = parseInt(year);
     currentImportMonth = parseInt(month);
 
@@ -3728,58 +4523,136 @@ $(document).ready(function() {
     handleImportPreview(currentFormData, currentImportType);
   });
 
-  const ROWS_PER_CHUNK = 5000;
-  const SIZE_THRESHOLD = 5 * 1024 * 1024;
+  $('#formTargetWitel').submit(function(e) {
+    e.preventDefault();
 
-  function handleImportPreview(formData, importType) {
-    console.log('📤 Sending to /import/preview:');
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`  ${key}: ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`  ${key}: ${value}`);
-      }
-    }
+    currentFormData = new FormData($(this)[0]);
+    currentImportType = currentFormData.get('import_type');
 
-    // ✅ FIX #3: Use progress snackbar instead of showLoading
-    showProgressSnackbar('Memproses file...');
-    updateProgress(5, 'Memulai...');
+    const year = $('#import-witel-year').val();
+    const month = $('#import-witel-month').val();
+    const divisi = $('#targetWitelDivisiImport').val();
 
-    file = formData.get('file');
-
-    if (!file) {
-      hideProgressSnackbar();
-      alert('No file selected');
+    if (!year || !month) {
+      alert('❌ Pilih Periode terlebih dahulu!');
       return;
     }
 
-    console.log('📊 File info:', {
-      name: file.name,
-      size: file.size,
-      type: file.type
+    if (!divisi || divisi === '') {
+      alert('❌ Pilih Divisi terlebih dahulu!');
+      return;
+    }
+
+    currentFormData.set('year', parseInt(year));
+    currentFormData.set('month', parseInt(month));
+
+    currentImportYear = parseInt(year);
+    currentImportMonth = parseInt(month);
+
+    console.log('📤 Submitting Target Witel with:', {
+      year: currentImportYear,
+      month: currentImportMonth,
+      divisi_id: divisi,
+      file: currentFormData.get('file')?.name
     });
 
-    if (file.size > SIZE_THRESHOLD) {
-      console.log('📦 Large file detected, using row-based chunked upload');
-      uploadCSVInRowChunks(file, importType, formData);
-    } else {
-      console.log('📤 Small file, using direct upload');
-      uploadFileDirect(formData, importType);
-    }
-  }
+    handleImportPreview(currentFormData, currentImportType);
+  });
 
-  /**
-   * ✅ Upload CSV in row-based chunks
-   */
+  const ROWS_PER_CHUNK = 5000;
+  const SIZE_THRESHOLD = 5 * 1024 * 1024;
+
+function handleImportPreview(formData, importType) {
+    console.log('📤 handleImportPreview called with:', {
+        importType: importType,
+        formDataKeys: Array.from(formData.keys())
+    });
+
+    // Log all form data for debugging
+    console.log('📤 Sending to /import/preview:');
+    for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            console.log(`  ${key}: ${value.name} (${value.size} bytes)`);
+        } else {
+            console.log(`  ${key}: ${value}`);
+        }
+    }
+
+    try {
+        showProgressSnackbar('Memproses file...');
+        updateProgress(5, 'Memulai...');
+
+        const file = formData.get('file');
+
+        // ✅ FIX #1: Validate file exists
+        if (!file) {
+            console.error('❌ No file found in FormData');
+            hideProgressSnackbar();
+            alert('Error: File tidak ditemukan. Silakan pilih file terlebih dahulu.');
+            return;
+        }
+
+        // ✅ FIX #2: Validate file is actually a File object
+        if (!(file instanceof File)) {
+            console.error('❌ file is not a File object:', typeof file);
+            hideProgressSnackbar();
+            alert('Error: File tidak valid. Silakan pilih ulang file.');
+            return;
+        }
+
+        console.log('📊 File info:', {
+            name: file.name,
+            size: file.size,
+            type: file.type
+        });
+
+        // ✅ FIX #3: Validate file size is positive
+        if (file.size <= 0) {
+            console.error('❌ File size is 0 or negative:', file.size);
+            hideProgressSnackbar();
+            alert('Error: File kosong atau tidak valid');
+            return;
+        }
+
+        // Determine upload strategy based on file size
+        if (file.size > SIZE_THRESHOLD) {
+            console.log('📦 Large file detected, using row-based chunked upload');
+            
+            try {
+                uploadCSVInRowChunks(file, importType, formData);
+            } catch (error) {
+                console.error('❌ Error in uploadCSVInRowChunks:', error);
+                hideProgressSnackbar();
+                alert('Error: Gagal memproses file besar - ' + error.message);
+            }
+        } else {
+            console.log('📤 Small file, using direct upload');
+            
+            try {
+                uploadFileDirect(formData, importType);
+            } catch (error) {
+                console.error('❌ Error in uploadFileDirect:', error);
+                hideProgressSnackbar();
+                alert('Error: Gagal upload file - ' + error.message);
+            }
+        }
+
+    } catch (error) {
+        // ✅ FIX #4: Catch any unexpected errors
+        console.error('❌ Unexpected error in handleImportPreview:', error);
+        console.error('Error stack:', error.stack);
+        hideProgressSnackbar();
+        alert('Error: Terjadi kesalahan tidak terduga - ' + error.message);
+    }
+}
+
   async function uploadCSVInRowChunks(file, importType, originalFormData) {
     updateProgress(10, 'Membaca file CSV...');
 
     try {
-      // Read entire file as text
       const csvText = await readFileAsText(file);
       const lines = csvText.split('\n');
 
-      // Remove empty lines at the end
       while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
         lines.pop();
       }
@@ -3788,7 +4661,6 @@ $(document).ready(function() {
         throw new Error('File CSV kosong');
       }
 
-      // Separate headers and data rows
       const headers = lines[0];
       const dataRows = lines.slice(1);
 
@@ -3799,19 +4671,16 @@ $(document).ready(function() {
         firstDataRow: dataRows[0]?.substring(0, 100) + '...'
       });
 
-      // Calculate chunks
       const totalChunks = Math.ceil(dataRows.length / ROWS_PER_CHUNK);
       const sessionId = generateSessionId();
 
       console.log(`📦 Will upload ${totalChunks} chunks (${ROWS_PER_CHUNK} rows each)`);
 
-      // Upload chunks
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
         const start = chunkIndex * ROWS_PER_CHUNK;
         const end = Math.min(start + ROWS_PER_CHUNK, dataRows.length);
         const chunkRows = dataRows.slice(start, end);
 
-        // Build CSV chunk
         let chunkCSV;
         if (chunkIndex === 0) {
           chunkCSV = headers + '\n' + chunkRows.join('\n');
@@ -3827,10 +4696,8 @@ $(document).ready(function() {
           chunkSize: chunkCSV.length
         });
 
-        // Create blob from CSV text
         const chunkBlob = new Blob([chunkCSV], { type: 'text/csv' });
 
-        // Send chunk
         const chunkFormData = new FormData();
         chunkFormData.append('file_chunk', chunkBlob, `chunk_${chunkIndex}.csv`);
         chunkFormData.append('chunk_index', chunkIndex);
@@ -3841,7 +4708,6 @@ $(document).ready(function() {
         chunkFormData.append('is_first_chunk', chunkIndex === 0 ? '1' : '0');
         chunkFormData.append('rows_in_chunk', chunkRows.length);
 
-        // Add any other fields from original formData
         for (let [key, value] of originalFormData.entries()) {
           if (!(value instanceof File) && key !== 'file') {
             chunkFormData.append(key, value);
@@ -3851,7 +4717,6 @@ $(document).ready(function() {
         await sendChunk(chunkFormData);
       }
 
-      // All chunks uploaded, now request preview
       console.log('✅ All chunks uploaded successfully');
       updateProgress(85, 'Memproses data...');
       await requestPreviewAfterChunks(sessionId, importType, originalFormData);
@@ -3863,9 +4728,6 @@ $(document).ready(function() {
     }
   }
 
-  /**
-   * Read file as text using FileReader
-   */
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -3882,7 +4744,7 @@ $(document).ready(function() {
     });
   }
 
-  function sendChunk(chunkFormData, chunkIndex, totalChunks) {
+  function sendChunk(chunkFormData) {
     return new Promise((resolve, reject) => {
       $.ajax({
         url: '/revenue-data/import/upload-chunk',
@@ -3908,371 +4770,730 @@ $(document).ready(function() {
     });
   }
 
-  /**
-   * Request preview after all chunks uploaded
-   */
-  function requestPreviewAfterChunks(sessionId, importType, originalFormData) {
+  
+function requestPreviewAfterChunks(sessionId, importType, originalFormData) {
     return new Promise((resolve, reject) => {
-      // Build request data with session_id instead of file
-      const requestData = {
-        session_id: sessionId,
-        import_type: importType,
-        year: parseInt(originalFormData.get('year')),  // ✅ Parse to integer
-        month: parseInt(originalFormData.get('month')), // ✅ Parse to integer
-        divisi_id: originalFormData.get('divisi_id'),
-        jenis_data: originalFormData.get('jenis_data'),
-      };
+        const requestData = {
+            session_id: sessionId,
+            import_type: importType
+        };
 
-      // Add any additional params
-      for (let [key, value] of originalFormData.entries()) {
-        if (!(value instanceof File) && key !== 'file') {
-          requestData[key] = value;
+        // Add year/month if available
+        if (originalFormData.get('year')) {
+            requestData.year = parseInt(originalFormData.get('year'));
         }
-      }
+        if (originalFormData.get('month')) {
+            requestData.month = parseInt(originalFormData.get('month'));
+        }
+        
+        // Add divisi_id if available
+        if (originalFormData.get('divisi_id')) {
+            requestData.divisi_id = originalFormData.get('divisi_id');
+        }
+        
+        // Add tipe_revenue if available
+        if (originalFormData.get('tipe_revenue')) {
+            requestData.tipe_revenue = originalFormData.get('tipe_revenue');
+        }
+        
+        // Add jenis_data if available
+        if (originalFormData.get('jenis_data')) {
+            requestData.jenis_data = originalFormData.get('jenis_data');
+        }
 
-      console.log('📊 Requesting preview with:', requestData);
-      updateProgress(90, 'Generating preview...');
-
-      $.ajax({
-        url: '/revenue-data/import/preview',
-        method: 'POST',
-        data: requestData,
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        timeout: 120000,
-        success: function(response) {
-          hideProgressSnackbar();
-
-          if (response.success) {
-            previewData = response.data;
-            currentSessionId = response.session_id;
-            console.log('✅ Preview loaded:', {
-              session_id: currentSessionId,
-              rowCount: response.data?.preview?.length || 0
-            });
-
-            showPreviewModal(previewData, importType);
-
-            const importModal = document.getElementById('importModal');
-            if (importModal) {
-              const modalInstance = bootstrap.Modal.getInstance(importModal);
-              if (modalInstance) {
-                modalInstance.hide();
-              }
+        // Add any other non-file fields
+        for (let [key, value] of originalFormData.entries()) {
+            if (!(value instanceof File) && key !== 'file' && !requestData[key]) {
+                requestData[key] = value;
             }
-
-            resolve(response);
-          } else {
-            reject(new Error(response.message));
-          }
-        },
-        error: function(xhr) {
-          hideProgressSnackbar();
-          console.error('❌ Preview failed:', xhr);
-          reject(new Error(xhr.responseJSON?.message || xhr.statusText));
         }
-      });
-    });
-  }
 
-  /**
-   * Direct upload for small files
-   */
-  function uploadFileDirect(formData, importType) {
+        console.log('📊 Requesting preview after chunks with:', requestData);
+        updateProgress(90, 'Generating preview...');
+
+        $.ajax({
+            url: '/revenue-data/import/preview',
+            method: 'POST',
+            data: requestData,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            timeout: 120000,
+            success: function(response) {
+                console.log('📥 Chunked upload preview response:', response);
+
+                // ✅ FIX #1: Validate response exists
+                if (!response) {
+                    console.error('❌ Response is null or undefined');
+                    hideProgressSnackbar();
+                    reject(new Error('Server tidak memberikan response'));
+                    return;
+                }
+
+                // ✅ FIX #2: Validate response.success
+                if (!response.success) {
+                    console.error('❌ Response success = false:', response);
+                    hideProgressSnackbar();
+                    const errorMsg = response.message || response.error || 'Preview gagal setelah upload chunks';
+                    reject(new Error(errorMsg));
+                    return;
+                }
+
+                // ✅ FIX #3: Handle different response structures
+                let previewDataToStore;
+                
+                if (response.data) {
+                    console.log('📦 Response has .data wrapper');
+                    previewDataToStore = response.data;
+                } else if (response.preview || response.stats || response.statistics) {
+                    console.log('📦 Response is direct (no .data wrapper)');
+                    previewDataToStore = response;
+                } else {
+                    console.error('❌ Response has no recognizable data structure:', response);
+                    hideProgressSnackbar();
+                    reject(new Error('Format data preview tidak dikenali'));
+                    return;
+                }
+
+                // ✅ FIX #4: Validate session_id exists (with fallback)
+                if (!response.session_id) {
+                    console.warn('⚠️ Warning: session_id missing, using original sessionId');
+                }
+
+                // ✅ All validations passed
+                console.log('✅ Chunked preview validations passed');
+                hideProgressSnackbar();
+
+                previewData = previewDataToStore;
+                currentSessionId = response.session_id || sessionId; // Fallback to original
+                
+                console.log('✅ Preview loaded after chunks:', {
+                    session_id: currentSessionId,
+                    hasPreview: !!(previewDataToStore.preview),
+                    previewCount: previewDataToStore.preview?.length || 0,
+                    hasStats: !!(previewDataToStore.stats || previewDataToStore.summary || previewDataToStore.statistics)
+                });
+
+                showPreviewModal(previewData, importType);
+
+                // Close import modal
+                const importModal = document.getElementById('importModal');
+                if (importModal) {
+                    const modalInstance = bootstrap.Modal.getInstance(importModal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                }
+
+                resolve(response);
+            },
+            error: function(xhr, status, error) {
+                hideProgressSnackbar();
+                
+                console.error('❌ Chunked preview AJAX error:', {
+                    status: status,
+                    error: error,
+                    statusCode: xhr.status,
+                    responseText: xhr.responseText,
+                    response: xhr.responseJSON
+                });
+
+                let errorMessage = 'Preview gagal setelah upload chunks';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (xhr.responseText) {
+                    try {
+                        const parsed = JSON.parse(xhr.responseText);
+                        errorMessage = parsed.message || parsed.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = xhr.statusText || errorMessage;
+                    }
+                }
+
+                reject(new Error(errorMessage));
+            }
+        });
+    });
+}
+
+
+  
+
+function uploadFileDirect(formData, importType) {
     console.log('📤 Sending to /import/preview:');
     for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`  ${key}: ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`  ${key}: ${value}`);
-      }
+        if (value instanceof File) {
+            console.log(`  ${key}: ${value.name} (${value.size} bytes)`);
+        } else {
+            console.log(`  ${key}: ${value}`);
+        }
     }
 
     updateProgress(20, 'Mengunggah file...');
 
     $.ajax({
-      url: '/revenue-data/import/preview',
-      method: 'POST',
-      data: formData,
-      processData: false,
-      contentType: false,
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      timeout: 120000,
-      xhr: function() {
-        const xhr = new window.XMLHttpRequest();
-        // Track upload progress
-        xhr.upload.addEventListener("progress", function(evt) {
-          if (evt.lengthComputable) {
-            const percentComplete = 20 + (evt.loaded / evt.total) * 60;
-            updateProgress(percentComplete, 'Mengunggah file...');
-          }
-        }, false);
-        return xhr;
-      },
-      success: function(response) {
-        updateProgress(100, 'Preview siap!');
+        url: '/revenue-data/import/preview',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        timeout: 120000,
+        xhr: function() {
+            const xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function(evt) {
+                if (evt.lengthComputable) {
+                    const percentComplete = 20 + (evt.loaded / evt.total) * 60;
+                    updateProgress(percentComplete, 'Mengunggah file...');
+                }
+            }, false);
+            return xhr;
+        },
+        success: function(response) {
+            console.log('📥 Response received:', response);
 
-        setTimeout(() => {
-          hideProgressSnackbar();
-
-          if (response.success) {
-            previewData = response.data;
-            currentSessionId = response.session_id;
-            console.log('✅ Preview loaded, session_id:', currentSessionId);
-
-            showPreviewModal(previewData, importType);
-
-            const importModal = document.getElementById('importModal');
-            if (importModal) {
-              const modalInstance = bootstrap.Modal.getInstance(importModal);
-              if (modalInstance) {
-                modalInstance.hide();
-              }
+            // ✅ FIX #1: Validate response exists
+            if (!response) {
+                console.error('❌ Response is null or undefined');
+                hideProgressSnackbar();
+                alert('Error: Server tidak memberikan response');
+                return;
             }
-          } else {
-            alert('Error: ' + response.message);
-          }
-        }, 500);
-      },
-      error: function(xhr) {
-        hideProgressSnackbar();
-        console.error('❌ Preview failed:', xhr.responseJSON);
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
+
+            // ✅ FIX #2: Validate response.success
+            if (!response.success) {
+                console.error('❌ Response success = false:', response);
+                hideProgressSnackbar();
+                alert('Error: ' + (response.message || response.error || 'Import preview gagal'));
+                return;
+            }
+
+            // ✅ FIX #3: Handle different response structures
+            // Backend might return data directly OR wrapped in .data
+            let previewDataToStore;
+            
+            if (response.data) {
+                // Response structure: { success: true, data: {...}, session_id: "..." }
+                console.log('📦 Response has .data wrapper');
+                previewDataToStore = response.data;
+            } else if (response.preview || response.stats || response.statistics) {
+                // Response structure: { success: true, preview: [...], stats: {...}, session_id: "..." }
+                console.log('📦 Response is direct (no .data wrapper)');
+                previewDataToStore = response;
+            } else {
+                console.error('❌ Response has no recognizable data structure:', response);
+                hideProgressSnackbar();
+                alert('Error: Format data preview tidak dikenali');
+                return;
+            }
+
+            // ✅ FIX #4: Validate session_id exists
+            if (!response.session_id) {
+                console.error('❌ Response session_id is missing:', response);
+                hideProgressSnackbar();
+                alert('Error: Session ID tidak tersedia. Silakan coba lagi.');
+                return;
+            }
+
+            // ✅ All validations passed
+            console.log('✅ All validations passed');
+            updateProgress(100, 'Preview siap!');
+
+            setTimeout(() => {
+                hideProgressSnackbar();
+
+                previewData = previewDataToStore;
+                currentSessionId = response.session_id;
+                
+                console.log('✅ Preview data stored:', {
+                    session_id: currentSessionId,
+                    hasData: !!previewData,
+                    dataKeys: previewData ? Object.keys(previewData) : [],
+                    hasPreview: !!(previewData.preview),
+                    hasStats: !!(previewData.stats || previewData.summary || previewData.statistics)
+                });
+
+                showPreviewModal(previewData, importType);
+
+                // Close import modal
+                const importModal = document.getElementById('importModal');
+                if (importModal) {
+                    const modalInstance = bootstrap.Modal.getInstance(importModal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                }
+            }, 500);
+        },
+        error: function(xhr, status, error) {
+            hideProgressSnackbar();
+            
+            console.error('❌ AJAX Error:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText,
+                statusCode: xhr.status,
+                response: xhr.responseJSON
+            });
+
+            let errorMessage = 'Terjadi kesalahan saat preview';
+            
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMessage = xhr.responseJSON.error;
+            } else if (xhr.responseText) {
+                try {
+                    const parsed = JSON.parse(xhr.responseText);
+                    errorMessage = parsed.message || parsed.error || errorMessage;
+                } catch (e) {
+                    errorMessage = xhr.statusText || errorMessage;
+                }
+            }
+
+            alert('Error: ' + errorMessage);
+        }
     });
-  }
+}
 
-  function generateSessionId() {
-    return 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-
-  // ✅ FIX #4: Show Preview Modal - Handle 5 rows + unique count
-  // =================== ✅ REDESIGNED PREVIEW & IMPORT (NO CHECKBOXES) ===================
-  
-  /**
-   * Show preview modal with summary and filter buttons
-   */
+  // ========================================
+  // ✅ FIXED: showPreviewModal - Handle Multiple Response Structures
+  // ========================================
   function showPreviewModal(data, importType) {
+    console.log('📊 showPreviewModal called with:', {
+        importType: importType,
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : []
+    });
+
+    // ✅ FIX #1: Validate data exists
+    if (!data) {
+        console.error('❌ Preview data is undefined or null');
+        alert('Terjadi kesalahan: Data preview tidak tersedia');
+        return;
+    }
+
+    // ✅ FIX #2: Handle multiple response structures (summary/stats/statistics)
+    const summary = data.summary || data.stats || data.statistics || {};
+    
+    console.log('📊 Summary extracted:', summary);
+
+    // ✅ FIX #3: Validate summary is not empty
+    if (!summary || Object.keys(summary).length === 0) {
+        console.error('❌ No valid summary found in response:', {
+            hasSummary: !!data.summary,
+            hasStats: !!data.stats,
+            hasStatistics: !!data.statistics,
+            dataKeys: Object.keys(data)
+        });
+        alert('Terjadi kesalahan: Data summary tidak tersedia atau kosong');
+        return;
+    }
+
+    // ✅ FIX #4: Normalize field names based on import type
+    let normalizedSummary = {
+        total_rows: summary.total_rows || 0,
+        new_count: 0,
+        update_count: 0,
+        error_count: 0,
+        unique_count: 0
+    };
+
+    // ✅ FIX #5: Handle different field names per import type
+    if (importType === 'data_am') {
+        // Data AM uses: new_ams, existing_ams, duplicate_niks, multi_divisi_ams
+        normalizedSummary.new_count = summary.new_ams || summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.existing_ams || summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.unique_am_count || 0;
+        normalizedSummary.multi_divisi_count = summary.multi_divisi_ams || 0;
+        normalizedSummary.duplicate_count = summary.duplicate_niks || 0;
+    } else if (importType === 'data_cc') {
+        // Data CC uses: new_cc, existing_cc
+        normalizedSummary.new_count = summary.new_cc || summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.existing_cc || summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.unique_cc_count || 0;
+    } else if (importType === 'revenue_cc') {
+        // Revenue CC uses: new_count, update_count
+        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.unique_cc_count || 0;
+    } else if (importType === 'revenue_am') {
+        // Revenue AM uses: new_count, update_count
+        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.unique_am_count || 0;
+    } else {
+        // Generic fallback
+        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+    }
+
+    console.log('✅ Summary normalized:', normalizedSummary);
+
+    // Store preview data globally
     previewData = data;
 
-    console.log('📊 Preview modal data:', { importType, data });
-
-    // Build summary cards HTML
     let summaryHTML = '';
 
-    if (data.summary) {
-      // Total rows card
-      summaryHTML += `
-        <div class="preview-card total">
-          <div class="icon"><i class="fa-solid fa-file-lines"></i></div>
-          <h3>${data.summary.total_rows || 0}</h3>
-          <p>Total Baris Data</p>
-        </div>
-      `;
+    // Total Rows Card
+    summaryHTML += `
+      <div class="preview-card total">
+        <div class="icon"><i class="fa-solid fa-file-lines"></i></div>
+        <h3>${normalizedSummary.total_rows}</h3>
+        <p>Total Baris Data</p>
+      </div>
+    `;
 
-      // Unique count card (CC or AM)
-      if (importType === 'revenue_cc' && data.summary.unique_cc_count !== undefined) {
+    // Unique Count Card (varies by import type)
+    if (normalizedSummary.unique_count > 0) {
+        let uniqueLabel = 'Unique Records';
+        let uniqueIcon = 'fa-solid fa-fingerprint';
+        
+        if (importType === 'revenue_cc' || importType === 'data_cc') {
+            uniqueLabel = 'Corporate Customer';
+            uniqueIcon = 'fa-solid fa-building';
+        } else if (importType === 'revenue_am' || importType === 'data_am') {
+            uniqueLabel = 'Account Manager';
+            uniqueIcon = 'fa-solid fa-user-tie';
+        }
+        
         summaryHTML += `
           <div class="preview-card unique">
-            <div class="icon"><i class="fa-solid fa-building"></i></div>
-            <h3>${data.summary.unique_cc_count}</h3>
-            <p>Corporate Customer</p>
+            <div class="icon"><i class="${uniqueIcon}"></i></div>
+            <h3>${normalizedSummary.unique_count}</h3>
+            <p>${uniqueLabel}</p>
           </div>
         `;
-      } else if (importType === 'revenue_am' && data.summary.unique_am_count !== undefined) {
-        summaryHTML += `
-          <div class="preview-card unique">
-            <div class="icon"><i class="fa-solid fa-user-tie"></i></div>
-            <h3>${data.summary.unique_am_count}</h3>
-            <p>Account Manager</p>
-          </div>
-        `;
-      }
-
-      // Other summary cards
-      summaryHTML += `
-        <div class="preview-card update">
-          <div class="icon"><i class="fa-solid fa-edit"></i></div>
-          <h3>${data.summary.update_count || 0}</h3>
-          <p>Akan Di-update</p>
-        </div>
-        <div class="preview-card new">
-          <div class="icon"><i class="fa-solid fa-plus"></i></div>
-          <h3>${data.summary.new_count || 0}</h3>
-          <p>Data Baru</p>
-        </div>
-        <div class="preview-card conflict">
-          <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
-          <h3>${data.summary.error_count || 0}</h3>
-          <p>Error/Konflik</p>
-        </div>
-      `;
     }
+
+    // Update Count Card
+    summaryHTML += `
+      <div class="preview-card update">
+        <div class="icon"><i class="fa-solid fa-edit"></i></div>
+        <h3>${normalizedSummary.update_count}</h3>
+        <p>Akan Di-update</p>
+      </div>
+    `;
+
+    // New Count Card
+    summaryHTML += `
+      <div class="preview-card new">
+        <div class="icon"><i class="fa-solid fa-plus"></i></div>
+        <h3>${normalizedSummary.new_count}</h3>
+        <p>Data Baru</p>
+      </div>
+    `;
+
+    // Error/Conflict Card
+    summaryHTML += `
+      <div class="preview-card conflict">
+        <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
+        <h3>${normalizedSummary.error_count}</h3>
+        <p>Error/Konflik</p>
+      </div>
+    `;
 
     $('#previewSummary').html(summaryHTML);
 
-    // Update button badges with counts
-    const totalCount = (data.summary?.new_count || 0) + (data.summary?.update_count || 0);
-    const newCount = data.summary?.new_count || 0;
-    const updateCount = data.summary?.update_count || 0;
-    const errorCount = data.summary?.error_count || 0;
+    // Calculate counts safely
+    const totalCount = normalizedSummary.new_count + normalizedSummary.update_count;
+    const newCount = normalizedSummary.new_count;
+    const updateCount = normalizedSummary.update_count;
+    const errorCount = normalizedSummary.error_count;
 
+    // Update badge counts
     $('#badgeAllCount').text(`${totalCount} data`);
     $('#badgeNewCount').text(`${newCount} data`);
     $('#badgeUpdateCount').text(`${updateCount} data`);
 
-    // Disable buttons if count = 0
+    // Enable/disable import buttons
     $('#btnImportAll').prop('disabled', totalCount === 0);
     $('#btnImportNew').prop('disabled', newCount === 0);
     $('#btnImportUpdate').prop('disabled', updateCount === 0);
 
-    // Show error info if any
+    // Show/hide error info
     if (errorCount > 0) {
-      $('#errorMessage').text(`${errorCount} baris data mengandung error dan akan diskip.`);
-      $('#errorInfo').show();
+        $('#errorMessage').text(`${errorCount} baris data mengandung error dan akan diskip.`);
+        $('#errorInfo').show();
     } else {
-      $('#errorInfo').hide();
+        $('#errorInfo').hide();
     }
 
-    // Show info banner for large datasets
+    // Handle large dataset info
     const previewInfo = $('#previewInfo');
     if (data.full_data_stored && totalCount > 100) {
-      previewInfo.html(`
-        <div class="alert alert-info">
-          <i class="fa-solid fa-info-circle me-2"></i>
-          <strong>Info:</strong> Dataset besar terdeteksi (${totalCount} data). 
-          Import akan memproses semua data sesuai filter yang dipilih.
-        </div>
-      `);
-      previewInfo.show();
+        previewInfo.html(`
+          <div class="alert alert-info">
+            <i class="fa-solid fa-info-circle me-2"></i>
+            <strong>Info:</strong> Dataset besar terdeteksi (${totalCount} data). 
+            Import akan memproses semua data sesuai filter yang dipilih.
+          </div>
+        `);
+        previewInfo.show();
     } else {
-      previewInfo.hide();
+        previewInfo.hide();
+    }
+
+    // Additional info for Data AM
+    if (importType === 'data_am' && normalizedSummary.multi_divisi_count > 0) {
+        const existingInfo = previewInfo.html() || '';
+        previewInfo.html(existingInfo + `
+          <div class="alert alert-success mt-2">
+            <i class="fa-solid fa-sitemap me-2"></i>
+            <strong>Info:</strong> ${normalizedSummary.multi_divisi_count} AM dengan multiple divisi terdeteksi.
+          </div>
+        `);
+        previewInfo.show();
     }
 
     // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
-    modal.show();
+    try {
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
 
-    console.log('✅ Preview modal shown', {
-      importType,
-      totalCount,
-      newCount,
-      updateCount,
-      errorCount
-    });
-  }
-
-  /**
-   * Execute import with filter type
-   */
-  function executeImportWithFilter(filterType) {
-    // Validate filter type
-    if (!['all', 'new', 'update'].includes(filterType)) {
-      alert('Filter type tidak valid');
-      return;
+        console.log('✅ Preview modal shown successfully', {
+            importType,
+            totalCount,
+            newCount,
+            updateCount,
+            errorCount,
+            originalSummary: summary,
+            normalizedSummary: normalizedSummary
+        });
+    } catch (error) {
+        console.error('❌ Error showing modal:', error);
+        alert('Error: Gagal menampilkan preview modal - ' + error.message);
     }
+}
 
-    // Get count based on filter
-    let count = 0;
-    let filterLabel = '';
-    
-    if (filterType === 'all') {
-      count = (previewData.summary?.new_count || 0) + (previewData.summary?.update_count || 0);
-      filterLabel = 'semua';
-    } else if (filterType === 'new') {
-      count = previewData.summary?.new_count || 0;
-      filterLabel = 'data baru';
-    } else if (filterType === 'update') {
-      count = previewData.summary?.update_count || 0;
-      filterLabel = 'data update';
-    }
+function executeImportWithFilter(filterType) {
+    console.log('🎯 executeImportWithFilter called with:', filterType);
 
-    if (count === 0) {
-      alert(`Tidak ada ${filterLabel} untuk diimport`);
-      return;
-    }
-
-    // Confirm import
-    if (!confirm(`Import ${count} ${filterLabel}?`)) {
-      return;
-    }
-
-    // Close preview modal
-    const previewModal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
-    if (previewModal) {
-      previewModal.hide();
-    }
-
-    // Show progress
-    showProgressSnackbar(`Mengimport ${count} data...`);
-    updateProgress(10, 'Mengirim data ke server...');
-
-    // Prepare payload
-    const payload = {
-      session_id: currentSessionId,
-      filter_type: filterType,
-      import_type: currentImportType
-    };
-
-    // Add year/month for revenue imports
-    if (currentImportType === 'revenue_am' || currentImportType === 'revenue_cc') {
-      payload.year = currentImportYear;
-      payload.month = currentImportMonth;
-    }
-
-    console.log('✅ Executing import', payload);
-
-    // Execute import
-    $.ajax({
-      url: '/revenue-data/import/execute',
-      method: 'POST',
-      data: JSON.stringify(payload),
-      contentType: 'application/json',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      xhr: function() {
-        const xhr = new window.XMLHttpRequest();
-        xhr.upload.addEventListener("progress", function(evt) {
-          if (evt.lengthComputable) {
-            const percentComplete = 10 + (evt.loaded / evt.total) * 80;
-            updateProgress(percentComplete, 'Memproses import...');
-          }
-        }, false);
-        return xhr;
-      },
-      success: function(response) {
-        updateProgress(100, 'Import selesai!');
-
-        setTimeout(() => {
-          hideProgressSnackbar();
-
-          if (response.success) {
-            console.log('✅ Import completed successfully', response);
-            showImportResult(response);
-            
-            // Reload table data
-            if (typeof loadRevenueData === 'function') {
-              loadRevenueData();
-            }
-          } else {
-            alert('Import gagal: ' + (response.message || 'Unknown error'));
-          }
-        }, 500);
-      },
-      error: function(xhr) {
-        hideProgressSnackbar();
-        console.error('❌ Import failed', xhr);
-        
-        let errorMsg = 'Terjadi kesalahan saat import';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-          errorMsg = xhr.responseJSON.message;
+    try {
+        // ✅ FIX #1: Validate filter type
+        if (!['all', 'new', 'update'].includes(filterType)) {
+            console.error('❌ Invalid filter type:', filterType);
+            alert('Error: Filter type tidak valid');
+            return;
         }
-        alert('Error: ' + errorMsg);
-      }
-    });
-  }
 
-  /**
-   * Button click handlers for filter import
-   */
+        // ✅ FIX #2: Validate previewData exists
+        if (!previewData) {
+            console.error('❌ previewData is null or undefined');
+            alert('Error: Data preview tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        // ✅ FIX #3: Validate summary exists
+        const summary = previewData.summary || previewData.stats || previewData.statistics || {};
+        
+        if (!summary || Object.keys(summary).length === 0) {
+            console.error('❌ Summary data is empty:', previewData);
+            alert('Error: Data summary tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        // ✅ FIX #4: Normalize field names based on import type
+        let newCount = 0;
+        let updateCount = 0;
+        
+        if (currentImportType === 'data_am') {
+            newCount = summary.new_ams || summary.new_count || summary.created_count || 0;
+            updateCount = summary.existing_ams || summary.update_count || summary.updated_count || 0;
+        } else if (currentImportType === 'data_cc') {
+            newCount = summary.new_cc || summary.new_count || summary.created_count || 0;
+            updateCount = summary.existing_cc || summary.update_count || summary.updated_count || 0;
+        } else {
+            // Revenue CC/AM use standard field names
+            newCount = summary.new_count || summary.created_count || 0;
+            updateCount = summary.update_count || summary.updated_count || 0;
+        }
+
+        // Calculate counts based on filter
+        let count = 0;
+        let filterLabel = '';
+        
+        if (filterType === 'all') {
+            count = newCount + updateCount;
+            filterLabel = 'semua';
+        } else if (filterType === 'new') {
+            count = newCount;
+            filterLabel = 'data baru';
+        } else if (filterType === 'update') {
+            count = updateCount;
+            filterLabel = 'data update';
+        }
+
+        console.log(`📊 Filter stats:`, {
+            filterType: filterType,
+            count: count,
+            filterLabel: filterLabel,
+            newCount: newCount,
+            updateCount: updateCount,
+            importType: currentImportType
+        });
+
+        // ✅ FIX #5: Validate count is positive
+        if (count === 0) {
+            console.warn(`⚠️ No ${filterLabel} to import`);
+            alert(`Tidak ada ${filterLabel} untuk diimport`);
+            return;
+        }
+
+        // ✅ FIX #6: Validate currentSessionId exists
+        if (!currentSessionId) {
+            console.error('❌ currentSessionId is missing');
+            alert('Error: Session ID tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        // ✅ FIX #7: Validate currentImportType exists
+        if (!currentImportType) {
+            console.error('❌ currentImportType is missing');
+            alert('Error: Import type tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        // Confirm import
+        if (!confirm(`Import ${count} ${filterLabel}?`)) {
+            console.log('❌ User cancelled import');
+            return;
+        }
+
+        // Close preview modal
+        const previewModal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+        if (previewModal) {
+            previewModal.hide();
+        }
+
+        // Show progress
+        showProgressSnackbar(`Mengimport ${count} data...`);
+        updateProgress(10, 'Mengirim data ke server...');
+
+        // Build payload
+        const payload = {
+            session_id: currentSessionId,
+            filter_type: filterType,
+            import_type: currentImportType
+        };
+
+        // Add year/month for revenue imports
+        if (currentImportType === 'revenue_am' || currentImportType === 'revenue_cc') {
+            if (!currentImportYear || !currentImportMonth) {
+                console.error('❌ Year/Month missing for revenue import');
+                hideProgressSnackbar();
+                alert('Error: Data periode tidak lengkap. Silakan upload ulang.');
+                return;
+            }
+            payload.year = currentImportYear;
+            payload.month = currentImportMonth;
+        }
+
+        // Add Revenue CC specific fields
+        if (currentImportType === 'revenue_cc') {
+            if (!currentImportDivisiId || !currentImportTipeRevenue || !currentImportJenisData) {
+                console.error('❌ Revenue CC parameters missing:', {
+                    divisi_id: currentImportDivisiId,
+                    tipe_revenue: currentImportTipeRevenue,
+                    jenis_data: currentImportJenisData
+                });
+                hideProgressSnackbar();
+                alert('Error: Parameter Revenue CC tidak lengkap. Silakan upload ulang.');
+                return;
+            }
+            payload.divisi_id = currentImportDivisiId;
+            payload.tipe_revenue = currentImportTipeRevenue;
+            payload.jenis_data = currentImportJenisData;
+        }
+
+        console.log('✅ Executing import with payload:', payload);
+
+        // Execute import
+        $.ajax({
+            url: '/revenue-data/import/execute',
+            method: 'POST',
+            data: JSON.stringify(payload),
+            contentType: 'application/json',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        const percentComplete = 10 + (evt.loaded / evt.total) * 80;
+                        updateProgress(percentComplete, 'Memproses import...');
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function(response) {
+                console.log('✅ Import execute response:', response);
+
+                updateProgress(100, 'Import selesai!');
+
+                setTimeout(() => {
+                    hideProgressSnackbar();
+
+                    // ✅ FIX #8: Validate response
+                    if (!response) {
+                        console.error('❌ Execute response is null');
+                        alert('Error: Server tidak memberikan response');
+                        return;
+                    }
+
+                    if (response.success) {
+                        console.log('✅ Import completed successfully');
+                        showImportResult(response);
+                        
+                        // Reload data
+                        loadData();
+                    } else {
+                        console.error('❌ Import failed:', response);
+                        alert('Import gagal: ' + (response.message || 'Unknown error'));
+                    }
+                }, 500);
+            },
+            error: function(xhr, status, error) {
+                hideProgressSnackbar();
+                
+                console.error('❌ Import execute error:', {
+                    status: status,
+                    error: error,
+                    statusCode: xhr.status,
+                    response: xhr.responseJSON,
+                    responseText: xhr.responseText
+                });
+                
+                let errorMsg = 'Terjadi kesalahan saat import';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        const parsed = JSON.parse(xhr.responseText);
+                        errorMsg = parsed.message || errorMsg;
+                    } catch (e) {
+                        errorMsg = xhr.statusText || errorMsg;
+                    }
+                }
+                
+                alert('Error: ' + errorMsg);
+            }
+        });
+
+    } catch (error) {
+        // ✅ FIX #9: Catch any unexpected errors
+        console.error('❌ Unexpected error in executeImportWithFilter:', error);
+        console.error('Error stack:', error.stack);
+        hideProgressSnackbar();
+        alert('Error: Terjadi kesalahan tidak terduga - ' + error.message);
+    }
+}
+
   $('#btnImportAll').click(function() {
     executeImportWithFilter('all');
   });
@@ -4285,33 +5506,63 @@ $(document).ready(function() {
     executeImportWithFilter('update');
   });
 
-  console.log('✅ Redesigned preview & import system loaded');
-
-  // =================== END REDESIGNED PREVIEW & IMPORT ===================
-
-  function showLoading(text) {
-    $('#loadingText').text(text || 'Memproses...');
-    $('#loadingOverlay').addClass('active');
-  }
-
-  function hideLoading() {
-    $('#loadingOverlay').removeClass('active');
-  }
-
   function showImportResult(response) {
-    const stats = response.statistics || {
-      total_rows: 0,
-      success_count: 0,
-      failed_count: 0,
-      skipped_count: 0
+    console.log('📊 Showing import result:', response);
+
+    // ✅ Handle different response structures
+    const stats = response.statistics || response.stats || response.data?.stats || {
+        total_rows: 0,
+        success_count: 0,
+        failed_count: 0,
+        skipped_count: 0
     };
 
-    const totalRows = stats.total_rows || 0;
-    const successCount = stats.success_count || 0;
-    const failedCount = stats.failed_count || 0;
-    const skippedCount = stats.skipped_count || 0;
-    const updatedCount = stats.updated_count || 0;
-    const recalculatedCount = stats.recalculated_am_count || 0;
+    // ✅ Normalize field names based on what backend actually returns
+    let totalRows = 0;
+    let successCount = 0;
+    let failedCount = 0;
+    let skippedCount = 0;
+    let updatedCount = 0;
+    let createdCount = 0;
+    let recalculatedCount = 0;
+
+    // Try different field name patterns
+    if (stats.total_processed !== undefined) {
+        // Pattern 1: ImportAMController style
+        totalRows = stats.total_processed || 0;
+        createdCount = stats.created || 0;
+        updatedCount = stats.updated || 0;
+        skippedCount = stats.skipped || 0;
+        failedCount = stats.errors || 0;
+        successCount = createdCount + updatedCount;
+        
+        if (stats.multi_divisi_processed) {
+            recalculatedCount = stats.multi_divisi_processed;
+        }
+    } else if (stats.total_rows !== undefined) {
+        // Pattern 2: Standard style
+        totalRows = stats.total_rows || 0;
+        successCount = stats.success_count || stats.successful || 0;
+        failedCount = stats.failed_count || stats.errors || 0;
+        skippedCount = stats.skipped_count || stats.skipped || 0;
+        updatedCount = stats.updated_count || stats.updated || 0;
+        createdCount = stats.created_count || stats.created || 0;
+        recalculatedCount = stats.recalculated_am_count || 0;
+    } else {
+        // Pattern 3: Fallback - try to extract from response message
+        console.warn('⚠️ Using fallback stats extraction');
+        
+        // Try to parse from message like "2 AM baru, 2 AM diupdate"
+        const message = response.message || '';
+        const newMatch = message.match(/(\d+)\s+(AM|CC)?\s*baru/i);
+        const updateMatch = message.match(/(\d+)\s+(AM|CC)?\s*(diupdate|updated)/i);
+        
+        if (newMatch) createdCount = parseInt(newMatch[1]) || 0;
+        if (updateMatch) updatedCount = parseInt(updateMatch[1]) || 0;
+        
+        successCount = createdCount + updatedCount;
+        totalRows = successCount;
+    }
 
     const successRate = totalRows > 0 ? ((successCount / totalRows) * 100).toFixed(1) : 0;
 
@@ -4365,43 +5616,100 @@ $(document).ready(function() {
       </div>
     `;
 
-    if (updatedCount > 0 || recalculatedCount > 0) {
-      content += `
-        <div class="result-modal-info">
-          <h6><i class="fa-solid fa-info-circle me-2"></i>Informasi Tambahan</h6>
-          <ul>
-            ${updatedCount > 0 ? `<li><strong>${updatedCount}</strong> data existing di-update</li>` : ''}
-            ${recalculatedCount > 0 ? `<li><strong>${recalculatedCount}</strong> AM revenues recalculated</li>` : ''}
-          </ul>
-        </div>
-      `;
+    // ✅ Show breakdown if we have created/updated counts
+    if (createdCount > 0 || updatedCount > 0 || recalculatedCount > 0) {
+        content += `
+          <div class="result-modal-info">
+            <h6><i class="fa-solid fa-info-circle me-2"></i>Informasi Tambahan</h6>
+            <ul>
+        `;
+        
+        if (createdCount > 0) {
+            content += `<li><strong>${createdCount}</strong> data baru ditambahkan</li>`;
+        }
+        if (updatedCount > 0) {
+            content += `<li><strong>${updatedCount}</strong> data existing di-update</li>`;
+        }
+        if (recalculatedCount > 0) {
+            content += `<li><strong>${recalculatedCount}</strong> multi-divisi AM diproses</li>`;
+        }
+        
+        content += `
+            </ul>
+          </div>
+        `;
     }
 
+    // Show detailed message if available
+    if (response.message && response.message !== 'Import berhasil') {
+        content += `
+          <div class="alert alert-success mt-3">
+            <i class="fa-solid fa-circle-check me-2"></i>
+            <strong>${response.message}</strong>
+          </div>
+        `;
+    }
+
+    // Show errors if any
     if (response.errors && response.errors.length > 0) {
-      content += `
-        <div class="alert alert-warning mt-3">
-          <strong><i class="fa-solid fa-triangle-exclamation me-2"></i>Detail Error:</strong>
-          <ul class="mb-0 mt-2">
-      `;
-      response.errors.slice(0, 10).forEach(err => {
-        content += `<li>${err}</li>`;
-      });
-      if (response.errors.length > 10) {
-        content += `<li><em>... dan ${response.errors.length - 10} error lainnya</em></li>`;
-      }
-      content += `</ul></div>`;
+        content += `
+          <div class="alert alert-warning mt-3">
+            <strong><i class="fa-solid fa-triangle-exclamation me-2"></i>Detail Error:</strong>
+            <ul class="mb-0 mt-2">
+        `;
+        response.errors.slice(0, 10).forEach(err => {
+            content += `<li>${err}</li>`;
+        });
+        if (response.errors.length > 10) {
+            content += `<li><em>... dan ${response.errors.length - 10} error lainnya</em></li>`;
+        }
+        content += `</ul></div>`;
     }
 
+    // Show failed rows if any
+    if (response.failed_rows && response.failed_rows.length > 0) {
+        content += `
+          <div class="alert alert-danger mt-3">
+            <strong><i class="fa-solid fa-circle-xmark me-2"></i>Data Yang Gagal:</strong>
+            <ul class="mb-0 mt-2">
+        `;
+        response.failed_rows.slice(0, 5).forEach(row => {
+            const rowInfo = row.nik || row.nipnas || row.row_number || 'Unknown';
+            const error = Array.isArray(row.errors) ? row.errors.join('; ') : (row.error || 'Unknown error');
+            content += `<li><strong>${rowInfo}</strong>: ${error}</li>`;
+        });
+        if (response.failed_rows.length > 5) {
+            content += `<li><em>... dan ${response.failed_rows.length - 5} baris lainnya</em></li>`;
+        }
+        content += `</ul></div>`;
+    }
+
+    // Show error log download link if available
     if (response.error_log_path) {
-      $('#btnDownloadErrorLog').attr('href', response.error_log_path).show();
+        $('#btnDownloadErrorLog').attr('href', response.error_log_path).show();
     } else {
-      $('#btnDownloadErrorLog').hide();
+        $('#btnDownloadErrorLog').hide();
     }
 
     $('#resultModalBody').html(content);
+    
     const modal = new bootstrap.Modal(document.getElementById('resultModal'));
     modal.show();
-  }
+
+    console.log('✅ Result modal shown with stats:', {
+        totalRows,
+        successCount,
+        failedCount,
+        skippedCount,
+        createdCount,
+        updatedCount,
+        recalculatedCount,
+        successRate
+    });
+}
+  // ========================================
+  // ✅ EDIT FUNCTIONS
+  // ========================================
 
   window.editRevenueCC = function(id) {
     $.ajax({
@@ -4415,8 +5723,14 @@ $(document).ready(function() {
           $('#editCCTargetRevenue').val(data.target_revenue);
           $('#editCCRealRevenue').val(data.real_revenue);
 
+          $('#tab-revenue-data-tab').click();
+
           const modal = new bootstrap.Modal(document.getElementById('modalEditRevenueCC'));
           modal.show();
+
+          $('#tab-mapping-am-tab').off('click').on('click', function() {
+            loadMappingAMTab(id);
+          });
         } else {
           alert('Error: ' + response.message);
         }
@@ -4426,6 +5740,186 @@ $(document).ready(function() {
       }
     });
   };
+
+  function loadMappingAMTab(ccRevenueId) {
+    const container = $('#mappingAmContent');
+    container.html(`
+      <div class="text-center text-muted py-5">
+        <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
+        <p>Loading mapping AM...</p>
+      </div>
+    `);
+
+    $.ajax({
+      url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings/edit`,
+      method: 'GET',
+      success: function(response) {
+        if (response.success) {
+          renderMappingAMContent(response.data);
+        } else {
+          container.html(`
+            <div class="alert alert-danger">
+              <i class="fa-solid fa-exclamation-triangle me-2"></i>
+              ${response.message || 'Gagal memuat data'}
+            </div>
+          `);
+        }
+      },
+      error: function(xhr) {
+        container.html(`
+          <div class="alert alert-danger">
+            <i class="fa-solid fa-exclamation-triangle me-2"></i>
+            Terjadi kesalahan: ${xhr.responseJSON?.message || xhr.statusText}
+          </div>
+        `);
+      }
+    });
+  }
+
+  function renderMappingAMContent(data) {
+    const container = $('#mappingAmContent');
+
+    if (!data.am_mappings || data.am_mappings.length === 0) {
+      container.html(`
+        <div class="text-center text-muted py-5">
+          <i class="fa-solid fa-info-circle fa-3x mb-3"></i>
+          <h5>Belum ada Account Manager</h5>
+          <p>Belum ada Account Manager yang dikaitkan dengan Revenue CC ini</p>
+          <small class="text-muted">Import Revenue AM untuk menambahkan mapping</small>
+        </div>
+      `);
+      return;
+    }
+
+    let html = `
+      <div class="mb-3">
+        <h6>Info Revenue CC</h6>
+        <p class="mb-1"><strong>Nama CC:</strong> ${data.cc_revenue.nama}</p>
+        <p class="mb-1"><strong>NIPNAS:</strong> ${data.cc_revenue.nipnas}</p>
+        <p class="mb-1"><strong>Real Revenue Sold (BASE):</strong> ${formatCurrency(data.cc_revenue.real_revenue_sold)}</p>
+        <p class="mb-1"><strong>Target Revenue Sold:</strong> ${formatCurrency(data.cc_revenue.target_revenue_sold)}</p>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>NIK</th>
+              <th>Nama AM</th>
+              <th>Proporsi (%)</th>
+              <th class="text-end">Real Revenue</th>
+              <th class="text-end">Target Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    data.am_mappings.forEach(function(am) {
+      html += `
+        <tr>
+          <td>${am.nik}</td>
+          <td>${am.nama}</td>
+          <td>
+            <input type="number" 
+                   class="form-control form-control-sm proporsi-input" 
+                   data-am-revenue-id="${am.am_revenue_id}"
+                   value="${am.proporsi_percent_display}" 
+                   min="0" 
+                   max="100" 
+                   step="0.01">
+          </td>
+          <td class="text-end real-revenue-display">${formatCurrency(am.real_revenue_display)}</td>
+          <td class="text-end target-revenue-display">${formatCurrency(am.target_revenue_display)}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="2">Total</th>
+              <th id="totalProporsi">100%</th>
+              <th colspan="2"></th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <button type="button" class="btn btn-primary w-100" id="btnSaveMappingAM" disabled>
+        <i class="fa-solid fa-save me-2"></i>Simpan Mapping
+      </button>
+    `;
+
+    container.html(html);
+
+    $('.proporsi-input').on('input', function() {
+      recalculateMappingAM(data);
+    });
+
+    $('#btnSaveMappingAM').off('click').on('click', function() {
+      saveMappingAM(data.cc_revenue.id);
+    });
+  }
+
+  function recalculateMappingAM(data) {
+    let totalProporsi = 0;
+    const baseSold = data.cc_revenue.real_revenue_sold;
+    const baseTarget = data.cc_revenue.target_revenue_sold;
+
+    $('.proporsi-input').each(function() {
+      const proporsi = parseFloat($(this).val()) || 0;
+      totalProporsi += proporsi;
+
+      const row = $(this).closest('tr');
+      const realRevenue = (baseSold * proporsi) / 100;
+      const targetRevenue = (baseTarget * proporsi) / 100;
+
+      row.find('.real-revenue-display').text(formatCurrency(realRevenue));
+      row.find('.target-revenue-display').text(formatCurrency(targetRevenue));
+    });
+
+    $('#totalProporsi').text(totalProporsi.toFixed(2) + '%');
+
+    const isValid = Math.abs(totalProporsi - 100) < 0.01;
+    $('#btnSaveMappingAM').prop('disabled', !isValid);
+
+    if (isValid) {
+      $('#totalProporsi').removeClass('text-danger').addClass('text-success');
+    } else {
+      $('#totalProporsi').removeClass('text-success').addClass('text-danger');
+    }
+  }
+
+  function saveMappingAM(ccRevenueId) {
+    const mappings = [];
+    
+    $('.proporsi-input').each(function() {
+      mappings.push({
+        am_revenue_id: $(this).data('am-revenue-id'),
+        proporsi: parseFloat($(this).val()) / 100
+      });
+    });
+
+    $.ajax({
+      url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings`,
+      method: 'PUT',
+      data: JSON.stringify({ am_mappings: mappings }),
+      contentType: 'application/json',
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+      success: function(response) {
+        if (response.success) {
+          alert('Mapping AM berhasil disimpan!');
+          loadData();
+        } else {
+          alert('Error: ' + response.message);
+        }
+      },
+      error: function(xhr) {
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+      }
+    });
+  }
 
   window.deleteRevenueCC = function(id) {
     if (!confirm('Hapus Revenue CC ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
@@ -4585,6 +6079,29 @@ $(document).ready(function() {
     });
   };
 
+  window.deleteDataAM = function(id) {
+    if (!confirm('Hapus Data AM ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
+      return;
+    }
+
+    $.ajax({
+      url: `/revenue-data/data-am/${id}`,
+      method: 'DELETE',
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+      success: function(response) {
+        if (response.success) {
+          alert(response.message);
+          loadData();
+        } else {
+          alert('Error: ' + response.message);
+        }
+      },
+      error: function(xhr) {
+        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+      }
+    });
+  };
+
   window.editDataCC = function(id) {
     $.ajax({
       url: `/revenue-data/data-cc/${id}`,
@@ -4631,6 +6148,9 @@ $(document).ready(function() {
     });
   };
 
+  // ========================================
+  // ✅ FORM SUBMISSIONS
+  // ========================================
   $('#formEditRevenueCC').on('submit', function(e) {
     e.preventDefault();
     const id = $('#editCCRevenueId').val();
@@ -4795,6 +6315,9 @@ $(document).ready(function() {
     });
   });
 
+  // ========================================
+  // ✅ HELPER FUNCTIONS
+  // ========================================
   function formatCurrency(value) {
     if (!value) return 'Rp 0';
     return 'Rp ' + parseFloat(value).toLocaleString('id-ID', { maximumFractionDigits: 0 });
@@ -4804,9 +6327,15 @@ $(document).ready(function() {
     alert(message);
   }
 
+  // ========================================
+  // 🚀 INITIALIZE APPLICATION
+  // ========================================
+  console.log('🚀 Initializing Revenue Data Application...');
   loadFilterOptions();
   loadData();
+  console.log('✅ Application initialized successfully!');
 
 });
 </script>
+
 @endpush

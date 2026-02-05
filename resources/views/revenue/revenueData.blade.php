@@ -9,14 +9,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
-        /* ===================================================
-           🎨 ADDITIONAL STYLES - DO NOT MODIFY EXISTING CSS
-           =================================================== */
+        /* MODAL RENDERING FIX - CRITICAL */
+        #modalEditRevenueCC .tab-content {
+            display: block !important;
+        }
+        #modalEditRevenueCC .tab-pane {
+            display: none !important;
+        }
+        #modalEditRevenueCC .tab-pane.active.show {
+            display: block !important;
+        }
+        #modalEditRevenueAM .tab-content {
+            display: block !important;
+        }
+        #modalEditDataAM .tab-content {
+            display: block !important;
+        }
+        #modalEditDataAM .tab-pane {
+            display: none;
+        }
+        #modalEditDataAM .tab-pane.active {
+            display: block !important;
+        }
 
-        /* ===================================================
-           ✅ FIX #1: REVENUE BADGE POSITIONING (RESPONSIVE ZOOM)
-           Fixed: Badges now stay aligned in column at all zoom levels
-           =================================================== */
+        /* REVENUE CELL LAYOUT */
         .revenue-cell {
             display: flex;
             flex-direction: column;
@@ -24,13 +40,11 @@
             gap: 4px;
             width: 100%;
         }
-
         .revenue-cell .revenue-value {
             font-weight: 700;
             font-size: 1rem;
             color: #212529;
         }
-
         .revenue-cell .revenue-badges {
             display: flex;
             gap: 4px;
@@ -39,12 +53,11 @@
             width: 100%;
             align-items: center;
         }
-
-        /* Ensure parent td alignment */
         td.text-end {
             text-align: right !important;
         }
 
+        /* MODAL STYLING */
         #modalEditRevenueAM .section-title {
             font-size: 1rem;
             font-weight: 600;
@@ -53,125 +66,189 @@
             padding-bottom: 0.5rem;
             border-bottom: 2px solid #e9ecef;
         }
-
         #modalEditRevenueAM .info-section {
             background-color: #f8f9fa;
             padding: 1rem;
             border-radius: 0.5rem;
             border: 1px solid #dee2e6;
         }
-
         #modalEditRevenueAM .edit-section {
             background-color: #fff8e1;
             padding: 1rem;
             border-radius: 0.5rem;
             border: 1px solid #ffc107;
         }
-
         #modalEditRevenueAM .calculated-section {
             background-color: #f0f8ff;
             padding: 1rem;
             border-radius: 0.5rem;
             border: 1px solid #0dcaf0;
         }
-
         #modalEditRevenueAM .form-control[readonly] {
             cursor: not-allowed !important;
         }
-
         #modalEditRevenueAM .other-ams-table {
             font-size: 0.9rem;
         }
-
         #modalEditRevenueAM .other-ams-table th {
             background-color: #e9ecef;
             font-weight: 600;
         }
-
         #modalEditRevenueAM .other-ams-table td {
             vertical-align: middle;
         }
-
         #proporsiValidationAlert.alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-
         #proporsiValidationAlert.alert-warning {
             background-color: #fff3cd;
             border-color: #ffeaa7;
             color: #856404;
         }
-
         #proporsiValidationAlert.alert-danger {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        /* ===================================================
-           ✅ FIX #2: MONTH PICKER ACTIVE HOVER STATE
-           Fixed: Active button hover shows RED text on WHITE bg
-           =================================================== */
+
+        /* MONTH PICKER */
         .mp-month-btn.active:hover {
             background: white !important;
             color: #dc3545 !important;
             border-color: #dc3545 !important;
             font-weight: 600;
         }
+        .mp-header-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 0 8px;
+        }
+        .mp-year-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.125rem;
+            font-weight: 700;
+            text-align: center;
+            cursor: text;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            width: 80px;
+            min-width: 80px;
+            max-width: 100px;
+        }
+        .mp-year-input:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .mp-year-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .mp-nav-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .mp-nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        .mp-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .flatpickr-current-month .numInputWrapper,
+        .flatpickr-current-month .cur-year,
+        .flatpickr-current-month .numInput,
+        .flatpickr-current-month .arrowUp,
+        .flatpickr-current-month .arrowDown {
+            display: none !important;
+        }
+        .mp-year-display {
+            font-weight: 600;
+            font-size: 1.1rem;
+            flex: 1;
+            text-align: center;
+            user-select: none;
+        }
+        .month-picker-body {
+            padding: 1rem;
+        }
+        .mp-month-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        .mp-month-btn {
+            padding: 0.75rem 0.5rem;
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+        .mp-month-btn:hover:not(:disabled) {
+            background: #e9ecef;
+            border-color: #dc3545;
+        }
+        .mp-month-btn.active {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-color: #dc3545;
+            font-weight: 600;
+        }
+        .mp-month-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
 
-        /* ===================================================
-           ✅ POLISH: SMOOTH TRANSITIONS & BETTER UX
-           =================================================== */
+        /* TRANSITIONS */
         .table tbody tr {
             transition: background-color 0.2s ease, transform 0.2s ease;
         }
-
         .form-control:focus,
         .form-select:focus {
             box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15);
         }
-
         .btn {
             transition: all 0.2s ease;
         }
-
         .btn:hover:not(:disabled) {
             transform: translateY(-1px);
         }
-
         .btn:active:not(:disabled) {
             transform: translateY(0);
         }
 
-        /* ===================================================
-           EXISTING STYLES BELOW - DO NOT MODIFY
-           =================================================== */
-
-        /* Result Modal Stats */
+        /* RESULT MODAL */
         .result-modal-stats-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
-
         .result-modal-stats-container.four-cols {
             grid-template-columns: repeat(4, 1fr);
         }
-
-        @media (max-width: 992px) {
-            .result-modal-stats-container.four-cols {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 576px) {
-            .result-modal-stats-container.four-cols {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .result-modal-stat {
             display: flex;
             align-items: center;
@@ -180,7 +257,6 @@
             background: #f8f9fa;
             border-radius: 8px;
         }
-
         .result-modal-stat .icon {
             font-size: 2rem;
             width: 60px;
@@ -196,7 +272,6 @@
         .result-modal-stat .icon.warning { background: #fff3cd; color: #856404; }
         .result-modal-stat .icon.info { background: #d1ecf1; color: #0c5460; }
         .result-modal-stat .content { flex: 1; }
-
         .result-modal-stat .content h4 {
             margin: 0;
             font-size: 1.5rem;
@@ -205,7 +280,6 @@
             color: #212529;
         }
         .result-modal-stat .content p { margin: 0; color: #6c757d; font-size: 0.9rem; }
-
         .progress-bar-custom {
             width: 100%;
             height: 30px;
@@ -224,20 +298,6 @@
             font-weight: bold;
             transition: width 0.5s ease;
         }
-
-        /* Tab Content Visibility Fix */
-        #modalEditDataAM .tab-content {
-            display: block !important;
-        }
-
-        #modalEditDataAM .tab-pane {
-            display: none;
-        }
-
-        #modalEditDataAM .tab-pane.active {
-            display: block !important;
-        }
-
         .result-modal-info {
             background: #e7f3ff;
             border-left: 4px solid #0066cc;
@@ -245,24 +305,21 @@
             margin: 1rem 0;
             border-radius: 4px;
         }
-
         .result-modal-info h6 {
             margin: 0 0 0.5rem 0;
             color: #0066cc;
             font-weight: 600;
         }
-
         .result-modal-info ul {
             margin: 0;
             padding-left: 1.25rem;
         }
-
         .result-modal-info li {
             color: #495057;
             margin-bottom: 0.25rem;
         }
 
-        /* Badge Styles for Role & Status */
+        /* BADGES */
         .badge-role-am {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -297,8 +354,44 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
+        .badge-revenue-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-left: 6px;
+        }
+        .badge-revenue-type.ho {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .badge-revenue-type.bill {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .badge-revenue-source {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-left: 6px;
+        }
+        .badge-revenue-source.reguler {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .badge-revenue-source.ngtma {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
 
-        /* Checkbox & Action Columns */
+        /* TABLE CONTROLS */
         .table thead th:first-child,
         .table tbody td:first-child {
             width: 48px !important;
@@ -306,7 +399,6 @@
             text-align: center !important;
             padding: 0.5rem !important;
         }
-
         .table thead th:first-child input[type="checkbox"],
         .table tbody td:first-child input[type="checkbox"] {
             width: 18px !important;
@@ -315,14 +407,12 @@
             display: inline-block !important;
             margin: 0 auto !important;
         }
-
         .table thead th:last-child,
         .table tbody td:last-child {
             width: 150px !important;
             min-width: 150px !important;
             text-align: center !important;
         }
-
         .action-buttons {
             display: flex;
             gap: 8px;
@@ -330,163 +420,31 @@
             align-items: center;
         }
 
-        /* Tab Active State - RED not blue */
+        /* TAB ACTIVE STATE */
         .tab-btn.active {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
             color: white !important;
             border-color: #dc3545 !important;
         }
-
         .tab-btn.active .badge {
             background: rgba(255, 255, 255, 0.3) !important;
             color: white !important;
         }
-
-        .mp-header-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-          padding: 0 8px;
+        #editRevenueCCTabs .nav-link.active {
+            color: #dc3545 !important;
+            border-bottom-color: #dc3545 !important;
+            background: transparent;
+        }
+        #editRevenueCCTabs .nav-link:hover {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.05);
         }
 
-        .mp-year-input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          color: #fff;
-          font-size: 1.125rem;
-          font-weight: 700;
-          text-align: center;
-          cursor: text;
-          padding: 8px;
-          border-radius: 6px;
-          transition: all 0.2s;
-          width: 80px;
-          min-width: 80px;
-          max-width: 100px;
-        }
-
-        .mp-year-input:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-
-        .mp-year-input:focus {
-          outline: none;
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .mp-nav-btn {
-          background: transparent;
-          border: none;
-          color: #fff;
-          font-size: 1.25rem;
-          cursor: pointer;
-          padding: 8px 12px;
-          border-radius: 6px;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .mp-nav-btn:hover:not(:disabled) {
-          background: rgba(255, 255, 255, 0.1);
-        }
-
-        .mp-nav-btn:disabled {
-          opacity: 0.3;
-          cursor: not-allowed;
-        }
-
-        /* Hide flatpickr default year dropdown */
-        .flatpickr-current-month .numInputWrapper {
-          display: none !important;
-        }
-
-        .flatpickr-current-month .cur-year {
-          display: none !important;
-        }
-
-        .flatpickr-current-month .numInput {
-          display: none !important;
-        }
-
-        .flatpickr-current-month .arrowUp,
-        .flatpickr-current-month .arrowDown {
-          display: none !important;
-        }
-
-
-
-        .mp-nav-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
-        }
-
-        .mp-nav-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .mp-year-display {
-            font-weight: 600;
-            font-size: 1.1rem;
-            flex: 1;
-            text-align: center;
-            user-select: none;
-        }
-
-        .month-picker-body {
-            padding: 1rem;
-        }
-
-        .mp-month-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-        }
-
-        .mp-month-btn {
-            padding: 0.75rem 0.5rem;
-            background: #f8f9fa;
-            border: 2px solid transparent;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-            text-align: center;
-            font-size: 0.875rem;
-        }
-
-        .mp-month-btn:hover:not(:disabled) {
-            background: #e9ecef;
-            border-color: #dc3545;
-        }
-
-        .mp-month-btn.active {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            border-color: #dc3545;
-            font-weight: 600;
-        }
-
-        .mp-month-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* ===================================================
-           📋 SEGMENT CUSTOM DROPDOWN
-           =================================================== */
-
+        /* SEGMENT DROPDOWN */
         .seg-select {
             position: relative;
             width: 100%;
         }
-
         .seg-select__btn {
             width: 100%;
             padding: 0.625rem 1rem;
@@ -500,12 +458,10 @@
             transition: all 0.2s;
             font-size: 0.875rem;
         }
-
         .seg-select__btn:hover {
             border-color: #dc3545;
             box-shadow: 0 2px 8px rgba(220, 53, 69, 0.1);
         }
-
         .seg-select__label {
             flex: 1;
             text-align: left;
@@ -516,7 +472,6 @@
             text-overflow: ellipsis;
             max-width: 200px;
         }
-
         .seg-select__caret {
             width: 0;
             height: 0;
@@ -526,11 +481,9 @@
             margin-left: 0.5rem;
             transition: transform 0.2s;
         }
-
         .seg-menu.open .seg-select__caret {
             transform: rotate(180deg);
         }
-
         .seg-menu {
             position: absolute;
             top: calc(100% + 4px);
@@ -546,18 +499,15 @@
             display: none;
             animation: fadeInScale 0.2s ease;
         }
-
         .seg-menu.open {
             display: block;
         }
-
         .seg-tabs {
             display: flex;
             background: #f8f9fa;
             border-bottom: 2px solid #e0e0e0;
             overflow-x: auto;
         }
-
         .seg-tab {
             padding: 0.75rem 1rem;
             background: transparent;
@@ -570,33 +520,27 @@
             white-space: nowrap;
             transition: all 0.2s;
         }
-
         .seg-tab:hover {
             background: rgba(220, 53, 69, 0.05);
             color: #dc3545;
         }
-
         .seg-tab.active {
             background: white;
             border-bottom-color: #dc3545;
             color: #dc3545;
             font-weight: 600;
         }
-
         .seg-panels {
             max-height: 250px;
             overflow-y: auto;
         }
-
         .seg-panel {
             display: none;
             padding: 0.5rem;
         }
-
         .seg-panel.active {
             display: block;
         }
-
         .seg-option {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -612,32 +556,25 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .seg-option:hover {
             background: #f8f9fa;
             color: #dc3545;
             font-weight: 500;
         }
-
         #filter-segment {
             display: none !important;
         }
-
         .seg-select {
             display: block !important;
         }
 
-        /* ===================================================
-           📥 IMPORT MODAL - MODERN DESIGN
-           =================================================== */
-
+        /* IMPORT MODAL */
         #importModal .modal-header {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             padding: 1.5rem 2rem;
             border-bottom: none;
         }
-
         #importModal .modal-header .modal-title {
             font-weight: 700;
             font-size: 1.5rem;
@@ -645,22 +582,17 @@
             align-items: center;
             gap: 0.75rem;
         }
-
         #importModal .modal-header .btn-close {
             filter: brightness(0) invert(1);
             opacity: 0.8;
         }
-
         #importModal .modal-header .btn-close:hover {
             opacity: 1;
         }
-
         #importModal .modal-body {
             padding: 2rem;
             background: #f8f9fa;
         }
-
-        /* Type Selector - Modern Tabs */
         .type-selector {
             display: flex;
             gap: 0;
@@ -670,7 +602,6 @@
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             margin-bottom: 2rem;
         }
-
         .type-btn {
             flex: 1;
             padding: 1rem 1.5rem;
@@ -688,25 +619,20 @@
             justify-content: center;
             gap: 0.5rem;
         }
-
         .type-btn:hover:not(.active) {
             background: rgba(220, 53, 69, 0.08);
             color: #dc3545;
             transform: translateY(-2px);
         }
-
         .type-btn.active {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             box-shadow: 0 4px 16px rgba(220, 53, 69, 0.35);
             transform: scale(1.02);
         }
-
         .type-btn i {
             font-size: 1.1rem;
         }
-
-        /* Import Panel Forms */
         .imp-panel {
             display: none;
             background: white;
@@ -715,11 +641,9 @@
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
             animation: fadeInUp 0.4s ease;
         }
-
         .imp-panel.active {
             display: block;
         }
-
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -730,7 +654,6 @@
                 transform: translateY(0);
             }
         }
-
         .imp-panel .alert {
             border: none;
             border-radius: 10px;
@@ -738,35 +661,29 @@
             margin-bottom: 1.5rem;
             border-left: 4px solid;
         }
-
         .imp-panel .alert-info {
             background: linear-gradient(135deg, #e7f3ff 0%, #d4e9ff 100%);
             border-left-color: #0066cc;
             color: #004080;
         }
-
         .imp-panel .alert-warning {
             background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%);
             border-left-color: #ff9800;
             color: #995c00;
         }
-
         .imp-panel .alert ul {
             margin: 0.5rem 0 0 0;
             padding-left: 1.5rem;
         }
-
         .imp-panel .alert li {
             margin-bottom: 0.35rem;
             line-height: 1.6;
         }
-
         .imp-panel .alert strong {
             font-weight: 700;
             display: block;
             margin-bottom: 0.5rem;
         }
-
         .imp-panel .form-label {
             font-weight: 600;
             color: #2c3e50;
@@ -776,12 +693,10 @@
             align-items: center;
             gap: 0.5rem;
         }
-
         .imp-panel .form-label .required {
             color: #dc3545;
             font-weight: 700;
         }
-
         .imp-panel .form-control,
         .imp-panel .form-select {
             border: 2px solid #e9ecef;
@@ -791,19 +706,16 @@
             transition: all 0.3s ease;
             background: #f8f9fa;
         }
-
         .imp-panel .form-control:focus,
         .imp-panel .form-select:focus {
             border-color: #dc3545;
             box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.12);
             background: white;
         }
-
         .imp-panel .form-control:hover,
         .imp-panel .form-select:hover {
             border-color: #dee2e6;
         }
-
         .imp-panel .datepicker-control {
             background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23dc3545' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") no-repeat right 1rem center;
             background-size: 20px;
@@ -811,25 +723,21 @@
             cursor: pointer;
             font-weight: 500;
         }
-
         .imp-panel .text-muted {
             font-size: 0.875rem;
             margin-top: 0.5rem;
             display: inline-block;
         }
-
         .imp-panel .text-muted a {
             color: #dc3545;
             text-decoration: none;
             font-weight: 600;
             transition: all 0.2s;
         }
-
         .imp-panel .text-muted a:hover {
             color: #c82333;
             text-decoration: underline;
         }
-
         .imp-panel .btn-primary {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             border: none;
@@ -842,27 +750,21 @@
             width: 100%;
             margin-top: 1rem;
         }
-
         .imp-panel .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
-
         .imp-panel .btn-primary:active {
             transform: translateY(0);
         }
-
         .imp-panel .btn-primary i {
             margin-right: 0.5rem;
         }
-
-        /* Modal Form Styling */
         .modal-body .form-label {
             font-weight: 600;
             color: #333;
             margin-bottom: 0.5rem;
         }
-
         .modal-body .form-control,
         .modal-body .form-select {
             border: 2px solid #e0e0e0;
@@ -870,40 +772,33 @@
             padding: 0.75rem;
             transition: all 0.3s ease;
         }
-
         .modal-body .form-control:focus,
         .modal-body .form-select:focus {
             border-color: #dc3545;
             box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
         }
-
         .modal-body .nav-tabs {
             border-bottom: 2px solid #e0e0e0;
         }
-
         .modal-body .nav-tabs .nav-link {
             border: none;
             color: #6c757d;
             font-weight: 600;
             padding: 1rem 1.5rem;
         }
-
         .modal-body .nav-tabs .nav-link.active {
             color: #dc3545;
             border-bottom: 3px solid #dc3545;
             background: transparent;
         }
 
-        /* ===================================================
-           🎨 DIVISI BUTTON GROUP
-           =================================================== */
+        /* DIVISI BUTTON GROUP */
         .divisi-button-group {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
             margin-top: 0.5rem;
         }
-
         .divisi-toggle-btn {
             padding: 0.5rem 1rem;
             border: 2px solid #e0e0e0;
@@ -916,19 +811,16 @@
             transition: all 0.3s ease;
             position: relative;
         }
-
         .divisi-toggle-btn:hover {
             border-color: #cbd5e0;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
         .divisi-toggle-btn.active {
             color: white;
             border-width: 2px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-
         .divisi-toggle-btn.active::after {
             content: '✓';
             position: absolute;
@@ -946,55 +838,43 @@
             font-weight: bold;
             border: 2px solid currentColor;
         }
-
         .divisi-toggle-btn.dps.active {
             background: var(--gradient-blue, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
             border-color: var(--dps-primary, #667eea);
         }
-
         .divisi-toggle-btn.dss.active {
             background: var(--gradient-pink, linear-gradient(135deg, #f093fb 0%, #f5576c 100%));
             border-color: var(--dss-primary, #f093fb);
         }
-
         .divisi-toggle-btn.dgs.active {
             background: var(--gradient-cyan, linear-gradient(135deg, #4facfe 0%, #00f2fe 100%));
             border-color: var(--dgs-primary, #4facfe);
         }
-
         .divisi-toggle-btn.des.active {
             background: var(--gradient-yellow, linear-gradient(135deg, #fa709a 0%, #fee140 100%));
             border-color: var(--des-primary, #fa709a);
         }
-
         .divisi-hidden-container {
             display: none;
         }
-
         #editDataAMTeldaWrapper {
             transition: all 0.3s ease;
         }
-
         #editDataAMTeldaWrapper.hidden {
             display: none;
         }
 
-        /* ===================================================
-           👁️ PREVIEW MODAL - REDESIGNED
-           =================================================== */
-
+        /* PREVIEW MODAL */
         #previewModal .modal-dialog {
             max-width: 900px;
             margin: 1.75rem auto;
         }
-
         #previewModal .modal-header {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             padding: 1.5rem 2rem;
             border-bottom: none;
         }
-
         #previewModal .modal-title {
             font-weight: 700;
             font-size: 1.5rem;
@@ -1003,33 +883,27 @@
             gap: 0.75rem;
             color: white;
         }
-
         #previewModal .modal-title i {
             color: white;
         }
-
         #previewModal .btn-close {
             filter: brightness(0) invert(1);
             opacity: 0.8;
         }
-
         #previewModal .btn-close:hover {
             opacity: 1;
         }
-
         #previewModal .modal-body {
             padding: 2rem;
             max-height: 70vh;
             overflow-y: auto;
         }
-
         .preview-summary {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 0.875rem;
             margin-bottom: 2rem;
         }
-
         .preview-card {
             background: white;
             border: 2px solid #e9ecef;
@@ -1039,31 +913,26 @@
             transition: all 0.2s ease;
             min-width: 0;
         }
-
         .preview-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-
         .preview-card .icon {
             font-size: 1.5rem;
             margin-bottom: 0.625rem;
             color: #6c757d;
         }
-
         .preview-card.total .icon { color: #495057; }
         .preview-card.unique .icon { color: #6c757d; }
         .preview-card.update .icon { color: #ffc107; }
         .preview-card.new .icon { color: #28a745; }
         .preview-card.conflict .icon { color: #dc3545; }
-
         .preview-card h3 {
             font-size: 1.5rem;
             font-weight: 700;
             margin: 0.375rem 0 0.25rem 0;
             color: #212529;
         }
-
         .preview-card p {
             margin: 0;
             color: #6c757d;
@@ -1071,50 +940,6 @@
             font-weight: 500;
             line-height: 1.3;
         }
-
-        @media (max-width: 992px) {
-            #previewModal .modal-dialog {
-                max-width: 720px;
-            }
-
-            .preview-summary {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .preview-card {
-                padding: 0.875rem;
-            }
-
-            .preview-card .icon {
-                font-size: 1.35rem;
-            }
-
-            .preview-card h3 {
-                font-size: 1.35rem;
-            }
-
-            .preview-card p {
-                font-size: 0.75rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .preview-summary {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.75rem;
-            }
-
-            .preview-card {
-                padding: 0.75rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .preview-summary {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .aggregate-warning {
             background: #fff8e6;
             border: 2px solid #ffc107;
@@ -1127,7 +952,6 @@
             justify-content: space-between;
             gap: 1rem;
         }
-
         .aggregate-warning .warning-text {
             display: flex;
             align-items: center;
@@ -1135,12 +959,10 @@
             color: #995c00;
             font-weight: 600;
         }
-
         .aggregate-warning .warning-text i {
             font-size: 1.25rem;
             color: #ff9800;
         }
-
         .aggregate-warning label {
             margin: 0;
             display: flex;
@@ -1150,17 +972,14 @@
             font-weight: 600;
             color: #995c00;
         }
-
         .aggregate-warning input[type="checkbox"] {
             width: 18px;
             height: 18px;
             cursor: pointer;
         }
-
         .import-actions {
             margin-top: 1.5rem;
         }
-
         .import-actions .alert {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
@@ -1169,16 +988,13 @@
             padding: 1rem 1.25rem;
             margin-bottom: 1.5rem;
         }
-
         .import-actions .alert i {
             color: #dc3545;
             margin-right: 0.5rem;
         }
-
         .import-actions .d-grid {
             gap: 0.75rem;
         }
-
         .import-actions .btn {
             padding: 0.875rem 1.5rem;
             font-weight: 600;
@@ -1190,40 +1006,34 @@
             align-items: center;
             justify-content: space-between;
         }
-
         #btnImportAll {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             border-color: #dc3545;
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
         }
-
         #btnImportAll:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(220, 53, 69, 0.35);
         }
-
         #btnImportNew,
         #btnImportUpdate {
             background: white;
             color: #dc3545;
             border: 2px solid #dc3545;
         }
-
         #btnImportNew:hover:not(:disabled),
         #btnImportUpdate:hover:not(:disabled) {
             background: #fff5f5;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
         }
-
         .import-actions .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
-
         .import-actions .badge {
             background: rgba(0, 0, 0, 0.1);
             color: inherit;
@@ -1232,25 +1042,21 @@
             font-size: 0.875rem;
             font-weight: 600;
         }
-
         #btnImportAll .badge {
             background: rgba(255, 255, 255, 0.25);
             color: white;
         }
-
         .import-actions .alert-danger {
             background: #fff5f5;
             border: 2px solid #ffc9c9;
             border-left: 4px solid #dc3545;
             color: #721c24;
         }
-
         #previewModal .modal-footer {
             border-top: 2px solid #e9ecef;
             padding: 1.5rem 2rem;
             background: #f8f9fa;
         }
-
         #previewModal .modal-footer .btn-light {
             background: white;
             border: 2px solid #e9ecef;
@@ -1259,16 +1065,13 @@
             font-weight: 600;
             border-radius: 10px;
         }
-
         #previewModal .modal-footer .btn-light:hover {
             border-color: #dc3545;
             color: #dc3545;
             background: #fff5f5;
         }
 
-        /* ===================================================
-           ⏳ PROGRESS SNACKBAR
-           =================================================== */
+        /* PROGRESS SNACKBAR */
         .progress-snackbar {
             position: fixed;
             bottom: 24px;
@@ -1283,12 +1086,10 @@
             overflow: hidden;
             border: 1px solid #e9ecef;
         }
-
         .progress-snackbar.active {
             display: block;
             animation: slideInRight 0.3s ease;
         }
-
         @keyframes slideInRight {
             from {
                 transform: translateX(450px);
@@ -1299,15 +1100,12 @@
                 opacity: 1;
             }
         }
-
         .progress-snackbar.minimized {
             width: auto;
         }
-
         .progress-snackbar.minimized .snackbar-body {
             display: none;
         }
-
         .snackbar-header {
             display: flex;
             justify-content: space-between;
@@ -1318,11 +1116,9 @@
             cursor: pointer;
             user-select: none;
         }
-
         .progress-snackbar.minimized .snackbar-header {
             border-radius: 12px;
         }
-
         .snackbar-title {
             font-weight: 600;
             font-size: 0.95rem;
@@ -1330,16 +1126,13 @@
             align-items: center;
             gap: 0.5rem;
         }
-
         .snackbar-title i {
             font-size: 1rem;
         }
-
         .snackbar-actions {
             display: flex;
             gap: 0.5rem;
         }
-
         .btn-minimize,
         .btn-close-snackbar {
             background: rgba(255,255,255,0.2);
@@ -1355,16 +1148,13 @@
             transition: all 0.2s;
             font-size: 0.875rem;
         }
-
         .btn-minimize:hover,
         .btn-close-snackbar:hover {
             background: rgba(255,255,255,0.3);
         }
-
         .snackbar-body {
             padding: 1.25rem;
         }
-
         .progress-container {
             width: 100%;
             height: 32px;
@@ -1373,7 +1163,6 @@
             overflow: hidden;
             margin-bottom: 0.75rem;
         }
-
         .progress-bar-fill {
             height: 100%;
             background: linear-gradient(90deg, #28a745, #20c997);
@@ -1386,26 +1175,22 @@
             transition: width 0.3s ease;
             min-width: 32px;
         }
-
         .progress-details {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: 0.5rem;
         }
-
         .progress-status {
             font-size: 0.875rem;
             color: #6c757d;
             font-weight: 500;
         }
-
         .progress-percentage {
             font-size: 1.125rem;
             font-weight: 700;
             color: #212529;
         }
-
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -1418,11 +1203,9 @@
             justify-content: center;
             z-index: 9998;
         }
-
         .loading-overlay.active {
             display: flex;
         }
-
         .loading-spinner {
             background: white;
             padding: 2rem;
@@ -1430,506 +1213,360 @@
             text-align: center;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-
         .loading-spinner .spinner-border {
             width: 3rem;
             height: 3rem;
             border-width: 0.3rem;
             color: #dc3545;
         }
-
         .loading-spinner p {
             margin-top: 1rem;
             color: #212529;
             font-weight: 600;
         }
 
-
-        /* ========================================
-        DELETE MODAL - MODERN MINIMALIST STYLES
-        ======================================== */
-
-      /* Modal backdrop blur effect */
-      .delete-modal-backdrop {
-          backdrop-filter: blur(4px);
-          background-color: rgba(0, 0, 0, 0.5);
-      }
-
-      /* Main modal styling */
-      .delete-confirm-modal .modal-content {
-          border: none;
-          border-radius: 16px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          overflow: hidden;
-      }
-
-      /* Header - Gradient danger background */
-      .delete-confirm-modal .modal-header {
-          background: #ea1d25;
-          border: none;
-          padding: 20px 24px;
-          position: relative;
-      }
-
-      .delete-confirm-modal .modal-header::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 4px;
-      }
-
-      .delete-confirm-modal .modal-title {
-          color: #ffffff !important;
-          font-weight: 600;
-          font-size: 1.125rem;
-          display: flex;
-          align-items: center;
-          margin: 0;
-      }
-
-      .delete-confirm-modal .modal-title i {
-          font-size: 1.25rem;
-          margin-right: 10px;
-          animation: pulse-warning 2s ease-in-out infinite;
-      }
-
-      @keyframes pulse-warning {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.1); }
-      }
-
-      .delete-confirm-modal .btn-close {
-          filter: brightness(0) invert(1);
-          opacity: 0.8;
-          transition: all 0.2s ease;
-      }
-
-      .delete-confirm-modal .btn-close:hover {
-          opacity: 1;
-          transform: rotate(90deg);
-      }
-
-      /* Body styling */
-      .delete-confirm-modal .modal-body {
-          padding: 24px;
-          background: #ffffff;
-      }
-
-      /* Warning alert box - Modern gradient */
-      .delete-warning-box {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-          border: none;
-          border-left: 4px solid #f59e0b;
-          border-radius: 12px;
-          padding: 16px;
-          margin-bottom: 20px;
-          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
-      }
-
-      .delete-warning-box .warning-icon {
-          color: #f59e0b;
-          font-size: 1.25rem;
-          margin-right: 12px;
-      }
-
-      .delete-warning-box .warning-title {
-          color: #92400e;
-          font-weight: 600;
-          font-size: 1rem;
-          margin: 0;
-      }
-
-      .delete-warning-box .warning-text {
-          color: #78350f;
-          font-size: 0.9rem;
-          margin: 8px 0 0 0;
-          line-height: 1.5;
-      }
-
-      /* Related Data Table - Modern card style */
-      .related-data-card {
-          background: #f9fafb;
-          border-radius: 12px;
-          padding: 16px;
-          margin-bottom: 20px;
-          border: 1px solid #e5e7eb;
-      }
-
-      .related-data-card h6 {
-          color: #374151;
-          font-weight: 600;
-          font-size: 0.875rem;
-          margin-bottom: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-      }
-
-      .related-data-table {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
-          background: white;
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      }
-
-      .related-data-table tbody tr {
-          transition: background-color 0.2s ease;
-      }
-
-      .related-data-table tbody tr:hover {
-          background-color: #f3f4f6;
-      }
-
-      .related-data-table td {
-          padding: 12px 16px;
-          border-bottom: 1px solid #f3f4f6;
-          font-size: 0.875rem;
-      }
-
-      .related-data-table td:first-child {
-          color: #6b7280;
-          font-weight: 500;
-      }
-
-      .related-data-table td:last-child {
-          text-align: right;
-          color: #111827;
-          font-weight: 600;
-      }
-
-      .related-data-table tbody tr:last-child td {
-          border-bottom: none;
-      }
-
-      .related-data-table tbody tr.total-row {
-          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-      }
-
-      .related-data-table tbody tr.total-row td {
-          font-weight: 700;
-          color: #111827;
-      }
-
-      /* Delete Options - Modern Radio Buttons */
-      .delete-options-card {
-          background: #ffffff;
-          border-radius: 12px;
-          padding: 20px;
-          margin-top: 20px;
-          border: 1px solid #e5e7eb;
-      }
-
-      .delete-options-card h6 {
-          color: #374151;
-          font-weight: 600;
-          font-size: 0.875rem;
-          margin-bottom: 16px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-      }
-
-      /* Custom Radio Button Container */
-      .delete-option-radio {
-          position: relative;
-          margin-bottom: 12px;
-      }
-
-      .delete-option-radio input[type="radio"] {
-          position: absolute;
-          opacity: 0;
-          width: 0;
-          height: 0;
-      }
-
-      .delete-option-radio label {
-          display: block;
-          padding: 16px 20px 16px 52px;
-          background: #f9fafb;
-          border: 2px solid #e5e7eb;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          margin: 0;
-      }
-
-      .delete-option-radio label::before {
-          content: '';
-          position: absolute;
-          left: 18px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 20px;
-          height: 20px;
-          border: 2px solid #d1d5db;
-          border-radius: 50%;
-          background: white;
-          transition: all 0.3s ease;
-      }
-
-      .delete-option-radio label::after {
-          content: '';
-          position: absolute;
-          left: 24px;
-          top: 50%;
-          transform: translateY(-50%) scale(0);
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: white;
-          transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      }
-
-      .delete-option-radio input[type="radio"]:checked + label {
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-          border-color: #3b82f6;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-      }
-
-      .delete-option-radio input[type="radio"]:checked + label::before {
-          background: #3b82f6;
-          border-color: #3b82f6;
-      }
-
-      .delete-option-radio input[type="radio"]:checked + label::after {
-          transform: translateY(-50%) scale(1);
-      }
-
-      .delete-option-radio label:hover {
-          border-color: #9ca3af;
-          background: #f3f4f6;
-          transform: translateX(2px);
-      }
-
-      .delete-option-radio input[type="radio"]:checked + label:hover {
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-          border-color: #3b82f6;
-      }
-
-      .delete-option-radio .option-title {
-          display: block;
-          color: #111827;
-          font-weight: 600;
-          font-size: 0.9rem;
-          margin-bottom: 4px;
-      }
-
-      .delete-option-radio .option-description {
-          display: block;
-          color: #6b7280;
-          font-size: 0.8rem;
-          line-height: 1.4;
-      }
-
-      .delete-option-radio input[type="radio"]:checked + label .option-title {
-          color: #1e40af;
-      }
-
-      .delete-option-radio input[type="radio"]:checked + label .option-description {
-          color: #1e40af;
-      }
-
-      /* Confirmation Text Section - DANGER ZONE */
-      .danger-zone-card {
-          background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-          border: 2px solid #dc2626;
-          border-radius: 12px;
-          padding: 20px;
-          margin-top: 20px;
-          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
-          animation: pulse-danger 2s ease-in-out infinite;
-      }
-
-      @keyframes pulse-danger {
-          0%, 100% { box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15); }
-          50% { box-shadow: 0 4px 20px rgba(220, 38, 38, 0.25); }
-      }
-
-      .danger-zone-card .danger-icon {
-          color: #dc2626;
-          font-size: 1.5rem;
-          margin-right: 12px;
-      }
-
-      .danger-zone-card .danger-title {
-          color: #991b1b;
-          font-weight: 700;
-          font-size: 1rem;
-          margin: 0 0 12px 0;
-      }
-
-      .danger-zone-card .danger-text {
-          color: #7f1d1d;
-          font-size: 0.875rem;
-          margin: 8px 0;
-          line-height: 1.5;
-      }
-
-      .danger-zone-card .confirmation-input {
-          margin-top: 12px;
-          padding: 12px 16px;
-          border: 2px solid #dc2626;
-          border-radius: 8px;
-          font-size: 0.9rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          transition: all 0.3s ease;
-      }
-
-      .danger-zone-card .confirmation-input:focus {
-          outline: none;
-          border-color: #991b1b;
-          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-          background: white;
-      }
-
-      .danger-zone-card .confirmation-input::placeholder {
-          color: #dc2626;
-          opacity: 0.5;
-      }
-
-      /* Modal Footer */
-      .delete-confirm-modal .modal-footer {
-          border: none;
-          padding: 16px 24px 20px;
-          background: #f9fafb;
-          display: flex;
-          gap: 12px;
-      }
-
-      .delete-confirm-modal .btn-cancel {
-          flex: 1;
-          padding: 12px 24px;
-          background: white;
-          border: 2px solid #e5e7eb;
-          color: #6b7280;
-          font-weight: 600;
-          border-radius: 8px;
-          transition: all 0.3s ease;
-      }
-
-      .delete-confirm-modal .btn-cancel:hover {
-          background: #f3f4f6;
-          border-color: #d1d5db;
-          color: #374151;
-          transform: translateY(-1px);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      }
-
-      .delete-confirm-modal .btn-delete-confirm {
-          flex: 1;
-          padding: 12px 24px;
-          background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-          border: none;
-          color: white;
-          font-weight: 600;
-          border-radius: 8px;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-      }
-
-      .delete-confirm-modal .btn-delete-confirm:hover {
-          background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
-      }
-
-      .delete-confirm-modal .btn-delete-confirm:active {
-          transform: translateY(0);
-      }
-
-      .delete-confirm-modal .btn-delete-confirm i,
-      .delete-confirm-modal .btn-cancel i {
-          margin-right: 8px;
-      }
-
-      /* Smooth modal animation */
-      .delete-confirm-modal.fade .modal-dialog {
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .delete-confirm-modal.show .modal-dialog {
-          transform: scale(1);
-      }
-
-      /* Responsive adjustments */
-      @media (max-width: 576px) {
-          .delete-confirm-modal .modal-dialog {
-              margin: 0.5rem;
-          }
-          
-          .delete-confirm-modal .modal-body {
-              padding: 16px;
-          }
-          
-          .delete-option-radio label {
-              padding: 12px 16px 12px 44px;
-          }
-          
-          .delete-option-radio label::before {
-              left: 14px;
-              width: 18px;
-              height: 18px;
-          }
-          
-          .delete-option-radio label::after {
-              left: 20px;
-              width: 6px;
-              height: 6px;
-          }
-      }
-
-        /* ===================================================
-           🆕 NEW FEATURES - BADGES & VIEW MODE
-           =================================================== */
-
-        .badge-revenue-type {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 700;
+        /* DELETE MODAL */
+        .delete-modal-backdrop {
+            backdrop-filter: blur(4px);
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .delete-confirm-modal .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        .delete-confirm-modal .modal-header {
+            background: #ea1d25;
+            border: none;
+            padding: 20px 24px;
+            position: relative;
+        }
+        .delete-confirm-modal .modal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        .delete-confirm-modal .modal-title {
+            color: #ffffff !important;
+            font-weight: 600;
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            margin: 0;
+        }
+        .delete-confirm-modal .modal-title i {
+            font-size: 1.25rem;
+            margin-right: 10px;
+            animation: pulse-warning 2s ease-in-out infinite;
+        }
+        @keyframes pulse-warning {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        .delete-confirm-modal .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+            transition: all 0.2s ease;
+        }
+        .delete-confirm-modal .btn-close:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+        }
+        .delete-confirm-modal .modal-body {
+            padding: 24px;
+            background: #ffffff;
+        }
+        .delete-warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: none;
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+        }
+        .delete-warning-box .warning-icon {
+            color: #f59e0b;
+            font-size: 1.25rem;
+            margin-right: 12px;
+        }
+        .delete-warning-box .warning-title {
+            color: #92400e;
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 0;
+        }
+        .delete-warning-box .warning-text {
+            color: #78350f;
+            font-size: 0.9rem;
+            margin: 8px 0 0 0;
+            line-height: 1.5;
+        }
+        .related-data-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .related-data-card h6 {
+            color: #374151;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-left: 6px;
+            letter-spacing: 0.5px;
         }
-
-        .badge-revenue-type.ho {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .related-data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-
-        .badge-revenue-type.bill {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+        .related-data-table tbody tr {
+            transition: background-color 0.2s ease;
         }
-
-        .badge-revenue-source {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
+        .related-data-table tbody tr:hover {
+            background-color: #f3f4f6;
+        }
+        .related-data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+        }
+        .related-data-table td:first-child {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .related-data-table td:last-child {
+            text-align: right;
+            color: #111827;
+            font-weight: 600;
+        }
+        .related-data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .related-data-table tbody tr.total-row {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+        .related-data-table tbody tr.total-row td {
             font-weight: 700;
+            color: #111827;
+        }
+        .delete-options-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .delete-options-card h6 {
+            color: #374151;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 16px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-left: 6px;
+            letter-spacing: 0.5px;
         }
-
-        .badge-revenue-source.reguler {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        .delete-option-radio {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .delete-option-radio input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .delete-option-radio label {
+            display: block;
+            padding: 16px 20px 16px 52px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            margin: 0;
+        }
+        .delete-option-radio label::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .delete-option-radio label::after {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%) scale(0);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .delete-option-radio input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+        .delete-option-radio input[type="radio"]:checked + label::before {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .delete-option-radio input[type="radio"]:checked + label::after {
+            transform: translateY(-50%) scale(1);
+        }
+        .delete-option-radio label:hover {
+            border-color: #9ca3af;
+            background: #f3f4f6;
+            transform: translateX(2px);
+        }
+        .delete-option-radio input[type="radio"]:checked + label:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #3b82f6;
+        }
+        .delete-option-radio .option-title {
+            display: block;
+            color: #111827;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        .delete-option-radio .option-description {
+            display: block;
+            color: #6b7280;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        .delete-option-radio input[type="radio"]:checked + label .option-title {
+            color: #1e40af;
+        }
+        .delete-option-radio input[type="radio"]:checked + label .option-description {
+            color: #1e40af;
+        }
+        .danger-zone-card {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #dc2626;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+            animation: pulse-danger 2s ease-in-out infinite;
+        }
+        @keyframes pulse-danger {
+            0%, 100% { box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15); }
+            50% { box-shadow: 0 4px 20px rgba(220, 38, 38, 0.25); }
+        }
+        .danger-zone-card .danger-icon {
+            color: #dc2626;
+            font-size: 1.5rem;
+            margin-right: 12px;
+        }
+        .danger-zone-card .danger-title {
+            color: #991b1b;
+            font-weight: 700;
+            font-size: 1rem;
+            margin: 0 0 12px 0;
+        }
+        .danger-zone-card .danger-text {
+            color: #7f1d1d;
+            font-size: 0.875rem;
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        .danger-zone-card .confirmation-input {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border: 2px solid #dc2626;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        .danger-zone-card .confirmation-input:focus {
+            outline: none;
+            border-color: #991b1b;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+            background: white;
+        }
+        .danger-zone-card .confirmation-input::placeholder {
+            color: #dc2626;
+            opacity: 0.5;
+        }
+        .delete-confirm-modal .modal-footer {
+            border: none;
+            padding: 16px 24px 20px;
+            background: #f9fafb;
+            display: flex;
+            gap: 12px;
+        }
+        .delete-confirm-modal .btn-cancel {
+            flex: 1;
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            color: #6b7280;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .delete-confirm-modal .btn-cancel:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #374151;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .delete-confirm-modal .btn-delete-confirm {
+            flex: 1;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            border: none;
             color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+        .delete-confirm-modal .btn-delete-confirm:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+        }
+        .delete-confirm-modal .btn-delete-confirm:active {
+            transform: translateY(0);
+        }
+        .delete-confirm-modal .btn-delete-confirm i,
+        .delete-confirm-modal .btn-cancel i {
+            margin-right: 8px;
+        }
+        .delete-confirm-modal.fade .modal-dialog {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .delete-confirm-modal.show .modal-dialog {
+            transform: scale(1);
         }
 
-        .badge-revenue-source.ngtma {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: white;
-        }
-
+        /* VIEW MODE TOGGLE */
         .view-mode-toggle {
             display: inline-flex;
             background: white;
@@ -1938,7 +1575,6 @@
             padding: 4px;
             gap: 4px;
         }
-
         .view-mode-toggle button {
             padding: 0.5rem 1rem;
             border: none;
@@ -1950,31 +1586,25 @@
             border-radius: 6px;
             transition: all 0.2s ease;
         }
-
         .view-mode-toggle button:hover:not(.active) {
             background: #f8f9fa;
             color: #495057;
         }
-
         .view-mode-toggle button.active {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             box-shadow: 0 2px 8px rgba(220, 53, 69, 0.25);
         }
-
         .table-wrap.all-columns {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-
         .table-wrap.all-columns table {
             min-width: 1200px;
         }
-
         .tipe-revenue-select {
             position: relative;
         }
-
         .tipe-revenue-select select {
             appearance: none;
             -webkit-appearance: none;
@@ -1983,11 +1613,9 @@
             background-size: 12px;
             padding-right: 2.5rem;
         }
-
         .currency-short {
             font-weight: 600;
         }
-
         .currency-short .unit {
             font-size: 0.85em;
             font-weight: 500;
@@ -1995,33 +1623,129 @@
             margin-left: 2px;
         }
 
+        /* AM MAPPING TABLE */
+        .am-mapping-row.editing {
+            background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%) !important;
+            border-left: 4px solid #ff9800;
+        }
+        .am-mapping-row.editing input {
+            border: 2px solid #ff9800 !important;
+            background: white !important;
+        }
+        .am-mapping-row.readonly {
+            background: #f8f9fa;
+        }
+        .am-mapping-row.readonly input {
+            cursor: not-allowed;
+        }
+        .proporsi-input {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.5rem;
+            font-weight: 600;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .proporsi-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .proporsi-alert-success {
+            background: #d4edda !important;
+            border-left-color: #28a745 !important;
+            color: #155724 !important;
+        }
+        .proporsi-alert-warning {
+            background: #fff3cd !important;
+            border-left-color: #ffc107 !important;
+            color: #856404 !important;
+        }
+        .proporsi-alert-danger {
+            background: #f8d7da !important;
+            border-left-color: #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 992px) {
+            .result-modal-stats-container.four-cols {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            #previewModal .modal-dialog {
+                max-width: 720px;
+            }
+            .preview-summary {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .preview-card {
+                padding: 0.875rem;
+            }
+            .preview-card .icon {
+                font-size: 1.35rem;
+            }
+            .preview-card h3 {
+                font-size: 1.35rem;
+            }
+            .preview-card p {
+                font-size: 0.75rem;
+            }
+        }
         @media (max-width: 768px) {
             .table-wrap {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
             }
-
             .view-mode-toggle {
                 width: 100%;
             }
-
             .view-mode-toggle button {
                 flex: 1;
             }
-
             .badge-revenue-type,
             .badge-revenue-source {
                 font-size: 0.65rem;
                 padding: 2px 6px;
             }
-
             .progress-snackbar {
                 width: calc(100% - 40px);
                 right: 20px;
                 left: 20px;
             }
+            .preview-summary {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            .preview-card {
+                padding: 0.75rem;
+            }
         }
-
+        @media (max-width: 576px) {
+            .result-modal-stats-container.four-cols {
+                grid-template-columns: 1fr;
+            }
+            .delete-confirm-modal .modal-dialog {
+                margin: 0.5rem;
+            }
+            .delete-confirm-modal .modal-body {
+                padding: 16px;
+            }
+            .delete-option-radio label {
+                padding: 12px 16px 12px 44px;
+            }
+            .delete-option-radio label::before {
+                left: 14px;
+                width: 18px;
+                height: 18px;
+            }
+            .delete-option-radio label::after {
+                left: 20px;
+                width: 6px;
+                height: 6px;
+            }
+            .preview-summary {
+                grid-template-columns: 1fr;
+            }
+        }
         @media (max-width: 480px) {
             .progress-snackbar {
                 bottom: 16px;
@@ -2029,12 +1753,10 @@
                 left: 16px;
                 width: calc(100% - 32px);
             }
-
             .import-actions .btn {
                 font-size: 0.875rem;
                 padding: 0.75rem 1rem;
             }
-
             .aggregate-warning {
                 flex-direction: column;
                 align-items: flex-start;
@@ -2803,49 +2525,141 @@
 <!-- ✅ EDIT MODALS (Will be continued in Part 2 JavaScript) -->
 <!-- Modal Edit Revenue CC -->
 <div class="modal fade" id="modalEditRevenueCC" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" style="color: white;">Edit Revenue CC</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none;">
+                <h5 class="modal-title" style="color: white;">
+                    <i class="fa-solid fa-pen-to-square me-2"></i>Edit Revenue Corporate Customer
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: brightness(0) invert(1);"></button>
             </div>
             
-            <!-- ✅ NEW: 2 TABS - Data Revenue & Mapping AM -->
-            <div class="modal-body">
-                <ul class="nav nav-tabs mb-3" id="editRevenueCCTabs" role="tablist">
+            <!-- ✅ NEW: TABS NAVIGATION -->
+            <div style="background: white; border-bottom: 2px solid #e9ecef;">
+                <ul class="nav nav-tabs" id="editRevenueCCTabs" role="tablist" style="border: none; padding: 0 2rem;">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tab-revenue-data-tab" data-bs-toggle="tab" data-bs-target="#tab-revenue-data" type="button">Data Revenue</button>
+                        <button class="nav-link active" 
+                                id="tab-revenue-data-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#tab-revenue-data" 
+                                type="button"
+                                style="border: none; border-bottom: 3px solid transparent; padding: 1rem 1.5rem; font-weight: 600; color: #6c757d;">
+                            <i class="fa-solid fa-chart-line me-2"></i>Data Revenue
+                        </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-mapping-am-tab" data-bs-toggle="tab" data-bs-target="#tab-mapping-am" type="button">Mapping AM</button>
+                        <button class="nav-link" 
+                                id="tab-mapping-am-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#tab-mapping-am" 
+                                type="button"
+                                style="border: none; border-bottom: 3px solid transparent; padding: 1rem 1.5rem; font-weight: 600; color: #6c757d;">
+                            <i class="fa-solid fa-users-gear me-2"></i>Mapping AM
+                        </button>
                     </li>
                 </ul>
-
-                <div class="tab-content">
-                    <!-- Tab 1: Data Revenue -->
-                    <div class="tab-pane fade show active" id="tab-revenue-data">
-                        <form id="formEditRevenueCC">
+            </div>
+            
+            <div class="tab-content" id="editRevenueCCTabContent" style="background: #f8f9fa;">
+                <!-- TAB 1: Data Revenue -->
+                <div class="tab-pane fade show active" id="tab-revenue-data" role="tabpanel">
+                    <form id="formEditRevenueCC">
+                        <div class="modal-body" style="padding: 2rem;">
                             <input type="hidden" id="editCCRevenueId">
-                            <div class="mb-3">
-                                <label class="form-label">Nama CC</label>
-                                <input type="text" class="form-control" id="editCCNamaCC" readonly>
+                            
+                            <!-- CC Info Section -->
+                            <div class="card mb-4" style="border: 2px solid #e9ecef; border-radius: 12px;">
+                                <div class="card-header" style="background: white; border-bottom: 2px solid #e9ecef; padding: 1rem 1.5rem;">
+                                    <h6 class="mb-0" style="color: #495057; font-weight: 600;">
+                                        <i class="fa-solid fa-info-circle me-2 text-primary"></i>
+                                        Informasi Corporate Customer
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 1.5rem;">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">Standard Name</label>
+                                            <input type="text" class="form-control" id="editCCNamaCC" readonly style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600;">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">NIPNAS</label>
+                                            <input type="text" class="form-control" id="editCCNipnas" readonly style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600;">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">Segment</label>
+                                            <input type="text" class="form-control" id="editCCSegment" readonly style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600;">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">Divisi</label>
+                                            <input type="text" class="form-control" id="editCCDivisi" readonly style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600;">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">Periode</label>
+                                            <input type="text" class="form-control" id="editCCPeriode" readonly style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600;">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Target Revenue</label>
-                                <input type="number" class="form-control" id="editCCTargetRevenue" required>
+                            
+                            <!-- Edit Revenue Section -->
+                            <div class="card" style="border: 2px solid #ffc107; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,193,7,0.15);">
+                                <div class="card-header" style="background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%); border-bottom: 2px solid #ffc107; padding: 1rem 1.5rem;">
+                                    <h6 class="mb-0" style="color: #856404; font-weight: 700;">
+                                        <i class="fa-solid fa-edit me-2"></i>Edit Revenue
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 1.5rem;">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label" style="font-weight: 600; color: #495057;">
+                                                Target Revenue <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="editCCTargetRevenue" 
+                                                   required
+                                                   min="0"
+                                                   step="0.01"
+                                                   style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem; font-weight: 600; font-size: 1.1rem;">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" style="font-weight: 600; color: #495057;">
+                                                Real Revenue <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="editCCRealRevenue" 
+                                                   required
+                                                   min="0"
+                                                   step="0.01"
+                                                   style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem; font-weight: 600; font-size: 1.1rem;">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info mt-3" style="border-left: 4px solid #0066cc; background: #e7f3ff; border-radius: 10px;">
+                                        <i class="fa-solid fa-calculator me-2"></i>
+                                        <strong>Perubahan revenue CC akan otomatis recalculate proporsi ke semua AM terkait</strong>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Real Revenue</label>
-                                <input type="number" class="form-control" id="editCCRealRevenue" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Simpan</button>
-                        </form>
-                    </div>
-
-                    <!-- Tab 2: Mapping AM -->
-                    <div class="tab-pane fade" id="tab-mapping-am">
+                        </div>
+                        
+                        <div class="modal-footer" style="border-top: 2px solid #e9ecef; padding: 1.25rem 2rem; background: white;">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem 1.5rem; font-weight: 600;">
+                                <i class="fa-solid fa-times me-2"></i>Batal
+                            </button>
+                            <button type="submit" class="btn btn-danger" style="border: none; border-radius: 10px; padding: 0.75rem 2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(220,53,69,0.3);">
+                                <i class="fa-solid fa-save me-2"></i>Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- TAB 2: Mapping AM -->
+                <div class="tab-pane fade" id="tab-mapping-am" role="tabpanel">
+                    <div class="modal-body" style="padding: 2rem;">
                         <div id="mappingAmContent">
-                            <!-- Will be populated by JavaScript -->
+                            <!-- Will be populated by JavaScript when tab is clicked -->
                             <div class="text-center text-muted py-5">
                                 <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
                                 <p>Loading mapping AM...</p>
@@ -2858,197 +2672,175 @@
     </div>
 </div>
 
+
 <!-- Other Edit Modals (Revenue AM, Data AM, Data CC) -->
 <!-- Modal Edit Revenue AM -->
 <div class="modal fade" id="modalEditRevenueAM" tabindex="-1" aria-labelledby="modalEditRevenueAMLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalEditRevenueAMLabel">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <!-- Header -->
+            <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none;">
+                <h5 class="modal-title" id="modalEditRevenueAMLabel" style="color: white;">
                     <i class="fa-solid fa-pen-to-square me-2"></i>Edit Revenue AM
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: brightness(0) invert(1);"></button>
             </div>
             
             <form id="formEditRevenueAM">
-                <div class="modal-body">
+                <div class="modal-body" style="padding: 2rem; background: #f8f9fa;">
                     <input type="hidden" id="editAMRevenueId">
                     <input type="hidden" id="editAMCCRevenueId">
                     <input type="hidden" id="editAMCCTargetSold">
                     <input type="hidden" id="editAMCCRealSold">
                     
                     <!-- ============================================
-                         INFO SECTION - Read Only
+                         📋 HEADER SECTION
                          ============================================ -->
-                    <div class="info-section mb-4">
-                        <h6 class="section-title">
-                            <i class="fa-solid fa-info-circle me-2"></i>Informasi Mapping
+                    <div class="alert" style="background: linear-gradient(135deg, #e7f3ff 0%, #d4e9ff 100%); border-left: 4px solid #0066cc; border-radius: 10px; margin-bottom: 1.5rem;">
+                        <h6 style="margin: 0; color: #004080; font-size: 1rem; line-height: 1.6;">
+                            <i class="fa-solid fa-user-tie me-2"></i>
+                            <strong>AM:</strong> <span id="editAMHeaderNama">Loading...</span>
+                            <span class="mx-2">•</span>
+                            <i class="fa-solid fa-building me-2"></i>
+                            <strong>Customer:</strong> <span id="editAMHeaderCC">Loading...</span>
+                            <span class="mx-2">•</span>
+                            <i class="fa-solid fa-calendar-days me-2"></i>
+                            <strong>Periode:</strong> <span id="editAMHeaderPeriod">Loading...</span>
                         </h6>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Nama Account Manager</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="editAMNamaAM" 
-                                       readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
-                                <small class="text-muted">
-                                    <i class="fa-solid fa-lock me-1"></i>Tidak dapat diubah
-                                </small>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Corporate Customer</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="editAMCCName" 
-                                       readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
-                                <small class="text-muted">
-                                    <i class="fa-solid fa-lock me-1"></i>Tidak dapat diubah
-                                </small>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-bold">Periode</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="editAMPeriode" 
-                                       readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-bold">CC Target Sold</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="editAMCCTargetDisplay" 
-                                       readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
-                                <small class="text-muted">Base revenue CC</small>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-bold">CC Real Sold</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="editAMCCRealDisplay" 
-                                       readonly 
-                                       style="background-color: #f8f9fa; cursor: not-allowed;">
-                                <small class="text-muted">Base revenue CC</small>
-                            </div>
-                        </div>
                     </div>
                     
-                    <hr>
-                    
                     <!-- ============================================
-                         EDITABLE SECTION - Proporsi Only
+                         📊 CC INFO SECTION
                          ============================================ -->
-                    <div class="edit-section mb-4">
-                        <h6 class="section-title">
-                            <i class="fa-solid fa-edit me-2"></i>Edit Proporsi
-                        </h6>
-                        
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label fw-bold">
-                                    Proporsi (%)
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <input type="number" 
+                    <div class="card mb-4" style="border: 2px solid #e9ecef; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                        <div class="card-header" style="background: white; border-bottom: 2px solid #e9ecef; padding: 1rem 1.5rem;">
+                            <h6 class="mb-0" style="color: #495057; font-weight: 600;">
+                                <i class="fa-solid fa-info-circle me-2 text-primary"></i>
+                                Informasi Corporate Customer
+                            </h6>
+                        </div>
+                        <div class="card-body" style="padding: 1.5rem;">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Standard Name
+                                    </label>
+                                    <input type="text" 
                                            class="form-control" 
-                                           id="editAMProporsi" 
-                                           min="0" 
-                                           max="100" 
-                                           step="0.01" 
-                                           required
-                                           placeholder="Masukkan proporsi (0-100)">
-                                    <span class="input-group-text">%</span>
+                                           id="editAMCCName" 
+                                           readonly 
+                                           style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600; color: #212529;">
                                 </div>
-                                <small class="text-muted">
-                                    <i class="fa-solid fa-info-circle me-1"></i>
-                                    Total proporsi untuk 1 CC harus = 100%
-                                </small>
                                 
-                                <!-- Proporsi Validation Alert -->
-                                <div id="proporsiValidationAlert" class="alert mt-2" style="display: none;"></div>
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        NIPNAS
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="editAMCCNipnas" 
+                                           readonly 
+                                           style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600; color: #212529;">
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Real Revenue (BASE)
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="editAMCCRealDisplay" 
+                                           readonly 
+                                           style="background: #e7ffe7; border: 2px solid #28a745; font-weight: 700; color: #155724; font-size: 1.1rem;">
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Target Revenue (BASE)
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="editAMCCTargetDisplay" 
+                                           readonly 
+                                           style="background: #e7f3ff; border: 2px solid #0056b3; font-weight: 700; color: #004085; font-size: 1.1rem;">
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <hr>
-                    
-                    <!-- ============================================
-                         CALCULATED REVENUE SECTION - Read Only
-                         ============================================ -->
-                    <div class="calculated-section mb-4">
-                        <h6 class="section-title">
-                            <i class="fa-solid fa-calculator me-2"></i>Revenue (Auto-Calculated)
-                        </h6>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Target Revenue</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="editAMTargetRevenueDisplay" 
-                                       readonly 
-                                       style="background-color: #e7f3ff; cursor: not-allowed; font-weight: bold; color: #0056b3;">
-                                <small class="text-muted">
-                                    <i class="fa-solid fa-calculator me-1"></i>
-                                    Formula: CC Target Sold × Proporsi
-                                </small>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Real Revenue</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="editAMRealRevenueDisplay" 
-                                       readonly 
-                                       style="background-color: #e7ffe7; cursor: not-allowed; font-weight: bold; color: #28a745;">
-                                <small class="text-muted">
-                                    <i class="fa-solid fa-calculator me-1"></i>
-                                    Formula: CC Real Sold × Proporsi
-                                </small>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="fa-solid fa-lightbulb me-2"></i>
-                            <strong>Catatan:</strong> 
-                            Revenue AM dihitung otomatis berdasarkan proporsi yang Anda masukkan. 
-                            Untuk mengubah revenue, edit proporsi atau update Revenue CC di tab Revenue Corporate Customer.
                         </div>
                     </div>
                     
                     <!-- ============================================
-                         OTHER AMS SECTION (if multiple AMs)
+                         ✏️ DATA MAPPING AM SECTION
                          ============================================ -->
-                    <div id="otherAMsSection" class="other-ams-section mb-3" style="display: none;">
-                        <hr>
-                        <h6 class="section-title">
-                            <i class="fa-solid fa-users me-2"></i>AM Lain untuk CC Ini
-                        </h6>
-                        <div id="otherAMsList" class="table-responsive">
-                            <!-- Will be populated dynamically -->
+                    <div class="card" style="border: 2px solid #ffc107; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,193,7,0.15);">
+                        <div class="card-header" style="background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%); border-bottom: 2px solid #ffc107; padding: 1rem 1.5rem;">
+                            <h6 class="mb-0" style="color: #856404; font-weight: 700;">
+                                <i class="fa-solid fa-users-gear me-2"></i>
+                                Data Mapping Account Manager
+                            </h6>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-responsive">
+                                <table class="table mb-0" style="border-collapse: separate; border-spacing: 0;">
+                                    <thead>
+                                        <tr style="background: #f8f9fa;">
+                                            <th style="padding: 1rem; border-bottom: 2px solid #dee2e6; font-weight: 700; color: #495057; width: 120px;">NIK</th>
+                                            <th style="padding: 1rem; border-bottom: 2px solid #dee2e6; font-weight: 700; color: #495057;">Nama AM</th>
+                                            <th style="padding: 1rem; border-bottom: 2px solid #dee2e6; font-weight: 700; color: #495057; width: 180px;">
+                                                Proporsi (%)
+                                                <i class="fa-solid fa-circle-question ms-1" 
+                                                   data-bs-toggle="tooltip" 
+                                                   title="Total proporsi semua AM harus = 100%"
+                                                   style="color: #6c757d; cursor: help;"></i>
+                                            </th>
+                                            <th style="padding: 1rem; border-bottom: 2px solid #dee2e6; font-weight: 700; color: #495057; text-align: right; width: 180px;">Target Revenue</th>
+                                            <th style="padding: 1rem; border-bottom: 2px solid #dee2e6; font-weight: 700; color: #495057; text-align: right; width: 180px;">Real Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="editAMTableBody">
+                                        <!-- Will be populated by JavaScript -->
+                                        <tr>
+                                            <td colspan="5" class="text-center" style="padding: 2rem;">
+                                                <i class="fa-solid fa-spinner fa-spin fa-2x text-muted"></i>
+                                                <p class="mt-2 text-muted">Loading mapping data...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-top: 3px solid #dee2e6;">
+                                            <th colspan="2" style="padding: 1rem; font-weight: 700; color: #212529; font-size: 1rem;">
+                                                <i class="fa-solid fa-calculator me-2"></i>Total Proporsi
+                                            </th>
+                                            <th style="padding: 1rem;">
+                                                <span id="editAMTotalProporsi" style="font-size: 1.2rem; font-weight: 700;">0%</span>
+                                            </th>
+                                            <th colspan="2" style="padding: 1rem;"></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
                     </div>
+                    
+                    <!-- ✅ Validation Alert -->
+                    <div id="editAMProporsiAlert" class="alert mt-3" style="display: none; border-radius: 10px; border-left-width: 4px;"></div>
                     
                 </div>
                 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fa-solid fa-times me-2"></i>Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="btnSaveEditAM">
-                        <i class="fa-solid fa-save me-2"></i>Simpan Perubahan
-                    </button>
+                <div class="modal-footer" style="border-top: 2px solid #e9ecef; padding: 1.25rem 2rem; background: white;">
+                <button type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal"
+                        style="background: #f1f3f5; border: 2px solid #dee2e6; color: #495057; border-radius: 10px; padding: 0.75rem 1.5rem; font-weight: 600;">
+                    <i class="fa-solid fa-times me-2"></i>Batal
+                </button>
+
+                <button type="submit"
+                        class="btn btn-primary"
+                        id="btnSaveEditAM"
+                        style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border: none; border-radius: 10px; padding: 0.75rem 2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(220,53,69,0.3);">
+                    <i class="fa-solid fa-save me-2"></i>Simpan Perubahan
+                </button>
+
                 </div>
             </form>
         </div>
@@ -3198,6 +2990,124 @@
     </div>
 </div>
 
+<!-- Variant A: 2 AMs (Auto-adjust confirmation) -->
+<div class="modal fade delete-confirm-modal" id="modalDeleteRevenueAMAutoAdjust" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Konfirmasi Hapus Revenue AM</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="delete-warning-box">
+                    <div class="d-flex align-items-start">
+                        <i class="fa-solid fa-info-circle warning-icon"></i>
+                        <div class="flex-grow-1">
+                            <div class="warning-title">Proporsi Otomatis Disesuaikan</div>
+                            <div class="warning-text" id="deleteAMAutoAdjustMessage">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-success" style="border-left: 4px solid #28a745; background: #d4edda;">
+                    <i class="fa-solid fa-check-circle me-2"></i>
+                    <strong>AM lain akan otomatis menerima 100% proporsi</strong> untuk CC ini.
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times"></i> Batal
+                </button>
+                <button type="button" class="btn btn-delete-confirm" id="btnConfirmDeleteAMAutoAdjust">
+                    <i class="fa-solid fa-trash"></i> Ya, Hapus!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Variant B: 3+ AMs (Manual redistribution) -->
+<div class="modal fade" id="modalDeleteRevenueAMManualRedistribute" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none;">
+                <h5 class="modal-title" style="color: white;">
+                    <i class="fa-solid fa-users-gear me-2"></i>Atur Ulang Proporsi AM
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: brightness(0) invert(1);"></button>
+            </div>
+            
+            <div class="modal-body" style="padding: 2rem; background: #f8f9fa;">
+                <div class="alert" style="background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%); border-left: 4px solid #ff9800; border-radius: 10px;">
+                    <div class="d-flex align-items-start">
+                        <i class="fa-solid fa-exclamation-triangle" style="color: #ff9800; font-size: 1.5rem; margin-right: 1rem;"></i>
+                        <div>
+                            <strong style="color: #995c00; display: block; margin-bottom: 0.5rem;">Atur Proporsi Ulang</strong>
+                            <p style="color: #856404; margin: 0;">
+                                Setelah <strong id="deleteAMNameToDelete"></strong> dihapus, 
+                                atur proporsi untuk <strong id="deleteAMRemainingCount"></strong> AM lainnya:
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="border: 2px solid #e9ecef; border-radius: 12px;">
+                    <div class="card-body" style="padding: 0;">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr style="background: #f8f9fa;">
+                                        <th style="padding: 1rem; border-bottom: 2px solid #dee2e6;">NIK</th>
+                                        <th style="padding: 1rem; border-bottom: 2px solid #dee2e6;">Nama AM</th>
+                                        <th style="padding: 1rem; border-bottom: 2px solid #dee2e6; width: 200px;">
+                                            Proporsi Baru (%)
+                                            <i class="fa-solid fa-circle-question ms-1" data-bs-toggle="tooltip" title="Total harus = 100%"></i>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deleteAMRedistributeTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                                <tfoot>
+                                    <tr style="background: #f8f9fa; border-top: 3px solid #dee2e6;">
+                                        <th colspan="2" style="padding: 1rem;">
+                                            <i class="fa-solid fa-calculator me-2"></i>Total Proporsi
+                                        </th>
+                                        <th style="padding: 1rem;">
+                                            <span id="deleteAMRedistributeTotalProporsi" style="font-size: 1.2rem; font-weight: 700;">0%</span>
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="deleteAMRedistributeAlert" class="alert mt-3" style="display: none; border-radius: 10px; border-left-width: 4px;"></div>
+            </div>
+            
+            <div class="modal-footer" style="border-top: 2px solid #e9ecef; padding: 1.25rem 2rem;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem 1.5rem; font-weight: 600;">
+                    <i class="fa-solid fa-times me-2"></i>Batal
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDeleteAMWithRedistribute" disabled style="border: none; border-radius: 10px; padding: 0.75rem 2rem; font-weight: 600;">
+                    <i class="fa-solid fa-trash me-2"></i>Hapus & Simpan Proporsi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
 <!-- Delete Confirmation Modal - Modern Design -->
 <div class="modal fade delete-confirm-modal" id="deleteConfirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
@@ -3209,6 +3119,39 @@
                     <span>Konfirmasi Hapus Data</span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- ✅ HEADER SECTION - Show AM, CC, Period -->
+            <div class="modal-header-info" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px 12px 0 0; color: white; margin: -1rem -1rem 1.5rem -1rem;">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-user-tie fa-2x me-3"></i>
+                            <div>
+                                <small style="opacity: 0.9; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Account Manager</small>
+                                <h6 class="mb-0" id="editAMHeaderNama" style="font-weight: 700; font-size: 1.1rem;">Loading...</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-building fa-2x me-3"></i>
+                            <div>
+                                <small style="opacity: 0.9; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Corporate Customer</small>
+                                <h6 class="mb-0" id="editAMHeaderCC" style="font-weight: 700; font-size: 1.1rem;">Loading...</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-calendar-alt fa-2x me-3"></i>
+                            <div>
+                                <small style="opacity: 0.9; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Periode</small>
+                                <h6 class="mb-0" id="editAMHeaderPeriod" style="font-weight: 700; font-size: 1.1rem;">Loading...</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Modal Body -->
@@ -4718,58 +4661,68 @@ $(document).ready(function() {
     $('[data-bs-toggle="tooltip"]').tooltip();
   }
 
-  function renderRevenueAM(response) {
+  // ================================================================
+// ✅ FIXED: renderRevenueAM() - CORRECT FIELD NAMES
+// Replace this function in your blade file (around line 6270)
+// ================================================================
+
+function renderRevenueAM(response) {
     const tbody = $('#tableRevenueAM');
     tbody.empty();
 
     if (!response || !response.data || response.data.length === 0) {
-      tbody.append('<tr><td colspan="9" class="text-center">Tidak ada data</td></tr>');
-      return;
+        tbody.append('<tr><td colspan="9" class="text-center">Tidak ada data</td></tr>');
+        return;
     }
 
     response.data.forEach(function(item) {
-      const role = item.role || 'AM';
-      const roleClass = role === 'HOTDA' ? 'badge-role-hotda' : 'badge-role-am';
-      const divisiKode = item.divisi_kode || item.divisi || '-';
-      const divisiDisplay = divisiKode !== '-' ? divisiKode.substring(0, 3).toUpperCase() : '-';
-      const divisiClass = divisiDisplay !== '-' ? `badge-div ${divisiDisplay.toLowerCase()}` : '';
+        const role = item.role || 'AM';
+        const roleClass = role === 'HOTDA' ? 'badge-role-hotda' : 'badge-role-am';
+        
+        // ✅ FIX #1: Use correct field names from backend response
+        const divisiKode = item.divisi_kode || '-';
+        const divisiDisplay = divisiKode !== '-' ? divisiKode.substring(0, 3).toUpperCase() : '-';
+        const divisiClass = divisiDisplay !== '-' ? `badge-div ${divisiDisplay.toLowerCase()}` : '';
 
-      const teldaDisplay = role === 'HOTDA' ? (item.telda_nama || '-') : '-';
-      const achievementPercent = item.achievement ? parseFloat(item.achievement).toFixed(2) : '0.00';
+        const teldaDisplay = role === 'HOTDA' ? (item.telda_nama || '-') : '-';
+        const achievementPercent = item.achievement ? parseFloat(item.achievement).toFixed(2) : '0.00';
 
-      const row = `
-        <tr>
-          <td><input type="checkbox" class="row-checkbox-am" data-id="${item.id}"></td>
-          <td>
-            <strong style="font-size: 1rem; font-weight: 700;">${item.nama_am}</strong><br>
-            <small>
-              <span class="${roleClass}">${role}</span>
-              ${divisiDisplay !== '-' ? `<span class="${divisiClass}" style="margin-left: 4px;">${divisiDisplay}</span>` : ''}
-            </small>
-          </td>
-          <td>${item.nama_cc}</td>
-          <td class="text-end">${formatCurrency(item.target_revenue)}</td>
-          <td class="text-end">${formatCurrency(item.real_revenue)}</td>
-          <td class="text-end">${achievementPercent}%</td>
-          <td>${item.bulan_display}</td>
-          <td class="telda-col">${teldaDisplay}</td>
-          <td class="text-center">
-            <div class="action-buttons">
-              <button class="btn btn-sm btn-warning" onclick="editRevenueAM(${item.id})" title="Edit">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              <button class="btn btn-sm btn-danger" onclick="deleteRevenueAM(${item.id})" title="Hapus">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-      tbody.append(row);
+        const namaCC = item.corporate_customer_nama || item.nama_cc || 'N/A';
+        const namaAM = item.account_manager_nama || item.nama_am || 'N/A';
+
+        const row = `
+            <tr>
+                <td><input type="checkbox" class="row-checkbox-am" data-id="${item.id}"></td>
+                <td>
+                    <strong style="font-size: 1rem; font-weight: 700;">${namaAM}</strong><br>
+                    <small>
+                        <span class="${roleClass}">${role}</span>
+                        ${divisiDisplay !== '-' ? `<span class="${divisiClass}" style="margin-left: 4px;">${divisiDisplay}</span>` : ''}
+                    </small>
+                </td>
+                <td>${namaCC}</td>
+                <td class="text-end">${formatCurrency(item.target_revenue)}</td>
+                <td class="text-end">${formatCurrency(item.real_revenue)}</td>
+                <td class="text-end">${achievementPercent}%</td>
+                <td>${item.bulan_display}</td>
+                <td class="telda-col">${teldaDisplay}</td>
+                <td class="text-center">
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-warning" onclick="editRevenueAM(${item.id})" title="Edit">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteRevenueAM(${item.id})" title="Hapus">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
     });
 
     $('[data-bs-toggle="tooltip"]').tooltip();
-  }
+}
 
   function renderDataAM(response) {
     const tbody = $('#tableDataAM');
@@ -5695,53 +5648,82 @@ function requestPreviewAfterChunks(sessionId, importType, originalFormData) {
     });
 }
 
-$(document).on('input', '#editAMProporsi', function() {
-    const proporsiPercent = parseFloat($(this).val()) || 0;
+// ================================================================
+// ✅ FIXED: Input listener for proporsi changes - PROPER ATTACHMENT
+// ================================================================
+$(document).on('input', '#editAMProporsiInput', function() {
+    const newProporsiPercent = parseFloat($(this).val()) || 0;
+    
+    console.log('📊 Proporsi input changed:', newProporsiPercent);
     
     // Validate range
-    if (proporsiPercent < 0 || proporsiPercent > 100) {
-        $('#proporsiValidationAlert')
-            .removeClass('alert-success alert-warning')
-            .addClass('alert-danger')
-            .html('<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Error:</strong> Proporsi harus antara 0-100%')
-            .show();
+    if (newProporsiPercent < 0 || newProporsiPercent > 100) {
+        showProporsiAlert('danger', '<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Error:</strong> Proporsi harus antara 0-100%');
         $('#btnSaveEditAM').prop('disabled', true);
         return;
     }
     
     // Convert to decimal for calculation
-    const proporsiDecimal = proporsiPercent / 100;
+    const newProporsiDecimal = newProporsiPercent / 100;
     
-    // Get CC Revenue base
+    // ✅ FIX: Get CC Revenue base from HIDDEN inputs (already populated by controller)
     const ccTargetSold = parseFloat($('#editAMCCTargetSold').val()) || 0;
     const ccRealSold = parseFloat($('#editAMCCRealSold').val()) || 0;
     
-    // Calculate new revenues
-    const newTargetRevenue = ccTargetSold * proporsiDecimal;
-    const newRealRevenue = ccRealSold * proporsiDecimal;
-    
-    // Update display
-    $('#editAMTargetRevenueDisplay').val(formatCurrency(newTargetRevenue));
-    $('#editAMRealRevenueDisplay').val(formatCurrency(newRealRevenue));
-    
-    console.log('📊 Proporsi changed:', {
-        proporsi_percent: proporsiPercent,
-        proporsi_decimal: proporsiDecimal,
-        cc_target_sold: ccTargetSold,
-        cc_real_sold: ccRealSold,
-        calculated_target: newTargetRevenue,
-        calculated_real: newRealRevenue
+    console.log('📊 CC Base Values:', {
+        ccTargetSold: ccTargetSold,
+        ccRealSold: ccRealSold,
+        newProporsiPercent: newProporsiPercent,
+        newProporsiDecimal: newProporsiDecimal
     });
     
-    // Note: We can't validate total proporsi here without knowing other AMs' proporsi
-    // Validation will be done server-side
-    $('#proporsiValidationAlert')
-        .removeClass('alert-danger alert-warning')
-        .addClass('alert-success')
-        .html('<i class="fa-solid fa-check-circle me-2"></i><strong>OK:</strong> Proporsi valid. Revenue akan dihitung ulang saat disimpan.')
-        .show();
+    // ✅ FIX: Check if CC base values are valid
+    if (ccTargetSold === 0 && ccRealSold === 0) {
+        console.error('❌ CC Revenue base values are ZERO!');
+        showProporsiAlert('danger', '<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Error:</strong> Data CC Revenue tidak tersedia. Silakan cek database.');
+        $('#btnSaveEditAM').prop('disabled', true);
+        return;
+    }
     
-    $('#btnSaveEditAM').prop('disabled', false);
+    // Calculate new revenues
+    const newTargetRevenue = ccTargetSold * newProporsiDecimal;
+    const newRealRevenue = ccRealSold * newProporsiDecimal;
+    
+    console.log('💰 Calculated Revenues:', {
+        newTargetRevenue: newTargetRevenue,
+        newRealRevenue: newRealRevenue
+    });
+    
+    // ✅ FIX: Update display (format as currency)
+    $('#editAMTargetRevenueDisplay').text(formatCurrency(newTargetRevenue));
+    $('#editAMRealRevenueDisplay').text(formatCurrency(newRealRevenue));
+    
+    // Calculate total proporsi (current + others)
+    const currentAmRevenueId = parseInt($('#editAMRevenueId').val());
+    let otherAMsProporsi = 0;
+    
+    // Sum proporsi from OTHER AMs (read-only rows)
+    $('.am-mapping-row.readonly').each(function() {
+        const proporsiText = $(this).find('input[readonly]').val();
+        if (proporsiText) {
+            const proporsiValue = parseFloat(proporsiText.replace('%', '')) || 0;
+            otherAMsProporsi += (proporsiValue / 100);
+        }
+    });
+    
+    const totalProporsi = newProporsiDecimal + otherAMsProporsi;
+    
+    console.log('📊 Total Proporsi:', {
+        current: newProporsiDecimal,
+        others: otherAMsProporsi,
+        total: totalProporsi
+    });
+    
+    // Update total display
+    $('#editAMTotalProporsi').text((totalProporsi * 100).toFixed(2) + '%');
+    
+    // Validate total
+    validateProporsiTotal(totalProporsi);
 });
   
 
@@ -5817,14 +5799,15 @@ function validateProporsiTotal(totalProporsi) {
     }
 }
 
-/**
- * ✅ Form submit handler
- */
+
+// ================================================================
+// ✅ UPDATED: Form submit handler for Edit Revenue AM
+// ================================================================
 $('#formEditRevenueAM').on('submit', function(e) {
     e.preventDefault();
     
     const id = $('#editAMRevenueId').val();
-    const proporsiPercent = parseFloat($('#editAMProporsi').val()) || 0;
+    const proporsiPercent = parseFloat($('#editAMProporsiInput').val()) || 0;
     
     // Validate
     if (proporsiPercent <= 0 || proporsiPercent > 100) {
@@ -5832,7 +5815,7 @@ $('#formEditRevenueAM').on('submit', function(e) {
         return;
     }
     
-    // Convert to decimal (50% → 0.5)
+    // Convert to decimal (50% → 0.5000)
     const proporsiDecimal = proporsiPercent / 100;
     
     const data = {
@@ -5869,6 +5852,174 @@ $('#formEditRevenueAM').on('submit', function(e) {
         }
     });
 });
+
+
+// ================================================================
+// ✅ UPDATED: deleteRevenueAM() - SMART DELETE
+// ================================================================
+window.deleteRevenueAM = function(id) {
+    console.log('🗑️ Delete Revenue AM initiated:', id);
+    
+    $.ajax({
+        url: `/revenue-data/revenue-am/${id}`,
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('📥 Delete response:', response);
+            
+            if (response.success) {
+                // ✅ CASE A: Auto-adjusted (2 AMs)
+                alert(response.message);
+                loadData();
+            } else if (response.requires_redistribution) {
+                // ✅ CASE B: Manual redistribution required (3+ AMs)
+                handleDeleteRevenueAMManualRedistribute(response.data);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Delete failed:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+};
+
+// ================================================================
+// ✅ NEW: handleDeleteRevenueAMManualRedistribute()
+// ================================================================
+function handleDeleteRevenueAMManualRedistribute(data) {
+    console.log('📋 Handling manual redistribution:', data);
+    
+    const remainingAMs = data.remaining_ams || [];
+    const amToDeleteId = data.am_to_delete_id;
+    
+    // Populate modal
+    $('#deleteAMRemainingCount').text(remainingAMs.length);
+    
+    // Render table
+    const tbody = $('#deleteAMRedistributeTableBody');
+    tbody.empty();
+    
+    remainingAMs.forEach(function(am) {
+        const row = `
+            <tr>
+                <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; font-weight: 600;">${am.nik}</td>
+                <td style="padding: 1rem; border-bottom: 1px solid #dee2e6;">${am.nama}</td>
+                <td style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
+                    <input type="number" 
+                           class="form-control proporsi-input redistribute-proporsi-input" 
+                           data-am-revenue-id="${am.id}"
+                           value="${am.current_proporsi_percent}" 
+                           min="0" 
+                           max="100" 
+                           step="0.01"
+                           placeholder="0.00">
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+    
+    // Attach input listeners
+    $('.redistribute-proporsi-input').on('input', function() {
+        let totalProporsi = 0;
+        
+        $('.redistribute-proporsi-input').each(function() {
+            totalProporsi += parseFloat($(this).val()) || 0;
+        });
+        
+        $('#deleteAMRedistributeTotalProporsi').text(totalProporsi.toFixed(2) + '%');
+        
+        // Validate
+        const isValid = Math.abs(totalProporsi - 100.0) < 0.01;
+        
+        if (isValid) {
+            $('#deleteAMRedistributeAlert')
+                .removeClass('alert-warning alert-danger')
+                .addClass('alert alert-success proporsi-alert-success')
+                .html('<i class="fa-solid fa-check-circle me-2"></i><strong>Valid:</strong> Total proporsi = 100%')
+                .show();
+            $('#btnConfirmDeleteAMWithRedistribute').prop('disabled', false);
+        } else if (totalProporsi < 100) {
+            const remaining = (100 - totalProporsi).toFixed(2);
+            $('#deleteAMRedistributeAlert')
+                .removeClass('alert-success alert-danger')
+                .addClass('alert alert-warning proporsi-alert-warning')
+                .html('<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Warning:</strong> Total = ' + totalProporsi.toFixed(2) + '% (sisa ' + remaining + '%)')
+                .show();
+            $('#btnConfirmDeleteAMWithRedistribute').prop('disabled', true);
+        } else {
+            const excess = (totalProporsi - 100).toFixed(2);
+            $('#deleteAMRedistributeAlert')
+                .removeClass('alert-success alert-warning')
+                .addClass('alert alert-danger proporsi-alert-danger')
+                .html('<i class="fa-solid fa-times-circle me-2"></i><strong>Error:</strong> Total = ' + totalProporsi.toFixed(2) + '% (kelebihan ' + excess + '%)')
+                .show();
+            $('#btnConfirmDeleteAMWithRedistribute').prop('disabled', true);
+        }
+    });
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('modalDeleteRevenueAMManualRedistribute'));
+    modal.show();
+    
+    // Handle confirm button
+    $('#btnConfirmDeleteAMWithRedistribute').off('click').on('click', function() {
+        confirmDeleteRevenueAMWithRedistribute(amToDeleteId);
+    });
+}
+
+// ================================================================
+// ✅ NEW: confirmDeleteRevenueAMWithRedistribute()
+// ================================================================
+function confirmDeleteRevenueAMWithRedistribute(amToDeleteId) {
+    const newProporsi = [];
+    
+    $('.redistribute-proporsi-input').each(function() {
+        const amRevenueId = $(this).data('am-revenue-id');
+        const proporsiPercent = parseFloat($(this).val()) || 0;
+        const proporsiDecimal = proporsiPercent / 100;
+        
+        newProporsi.push({
+            am_revenue_id: amRevenueId,
+            proporsi: proporsiDecimal
+        });
+    });
+    
+    console.log('📤 Confirming delete with redistribution:', {
+        am_to_delete_id: amToDeleteId,
+        new_proporsi: newProporsi
+    });
+    
+    $.ajax({
+        url: `/revenue-data/revenue-am/${amToDeleteId}/confirm-delete`,
+        method: 'POST',
+        data: JSON.stringify({ new_proporsi: newProporsi }),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('✅ Delete confirmed:', response);
+            
+            if (response.success) {
+                alert(response.message);
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('modalDeleteRevenueAMManualRedistribute')).hide();
+                
+                // Reload data
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Confirm delete failed:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
 
 /**
  * ✅ Helper: Format currency
@@ -6977,39 +7128,382 @@ $('#btnImportUpdate').click(function() {
 });
 
 
-  // ========================================
-  // ✅ EDIT FUNCTIONS
-  // ========================================
 
-  window.editRevenueCC = function(id) {
+// ================================================================
+// ✅ FIXED: editRevenueCC() - WITH PROPER TAB HANDLING
+// ================================================================
+window.editRevenueCC = function(id) {
+    console.log('📝 Opening edit Revenue CC modal:', id);
+    
     $.ajax({
-      url: `/revenue-data/revenue-cc/${id}`,
-      method: 'GET',
-      success: function(response) {
-        if (response.success) {
-          const data = response.data;
-          $('#editCCRevenueId').val(data.id);
-          $('#editCCNamaCC').val(data.nama_cc);
-          $('#editCCTargetRevenue').val(data.target_revenue);
-          $('#editCCRealRevenue').val(data.real_revenue);
+        url: `/revenue-data/revenue-cc/${id}`,
+        method: 'GET',
+        success: function(response) {
+            console.log('✅ Revenue CC data loaded:', response);
+            
+            if (response.success) {
+                const data = response.data;
+                
+                // Populate form fields
+                $('#editCCRevenueId').val(data.id);
+                $('#editCCNamaCC').val(data.nama_cc);
+                $('#editCCNipnas').val(data.nipnas);
+                $('#editCCSegment').val(data.segment);
+                $('#editCCDivisi').val(data.divisi);
+                $('#editCCPeriode').val(data.period_name || `${data.bulan}/${data.tahun}`);
+                $('#editCCTargetRevenue').val(data.target_revenue_sold);
+                $('#editCCRealRevenue').val(data.real_revenue_sold);
 
-          $('#tab-revenue-data-tab').click();
+                // ✅ FIX: Reset to Tab 1 (Data Revenue)
+                $('#tab-revenue-data-tab').addClass('active');
+                $('#tab-mapping-am-tab').removeClass('active');
+                $('#tab-revenue-data').addClass('show active');
+                $('#tab-mapping-am').removeClass('show active');
 
-          const modal = new bootstrap.Modal(document.getElementById('modalEditRevenueCC'));
-          modal.show();
+                console.log('✅ Reset to Tab 1 - Data Revenue');
 
-          $('#tab-mapping-am-tab').off('click').on('click', function() {
-            loadMappingAMTab(id);
-          });
-        } else {
-          alert('Error: ' + response.message);
+                // ✅ FIX: Attach tab click handler PROPERLY
+                $('#tab-mapping-am-tab').off('click').on('click', function(e) {
+                    console.log('🔄 Tab Mapping AM clicked');
+                    e.preventDefault();
+                    
+                    // Manual tab switching (in case Bootstrap fails)
+                    $('#tab-revenue-data-tab').removeClass('active');
+                    $('#tab-mapping-am-tab').addClass('active');
+                    $('#tab-revenue-data').removeClass('show active');
+                    $('#tab-mapping-am').addClass('show active');
+                    
+                    console.log('✅ Switched to Tab 2 - Mapping AM');
+                    
+                    // Load mapping AM data
+                    loadMappingAMTab(id);
+                });
+
+                // ✅ FIX: Attach tab 1 click handler
+                $('#tab-revenue-data-tab').off('click').on('click', function(e) {
+                    console.log('🔄 Tab Data Revenue clicked');
+                    e.preventDefault();
+                    
+                    $('#tab-revenue-data-tab').addClass('active');
+                    $('#tab-mapping-am-tab').removeClass('active');
+                    $('#tab-revenue-data').addClass('show active');
+                    $('#tab-mapping-am').removeClass('show active');
+                    
+                    console.log('✅ Switched to Tab 1 - Data Revenue');
+                });
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('modalEditRevenueCC'));
+                modal.show();
+
+                console.log('✅ Modal shown successfully');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Error loading Revenue CC:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
         }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
     });
-  };
+};
+
+// ================================================================
+// ✅ loadMappingAMTab() - Load AM mappings for CC Revenue
+// ================================================================
+function loadMappingAMTab(ccRevenueId) {
+    console.log('📊 Loading mapping AM for CC Revenue ID:', ccRevenueId);
+    
+    const container = $('#mappingAmContent');
+    
+    container.html(`
+        <div class="text-center text-muted py-5">
+            <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
+            <p>Loading mapping AM...</p>
+        </div>
+    `);
+
+    $.ajax({
+        url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings/edit`,
+        method: 'GET',
+        success: function(response) {
+            console.log('✅ Mapping AM data loaded:', response);
+            
+            if (response.success) {
+                renderMappingAMContent(response.data);
+            } else {
+                container.html(`
+                    <div class="alert alert-danger">
+                        <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                        ${response.message || 'Gagal memuat data'}
+                    </div>
+                `);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Error loading mapping AM:', xhr);
+            
+            container.html(`
+                <div class="alert alert-danger">
+                    <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                    Terjadi kesalahan: ${xhr.responseJSON?.message || xhr.statusText}
+                </div>
+            `);
+        }
+    });
+}
+
+
+function renderMappingAMContent(data) {
+    console.log('🎨 Rendering mapping AM content:', data);
+    
+    const container = $('#mappingAmContent');
+
+    if (!data.am_mappings || data.am_mappings.length === 0) {
+        container.html(`
+            <div class="text-center text-muted py-5">
+                <i class="fa-solid fa-info-circle fa-3x mb-3"></i>
+                <h5>Belum ada Account Manager</h5>
+                <p>Belum ada Account Manager yang dikaitkan dengan Revenue CC ini</p>
+                <small class="text-muted">Import Revenue AM untuk menambahkan mapping</small>
+            </div>
+        `);
+        return;
+    }
+
+    let html = `
+        <!-- ✅ MODERN TABLE CARD ONLY -->
+        <div class="card" style="border: none; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+            <div class="card-header" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border: none; padding: 1.5rem 2rem;">
+                <h6 class="mb-0" style="color: #fff; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center;">
+                    <i class="fa-solid fa-users-gear me-3" style="font-size: 1.5rem; opacity: 0.9;"></i>
+                    Mapping Account Manager
+                </h6>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div class="table-responsive">
+                    <table class="table mb-0" style="border-collapse: separate; border-spacing: 0;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">NIK</th>
+                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Nama AM</th>
+                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; width: 180px;">
+                                    Proporsi (%)
+                                    <i class="fa-solid fa-circle-question ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       title="Total proporsi harus = 100%"
+                                       style="color: #6c757d; cursor: help; font-size: 0.75rem;"></i>
+                                </th>
+                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Real Revenue</th>
+                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Target Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+    `;
+
+    data.am_mappings.forEach(function(am, index) {
+        const bgColor = index % 2 === 0 ? 'white' : '#f8f9fa';
+        html += `
+            <tr style="background: ${bgColor}; transition: all 0.2s ease;">
+                <td style="padding: 1.25rem 1.5rem; border: none; font-weight: 600; color: #495057; font-family: 'Courier New', monospace;">${am.nik}</td>
+                <td style="padding: 1.25rem 1.5rem; border: none;">
+                    <div style="font-weight: 600; color: #212529; font-size: 1rem;">${am.nama}</div>
+                </td>
+                <td style="padding: 1.25rem 1.5rem; border: none;">
+                    <div style="position: relative;">
+                        <input type="number" 
+                               class="form-control proporsi-input mapping-proporsi-input" 
+                               data-am-revenue-id="${am.am_revenue_id}"
+                               value="${am.proporsi_percent_display}" 
+                               min="0" 
+                               max="100" 
+                               step="0.01"
+                               style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem 1rem; text-align: center; font-weight: 700; font-size: 1.1rem; background: white; transition: all 0.3s ease;">
+                    </div>
+                </td>
+                <td class="real-revenue-display" style="padding: 1.25rem 1.5rem; border: none; text-align: right; font-weight: 700; font-size: 1.1rem; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    ${formatCurrency(am.real_revenue_display)}
+                </td>
+                <td class="target-revenue-display" style="padding: 1.25rem 1.5rem; border: none; text-align: right; font-weight: 700; font-size: 1.1rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    ${formatCurrency(am.target_revenue_display)}
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%); border-top: 3px solid #ffc107;">
+                                <th colspan="2" style="padding: 1.5rem; font-weight: 700; color: #856404; font-size: 1.1rem;">
+                                    <i class="fa-solid fa-calculator me-2"></i>Total Proporsi
+                                </th>
+                                <th style="padding: 1.5rem;">
+                                    <span id="mappingTotalProporsi" style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">100.00%</span>
+                                </th>
+                                <th colspan="2" style="padding: 1.5rem;"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ VALIDATION ALERT -->
+        <div id="mappingProporsiAlert" class="alert mt-4" style="display: none; border-radius: 12px; border-left-width: 4px; font-weight: 600;"></div>
+
+        <!-- ✅ SAVE BUTTON -->
+        <button type="button" class="btn w-100 mt-4" id="btnSaveMappingAM" disabled 
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                       border: none; 
+                       border-radius: 12px; 
+                       padding: 1rem 2rem; 
+                       font-weight: 700; 
+                       font-size: 1.1rem;
+                       color: white;
+                       box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+                       transition: all 0.3s ease;">
+            <i class="fa-solid fa-save me-2"></i>Simpan Mapping
+        </button>
+    `;
+
+    container.html(html);
+
+    // ✅ Add hover effect to table rows
+    container.find('tbody tr').hover(
+        function() {
+            $(this).css({
+                'background': 'linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%)',
+                'transform': 'translateX(4px)',
+                'box-shadow': '0 2px 8px rgba(0,0,0,0.1)'
+            });
+        },
+        function() {
+            const index = $(this).index();
+            const bgColor = index % 2 === 0 ? 'white' : '#f8f9fa';
+            $(this).css({
+                'background': bgColor,
+                'transform': 'translateX(0)',
+                'box-shadow': 'none'
+            });
+        }
+    );
+
+    // ✅ Add focus effect to inputs
+    container.find('.proporsi-input').on('focus', function() {
+        $(this).css({
+            'border-color': '#667eea',
+            'box-shadow': '0 0 0 0.25rem rgba(102, 126, 234, 0.25)',
+            'transform': 'scale(1.02)'
+        });
+    }).on('blur', function() {
+        $(this).css({
+            'border-color': '#e9ecef',
+            'box-shadow': 'none',
+            'transform': 'scale(1)'
+        });
+    });
+
+    // ✅ Attach input listeners
+    $('.mapping-proporsi-input').on('input', function() {
+        recalculateMappingAM(data);
+    });
+
+    // ✅ Attach save button
+    $('#btnSaveMappingAM').off('click').on('click', function() {
+        saveMappingAM(data.cc_revenue.id);
+    });
+    
+    // ✅ Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    console.log('✅ Mapping AM content rendered successfully');
+}
+
+// ================================================================
+// ✅ NEW: recalculateMappingAM() - Real-time recalculation
+// ================================================================
+function recalculateMappingAM(data) {
+    let totalProporsi = 0;
+    const baseSold = data.cc_revenue.real_revenue_sold;
+    const baseTarget = data.cc_revenue.target_revenue_sold;
+
+    $('.mapping-proporsi-input').each(function() {
+        const proporsi = parseFloat($(this).val()) || 0;
+        totalProporsi += proporsi;
+
+        const row = $(this).closest('tr');
+        const realRevenue = (baseSold * proporsi) / 100;
+        const targetRevenue = (baseTarget * proporsi) / 100;
+
+        row.find('.real-revenue-display').text(formatCurrency(realRevenue));
+        row.find('.target-revenue-display').text(formatCurrency(targetRevenue));
+    });
+
+    $('#mappingTotalProporsi').text(totalProporsi.toFixed(2) + '%');
+
+    const isValid = Math.abs(totalProporsi - 100) < 0.01;
+    $('#btnSaveMappingAM').prop('disabled', !isValid);
+
+    if (isValid) {
+        $('#mappingProporsiAlert')
+            .removeClass('alert-warning alert-danger')
+            .addClass('alert alert-success proporsi-alert-success')
+            .html('<i class="fa-solid fa-check-circle me-2"></i><strong>Valid:</strong> Total proporsi = 100%')
+            .show();
+    } else if (totalProporsi < 100) {
+        const remaining = (100 - totalProporsi).toFixed(2);
+        $('#mappingProporsiAlert')
+            .removeClass('alert-success alert-danger')
+            .addClass('alert alert-warning proporsi-alert-warning')
+            .html('<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Warning:</strong> Total = ' + totalProporsi.toFixed(2) + '% (sisa ' + remaining + '%)')
+            .show();
+    } else {
+        const excess = (totalProporsi - 100).toFixed(2);
+        $('#mappingProporsiAlert')
+            .removeClass('alert-success alert-warning')
+            .addClass('alert alert-danger proporsi-alert-danger')
+            .html('<i class="fa-solid fa-times-circle me-2"></i><strong>Error:</strong> Total = ' + totalProporsi.toFixed(2) + '% (kelebihan ' + excess + '%)')
+            .show();
+    }
+}
+
+// ================================================================
+// ✅ NEW: saveMappingAM() - Save proporsi changes
+// ================================================================
+function saveMappingAM(ccRevenueId) {
+    const mappings = [];
+    
+    $('.mapping-proporsi-input').each(function() {
+        mappings.push({
+            am_revenue_id: $(this).data('am-revenue-id'),
+            proporsi: parseFloat($(this).val()) / 100
+        });
+    });
+
+    console.log('📤 Saving mapping AM:', mappings);
+
+    $.ajax({
+        url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings`,
+        method: 'PUT',
+        data: JSON.stringify({ am_mappings: mappings }),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            if (response.success) {
+                alert('Mapping AM berhasil disimpan!');
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
+
 
   function loadMappingAMTab(ccRevenueId) {
     const container = $('#mappingAmContent');
@@ -7062,13 +7556,6 @@ $('#btnImportUpdate').click(function() {
     }
 
     let html = `
-      <div class="mb-3">
-        <h6>Info Revenue CC</h6>
-        <p class="mb-1"><strong>Nama CC:</strong> ${data.cc_revenue.nama}</p>
-        <p class="mb-1"><strong>NIPNAS:</strong> ${data.cc_revenue.nipnas}</p>
-        <p class="mb-1"><strong>Real Revenue Sold (BASE):</strong> ${formatCurrency(data.cc_revenue.real_revenue_sold)}</p>
-        <p class="mb-1"><strong>Target Revenue Sold:</strong> ${formatCurrency(data.cc_revenue.target_revenue_sold)}</p>
-      </div>
 
       <div class="table-responsive">
         <table class="table table-bordered">
@@ -7214,14 +7701,15 @@ $('#btnImportUpdate').click(function() {
     });
   };
 
-  window.editRevenueAM = function(id) {
+
+window.editRevenueAM = function(id) {
     console.log('🔧 Opening edit modal for AM Revenue ID:', id);
     
     $.ajax({
         url: `/revenue-data/revenue-am/${id}`,
         method: 'GET',
         success: function(response) {
-            console.log('✅ AM Revenue data loaded:', response);
+            console.log('✅ Full Response:', response);
             
             if (!response.success) {
                 alert('Error: ' + response.message);
@@ -7230,54 +7718,52 @@ $('#btnImportUpdate').click(function() {
 
             const data = response.data;
             
-            // ============================================
-            // POPULATE READ-ONLY INFO FIELDS
-            // ============================================
-            $('#editAMRevenueId').val(data.id);
-            $('#editAMNamaAM').val(data.account_manager_nama || 'N/A');
-            $('#editAMCCName').val(data.corporate_customer_nama || 'N/A');
-            $('#editAMPeriode').val(data.period_name || 'N/A');
+            // ✅ CRITICAL DEBUG: Check CC Revenue values
+            console.log('🔍 CC Revenue Check:', {
+                cc_revenue_id: data.cc_revenue_id,
+                cc_target_revenue_sold: data.cc_target_revenue_sold,
+                cc_real_revenue_sold: data.cc_real_revenue_sold
+            });
             
-            // Store CC Revenue IDs for calculation
+            if (!data.cc_revenue_id) {
+                console.error('❌ WARNING: CC Revenue ID is missing!');
+            }
+            
+            if (data.cc_target_revenue_sold === 0 && data.cc_real_revenue_sold === 0) {
+                console.error('❌ WARNING: CC Revenue values are ZERO!');
+            }
+            
+            // POPULATE HEADER
+            $('#editAMHeaderNama').text(data.account_manager_nama || 'N/A');
+            $('#editAMHeaderCC').text(data.corporate_customer_nama || 'N/A');
+            $('#editAMHeaderPeriod').text(data.period_name || 'N/A');
+            
+            // POPULATE HIDDEN FIELDS
+            $('#editAMRevenueId').val(data.id);
             $('#editAMCCRevenueId').val(data.cc_revenue_id || '');
             $('#editAMCCTargetSold').val(data.cc_target_revenue_sold || 0);
             $('#editAMCCRealSold').val(data.cc_real_revenue_sold || 0);
             
-            // Display CC Revenue (formatted)
+            // ✅ VERIFY VALUES WERE SET
+            console.log('✅ Hidden inputs populated:', {
+                editAMCCRevenueId: $('#editAMCCRevenueId').val(),
+                editAMCCTargetSold: $('#editAMCCTargetSold').val(),
+                editAMCCRealSold: $('#editAMCCRealSold').val()
+            });
+            
+            // POPULATE CC INFO (READ-ONLY)
+            $('#editAMCCName').val(data.corporate_customer_nama || 'N/A');
+            $('#editAMCCNipnas').val(data.corporate_customer_nipnas || 'N/A');
             $('#editAMCCTargetDisplay').val(formatCurrency(data.cc_target_revenue_sold || 0));
             $('#editAMCCRealDisplay').val(formatCurrency(data.cc_real_revenue_sold || 0));
             
-            // ============================================
-            // POPULATE EDITABLE PROPORSI FIELD
-            // ============================================
-            // Convert decimal to percentage (0.5 → 50)
-            const proporsiPercent = (parseFloat(data.proporsi) * 100).toFixed(2);
-            $('#editAMProporsi').val(proporsiPercent);
+            // POPULATE AM MAPPING TABLE
+            renderAMTableForEdit(data, data.other_ams || []);
             
-            // ============================================
-            // POPULATE CALCULATED REVENUE FIELDS
-            // ============================================
-            $('#editAMTargetRevenueDisplay').val(formatCurrency(data.target_revenue || 0));
-            $('#editAMRealRevenueDisplay').val(formatCurrency(data.real_revenue || 0));
-            
-            // ============================================
-            // SHOW OTHER AMs (if multiple)
-            // ============================================
-            if (data.other_ams && data.other_ams.length > 0) {
-                renderOtherAMs(data.other_ams, data.proporsi_total);
-                $('#otherAMsSection').show();
-            } else {
-                $('#otherAMsSection').hide();
-            }
-            
-            // ============================================
             // VALIDATE INICIAL PROPORSI
-            // ============================================
             validateProporsiTotal(data.proporsi_total || 1.0);
             
-            // ============================================
             // SHOW MODAL
-            // ============================================
             const modal = new bootstrap.Modal(document.getElementById('modalEditRevenueAM'));
             modal.show();
             
@@ -7290,28 +7776,183 @@ $('#btnImportUpdate').click(function() {
     });
 };
 
-  window.deleteRevenueAM = function(id) {
-    if (!confirm('Hapus Revenue AM ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
-      return;
+// ================================================================
+// ✅ NEW: renderAMTableForEdit() - Render AM mapping table
+// ================================================================
+function renderAMTableForEdit(currentAM, otherAMs) {
+    const tbody = $('#editAMTableBody');
+    tbody.empty();
+    
+    // Calculate current proporsi percent
+    const currentProporsiPercent = (parseFloat(currentAM.proporsi) * 100).toFixed(2);
+    
+    let html = '';
+    
+    // Row 1: Current AM (EDITABLE - highlighted)
+    html += `
+        <tr class="am-mapping-row editing">
+            <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; font-weight: 600;">${currentAM.account_manager_nik || 'N/A'}</td>
+            <td style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
+                <strong>${currentAM.account_manager_nama || 'N/A'}</strong>
+                <br><small class="text-muted"><i class="fa-solid fa-pen me-1"></i>Sedang diedit</small>
+            </td>
+            <td style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
+                <input type="number" 
+                       class="form-control proporsi-input" 
+                       id="editAMProporsiInput"
+                       data-am-revenue-id="${currentAM.id}"
+                       value="${currentProporsiPercent}" 
+                       min="0" 
+                       max="100" 
+                       step="0.01"
+                       placeholder="0.00">
+            </td>
+            <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; text-align: right;">
+                <span class="target-revenue-display" id="editAMTargetRevenueDisplay" style="font-weight: 600; color: #004085;">
+                    ${formatCurrency(currentAM.target_revenue || 0)}
+                </span>
+            </td>
+            <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; text-align: right;">
+                <span class="real-revenue-display" id="editAMRealRevenueDisplay" style="font-weight: 600; color: #155724;">
+                    ${formatCurrency(currentAM.real_revenue || 0)}
+                </span>
+            </td>
+        </tr>
+    `;
+    
+    // Rows 2+: Other AMs (READ-ONLY)
+    if (otherAMs && otherAMs.length > 0) {
+        otherAMs.forEach(function(otherAM) {
+            const proporsiPercent = (parseFloat(otherAM.proporsi) * 100).toFixed(2);
+            
+            html += `
+                <tr class="am-mapping-row readonly">
+                    <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; font-weight: 600; color: #6c757d;">${otherAM.account_manager_nik || 'N/A'}</td>
+                    <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; color: #6c757d;">${otherAM.account_manager_nama || 'N/A'}</td>
+                    <td style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
+                        <input type="text" 
+                               class="form-control" 
+                               value="${proporsiPercent}%" 
+                               readonly 
+                               style="background: #e9ecef; border: 2px solid #dee2e6; text-align: center; font-weight: 600; cursor: not-allowed;">
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; text-align: right; color: #6c757d;">
+                        ${formatCurrency(otherAM.target_revenue || 0)}
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid #dee2e6; text-align: right; color: #6c757d;">
+                        ${formatCurrency(otherAM.real_revenue || 0)}
+                    </td>
+                </tr>
+            `;
+        });
     }
-
-    $.ajax({
-      url: `/revenue-data/revenue-am/${id}`,
-      method: 'DELETE',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      success: function(response) {
-        if (response.success) {
-          alert(response.message);
-          loadData();
-        } else {
-          alert('Error: ' + response.message);
+    
+    tbody.html(html);
+    
+    // ============================================
+    // ATTACH INPUT LISTENER FOR REAL-TIME CALCULATION
+    // ============================================
+    $('#editAMProporsiInput').on('input', function() {
+        const newProporsiPercent = parseFloat($(this).val()) || 0;
+        
+        // Validate range
+        if (newProporsiPercent < 0 || newProporsiPercent > 100) {
+            showProporsiAlert('danger', '<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Error:</strong> Proporsi harus antara 0-100%');
+            $('#btnSaveEditAM').prop('disabled', true);
+            return;
         }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
+        
+        // Convert to decimal for calculation
+        const newProporsiDecimal = newProporsiPercent / 100;
+        
+        // Get CC Revenue base
+        const ccTargetSold = parseFloat($('#editAMCCTargetSold').val()) || 0;
+        const ccRealSold = parseFloat($('#editAMCCRealSold').val()) || 0;
+        
+        // Calculate new revenues
+        const newTargetRevenue = ccTargetSold * newProporsiDecimal;
+        const newRealRevenue = ccRealSold * newProporsiDecimal;
+        
+        // Update display
+        $('#editAMTargetRevenueDisplay').text(formatCurrency(newTargetRevenue));
+        $('#editAMRealRevenueDisplay').text(formatCurrency(newRealRevenue));
+        
+        // Calculate total proporsi (current + others)
+        let otherAMsProporsi = 0;
+        if (otherAMs && otherAMs.length > 0) {
+            otherAMsProporsi = otherAMs.reduce((sum, am) => sum + parseFloat(am.proporsi), 0);
+        }
+        
+        const totalProporsi = newProporsiDecimal + otherAMsProporsi;
+        
+        // Update total display
+        $('#editAMTotalProporsi').text((totalProporsi * 100).toFixed(2) + '%');
+        
+        // Validate total
+        validateProporsiTotal(totalProporsi);
+        
+        console.log('📊 Proporsi changed:', {
+            proporsi_percent: newProporsiPercent,
+            proporsi_decimal: newProporsiDecimal,
+            cc_target_sold: ccTargetSold,
+            cc_real_sold: ccRealSold,
+            calculated_target: newTargetRevenue,
+            calculated_real: newRealRevenue,
+            total_proporsi: totalProporsi
+        });
     });
-  };
+}
+
+// ================================================================
+// ✅ NEW: validateProporsiTotal() - Validate 100% proporsi
+// ================================================================
+function validateProporsiTotal(totalProporsi) {
+    const totalPercent = (totalProporsi * 100).toFixed(2);
+    const alertDiv = $('#editAMProporsiAlert');
+    const saveBtn = $('#btnSaveEditAM');
+    
+    if (Math.abs(totalProporsi - 1.0) < 0.0001) {
+        // Valid: exactly 100%
+        showProporsiAlert('success', 
+            '<i class="fa-solid fa-check-circle me-2"></i><strong>Valid:</strong> Total proporsi = ' + totalPercent + '%'
+        );
+        saveBtn.prop('disabled', false);
+    } else if (totalProporsi < 1.0) {
+        // Under 100%
+        const remaining = ((1.0 - totalProporsi) * 100).toFixed(2);
+        showProporsiAlert('warning', 
+            '<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Warning:</strong> Total proporsi = ' + totalPercent + '% (sisa ' + remaining + '%)'
+        );
+        saveBtn.prop('disabled', true);
+    } else {
+        // Over 100%
+        const excess = ((totalProporsi - 1.0) * 100).toFixed(2);
+        showProporsiAlert('danger', 
+            '<i class="fa-solid fa-times-circle me-2"></i><strong>Error:</strong> Total proporsi = ' + totalPercent + '% (kelebihan ' + excess + '%)'
+        );
+        saveBtn.prop('disabled', true);
+    }
+}
+
+// ================================================================
+// ✅ NEW: showProporsiAlert() - Show validation alert
+// ================================================================
+function showProporsiAlert(type, message) {
+    const alertDiv = $('#editAMProporsiAlert');
+    
+    alertDiv.removeClass('proporsi-alert-success proporsi-alert-warning proporsi-alert-danger');
+    
+    if (type === 'success') {
+        alertDiv.addClass('alert proporsi-alert-success');
+    } else if (type === 'warning') {
+        alertDiv.addClass('alert proporsi-alert-warning');
+    } else {
+        alertDiv.addClass('alert proporsi-alert-danger');
+    }
+    
+    alertDiv.html(message).show();
+}
+
 
   function toggleTeldaField(role) {
     const teldaWrapper = document.getElementById('editDataAMTeldaWrapper');
@@ -7789,37 +8430,48 @@ window.deleteRevenueCC = function(id) {
 };
 
 
-  // ========================================
-  // ✅ FORM SUBMISSIONS
-  // ========================================
-  $('#formEditRevenueCC').on('submit', function(e) {
+// ================================================================
+// ✅ UPDATED: Form submit for Edit Revenue CC
+// ================================================================
+$('#formEditRevenueCC').on('submit', function(e) {
     e.preventDefault();
+    
     const id = $('#editCCRevenueId').val();
     const data = {
-      target_revenue: $('#editCCTargetRevenue').val(),
-      real_revenue: $('#editCCRealRevenue').val()
+        target_revenue_sold: $('#editCCTargetRevenue').val(),
+        real_revenue_sold: $('#editCCRealRevenue').val()
     };
 
     $.ajax({
-      url: `/revenue-data/revenue-cc/${id}`,
-      method: 'PUT',
-      data: JSON.stringify(data),
-      contentType: 'application/json',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      success: function(response) {
-        if (response.success) {
-          alert(response.message);
-          bootstrap.Modal.getInstance(document.getElementById('modalEditRevenueCC')).hide();
-          loadData();
-        } else {
-          alert('Error: ' + response.message);
+        url: `/revenue-data/revenue-cc/${id}`,
+        method: 'PUT',
+        data: JSON.stringify(data),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            if (response.success) {
+                alert(response.message);
+                bootstrap.Modal.getInstance(document.getElementById('modalEditRevenueCC')).hide();
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
         }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
     });
-  });
+});
+
+// ================================================================
+// ✅ HELPER: formatCurrency() - Already exists, just ensure it's available
+// ================================================================
+function formatCurrency(value) {
+    if (!value) return 'Rp 0';
+    return 'Rp ' + parseFloat(value).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+}
+
+
 
   $('#formEditRevenueAM').on('submit', function(e) {
     e.preventDefault();

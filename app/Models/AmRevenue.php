@@ -8,19 +8,17 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * ============================================================================
- * AmRevenue Model - COMPLETE FIXED VERSION
+ * AmRevenue Model - FIXED VERSION (2026-02-05)
  * ============================================================================
  * 
- * Date: 2026-02-05
- * Version: 4.0 - CRITICAL BUSINESS RULE FIX
+ * Version: 5.0 - CRITICAL RELATIONSHIP FIX
  * 
  * CRITICAL FIXES:
- * ✅ FIXED: Strict telda_id business rule validation:
- *    - AM role: telda_id MUST be NULL (enforced in boot->saving)
- *    - HOTDA role: telda_id MUST NOT be NULL (enforced in boot->saving)
- * ✅ FIXED: Better error messages for validation failures
- * ✅ FIXED: Enhanced logging for debugging telda issues
+ * ✅ FIXED: ccRevenue relationship - Changed from hasOne with complex where
+ *    to belongsTo with proper foreign key (cc_revenue_id)
+ * ✅ FIXED: Added cc_revenue_id to fillable array
  * ✅ MAINTAINED: All existing functionality (proporsi validation, helpers, etc.)
+ * ✅ MAINTAINED: Strict telda_id business rule validation
  * 
  * PROPORSI RANGE:
  * - Database stores: 0.0 - 1.0 (decimal, e.g., 0.4 = 40%)
@@ -36,7 +34,7 @@ use Illuminate\Support\Facades\Log;
  * 5. Revenue calculation: CC.real_revenue_sold × proporsi
  * 
  * @author RLEGS Team
- * @version 4.0 - Strict Business Rules
+ * @version 5.0 - Relationship Fix
  * ============================================================================
  */
 class AmRevenue extends Model
@@ -48,6 +46,7 @@ class AmRevenue extends Model
     protected $fillable = [
         'account_manager_id',
         'corporate_customer_id',
+        'cc_revenue_id',           // ✅ ADDED: Foreign key to cc_revenues table
         'divisi_id',
         'witel_id',
         'telda_id',
@@ -97,12 +96,42 @@ class AmRevenue extends Model
         return $this->belongsTo(Telda::class);
     }
 
+    /**
+     * ✅ FIXED: CcRevenue relationship
+     * 
+     * OLD (BROKEN):
+     * - Used hasOne with corporate_customer_id
+     * - Added dynamic where conditions ($this->divisi_id, $this->bulan, etc)
+     * - Failed because $this attributes not available during query building
+     * 
+     * NEW (FIXED):
+     * - Use belongsTo with proper foreign key cc_revenue_id
+     * - Simple, direct relationship
+     * - Works correctly with eager loading
+     * 
+     * NOTE: This requires cc_revenue_id column in am_revenues table
+     * If column doesn't exist yet, you need to run migration first
+     */
     public function ccRevenue()
     {
-        return $this->hasOne(CcRevenue::class, 'corporate_customer_id', 'corporate_customer_id')
-                    ->where('divisi_id', $this->divisi_id)
-                    ->where('bulan', $this->bulan)
-                    ->where('tahun', $this->tahun);
+        return $this->belongsTo(CcRevenue::class, 'cc_revenue_id');
+    }
+
+    /**
+     * ✅ FALLBACK: Legacy ccRevenue relationship (for backward compatibility)
+     * 
+     * Use this ONLY if cc_revenue_id column doesn't exist yet
+     * This will try to find CC Revenue based on matching criteria
+     * 
+     * WARNING: This is NOT efficient and should be replaced with proper FK
+     */
+    public function ccRevenueLegacy()
+    {
+        return CcRevenue::where('corporate_customer_id', $this->corporate_customer_id)
+                       ->where('divisi_id', $this->divisi_id)
+                       ->where('bulan', $this->bulan)
+                       ->where('tahun', $this->tahun)
+                       ->first();
     }
 
     // ========================================
@@ -150,6 +179,9 @@ class AmRevenue extends Model
         return $query->whereNull('telda_id');
     }
 
+    /**
+     * ✅ UPDATED: WithRelations scope with fixed ccRevenue
+     */
     public function scopeWithRelations($query)
     {
         return $query->with([
@@ -157,7 +189,8 @@ class AmRevenue extends Model
             'corporateCustomer:id,nama,nipnas',
             'divisi:id,nama,kode',
             'witel:id,nama',
-            'telda:id,nama'
+            'telda:id,nama',
+            'ccRevenue:id,corporate_customer_id,target_revenue_sold,real_revenue_sold,tipe_revenue,bulan,tahun'  // ✅ FIXED
         ]);
     }
 
@@ -171,6 +204,14 @@ class AmRevenue extends Model
         return $query->where('corporate_customer_id', $corporateCustomerId)
                      ->where('tahun', $year)
                      ->where('bulan', $month);
+    }
+
+    /**
+     * ✅ NEW: Scope for filtering by cc_revenue_id (if using new FK structure)
+     */
+    public function scopeByCcRevenue($query, $ccRevenueId)
+    {
+        return $query->where('cc_revenue_id', $ccRevenueId);
     }
 
     // ========================================
@@ -280,6 +321,34 @@ class AmRevenue extends Model
         return null;
     }
 
+    /**
+     * ✅ NEW: Get CC Revenue info safely (with fallback)
+     * 
+     * @return array|null
+     */
+    public function getCcRevenueInfo(): ?array
+    {
+        $ccRevenue = $this->ccRevenue;
+
+        if (!$ccRevenue) {
+            // Fallback to legacy method if FK relationship doesn't work
+            $ccRevenue = $this->ccRevenueLegacy();
+        }
+
+        if (!$ccRevenue) {
+            return null;
+        }
+
+        return [
+            'id' => $ccRevenue->id,
+            'target_revenue_sold' => $ccRevenue->target_revenue_sold,
+            'real_revenue_sold' => $ccRevenue->real_revenue_sold,
+            'tipe_revenue' => $ccRevenue->tipe_revenue ?? 'HO',
+            'bulan' => $ccRevenue->bulan,
+            'tahun' => $ccRevenue->tahun,
+        ];
+    }
+
     // ========================================
     // PROPORSI HELPER METHODS
     // ========================================
@@ -381,7 +450,7 @@ class AmRevenue extends Model
 
     /**
      * ============================================================================
-     * ✅ FIXED: Strict telda_id business rule validation
+     * ✅ MAINTAINED: Strict telda_id business rule validation
      * ============================================================================
      * 
      * BUSINESS RULES:
@@ -551,7 +620,7 @@ class AmRevenue extends Model
     }
 
     // ========================================
-    // ✅ FIXED: BOOT METHOD WITH STRICT VALIDATION
+    // ✅ MAINTAINED: BOOT METHOD WITH STRICT VALIDATION
     // ========================================
 
     protected static function boot()
@@ -563,6 +632,7 @@ class AmRevenue extends Model
                 'id' => $amRevenue->id ?? 'new',
                 'account_manager_id' => $amRevenue->account_manager_id,
                 'corporate_customer_id' => $amRevenue->corporate_customer_id,
+                'cc_revenue_id' => $amRevenue->cc_revenue_id ?? 'not set',
                 'telda_id' => $amRevenue->telda_id,
                 'proporsi' => $amRevenue->proporsi,
                 'bulan' => $amRevenue->bulan,

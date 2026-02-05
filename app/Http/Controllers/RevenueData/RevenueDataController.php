@@ -544,20 +544,15 @@ class RevenueDataController extends Controller
     // ========================================
     // MAPPING AM TAB - NEW FEATURE
     // ========================================
-
-    /**
-     * Get CC Revenue AM Mapping (for display in tab)
-     */
     public function getCcRevenueAmMapping($id)
     {
         try {
             $ccRevenue = CcRevenue::with('corporateCustomer')->findOrFail($id);
 
-            // ✅ FIXED: am_revenues table doesn't have cc_revenue_id column
+            // ✅ FIXED: Filter only by corporate_customer_id + periode (NO divisi_id)
             $amMappings = AmRevenue::where('corporate_customer_id', $ccRevenue->corporate_customer_id)
                 ->where('bulan', $ccRevenue->bulan)
                 ->where('tahun', $ccRevenue->tahun)
-                ->where('divisi_id', $ccRevenue->divisi_id)
                 ->with(['accountManager:id,nama,nik'])
                 ->get()
                 ->map(function($am) {
@@ -571,6 +566,13 @@ class RevenueDataController extends Controller
                         'target_revenue' => $am->target_revenue
                     ];
                 });
+
+            Log::info('CC Revenue AM Mapping loaded:', [
+                'cc_revenue_id' => $id,
+                'corporate_customer_id' => $ccRevenue->corporate_customer_id,
+                'periode' => $ccRevenue->bulan . '/' . $ccRevenue->tahun,
+                'am_count' => $amMappings->count()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -586,13 +588,17 @@ class RevenueDataController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting CC Revenue AM mapping: ' . $e->getMessage());
+            Log::error('Error getting CC Revenue AM mapping: ' . $e->getMessage(), [
+                'cc_revenue_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat mapping AM: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
     /**
      * Get CC Revenue AM Mappings for Edit (with display formats)
@@ -602,12 +608,10 @@ class RevenueDataController extends Controller
         try {
             $ccRevenue = CcRevenue::with('corporateCustomer')->findOrFail($id);
 
-            // ✅ FIXED: am_revenues table doesn't have cc_revenue_id column
-            // Instead, filter by corporate_customer_id, bulan, and tahun
+            // ✅ FIXED: Filter only by corporate_customer_id + periode (NO divisi_id)
             $amMappings = AmRevenue::where('corporate_customer_id', $ccRevenue->corporate_customer_id)
                 ->where('bulan', $ccRevenue->bulan)
                 ->where('tahun', $ccRevenue->tahun)
-                ->where('divisi_id', $ccRevenue->divisi_id)
                 ->with(['accountManager:id,nama,nik'])
                 ->get()
                 ->map(function($am) {
@@ -622,6 +626,14 @@ class RevenueDataController extends Controller
                         'target_revenue_display' => $am->target_revenue
                     ];
                 });
+
+            Log::info('CC Revenue AM Mappings for Edit loaded:', [
+                'cc_revenue_id' => $id,
+                'corporate_customer_id' => $ccRevenue->corporate_customer_id,
+                'periode' => $ccRevenue->bulan . '/' . $ccRevenue->tahun,
+                'am_count' => $amMappings->count(),
+                'am_list' => $amMappings->pluck('nama', 'am_revenue_id')->toArray()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -638,7 +650,10 @@ class RevenueDataController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting CC Revenue AM mappings for edit: ' . $e->getMessage());
+            Log::error('Error getting CC Revenue AM mappings for edit: ' . $e->getMessage(), [
+                'cc_revenue_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat data mapping: ' . $e->getMessage()
@@ -900,37 +915,112 @@ class RevenueDataController extends Controller
     }
 
     /**
-     * Show single Revenue AM
+     * ✅ FIXED: Show single Revenue AM - WITH CC REVENUE DATA
      */
     public function showRevenueAM($id)
     {
         try {
             $revenue = AmRevenue::with([
-                'accountManager:id,nama,nik',
+                'accountManager:id,nama,nik,role',
+                'accountManager.divisi:id,nama,kode',
                 'corporateCustomer:id,nama,nipnas'
             ])->findOrFail($id);
 
             $am = $revenue->accountManager;
             $cc = $revenue->corporateCustomer;
+            
+            // ✅ CRITICAL: Get CC Revenue untuk same corporate_customer + periode
+            $ccRevenue = \App\Models\CcRevenue::where('corporate_customer_id', $revenue->corporate_customer_id)
+                ->where('bulan', $revenue->bulan)
+                ->where('tahun', $revenue->tahun)
+                ->first();
+
+            if (!$ccRevenue) {
+                Log::warning('CC Revenue not found for AM Revenue', [
+                    'am_revenue_id' => $id,
+                    'corporate_customer_id' => $revenue->corporate_customer_id,
+                    'periode' => $revenue->tahun . '-' . $revenue->bulan
+                ]);
+            }
+
+            // Get divisi info
+            $divisi = $am && $am->divisi->isNotEmpty() ? $am->divisi->first() : null;
+
+            // Get OTHER AMs untuk same CC + period
+            $otherAMs = AmRevenue::where('corporate_customer_id', $revenue->corporate_customer_id)
+                ->where('bulan', $revenue->bulan)
+                ->where('tahun', $revenue->tahun)
+                ->where('id', '!=', $id)
+                ->with(['accountManager:id,nama,nik'])
+                ->get()
+                ->map(function($am) {
+                    return [
+                        'id' => $am->id,
+                        'account_manager_id' => $am->account_manager_id,
+                        'account_manager_nama' => $am->accountManager ? $am->accountManager->nama : '-',
+                        'account_manager_nik' => $am->accountManager ? $am->accountManager->nik : '-',
+                        'proporsi' => $am->proporsi,
+                        'target_revenue' => $am->target_revenue,
+                        'real_revenue' => $am->real_revenue
+                    ];
+                });
+
+            // Calculate total proporsi
+            $totalProporsi = $revenue->proporsi + $otherAMs->sum('proporsi');
+
+            Log::info('Show Revenue AM - CC Revenue Check:', [
+                'am_revenue_id' => $id,
+                'cc_revenue_found' => !!$ccRevenue,
+                'cc_revenue_id' => $ccRevenue ? $ccRevenue->id : null,
+                'cc_target' => $ccRevenue ? $ccRevenue->target_revenue_sold : 0,
+                'cc_real' => $ccRevenue ? $ccRevenue->real_revenue_sold : 0
+            ]);
 
             return response()->json([
                 'success' => true,
                 'data' => [
+                    // PRIMARY DATA
                     'id' => $revenue->id,
                     'account_manager_id' => $revenue->account_manager_id,
-                    'nama_am' => $am ? $am->nama : '-',
                     'corporate_customer_id' => $revenue->corporate_customer_id,
-                    'nama_cc' => $cc ? $cc->nama : '-',
-                    'proporsi' => $revenue->proporsi * 100,
-                    'target_revenue' => $revenue->target_revenue,
-                    'real_revenue' => $revenue->real_revenue,
                     'bulan' => $revenue->bulan,
-                    'tahun' => $revenue->tahun
+                    'tahun' => $revenue->tahun,
+                    'period_name' => \Carbon\Carbon::create($revenue->tahun, $revenue->bulan, 1)->translatedFormat('F Y'),
+                    
+                    // AM DATA
+                    'account_manager_nama' => $am ? $am->nama : '-',
+                    'account_manager_nik' => $am ? $am->nik : '-',
+                    'account_manager_role' => $am ? $am->role : '-',
+                    
+                    // DIVISI DATA
+                    'divisi_id' => $divisi ? $divisi->id : null,
+                    'divisi_nama' => $divisi ? $divisi->nama : '-',
+                    'divisi_kode' => $divisi ? $divisi->kode : '-',
+                    
+                    // CC DATA
+                    'corporate_customer_nama' => $cc ? $cc->nama : '-',
+                    'corporate_customer_nipnas' => $cc ? $cc->nipnas : '-',
+                    
+                    // ✅ CRITICAL FIX: CC REVENUE BASE (untuk kalkulasi)
+                    'cc_revenue_id' => $ccRevenue ? $ccRevenue->id : null,
+                    'cc_target_revenue_sold' => $ccRevenue ? (float)$ccRevenue->target_revenue_sold : 0,
+                    'cc_real_revenue_sold' => $ccRevenue ? (float)$ccRevenue->real_revenue_sold : 0,
+                    
+                    // AM REVENUE DATA
+                    'proporsi' => (float)$revenue->proporsi,
+                    'target_revenue' => (float)$revenue->target_revenue,
+                    'real_revenue' => (float)$revenue->real_revenue,
+                    
+                    // OTHER AMS HANDLING SAME CC
+                    'other_ams' => $otherAMs,
+                    'proporsi_total' => $totalProporsi
                 ]
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error showing Revenue AM: ' . $e->getMessage());
+            Log::error('Error showing Revenue AM: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat detail Revenue AM: ' . $e->getMessage()

@@ -150,12 +150,6 @@
                         @php $badge = $getBadgeInfo($globalRanking['status'], $globalRanking['change']); @endphp
                         <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
-                    {{-- @if($globalRanking['change'] != 0)
-                        <div class="rank-badge {{ $badge['class'] }}">
-                            <i class="lni {{ $badge['icon'] }}"></i>
-                            {{ $badge['text'] }}
-                        </div>
-                    @endif --}}
                 </a>
             </div>
 
@@ -173,12 +167,6 @@
                         @php $badge = $getBadgeInfo($witelRanking['status'], $witelRanking['change']); @endphp
                         <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                     </div>
-                    {{-- @if($witelRanking['change'] != 0)
-                        <div class="rank-badge {{ $badge['class'] }}">
-                            <i class="lni {{ $badge['icon'] }}"></i>
-                            {{ $badge['text'] }}
-                        </div>
-                    @endif --}}
                 </a>
             </div>
 
@@ -213,12 +201,6 @@
                                     </div>
                                     <span class="rank-change-detail {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                                 </div>
-                                {{-- @if(($ranking['change'] ?? 0) != 0)
-                                    <div class="rank-badge {{ $badge['class'] }}">
-                                        <i class="lni {{ $badge['icon'] }}"></i>
-                                        {{ $badge['text'] }}
-                                    </div>
-                                @endif --}}
                             </a>
                         @else
                             <div class="ranking-card division">
@@ -297,18 +279,19 @@
                     @endif
 
                     <div class="two-filters">
-                        <div class="filter-group">
-                            <select id="tipeRevenueFilter" class="selectpicker" title="Tipe Revenue">
-                                <option value="all" {{ $filters['tipe_revenue']=='all'?'selected':'' }}>Semua Tipe</option>
-                                <option value="REGULER" {{ $filters['tipe_revenue']=='REGULER'?'selected':'' }}>REGULER</option>
-                                <option value="NGTMA" {{ $filters['tipe_revenue']=='NGTMA'?'selected':'' }}>NGTMA</option>
+                        <div class="filter-group" style="margin-right: 10px;">
+                            <select id="sourceDataFilter" class="selectpicker" title="Source Data">
+                                <option value="all" {{ ($filters['source_data'] ?? 'all')=='all'?'selected':'' }}>Semua Source</option>
+                                <option value="REGULER" {{ ($filters['source_data'] ?? 'all')=='REGULER'?'selected':'' }}>REGULER</option>
+                                <option value="NGTMA" {{ ($filters['source_data'] ?? 'all')=='NGTMA'?'selected':'' }}>NGTMA</option>
                             </select>
                         </div>
 
                         <div class="filter-group year-selector">
                             <select id="customerYearFilter" class="selectpicker" title="Tahun">
+                                <option value="all" {{ ($filters['tahun'] ?? date('Y'))=='all'?'selected':'' }}>Semua Tahun</option>
                                 @foreach($filterOptions['available_years'] as $year)
-                                    <option value="{{ $year }}" {{ $filters['tahun']==$year?'selected':'' }}>{{ $year }}</option>
+                                    <option value="{{ $year }}" {{ ($filters['tahun'] ?? date('Y'))==$year?'selected':'' }}>{{ $year }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -373,11 +356,11 @@
                                         </td>
                                         @if($filters['customer_view_mode'] == 'detail')
                                             <td>
-                                                <span class="month-badge">{{ $customer->bulan_name ?? 'N/A' }}</span>
+                                                <span class="month-badge">{{ $customer->bulan_year_name ?? $customer->bulan_name ?? 'N/A' }}</span>
                                             </td>
                                         @elseif($filters['customer_view_mode'] == 'agregat_bulan')
                                             <td>
-                                                <span class="month-badge">{{ $customer->bulan_name ?? 'N/A' }}</span>
+                                                <span class="month-badge">{{ $customer->bulan_year_name ?? $customer->bulan_name ?? 'N/A' }}</span>
                                             </td>
                                             <td class="text-center">{{ $customer->customer_count ?? 0 }}</td>
                                         @endif
@@ -604,6 +587,23 @@ $(document).ready(function() {
         mobile: false
     });
 
+    // ✅ NEW: Auto-switch to active tab from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('active_tab');
+    
+    if (activeTab) {
+        $('.tab-button').removeClass('active');
+        $('.tab-content').removeClass('active');
+        
+        $(`.tab-button[data-tab="${activeTab}"]`).addClass('active');
+        $(`#${activeTab}`).addClass('active');
+        
+        // Render chart if switching to performance tab
+        if (activeTab === 'performance-analysis') {
+            setTimeout(renderPerformanceChart, 100);
+        }
+    }
+
     // Tab Navigation
     $('.tab-button').on('click', function() {
         $('.tab-button').removeClass('active');
@@ -647,10 +647,10 @@ $(document).ready(function() {
         updateUrlParameter('divisi_id', divisiId);
     });
 
-    // Tipe Revenue Filter
-    $('#tipeRevenueFilter').on('changed.bs.select', function() {
-        const tipeRevenue = $(this).val();
-        updateUrlParameter('tipe_revenue', tipeRevenue);
+    // ✅ FIXED: Source Data Filter (ganti dari tipeRevenueFilter)
+    $('#sourceDataFilter').on('changed.bs.select', function() {
+        const sourceData = $(this).val();
+        updateUrlParameter('source_data', sourceData);
     });
 
     // Customer Year Filter
@@ -659,17 +659,58 @@ $(document).ready(function() {
         updateUrlParameter('tahun', year);
     });
 
-    // Chart Year Filter
+    // Chart Year Filter - ✅ AJAX tanpa reload
     $('#chartYearFilter').on('changed.bs.select', function() {
         const year = $(this).val();
-        updateUrlParameter('chart_tahun', year);
+        
+        // Update URL without reload
+        const url = new URL(window.location.href);
+        url.searchParams.set('chart_tahun', year);
+        window.history.pushState({}, '', url);
+        
+        // Reload chart data via AJAX
+        loadChartData(year, $('#chartDisplayMode').val());
     });
 
-    // Chart Display Mode
+    // Chart Display Mode - ✅ AJAX tanpa reload
     $('#chartDisplayMode').on('changed.bs.select', function() {
         const mode = $(this).val();
-        updateUrlParameter('chart_display', mode);
+        
+        // Update URL without reload
+        const url = new URL(window.location.href);
+        url.searchParams.set('chart_display', mode);
+        window.history.pushState({}, '', url);
+        
+        // Reload chart data via AJAX
+        loadChartData($('#chartYearFilter').val(), mode);
     });
+
+    // ✅ FIXED: Function to load chart data via AJAX menggunakan current URL
+    function loadChartData(tahun, displayMode) {
+        // Show loading indicator
+        const chartContainer = $('#performanceChart').parent();
+        chartContainer.html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2">Memuat data chart...</p></div>');
+        
+        // Build query params
+        const params = new URLSearchParams();
+        params.set('chart_tahun', tahun || '{{ $filters["chart_tahun"] ?? date("Y") }}');
+        params.set('chart_display', displayMode || 'combination');
+        params.set('active_tab', 'performance-analysis');
+        
+        // Add other filters
+        const divisiFilter = $('#performanceDivisiFilter').val();
+        if (divisiFilter) {
+            params.set('divisi_id', divisiFilter);
+        }
+        
+        const sourceDataFilter = $('#sourceDataFilter').val();
+        if (sourceDataFilter && sourceDataFilter !== 'all') {
+            params.set('source_data', sourceDataFilter);
+        }
+        
+        // Reload page with new params but stay on performance tab
+        window.location.href = window.location.pathname + '?' + params.toString();
+    }
 
     // Helper function to update URL parameters
     function updateUrlParameter(key, value) {
@@ -702,8 +743,8 @@ $(document).ready(function() {
             console.warn('Error destroying existing chart:', e);
         }
 
-        // Get chart data from backend
-        const chartData = @json($performanceAnalysis['monthly_chart'] ?? null);
+        // ✅ FIXED: Support dynamic chart data from AJAX or initial load
+        const chartData = window.currentChartData || @json($performanceAnalysis['monthly_chart'] ?? null);
 
         if (!chartData || !chartData.labels || chartData.labels.length === 0) {
             $(ctx).parent().html(
@@ -715,7 +756,8 @@ $(document).ready(function() {
             return;
         }
 
-        const displayMode = '{{ $filters["chart_display"] ?? "combination" }}';
+        // ✅ FIXED: Get display mode from select or URL
+        const displayMode = $('#chartDisplayMode').val() || '{{ $filters["chart_display"] ?? "combination" }}';
         const datasets = [];
 
         // Revenue datasets

@@ -25,7 +25,7 @@
                 <div class="filter-group">
                     <!-- Period Type Filter (YTD/MTD) -->
                     <select id="periodTypeFilter" class="form-select filter-select js-enhance">
-                        @foreach($filterOptions['period_types'] ?? ['YTD' => 'Year to Date', 'MTD' => 'Month to Date'] as $key => $label)
+                        @foreach($filterOptions['period_types'] ?? ['YTD' => 'Year to Date', 'MTD' => 'Month to Date', 'ALL' => 'Semua Periode'] as $key => $label)
                         <option value="{{ $key }}" {{ $key == ($filters['period_type'] ?? 'YTD') ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
@@ -34,26 +34,26 @@
 
                     <!-- Divisi Filter dengan Kode -->
                     <select id="divisiFilter" class="form-select filter-select js-enhance">
-                        <option value="">Semua Divisi</option>
-                        @foreach($filterOptions['divisis'] ?? [] as $divisi)
+                        <option value="all">Semua Divisi</option>
+                        @foreach($filterOptions['divisi'] ?? [] as $divisi)
                         <option value="{{ $divisi->id }}" {{ $divisi->id == ($filters['divisi_id'] ?? '') ? 'selected' : '' }}>
                             {{ $divisi->kode ?? $divisi->nama }}
                         </option>
                         @endforeach
                     </select>
 
-                    <!-- Sort Indicator Filter -->
-                    <select id="sortIndicatorFilter" class="form-select filter-select js-enhance">
-                        @foreach($filterOptions['sort_indicators'] ?? ['total_revenue' => 'Total Revenue Tertinggi', 'achievement_rate' => 'Achievement Rate Tertinggi', 'semua' => 'Semua'] as $key => $label)
-                        <option value="{{ $key }}" {{ $key == ($filters['sort_indicator'] ?? 'total_revenue') ? 'selected' : '' }}>
+                    <!-- Source Data Filter (REGULER/NGTMA) -->
+                    <select id="sourceDataFilter" class="form-select filter-select js-enhance">
+                        @foreach($filterOptions['source_data'] ?? ['all' => 'Semua Tipe'] as $key => $label)
+                        <option value="{{ $key }}" {{ $key == ($filters['source_data'] ?? 'all') ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
                         @endforeach
                     </select>
 
-                    <!-- Tipe Revenue Filter -->
+                    <!-- Tipe Revenue Filter (HO/BILL) -->
                     <select id="tipeRevenueFilter" class="form-select filter-select js-enhance">
-                        @foreach($filterOptions['tipe_revenues'] ?? ['all' => 'Semua Tipe'] as $key => $label)
+                        @foreach($filterOptions['tipe_revenue'] ?? ['all' => 'Semua'] as $key => $label)
                         <option value="{{ $key }}" {{ $key == ($filters['tipe_revenue'] ?? 'all') ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
@@ -83,13 +83,20 @@
         </div>
     @endif
 
-    <!-- 1. CARD GROUP SECTION - DENGAN FORMAT SHORT -->
+    <!-- 1. CARD GROUP SECTION - DYNAMIC BASED ON FILTER -->
     <div class="row g-4 mb-4">
+        @php
+            $showSold = !isset($filters['tipe_revenue']) || $filters['tipe_revenue'] === 'all' || $filters['tipe_revenue'] === 'HO';
+            $showBill = !isset($filters['tipe_revenue']) || $filters['tipe_revenue'] === 'all' || $filters['tipe_revenue'] === 'BILL';
+        @endphp
+
+        @if($showSold)
+        <!-- Revenue Sold Section -->
         <div class="col-md-4">
             <div class="stats-card">
-                <div class="stats-title">Total Revenue</div>
-                <div class="stats-value">Rp {{ $cardData['total_revenue_formatted'] ?? '0' }}</div>
-                <div class="stats-period">Keseluruhan Real Revenue</div>
+                <div class="stats-title">Total Real Revenue Sold</div>
+                <div class="stats-value">{{ $cardData['total_real_sold_formatted'] ?? 'Rp 0' }}</div>
+                <div class="stats-period">Revenue dari HO (Sold)</div>
                 <div class="stats-icon icon-revenue">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -97,9 +104,9 @@
         </div>
         <div class="col-md-4">
             <div class="stats-card">
-                <div class="stats-title">Target Revenue</div>
-                <div class="stats-value">Rp {{ $cardData['total_target_formatted'] ?? '0' }}</div>
-                <div class="stats-period">Keseluruhan Target Revenue</div>
+                <div class="stats-title">Target Revenue Sold</div>
+                <div class="stats-value">{{ $cardData['total_target_sold_formatted'] ?? 'Rp 0' }}</div>
+                <div class="stats-period">Target dari HO (Sold)</div>
                 <div class="stats-icon icon-target">
                     <i class="fas fa-bullseye"></i>
                 </div>
@@ -107,14 +114,49 @@
         </div>
         <div class="col-md-4">
             <div class="stats-card is-achievement">
-                <div class="stats-title">Achievement Rate</div>
-                <div class="stats-value">{{ number_format($cardData['achievement_rate'] ?? 0, 2) }}%<span class="achievement-indicator achievement-{{ $cardData['achievement_color'] ?? 'poor' }}"></span></div>
-                <div class="stats-period">Persentase Pencapaian Target Pendapatan</div>
+                <div class="stats-title">Achievement Rate Sold</div>
+                <div class="stats-value">{{ number_format($cardData['achievement_sold'] ?? 0, 2) }}%<span class="achievement-indicator achievement-{{ $cardData['achievement_sold_color'] ?? 'secondary' }}"></span></div>
+                <div class="stats-period">Pencapaian Revenue Sold</div>
                 <div class="stats-icon icon-achievement">
                     <i class="fas fa-medal"></i>
                 </div>
             </div>
         </div>
+        @endif
+
+        @if($showBill)
+        <!-- Revenue Bill Section -->
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-title">Total Real Revenue Bill</div>
+                <div class="stats-value">{{ $cardData['total_real_bill_formatted'] ?? 'Rp 0' }}</div>
+                <div class="stats-period">Revenue dari Bill (Invoice)</div>
+                <div class="stats-icon icon-revenue">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-title">Target Revenue Bill</div>
+                <div class="stats-value">{{ $cardData['total_target_bill_formatted'] ?? 'Rp 0' }}</div>
+                <div class="stats-period">Target dari Bill (Invoice)</div>
+                <div class="stats-icon icon-target">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card is-achievement">
+                <div class="stats-title">Achievement Rate Bill</div>
+                <div class="stats-value">{{ number_format($cardData['achievement_bill'] ?? 0, 2) }}%<span class="achievement-indicator achievement-{{ $cardData['achievement_bill_color'] ?? 'secondary' }}"></span></div>
+                <div class="stats-period">Pencapaian Revenue Bill</div>
+                <div class="stats-icon icon-achievement">
+                    <i class="fas fa-medal"></i>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     <!-- 2. PERFORMANCE SECTION - Corporate Customer First, Account Manager Second -->
@@ -180,7 +222,7 @@
                             </thead>
                             <tbody>
                                 @foreach($performanceData['corporate_customer'] as $index => $customer)
-                                <tr class="clickable-row {{ $customer->has_revenue ?? true ? '' : 'row-no-revenue' }}" data-url="{{ $customer->detail_url ?? route('corporate-customer.show', $customer->id) }}">
+                                <tr class="clickable-row {{ $customer->has_revenue ?? true ? '' : 'row-no-revenue' }}" data-url="{{ route('corporate-customer.show', $customer->id) }}">
                                     <td><strong>{{ $index + 1 }}</strong></td>
                                     <td>
                                         <div>
@@ -194,7 +236,7 @@
                                     <td>{{ ($customer->segment_nama && $customer->segment_nama !== 'N/A') ? $customer->segment_nama : '-' }}</td>
                                     <td class="text-end">
                                         @if(($customer->total_revenue ?? 0) > 0)
-                                            Rp {{ number_format($customer->total_revenue, 0, ',', '.') }}
+                                            {{ $customer->total_revenue_formatted ?? 'Rp ' . number_format($customer->total_revenue, 0, ',', '.') }}
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -209,17 +251,14 @@
                                     <td class="text-end">
                                         @php
                                             $rate = $customer->achievement_rate ?? 0;
+                                            $color = $customer->achievement_color ?? 'secondary';
                                             if ($rate >= 100) {
-                                                $color = 'success';
                                                 $tooltip = 'Excellent: Target tercapai dengan baik!';
                                             } elseif ($rate >= 80) {
-                                                $color = 'warning';
                                                 $tooltip = 'Good: Mendekati target, perlu sedikit peningkatan';
                                             } elseif ($rate > 0) {
-                                                $color = 'danger';
                                                 $tooltip = 'Poor: Perlu peningkatan signifikan';
                                             } else {
-                                                $color = 'secondary';
                                                 $tooltip = 'Belum ada data revenue';
                                             }
                                         @endphp
@@ -228,7 +267,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{{ $customer->detail_url ?? route('corporate-customer.show', $customer->id) }}"
+                                        <a href="{{ route('corporate-customer.show', $customer->id) }}"
                                            class="btn btn-sm btn-primary">Detail</a>
                                     </td>
                                 </tr>
@@ -246,7 +285,7 @@
                 </div>
             </div>
 
-            <!-- Account Manager Tab - SERVER-SIDE DATA WITH TOP 10 PRIORITY -->
+            <!-- Account Manager Tab - SERVER-SIDE DATA -->
             <div class="tab-pane" id="content-account-manager" role="tabpanel">
                 <div class="table-container">
                     @if(isset($performanceData['account_manager']) && $performanceData['account_manager']->count() > 0)
@@ -257,7 +296,6 @@
                                     <th>Ranking</th>
                                     <th>Nama</th>
                                     <th>Witel</th>
-                                    <th>Divisi</th>
                                     <th class="text-end">Total Revenue</th>
                                     <th class="text-end">Target Revenue</th>
                                     <th class="text-end">Achievement</th>
@@ -266,7 +304,7 @@
                             </thead>
                             <tbody>
                                 @foreach($performanceData['account_manager'] as $index => $am)
-                                <tr class="clickable-row {{ $am->has_revenue ?? true ? '' : 'row-no-revenue' }}" data-url="{{ $am->detail_url ?? route('account-manager.show', $am->id) }}">
+                                <tr class="clickable-row {{ $am->has_revenue ?? true ? '' : 'row-no-revenue' }}" data-url="{{ route('account-manager.show', $am->id) }}">
                                     <td><strong>{{ $index + 1 }}</strong></td>
                                     <td>
                                         <div class="d-flex align-items-center">
@@ -274,43 +312,10 @@
                                             <span class="ms-2 clickable-name">{{ $am->nama }}</span>
                                         </div>
                                     </td>
-                                    <td>{{ $am->witel->nama ?? '-' }}</td>
-                                    <td>
-                                        <div class="divisi-pills">
-                                            @if(!empty($am->divisi_list) && $am->divisi_list !== 'N/A' && $am->divisi_list !== '-')
-                                            @php
-                                                $divs = preg_split('/\s*,\s*/', $am->divisi_list, -1, PREG_SPLIT_NO_EMPTY);
-                                                $alias = [
-                                                'government-service' => 'dgs',
-                                                'govt-service'       => 'dgs',
-                                                'gs'                 => 'dgs',
-                                                'dgs'                => 'dgs',
-                                                'digital-platform-service' => 'dps',
-                                                'platform-service'         => 'dps',
-                                                'dps'                      => 'dps',
-                                                'digital-solution-service' => 'dss',
-                                                'solution-service'         => 'dss',
-                                                'dss'                      => 'dss',
-                                                'digital-enterprise-service' => 'des',
-                                                'enterprise-service'         => 'des',
-                                                'des'                        => 'des',
-                                                ];
-                                            @endphp
-                                            @foreach($divs as $divisi)
-                                                @php
-                                                $key = \Illuminate\Support\Str::slug($divisi);
-                                                $code = $alias[$key] ?? 'all';
-                                                @endphp
-                                                <span class="divisi-pill badge-{{ $code }}">{{ $divisi }}</span>
-                                            @endforeach
-                                            @else
-                                            <span class="text-muted">-</span>
-                                            @endif
-                                        </div>
-                                    </td>
+                                    <td>{{ $am->witel_nama ?? '-' }}</td>
                                     <td class="text-end">
                                         @if(($am->total_revenue ?? 0) > 0)
-                                            Rp {{ number_format($am->total_revenue, 0, ',', '.') }}
+                                            {{ $am->total_revenue_formatted ?? 'Rp ' . number_format($am->total_revenue, 0, ',', '.') }}
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -325,22 +330,14 @@
                                     <td class="text-end">
                                         @php
                                             $rate = $am->achievement_rate ?? 0;
-                                            if ($rate >= 100) {
-                                                $color = 'success';
-                                            } elseif ($rate >= 80) {
-                                                $color = 'warning';
-                                            } elseif ($rate > 0) {
-                                                $color = 'danger';
-                                            } else {
-                                                $color = 'secondary';
-                                            }
+                                            $color = $am->achievement_color ?? 'secondary';
                                         @endphp
                                         <span class="status-badge bg-{{ $color }}-soft">
                                             {{ $rate > 0 ? number_format($rate, 2) . '%' : '-' }}
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{{ $am->detail_url ?? route('account-manager.show', $am->id) }}"
+                                        <a href="{{ route('account-manager.show', $am->id) }}"
                                            class="btn btn-sm btn-primary">Detail</a>
                                     </td>
                                 </tr>
@@ -358,14 +355,125 @@
                 </div>
             </div>
 
-            <!-- Witel Tab - AJAX LOADED (ALL WITELS) -->
+            <!-- Witel Tab - SERVER-SIDE DATA -->
             <div class="tab-pane" id="content-witel" role="tabpanel">
-                <!-- Content loaded via AJAX -->
+                <div class="table-container">
+                    @if(isset($performanceData['witel']) && $performanceData['witel']->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-modern m-0">
+                            <thead>
+                                <tr>
+                                    <th>Ranking</th>
+                                    <th>Nama Witel</th>
+                                    <th class="text-end">Total Revenue</th>
+                                    <th class="text-end">Target Revenue</th>
+                                    <th class="text-end">Achievement</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($performanceData['witel'] as $index => $witel)
+                                <tr class="clickable-row" data-url="{{ route('witel.show', $witel->id) }}">
+                                    <td><strong>{{ $index + 1 }}</strong></td>
+                                    <td>{{ $witel->nama ?? '-' }}</td>
+                                    <td class="text-end">
+                                        @if(($witel->total_revenue ?? 0) > 0)
+                                            {{ $witel->total_revenue_formatted ?? 'Rp ' . number_format($witel->total_revenue, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if(($witel->total_target ?? 0) > 0)
+                                            Rp {{ number_format($witel->total_target, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @php
+                                            $rate = $witel->achievement_rate ?? 0;
+                                            $color = $witel->achievement_color ?? 'secondary';
+                                        @endphp
+                                        <span class="status-badge bg-{{ $color }}-soft">
+                                            {{ $rate > 0 ? number_format($rate, 2) . '%' : '-' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('witel.show', $witel->id) }}"
+                                           class="btn btn-sm btn-primary">Detail</a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <div class="empty-state-enhanced">
+                        <i class="fas fa-building"></i>
+                        <h5>Belum Ada Data Witel</h5>
+                        <p>Tidak ada Witel yang memiliki data pendapatan pada periode dan filter yang dipilih.</p>
+                    </div>
+                    @endif
+                </div>
             </div>
 
-            <!-- Segment Tab - AJAX LOADED (ALL SEGMENTS) -->
+            <!-- Segment Tab - SERVER-SIDE DATA -->
             <div class="tab-pane" id="content-segment" role="tabpanel">
-                <!-- Content loaded via AJAX -->
+                <div class="table-container">
+                    @if(isset($performanceData['segment']) && $performanceData['segment']->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-modern m-0">
+                            <thead>
+                                <tr>
+                                    <th>Ranking</th>
+                                    <th>Nama Segmen</th>
+                                    <th class="text-end">Total Revenue</th>
+                                    <th class="text-end">Target Revenue</th>
+                                    <th class="text-end">Achievement</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($performanceData['segment'] as $index => $segment)
+                                <tr>
+                                    <td><strong>{{ $index + 1 }}</strong></td>
+                                    <td>{{ $segment->lsegment_ho ?? '-' }}</td>
+                                    <td class="text-end">
+                                        @if(($segment->total_revenue ?? 0) > 0)
+                                            {{ $segment->total_revenue_formatted ?? 'Rp ' . number_format($segment->total_revenue, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if(($segment->total_target ?? 0) > 0)
+                                            Rp {{ number_format($segment->total_target, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @php
+                                            $rate = $segment->achievement_rate ?? 0;
+                                            $color = $segment->achievement_color ?? 'secondary';
+                                        @endphp
+                                        <span class="status-badge bg-{{ $color }}-soft">
+                                            {{ $rate > 0 ? number_format($rate, 2) . '%' : '-' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <div class="empty-state-enhanced">
+                        <i class="fas fa-chart-pie"></i>
+                        <h5>Belum Ada Data Segmen</h5>
+                        <p>Tidak ada Segmen yang memiliki data pendapatan pada periode dan filter yang dipilih.</p>
+                    </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -811,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <!-- Main Dashboard JavaScript -->
 <script>
 $(document).ready(function() {
-    console.log('Dashboard RLEGS V2 - FINAL FIXED VERSION with N/A→- & Responsive Table');
+    console.log('Dashboard RLEGS V2 - Updated with Revenue Sold & Bill');
 
     // =====================================
     // FILTER HANDLING
@@ -820,7 +928,7 @@ $(document).ready(function() {
         const filters = {
             period_type: $('#periodTypeFilter').val(),
             divisi_id: $('#divisiFilter').val(),
-            sort_indicator: $('#sortIndicatorFilter').val(),
+            source_data: $('#sourceDataFilter').val(),
             tipe_revenue: $('#tipeRevenueFilter').val()
         };
 
@@ -829,7 +937,7 @@ $(document).ready(function() {
 
         const params = new URLSearchParams();
         Object.keys(filters).forEach(key => {
-            if (filters[key]) {
+            if (filters[key] && filters[key] !== 'all') {
                 params.append(key, filters[key]);
             }
         });
@@ -839,252 +947,10 @@ $(document).ready(function() {
         window.location.href = newUrl;
     }
 
-    $('#periodTypeFilter, #divisiFilter, #sortIndicatorFilter, #tipeRevenueFilter').on('change', function() {
+    $('#periodTypeFilter, #divisiFilter, #sourceDataFilter, #tipeRevenueFilter').on('change', function() {
         console.log('Filter changed:', this.id, this.value);
         applyFilters();
     });
-
-    // =====================================
-    // TAB SWITCHING
-    // =====================================
-    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
-        const tabType = $(e.target).attr('data-tab');
-        console.log('Tab switched to:', tabType);
-
-        if (tabType === 'witel' || tabType === 'segment') {
-            loadTabData(tabType);
-        }
-    });
-
-    // =====================================
-    // AJAX LOAD TAB DATA - WITEL & SEGMENT
-    // =====================================
-    function loadTabData(tabType) {
-        console.log('Loading AJAX data for:', tabType);
-
-        const filters = {
-            tab: tabType,
-            period_type: $('#periodTypeFilter').val() || 'YTD',
-            divisi_id: $('#divisiFilter').val() || '',
-            sort_indicator: $('#sortIndicatorFilter').val() || 'total_revenue',
-            tipe_revenue: $('#tipeRevenueFilter').val() || 'all'
-        };
-
-        const tabContent = $(`#content-${tabType}`);
-
-        tabContent.html(`
-            <div class="table-container">
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2 text-muted">Memuat data ${getTabDisplayName(tabType)}...</p>
-                </div>
-            </div>
-        `);
-
-        $.ajax({
-            url: "{{ route('dashboard.tab-data') }}",
-            method: 'GET',
-            data: filters,
-            dataType: 'json',
-            timeout: 30000,
-            success: function(response) {
-                console.log(`AJAX success for ${tabType}:`, response);
-
-                if (response.success && response.data) {
-                    const dataArray = Array.isArray(response.data) ? response.data : Object.values(response.data);
-
-                    if (dataArray.length > 0) {
-                        console.log(`Rendering ${dataArray.length} items for ${tabType}`);
-                        renderTabContent(tabContent, dataArray, tabType);
-                        bindClickableRows();
-                    } else {
-                        console.log(`No data for ${tabType}`);
-                        showEmptyState(tabContent, tabType);
-                    }
-                } else {
-                    console.warn(`Invalid response for ${tabType}:`, response);
-                    showEmptyState(tabContent, tabType);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error(`AJAX error for ${tabType}:`, {
-                    status: xhr.status,
-                    error: error,
-                    response: xhr.responseText
-                });
-                showErrorState(tabContent, tabType, error);
-            }
-        });
-    }
-
-    // =====================================
-    // RENDER TAB CONTENT
-    // =====================================
-    function renderTabContent(tabContent, data, tabType) {
-        console.log(`Rendering ${tabType} with ${data.length} records`);
-
-        let html = `
-            <div class="table-container">
-                <div class="table-responsive">
-                    <table class="table table-modern m-0">
-                        <thead>
-                            <tr>${getTableHeaders(tabType)}</tr>
-                        </thead>
-                        <tbody>
-        `;
-
-        data.forEach((item, index) => {
-            html += buildTableRow(item, index + 1, tabType);
-        });
-
-        html += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
-        tabContent.html(html);
-        console.log(`Content rendered for ${tabType}`);
-    }
-
-    // =====================================
-    // TABLE BUILDERS
-    // =====================================
-    function getTableHeaders(tabType) {
-        const headers = {
-            'witel': '<th>Ranking</th><th>Nama Witel</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th><th>Action</th>',
-            'segment': '<th>Ranking</th><th>Nama Segmen</th><th>Divisi</th><th class="text-center">Total Pelanggan</th><th class="text-end">Total Revenue</th><th class="text-end">Target Revenue</th><th class="text-end">Achievement</th>'
-        };
-        return headers[tabType] || '';
-    }
-
-    function buildTableRow(item, ranking, tabType) {
-        const detailUrl = item.detail_url || getDetailRoute(item.id, tabType);
-        let row = `<tr class="clickable-row" data-url="${detailUrl}"><td><strong>${ranking}</strong></td>`;
-
-        console.log(`Building row ${ranking} for ${tabType}:`, item);
-
-        switch(tabType) {
-            case 'witel':
-                const witelRevenue = parseFloat(item.total_revenue) || 0;
-                const witelTarget = parseFloat(item.total_target) || 0;
-                row += `
-                    <td>${item.nama || '-'}</td>
-                    <td class="text-center">${formatNumber(item.total_customers || 0)}</td>
-                    <td class="text-end">${witelRevenue > 0 ? 'Rp ' + formatCurrency(witelRevenue) : '<span class="text-muted">-</span>'}</td>
-                    <td class="text-end">${witelTarget > 0 ? 'Rp ' + formatCurrency(witelTarget) : '<span class="text-muted">-</span>'}</td>
-                    <td class="text-end">
-                        <span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">
-                            ${(parseFloat(item.achievement_rate) || 0) > 0 ? (parseFloat(item.achievement_rate) || 0).toFixed(2) + '%' : '-'}
-                        </span>
-                    </td>
-                    <td><a href="${detailUrl}" class="btn btn-sm btn-primary">Detail</a></td>
-                `;
-                break;
-
-            case 'segment':
-                const segRevenue = parseFloat(item.total_revenue) || 0;
-                const segTarget = parseFloat(item.total_target) || 0;
-                row += `
-                    <td>${item.lsegment_ho || item.nama || '-'}</td>
-                    <td>${(item.divisi && item.divisi.nama) || item.divisi_nama || '-'}</td>
-                    <td class="text-center">${formatNumber(item.total_customers || 0)}</td>
-                    <td class="text-end">${segRevenue > 0 ? 'Rp ' + formatCurrency(segRevenue) : '<span class="text-muted">-</span>'}</td>
-                    <td class="text-end">${segTarget > 0 ? 'Rp ' + formatCurrency(segTarget) : '<span class="text-muted">-</span>'}</td>
-                    <td class="text-end">
-                        <span class="status-badge bg-${item.achievement_color || 'secondary'}-soft">
-                            ${(parseFloat(item.achievement_rate) || 0) > 0 ? (parseFloat(item.achievement_rate) || 0).toFixed(2) + '%' : '-'}
-                        </span>
-                    </td>
-                `;
-                break;
-
-            default:
-                console.error('Unknown tab type:', tabType);
-                return '';
-        }
-
-        row += '</tr>';
-        return row;
-    }
-
-    // =====================================
-    // HELPER FUNCTIONS
-    // =====================================
-    function getTabDisplayName(tabType) {
-        const names = {
-            'witel': 'Witel',
-            'segment': 'Segment'
-        };
-        return names[tabType] || tabType;
-    }
-
-    function getDetailRoute(id, tabType) {
-        const baseRoutes = {
-            'witel': "{{ route('witel.show', '') }}",
-            'segment': "{{ route('segment.show', '') }}"
-        };
-        return `${baseRoutes[tabType]}/${id}`;
-    }
-
-    function formatCurrency(amount) {
-        const num = parseFloat(amount) || 0;
-        return new Intl.NumberFormat('id-ID').format(Math.round(num));
-    }
-
-    function formatNumber(num) {
-        return new Intl.NumberFormat('id-ID').format(parseInt(num) || 0);
-    }
-
-    function showEmptyState(tabContent, tabType) {
-        const icons = {
-            'witel': 'fas fa-building',
-            'segment': 'fas fa-chart-pie'
-        };
-
-        const messages = {
-            'witel': 'Belum Ada Data Witel',
-            'segment': 'Belum Ada Data Segmen'
-        };
-
-        const descriptions = {
-            'witel': 'Tidak ada data Witel yang tersedia pada periode dan filter yang dipilih.',
-            'segment': 'Tidak ada data Segmen yang tersedia pada periode dan filter yang dipilih.'
-        };
-
-        tabContent.html(`
-            <div class="table-container">
-                <div class="empty-state-enhanced">
-                    <i class="${icons[tabType]}"></i>
-                    <h5>${messages[tabType]}</h5>
-                    <p>${descriptions[tabType]}</p>
-                </div>
-            </div>
-        `);
-    }
-
-    function showErrorState(tabContent, tabType, error) {
-        console.error(`Error loading ${tabType}:`, error);
-
-        tabContent.html(`
-            <div class="table-container">
-                <div class="empty-state-enhanced">
-                    <i class="fas fa-exclamation-triangle text-danger"></i>
-                    <h5>Gagal Memuat Data</h5>
-                    <p>Terjadi kesalahan saat memuat data ${getTabDisplayName(tabType)}. Silakan coba lagi.</p>
-                    <small class="text-muted">Error: ${error}</small>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary" onclick="loadTabData('${tabType}')">
-                            <i class="fas fa-redo"></i> Coba Lagi
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `);
-    }
 
     // =====================================
     // CLICKABLE ROWS
@@ -1124,7 +990,7 @@ $(document).ready(function() {
         const filters = {
             period_type: $('#periodTypeFilter').val(),
             divisi_id: $('#divisiFilter').val(),
-            sort_indicator: $('#sortIndicatorFilter').val(),
+            source_data: $('#sourceDataFilter').val(),
             tipe_revenue: $('#tipeRevenueFilter').val()
         };
 
@@ -1132,7 +998,7 @@ $(document).ready(function() {
 
         const params = new URLSearchParams();
         Object.keys(filters).forEach(key => {
-            if (filters[key]) {
+            if (filters[key] && filters[key] !== 'all') {
                 params.append(key, filters[key]);
             }
         });
@@ -1198,8 +1064,7 @@ $(document).ready(function() {
     // =====================================
     // INITIALIZATION COMPLETE
     // =====================================
-    console.log('✅ Dashboard RLEGS V2 - FINAL FIXED VERSION Ready');
-    console.log('📊 Features: Format Currency ✓, N/A→- ✓, Responsive Table ✓, Top 10 Priority ✓');
+    console.log('✅ Dashboard RLEGS V2 - Ready with Revenue Sold & Bill Metrics');
     hideLoading();
 });
 </script>

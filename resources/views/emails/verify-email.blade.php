@@ -222,7 +222,7 @@
                 Halo, <span class="greeting-name">{{ $user->name }}</span>
             </p>
 
-            <h1 class="title">Verifikasi Alamat Email Anda</h1>
+            <h1 class="title">Verifikasi Alamat Email Akun Dashboard RLEGS TR3</h1>
 
             <p class="message">
                 Terima kasih telah mendaftar di Dashboard RLEGS 2.0. Untuk menyelesaikan proses pendaftaran, silakan verifikasi alamat email Anda dengan mengklik tombol di bawah ini.

@@ -127,10 +127,31 @@ class AmDashboardController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
+            $accountManager = AccountManager::with(['witel'])->find($amId);
+            $divisiList = $accountManager ? $accountManager->divisis : collect([]);
+            $filters = $this->getDefaultFilters();
+
             return view('am.detailAM', [
                 'error' => 'Gagal memuat data dashboard Account Manager',
-                'accountManager' => AccountManager::find($amId),
-                'filters' => $this->getDefaultFilters()
+                'accountManager' => $accountManager,
+                'profileData' => $accountManager ? $this->getProfileData($accountManager, $filters, $divisiList) : [
+                    'has_government' => false,
+                    'has_enterprise' => false,
+                    'divisi_umum_list' => []
+                ],
+                'rankingData' => [],
+                'cardData' => [
+                    'total_revenue' => 0,
+                    'total_target' => 0,
+                    'achievement_rate' => 0,
+                    'period_text' => 'N/A'
+                ],
+                'customerData' => ['customers' => collect([])],
+                'performanceAnalysis' => [],
+                'filterOptions' => $accountManager ? $this->getFilterOptions($accountManager, $divisiList) : [
+                    'available_years' => [date('Y')]
+                ],
+                'filters' => $filters
             ]);
         }
     }
@@ -398,8 +419,11 @@ class AmDashboardController extends Controller
 
     /**
      * 🔧 FIXED: Calculate Divisi Umum Ranking (GOVERNMENT atau ENTERPRISE) dalam scope witel
-     * INCLUDE semua AM yang terdaftar di divisi tersebut bahkan yang belum punya revenue
-     * CRITICAL FIX: Exclude HOTDA from all calculations
+     * 
+     * CRITICAL FIX:
+     * - Ranking berdasarkan DIVISI yang DIMILIKI AM (lewat account_manager_divisi)
+     * - Revenue yang dibandingkan = TOTAL revenue AM (TIDAK di-breakdown per divisi)
+     * - EXCLUDE HOTDA from all calculations
      */
     private function calculateDivisiUmumRanking($amId, $divisiUmum, $witelId, $tahun, $bulan)
     {
@@ -438,15 +462,17 @@ class AmDashboardController extends Controller
             ];
         }
 
-        // Hitung total revenue per AM dari divisi-divisi yang relevan saja
-        // INCLUDE AM yang belum punya revenue dengan LEFT JOIN
+        // ✅ FIXED: Hitung TOTAL revenue AM (tidak di-filter per divisi)
+        // Revenue AM = SUM dari semua CC yang di-handle, terlepas dari divisi CC
         $rankings = AccountManager::whereIn('account_managers.id', $amIdsInWitel)
             ->where('account_managers.role', '=', 'AM') // ✅ Double-check EXCLUDE HOTDA
-            ->leftJoin('am_revenues', function($join) use ($tahun, $bulan, $divisiIds) {
+            ->leftJoin('am_revenues', function($join) use ($tahun, $bulan) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $tahun)
-                    ->where('am_revenues.bulan', '<=', $bulan)
-                    ->whereIn('am_revenues.divisi_id', $divisiIds);
+                    ->where('am_revenues.bulan', '<=', $bulan);
+                // ✅ REMOVED: ->whereIn('am_revenues.divisi_id', $divisiIds)
+                // Karena am_revenues TIDAK punya kolom divisi_id
+                // Dan ranking divisi umum = compare TOTAL revenue AM
             })
             ->selectRaw('
                 account_managers.id as account_manager_id,
@@ -488,11 +514,11 @@ class AmDashboardController extends Controller
 
         $previousRankings = AccountManager::whereIn('account_managers.id', $previousAmIdsInWitel)
             ->where('account_managers.role', '=', 'AM') // ✅ EXCLUDE HOTDA
-            ->leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth, $divisiIds) {
+            ->leftJoin('am_revenues', function($join) use ($previousYear, $previousMonth) {
                 $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                     ->where('am_revenues.tahun', '=', $previousYear)
-                    ->where('am_revenues.bulan', '<=', $previousMonth)
-                    ->whereIn('am_revenues.divisi_id', $divisiIds);
+                    ->where('am_revenues.bulan', '<=', $previousMonth);
+                // ✅ REMOVED: ->whereIn('am_revenues.divisi_id', $divisiIds)
             })
             ->selectRaw('
                 account_managers.id as account_manager_id,
@@ -569,8 +595,17 @@ class AmDashboardController extends Controller
                 ->value('divisi_id');
         }
 
+        // ✅ FIXED: Support filter "all_years" - simplified logic
         $tahunFilter = $request->get('tahun', date('Y'));
-        $defaultBulanEnd = $tahunFilter < date('Y') ? 12 : date('n');
+        
+        // Jika user pilih "all" atau ada parameter show_all_years=true
+        $showAllYears = ($tahunFilter === 'all') || filter_var($request->get('show_all_years', false), FILTER_VALIDATE_BOOLEAN);
+        
+        // ✅ FIXED: Handle tahun='all' untuk defaultBulanEnd
+        $defaultBulanEnd = 12; // Default ke Desember
+        if ($tahunFilter !== 'all' && is_numeric($tahunFilter)) {
+            $defaultBulanEnd = $tahunFilter < date('Y') ? 12 : date('n');
+        }
 
         // Tentukan default divisi_umum berdasarkan divisi yang dimiliki AM
         $divisiIds = $divisiList->pluck('id')->toArray();
@@ -588,10 +623,11 @@ class AmDashboardController extends Controller
 
         return [
             'period_type' => $request->get('period_type', 'YTD'),
-            'tahun' => $tahunFilter,
+            'tahun' => $tahunFilter, // ✅ FIXED: Return raw value (bisa 'all' atau numeric)
+            'show_all_years' => $showAllYears,
             'divisi_id' => $request->get('divisi_id', $defaultDivisiId),
-            'divisi_umum' => $request->get('divisi_umum', $defaultDivisiUmum), // NEW: filter divisi umum
-            'tipe_revenue' => $request->get('tipe_revenue', 'all'),
+            'divisi_umum' => $request->get('divisi_umum', $defaultDivisiUmum),
+            'source_data' => $request->get('source_data', 'all'), // ✅ FIXED: Ganti dari tipe_revenue
             'customer_view_mode' => $request->get('customer_view_mode', 'detail'),
             'analysis_view_mode' => $request->get('analysis_view_mode', 'detail'),
             'bulan_start' => $request->get('bulan_start', 1),
@@ -678,14 +714,19 @@ class AmDashboardController extends Controller
      */
     private function getCardGroupData($amId, $filters)
     {
-        $dateRange = $this->calculateDateRange($filters['period_type'], $filters['tahun']);
+        $dateRange = $this->calculateDateRange($filters['period_type'], $filters['tahun'] === 'all' ? date('Y') : $filters['tahun']);
 
-        $query = AmRevenue::where('account_manager_id', $amId)
-            ->where('tahun', $filters['tahun']);
+        $query = AmRevenue::where('account_manager_id', $amId);
 
-        if ($filters['divisi_id']) {
-            $query->where('divisi_id', $filters['divisi_id']);
+        // ✅ FIXED: Support show_all_years
+        if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+            if ($filters['tahun'] !== 'all') {
+                $query->where('tahun', $filters['tahun']);
+            }
         }
+
+        // ✅ REMOVED: Filter divisi_id karena am_revenues TIDAK punya kolom divisi_id
+        // Filter divisi dilakukan di level AM (lewat pivot table account_manager_divisi)
 
         if ($filters['period_type'] === 'MTD') {
             $query->where('bulan', date('n'));
@@ -693,10 +734,18 @@ class AmDashboardController extends Controller
             $query->where('bulan', '<=', date('n'));
         }
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
-                $q->where('tipe_revenue', $filters['tipe_revenue'])
-                    ->where('tahun', $filters['tahun']);
+        // ✅ FIXED: Filter source_data via subquery (bukan whereHas yang error)
+        if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
+            $query->whereIn('corporate_customer_id', function($subQuery) use ($filters) {
+                $subQuery->select('corporate_customer_id')
+                    ->from('cc_revenues')
+                    ->where('source_data', $filters['source_data']);
+                
+                if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+                    if ($filters['tahun'] !== 'all') {
+                        $subQuery->where('tahun', $filters['tahun']);
+                    }
+                }
             });
         }
 
@@ -758,7 +807,7 @@ class AmDashboardController extends Controller
             'use_year_picker' => count($availableYears) > 10,
             'tahun' => $filters['tahun'],
             'divisi_id' => $filters['divisi_id'],
-            'tipe_revenue' => $filters['tipe_revenue']
+            'source_data' => $filters['source_data'] // ✅ FIXED: Ganti dari tipe_revenue
         ];
     }
 
@@ -767,49 +816,66 @@ class AmDashboardController extends Controller
      */
     private function getCustomerDataAggregateByCC($amId, $filters)
     {
-        $query = AmRevenue::where('account_manager_id', $amId)
-            ->where('tahun', $filters['tahun']);
+        $query = AmRevenue::where('account_manager_id', $amId);
 
-        if ($filters['divisi_id']) {
-            $query->where('divisi_id', $filters['divisi_id']);
+        // ✅ FIXED: Support show_all_years
+        if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+            if ($filters['tahun'] !== 'all') {
+                $query->where('tahun', $filters['tahun']);
+            }
         }
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
-                $q->where('tipe_revenue', $filters['tipe_revenue'])
-                    ->where('tahun', $filters['tahun']);
+        // ✅ FIXED: Filter source_data via subquery
+        if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
+            $query->whereIn('corporate_customer_id', function($subQuery) use ($filters) {
+                $subQuery->select('corporate_customer_id')
+                    ->from('cc_revenues')
+                    ->where('source_data', $filters['source_data']);
+                
+                if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+                    if ($filters['tahun'] !== 'all') {
+                        $subQuery->where('tahun', $filters['tahun']);
+                    }
+                }
             });
         }
 
         $aggregated = $query->selectRaw('
                 corporate_customer_id,
-                divisi_id,
                 SUM(real_revenue) as total_revenue,
                 SUM(target_revenue) as total_target
             ')
-            ->groupBy('corporate_customer_id', 'divisi_id')
+            ->groupBy('corporate_customer_id')
             ->orderByDesc('total_revenue')
             ->get();
 
         return $aggregated->map(function ($item) use ($filters) {
             $customer = CorporateCustomer::find($item->corporate_customer_id);
-            $divisi = Divisi::find($item->divisi_id);
 
             $achievementRate = $item->total_target > 0
                 ? round(($item->total_revenue / $item->total_target) * 100, 2)
                 : 0;
 
-            $segment = CcRevenue::where('corporate_customer_id', $item->corporate_customer_id)
-                ->where('tahun', $filters['tahun'])
-                ->with('segment')
+            // Get latest CC revenue record untuk divisi & segment
+            $ccRevenueQuery = CcRevenue::where('corporate_customer_id', $item->corporate_customer_id)
+                ->with(['segment', 'divisi']);
+            
+            if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+                if ($filters['tahun'] !== 'all') {
+                    $ccRevenueQuery->where('tahun', $filters['tahun']);
+                }
+            }
+            
+            $ccRevenue = $ccRevenueQuery->orderBy('tahun', 'desc')
+                ->orderBy('bulan', 'desc')
                 ->first();
 
             return (object)[
                 'customer_id' => $customer->id,
                 'customer_name' => $customer->nama,
                 'nipnas' => $customer->nipnas,
-                'divisi' => $divisi->nama ?? 'N/A',
-                'segment' => $segment->segment->lsegment_ho ?? 'N/A',
+                'divisi' => $ccRevenue->divisi->nama ?? 'N/A',
+                'segment' => $ccRevenue->segment->lsegment_ho ?? 'N/A',
                 'total_revenue' => floatval($item->total_revenue),
                 'total_target' => floatval($item->total_target),
                 'achievement_rate' => $achievementRate,
@@ -823,17 +889,27 @@ class AmDashboardController extends Controller
      */
     private function getCustomerDataAggregateByMonth($amId, $filters)
     {
-        $query = AmRevenue::where('account_manager_id', $amId)
-            ->where('tahun', $filters['tahun']);
+        $query = AmRevenue::where('account_manager_id', $amId);
 
-        if ($filters['divisi_id']) {
-            $query->where('divisi_id', $filters['divisi_id']);
+        // ✅ FIXED: Support show_all_years
+        if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+            if ($filters['tahun'] !== 'all') {
+                $query->where('tahun', $filters['tahun']);
+            }
         }
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
-                $q->where('tipe_revenue', $filters['tipe_revenue'])
-                    ->where('tahun', $filters['tahun']);
+        // ✅ FIXED: Filter source_data
+        if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
+            $query->whereIn('corporate_customer_id', function($subQuery) use ($filters) {
+                $subQuery->select('corporate_customer_id')
+                    ->from('cc_revenues')
+                    ->where('source_data', $filters['source_data']);
+                
+                if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+                    if ($filters['tahun'] !== 'all') {
+                        $subQuery->where('tahun', $filters['tahun']);
+                    }
+                }
             });
         }
 
@@ -843,13 +919,15 @@ class AmDashboardController extends Controller
         $query->whereBetween('bulan', [$bulanStart, $bulanEnd]);
 
         $monthlyData = $query->selectRaw('
+                tahun,
                 bulan,
                 SUM(real_revenue) as monthly_revenue,
                 SUM(target_revenue) as monthly_target,
                 COUNT(DISTINCT corporate_customer_id) as customer_count
             ')
-            ->groupBy('bulan')
-            ->orderBy('bulan')
+            ->groupBy('tahun', 'bulan')
+            ->orderBy('tahun', 'desc')
+            ->orderBy('bulan', 'desc')
             ->get();
 
         return $monthlyData->map(function ($item) {
@@ -859,7 +937,9 @@ class AmDashboardController extends Controller
 
             return (object)[
                 'bulan' => $item->bulan,
+                'tahun' => $item->tahun,
                 'bulan_name' => $this->getMonthName($item->bulan),
+                'bulan_year_name' => $this->getMonthName($item->bulan) . ' ' . $item->tahun,
                 'total_revenue' => floatval($item->monthly_revenue),
                 'total_target' => floatval($item->monthly_target),
                 'achievement_rate' => $achievementRate,
@@ -875,21 +955,33 @@ class AmDashboardController extends Controller
     private function getCustomerDataDetail($amId, $filters)
     {
         $query = AmRevenue::where('account_manager_id', $amId)
-            ->where('tahun', $filters['tahun'])
-            ->with(['corporateCustomer', 'divisi']);
+            ->with(['corporateCustomer']);
 
-        if ($filters['divisi_id']) {
-            $query->where('divisi_id', $filters['divisi_id']);
+        // ✅ FIXED: Support show_all_years
+        if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+            if ($filters['tahun'] !== 'all') {
+                $query->where('tahun', $filters['tahun']);
+            }
         }
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
-            $query->whereHas('corporateCustomer.ccRevenues', function ($q) use ($filters) {
-                $q->where('tipe_revenue', $filters['tipe_revenue'])
-                    ->where('tahun', $filters['tahun']);
+        // ✅ FIXED: Filter source_data via JOIN cc_revenues (bukan whereHas yang lambat)
+        if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
+            $query->whereIn('corporate_customer_id', function($subQuery) use ($filters) {
+                $subQuery->select('corporate_customer_id')
+                    ->from('cc_revenues')
+                    ->where('source_data', $filters['source_data']);
+                
+                // Filter tahun di cc_revenues juga kalau ada
+                if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+                    if ($filters['tahun'] !== 'all') {
+                        $subQuery->where('tahun', $filters['tahun']);
+                    }
+                }
             });
         }
 
-        $detailData = $query->orderBy('bulan')
+        $detailData = $query->orderBy('tahun', 'desc')
+            ->orderBy('bulan', 'desc')
             ->orderBy('corporate_customer_id')
             ->get();
 
@@ -898,20 +990,22 @@ class AmDashboardController extends Controller
                 ? round(($item->real_revenue / $item->target_revenue) * 100, 2)
                 : 0;
 
-            $segment = CcRevenue::where('corporate_customer_id', $item->corporate_customer_id)
-                ->where('tahun', $filters['tahun'])
+            $ccRevenue = CcRevenue::where('corporate_customer_id', $item->corporate_customer_id)
+                ->where('tahun', $item->tahun)
                 ->where('bulan', $item->bulan)
-                ->with('segment')
+                ->with(['segment', 'divisi'])
                 ->first();
 
             return (object)[
                 'customer_id' => $item->corporateCustomer->id,
                 'customer_name' => $item->corporateCustomer->nama,
                 'nipnas' => $item->corporateCustomer->nipnas,
-                'divisi' => $item->divisi->nama ?? 'N/A',
-                'segment' => $segment->segment->lsegment_ho ?? 'N/A',
+                'divisi' => $ccRevenue->divisi->nama ?? 'N/A',
+                'segment' => $ccRevenue->segment->lsegment_ho ?? 'N/A',
                 'bulan' => $item->bulan,
+                'tahun' => $item->tahun,
                 'bulan_name' => $this->getMonthName($item->bulan),
+                'bulan_year_name' => $this->getMonthName($item->bulan) . ' ' . $item->tahun,
                 'revenue' => floatval($item->real_revenue),
                 'target' => floatval($item->target_revenue),
                 'achievement_rate' => $achievementRate,
@@ -927,7 +1021,7 @@ class AmDashboardController extends Controller
     {
         $summaryFilters = [
             'divisi_id' => $filters['divisi_id'],
-            'tipe_revenue' => $filters['tipe_revenue'],
+            'source_data' => $filters['source_data'], // ✅ FIXED: Ganti dari tipe_revenue
             'summary_mode' => $filters['summary_mode'] ?? 'all_time',
             'summary_year' => $filters['summary_year'] ?? null,
             'summary_year_start' => $filters['summary_year_start'] ?? null,
@@ -1030,9 +1124,9 @@ class AmDashboardController extends Controller
                     'is_primary' => $divisi->pivot->is_primary ?? 0
                 ];
             }),
-            'divisi_umum_options' => $divisiUmumOptions, // NEW
-            'tipe_revenues' => [
-                'all' => 'Semua Tipe',
+            'divisi_umum_options' => $divisiUmumOptions,
+            'source_data_options' => [ // ✅ FIXED: Ganti dari tipe_revenues
+                'all' => 'Semua Source',
                 'REGULER' => 'Revenue Reguler',
                 'NGTMA' => 'Revenue NGTMA'
             ],
@@ -1052,6 +1146,7 @@ class AmDashboardController extends Controller
                 'range_years' => 'Range Tahun'
             ],
             'available_years' => $availableYears,
+            'available_years_with_all' => array_merge(['all' => 'Semua Tahun'], array_combine($availableYears, $availableYears)), // ✅ NEW
             'use_year_picker' => count($availableYears) > 10,
             'bulan_options' => $bulanOptions,
             'current_month' => date('n')
@@ -1108,7 +1203,7 @@ class AmDashboardController extends Controller
             'tahun' => date('Y'),
             'divisi_id' => null,
             'divisi_umum' => 'all',
-            'tipe_revenue' => 'all',
+            'source_data' => 'all', // ✅ FIXED: Ganti dari tipe_revenue
             'customer_view_mode' => 'detail',
             'analysis_view_mode' => 'detail',
             'bulan_start' => 1,
@@ -1890,8 +1985,8 @@ class AmDashboardController extends Controller
                 ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
                     $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                         ->where('am_revenues.tahun', '=', $currentYear)
-                        ->where('am_revenues.bulan', '<=', $currentMonth)
-                        ->whereIn('am_revenues.divisi_id', [1]);
+                        ->where('am_revenues.bulan', '<=', $currentMonth);
+                    // ✅ REMOVED: ->whereIn('am_revenues.divisi_id', [1])
                 })
                 ->selectRaw('
                     account_managers.id as account_manager_id,
@@ -1934,8 +2029,8 @@ class AmDashboardController extends Controller
                 ->leftJoin('am_revenues', function($join) use ($currentYear, $currentMonth) {
                     $join->on('account_managers.id', '=', 'am_revenues.account_manager_id')
                         ->where('am_revenues.tahun', '=', $currentYear)
-                        ->where('am_revenues.bulan', '<=', $currentMonth)
-                        ->whereIn('am_revenues.divisi_id', [2, 3]);
+                        ->where('am_revenues.bulan', '<=', $currentMonth);
+                    // ✅ REMOVED: ->whereIn('am_revenues.divisi_id', [2, 3])
                 })
                 ->selectRaw('
                     account_managers.id as account_manager_id,

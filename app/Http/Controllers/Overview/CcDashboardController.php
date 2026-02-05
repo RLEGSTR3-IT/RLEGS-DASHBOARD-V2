@@ -22,7 +22,7 @@ class CcDashboardController extends Controller
     public function show($id, Request $request)
     {
         try {
-            // FIXED: Load dengan latestAmRevenue untuk eager loading
+            // Load dengan latestAmRevenue untuk eager loading
             $corporateCustomer = CorporateCustomer::with(['latestAmRevenue.accountManager'])
                                                    ->findOrFail($id);
 
@@ -35,14 +35,14 @@ class CcDashboardController extends Controller
                 ->orderByDesc('bulan')
                 ->first();
 
-            // Profile Data - FIXED: Gunakan accessor
+            // Profile Data - Gunakan accessor
             $profileData = [
                 'id' => $corporateCustomer->id,
                 'nama' => $corporateCustomer->nama,
                 'nipnas' => $corporateCustomer->nipnas,
                 'divisi' => $latestRevenue ? $latestRevenue->divisi : null,
                 'segment' => $latestRevenue ? $latestRevenue->segment : null,
-                'account_manager' => $corporateCustomer->primary_account_manager, // FIXED: Gunakan accessor
+                'account_manager' => $corporateCustomer->primary_account_manager,
                 'witel' => $latestRevenue ? $latestRevenue->witelHo : null
             ];
 
@@ -88,11 +88,19 @@ class CcDashboardController extends Controller
 
     /**
      * Extract filters
+     * FIXED: bulan_end default ke bulan saat ini (bukan dari request jika kosong)
      */
     private function extractFilters(Request $request)
     {
-        $defaultTahun = $request->get('tahun', date('Y'));
-        $defaultBulanEnd = date('n');
+        // FIXED: Get current month/year
+        $currentMonth = date('n'); // 1-12
+        $currentYear = date('Y');
+        
+        // Get latest available data untuk CC ini jika diperlukan
+        $defaultTahun = $request->get('tahun', $currentYear);
+        
+        // FIXED: Default bulan_end ke bulan sekarang, bukan 12
+        $defaultBulanEnd = $request->get('bulan_end', $currentMonth);
 
         return [
             'period_type' => $request->get('period_type', 'YTD'),
@@ -100,9 +108,9 @@ class CcDashboardController extends Controller
             'tipe_revenue' => $request->get('tipe_revenue', 'all'),
             'revenue_source' => $request->get('revenue_source', 'all'),
             'revenue_view_mode' => $request->get('revenue_view_mode', 'detail'),
-            'granularity' => $request->get('granularity', 'divisi'), // NEW: divisi, segment, account_manager
+            'granularity' => $request->get('granularity', 'divisi'),
             'bulan_start' => $request->get('bulan_start', 1),
-            'bulan_end' => $request->get('bulan_end', $defaultBulanEnd),
+            'bulan_end' => $defaultBulanEnd, // FIXED: Use current month
             'chart_tahun' => $request->get('chart_tahun', $defaultTahun),
             'chart_display' => $request->get('chart_display', 'combination'),
             'active_tab' => $request->get('active_tab', 'revenue')
@@ -111,6 +119,8 @@ class CcDashboardController extends Controller
 
     /**
      * Get Card Summary Data
+     * FIXED: Pakai CASE WHEN untuk real_revenue berdasarkan tipe_revenue
+     * FIXED: Pakai target_revenue_sold untuk semua target
      */
     private function getCardGroupData($ccId, $filters)
     {
@@ -128,12 +138,17 @@ class CcDashboardController extends Controller
         if ($filters['period_type'] === 'MTD') {
             $query->where('bulan', $filters['bulan_end']);
         } else {
+            // YTD: Januari sampai bulan_end
             $query->where('bulan', '<=', $filters['bulan_end']);
         }
 
+        // FIXED: Real revenue sesuai tipe_revenue
         $aggregated = $query->selectRaw('
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target,
+                SUM(CASE 
+                    WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                    ELSE real_revenue_bill 
+                END) as total_revenue,
+                SUM(target_revenue_sold) as total_target,
                 COUNT(DISTINCT bulan) as month_count
             ')
             ->first();
@@ -204,6 +219,8 @@ class CcDashboardController extends Controller
 
     /**
      * Get Revenue Data Detail (Original - by Divisi)
+     * FIXED: Pakai conditional real_revenue berdasarkan tipe_revenue
+     * FIXED: Pakai target_revenue_sold untuk target
      */
     private function getRevenueDataDetail($ccId, $filters)
     {
@@ -222,8 +239,16 @@ class CcDashboardController extends Controller
         $detailData = $query->orderBy('bulan')->get();
 
         return $detailData->map(function($item) {
-            $achievementRate = $item->target_revenue > 0
-                ? round(($item->real_revenue / $item->target_revenue) * 100, 2)
+            // FIXED: Real revenue berdasarkan tipe_revenue
+            $realRevenue = $item->tipe_revenue === 'HO' 
+                ? $item->real_revenue_sold 
+                : $item->real_revenue_bill;
+            
+            // Target selalu pakai target_revenue_sold
+            $targetRevenue = $item->target_revenue_sold;
+
+            $achievementRate = $targetRevenue > 0
+                ? round(($realRevenue / $targetRevenue) * 100, 2)
                 : 0;
 
             return (object)[
@@ -235,8 +260,8 @@ class CcDashboardController extends Controller
                 'tipe_revenue' => $item->tipe_revenue,
                 'witel_ho' => $item->witelHo ? $item->witelHo->nama : 'N/A',
                 'witel_bill' => $item->witelBill ? $item->witelBill->nama : 'N/A',
-                'revenue' => floatval($item->real_revenue),
-                'target' => floatval($item->target_revenue),
+                'revenue' => floatval($realRevenue),
+                'target' => floatval($targetRevenue),
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ];
@@ -244,11 +269,11 @@ class CcDashboardController extends Controller
     }
 
     /**
-     * NEW: Get Revenue Data Detail by Account Manager
+     * Get Revenue Data Detail by Account Manager
+     * FIXED: Pakai conditional real_revenue dan target_revenue_sold
      */
     private function getRevenueDataDetailByAM($ccId, $filters)
     {
-        // FIXED: Load CC dengan latestAmRevenue
         $corporateCustomer = CorporateCustomer::with('latestAmRevenue.accountManager')->find($ccId);
 
         $query = CcRevenue::where('corporate_customer_id', $ccId)
@@ -266,11 +291,18 @@ class CcDashboardController extends Controller
         $detailData = $query->orderBy('bulan')->get();
 
         return $detailData->map(function($item) use ($corporateCustomer) {
-            $achievementRate = $item->target_revenue > 0
-                ? round(($item->real_revenue / $item->target_revenue) * 100, 2)
+            // FIXED: Real revenue berdasarkan tipe_revenue
+            $realRevenue = $item->tipe_revenue === 'HO' 
+                ? $item->real_revenue_sold 
+                : $item->real_revenue_bill;
+            
+            // Target selalu pakai target_revenue_sold
+            $targetRevenue = $item->target_revenue_sold;
+
+            $achievementRate = $targetRevenue > 0
+                ? round(($realRevenue / $targetRevenue) * 100, 2)
                 : 0;
 
-            // FIXED: Gunakan accessor
             $primaryAM = $corporateCustomer->primary_account_manager;
 
             return (object)[
@@ -278,12 +310,13 @@ class CcDashboardController extends Controller
                 'bulan_name' => $this->getMonthName($item->bulan),
                 'account_manager' => $primaryAM ? $primaryAM->nama : 'N/A',
                 'nik' => $primaryAM ? $primaryAM->nik : 'N/A',
+                'account_manager_id' => $primaryAM ? $primaryAM->id : null,
                 'divisi' => $item->divisi ? $item->divisi->nama : 'N/A',
                 'segment' => $item->segment ? $item->segment->lsegment_ho : 'N/A',
                 'revenue_source' => $item->revenue_source,
                 'tipe_revenue' => $item->tipe_revenue,
-                'revenue' => floatval($item->real_revenue),
-                'target' => floatval($item->target_revenue),
+                'revenue' => floatval($realRevenue),
+                'target' => floatval($targetRevenue),
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ];
@@ -291,7 +324,8 @@ class CcDashboardController extends Controller
     }
 
     /**
-     * NEW: Get Revenue Data Detail by Segment
+     * Get Revenue Data Detail by Segment
+     * FIXED: Pakai conditional real_revenue dan target_revenue_sold
      */
     private function getRevenueDataDetailBySegment($ccId, $filters)
     {
@@ -310,8 +344,16 @@ class CcDashboardController extends Controller
         $detailData = $query->orderBy('bulan')->get();
 
         return $detailData->map(function($item) {
-            $achievementRate = $item->target_revenue > 0
-                ? round(($item->real_revenue / $item->target_revenue) * 100, 2)
+            // FIXED: Real revenue berdasarkan tipe_revenue
+            $realRevenue = $item->tipe_revenue === 'HO' 
+                ? $item->real_revenue_sold 
+                : $item->real_revenue_bill;
+            
+            // Target selalu pakai target_revenue_sold
+            $targetRevenue = $item->target_revenue_sold;
+
+            $achievementRate = $targetRevenue > 0
+                ? round(($realRevenue / $targetRevenue) * 100, 2)
                 : 0;
 
             return (object)[
@@ -321,8 +363,8 @@ class CcDashboardController extends Controller
                 'divisi' => $item->divisi ? $item->divisi->nama : 'N/A',
                 'revenue_source' => $item->revenue_source,
                 'tipe_revenue' => $item->tipe_revenue,
-                'revenue' => floatval($item->real_revenue),
-                'target' => floatval($item->target_revenue),
+                'revenue' => floatval($realRevenue),
+                'target' => floatval($targetRevenue),
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ];
@@ -331,17 +373,22 @@ class CcDashboardController extends Controller
 
     /**
      * Get Revenue Data Aggregate by Month (Original)
+     * FIXED: Pakai CASE WHEN dan target_revenue_sold
+     * FIXED: Include revenue_source dan tipe_revenue dari filter
      */
     private function getRevenueDataAggregateByMonth($ccId, $filters)
     {
         $query = CcRevenue::where('corporate_customer_id', $ccId)
             ->where('tahun', $filters['tahun']);
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
+        $hasSpecificTipeRevenue = $filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all';
+        $hasSpecificRevenueSource = $filters['revenue_source'] && $filters['revenue_source'] !== 'all';
+
+        if ($hasSpecificTipeRevenue) {
             $query->where('tipe_revenue', $filters['tipe_revenue']);
         }
 
-        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
+        if ($hasSpecificRevenueSource) {
             $query->where('revenue_source', $filters['revenue_source']);
         }
 
@@ -352,19 +399,22 @@ class CcDashboardController extends Controller
 
         $monthlyData = $query->selectRaw('
                 bulan,
-                SUM(real_revenue) as monthly_revenue,
-                SUM(target_revenue) as monthly_target
+                SUM(CASE 
+                    WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                    ELSE real_revenue_bill 
+                END) as monthly_revenue,
+                SUM(target_revenue_sold) as monthly_target
             ')
             ->groupBy('bulan')
             ->orderBy('bulan')
             ->get();
 
-        return $monthlyData->map(function($item) {
+        return $monthlyData->map(function($item) use ($filters, $hasSpecificTipeRevenue, $hasSpecificRevenueSource) {
             $achievementRate = $item->monthly_target > 0
                 ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
                 : 0;
 
-            return (object)[
+            $result = [
                 'bulan' => $item->bulan,
                 'bulan_name' => $this->getMonthName($item->bulan),
                 'total_revenue' => floatval($item->monthly_revenue),
@@ -372,25 +422,40 @@ class CcDashboardController extends Controller
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ];
+
+            // Include filter values if specific filter applied
+            if ($hasSpecificRevenueSource) {
+                $result['revenue_source'] = $filters['revenue_source'];
+            }
+
+            if ($hasSpecificTipeRevenue) {
+                $result['tipe_revenue'] = $filters['tipe_revenue'];
+            }
+
+            return (object)$result;
         });
     }
 
     /**
-     * NEW: Get Revenue Data Aggregate by Month and Account Manager
+     * Get Revenue Data Aggregate by Month and Account Manager
+     * FIXED: Pakai CASE WHEN dan target_revenue_sold
+     * FIXED: Include revenue_source dan tipe_revenue dari filter
      */
     private function getRevenueDataAggregateByMonthAndAM($ccId, $filters)
     {
-        // FIXED: Load CC dengan latestAmRevenue
         $corporateCustomer = CorporateCustomer::with('latestAmRevenue.accountManager')->find($ccId);
 
         $query = CcRevenue::where('corporate_customer_id', $ccId)
             ->where('tahun', $filters['tahun']);
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
+        $hasSpecificTipeRevenue = $filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all';
+        $hasSpecificRevenueSource = $filters['revenue_source'] && $filters['revenue_source'] !== 'all';
+
+        if ($hasSpecificTipeRevenue) {
             $query->where('tipe_revenue', $filters['tipe_revenue']);
         }
 
-        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
+        if ($hasSpecificRevenueSource) {
             $query->where('revenue_source', $filters['revenue_source']);
         }
 
@@ -401,36 +466,52 @@ class CcDashboardController extends Controller
 
         $monthlyData = $query->selectRaw('
                 bulan,
-                SUM(real_revenue) as monthly_revenue,
-                SUM(target_revenue) as monthly_target
+                SUM(CASE 
+                    WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                    ELSE real_revenue_bill 
+                END) as monthly_revenue,
+                SUM(target_revenue_sold) as monthly_target
             ')
             ->groupBy('bulan')
             ->orderBy('bulan')
             ->get();
 
-        return $monthlyData->map(function($item) use ($corporateCustomer) {
+        return $monthlyData->map(function($item) use ($corporateCustomer, $filters, $hasSpecificTipeRevenue, $hasSpecificRevenueSource) {
             $achievementRate = $item->monthly_target > 0
                 ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
                 : 0;
 
-            // FIXED: Gunakan accessor
             $primaryAM = $corporateCustomer->primary_account_manager;
 
-            return (object)[
+            $result = [
                 'bulan' => $item->bulan,
                 'bulan_name' => $this->getMonthName($item->bulan),
                 'account_manager' => $primaryAM ? $primaryAM->nama : 'N/A',
                 'nik' => $primaryAM ? $primaryAM->nik : 'N/A',
+                'account_manager_id' => $primaryAM ? $primaryAM->id : null,
                 'total_revenue' => floatval($item->monthly_revenue),
                 'total_target' => floatval($item->monthly_target),
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ];
+
+            // Include filter values if specific filter applied
+            if ($hasSpecificRevenueSource) {
+                $result['revenue_source'] = $filters['revenue_source'];
+            }
+
+            if ($hasSpecificTipeRevenue) {
+                $result['tipe_revenue'] = $filters['tipe_revenue'];
+            }
+
+            return (object)$result;
         });
     }
 
     /**
-     * NEW: Get Revenue Data Aggregate by Month and Segment
+     * Get Revenue Data Aggregate by Month and Segment
+     * FIXED: Pakai CASE WHEN dan target_revenue_sold
+     * FIXED: Include revenue_source dan tipe_revenue dari filter
      */
     private function getRevenueDataAggregateByMonthAndSegment($ccId, $filters)
     {
@@ -438,11 +519,14 @@ class CcDashboardController extends Controller
             ->where('tahun', $filters['tahun'])
             ->with('segment');
 
-        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
+        $hasSpecificTipeRevenue = $filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all';
+        $hasSpecificRevenueSource = $filters['revenue_source'] && $filters['revenue_source'] !== 'all';
+
+        if ($hasSpecificTipeRevenue) {
             $query->where('tipe_revenue', $filters['tipe_revenue']);
         }
 
-        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
+        if ($hasSpecificRevenueSource) {
             $query->where('revenue_source', $filters['revenue_source']);
         }
 
@@ -454,19 +538,22 @@ class CcDashboardController extends Controller
         $monthlyData = $query->selectRaw('
                 bulan,
                 segment_id,
-                SUM(real_revenue) as monthly_revenue,
-                SUM(target_revenue) as monthly_target
+                SUM(CASE 
+                    WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                    ELSE real_revenue_bill 
+                END) as monthly_revenue,
+                SUM(target_revenue_sold) as monthly_target
             ')
             ->groupBy('bulan', 'segment_id')
             ->orderBy('bulan')
             ->get();
 
-        return $monthlyData->map(function($item) {
+        return $monthlyData->map(function($item) use ($filters, $hasSpecificTipeRevenue, $hasSpecificRevenueSource) {
             $achievementRate = $item->monthly_target > 0
                 ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
                 : 0;
 
-            return (object)[
+            $result = [
                 'bulan' => $item->bulan,
                 'bulan_name' => $this->getMonthName($item->bulan),
                 'segment' => $item->segment ? $item->segment->lsegment_ho : 'N/A',
@@ -475,6 +562,17 @@ class CcDashboardController extends Controller
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ];
+
+            // Include filter values if specific filter applied
+            if ($hasSpecificRevenueSource) {
+                $result['revenue_source'] = $filters['revenue_source'];
+            }
+
+            if ($hasSpecificTipeRevenue) {
+                $result['tipe_revenue'] = $filters['tipe_revenue'];
+            }
+
+            return (object)$result;
         });
     }
 
@@ -498,6 +596,7 @@ class CcDashboardController extends Controller
 
     /**
      * Get Revenue Summary
+     * FIXED: Pakai CASE WHEN dan target_revenue_sold
      */
     private function getRevenueSummary($ccId, $filters)
     {
@@ -514,8 +613,11 @@ class CcDashboardController extends Controller
 
             $allTimeData = (clone $baseQuery)
                 ->selectRaw('
-                    SUM(real_revenue) as total_revenue_all_time,
-                    SUM(target_revenue) as total_target_all_time
+                    SUM(CASE 
+                        WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                        ELSE real_revenue_bill 
+                    END) as total_revenue_all_time,
+                    SUM(target_revenue_sold) as total_target_all_time
                 ')
                 ->first();
 
@@ -523,12 +625,18 @@ class CcDashboardController extends Controller
                 ->selectRaw('
                     tahun,
                     bulan,
-                    SUM(real_revenue) as revenue,
-                    SUM(target_revenue) as target,
-                    (SUM(real_revenue) / SUM(target_revenue)) * 100 as achievement_rate
+                    SUM(CASE 
+                        WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                        ELSE real_revenue_bill 
+                    END) as revenue,
+                    SUM(target_revenue_sold) as target,
+                    (SUM(CASE 
+                        WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                        ELSE real_revenue_bill 
+                    END) / SUM(target_revenue_sold)) * 100 as achievement_rate
                 ')
                 ->groupBy('tahun', 'bulan')
-                ->havingRaw('SUM(target_revenue) > 0')
+                ->havingRaw('SUM(target_revenue_sold) > 0')
                 ->orderByDesc('achievement_rate')
                 ->first();
 
@@ -536,7 +644,10 @@ class CcDashboardController extends Controller
                 ->selectRaw('
                     tahun,
                     bulan,
-                    SUM(real_revenue) as revenue
+                    SUM(CASE 
+                        WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                        ELSE real_revenue_bill 
+                    END) as revenue
                 ')
                 ->groupBy('tahun', 'bulan')
                 ->orderByDesc('revenue')
@@ -546,10 +657,13 @@ class CcDashboardController extends Controller
                 ->selectRaw('
                     tahun,
                     bulan,
-                    (SUM(real_revenue) / SUM(target_revenue)) * 100 as achievement_rate
+                    (SUM(CASE 
+                        WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                        ELSE real_revenue_bill 
+                    END) / SUM(target_revenue_sold)) * 100 as achievement_rate
                 ')
                 ->groupBy('tahun', 'bulan')
-                ->havingRaw('SUM(target_revenue) > 0')
+                ->havingRaw('SUM(target_revenue_sold) > 0')
                 ->get();
 
             $averageAchievement = $monthlyAchievements->avg('achievement_rate');
@@ -602,6 +716,7 @@ class CcDashboardController extends Controller
 
     /**
      * Calculate Revenue Trend
+     * FIXED: Pakai CASE WHEN dan target_revenue_sold
      */
     private function calculateTrend($ccId, $months = 3, $filters = [])
     {
@@ -642,10 +757,13 @@ class CcDashboardController extends Controller
             ->selectRaw('
                 tahun,
                 bulan,
-                (SUM(real_revenue) / SUM(target_revenue)) * 100 as achievement_rate
+                (SUM(CASE 
+                    WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                    ELSE real_revenue_bill 
+                END) / SUM(target_revenue_sold)) * 100 as achievement_rate
             ')
             ->groupBy('tahun', 'bulan')
-            ->havingRaw('SUM(target_revenue) > 0')
+            ->havingRaw('SUM(target_revenue_sold) > 0')
             ->orderBy('tahun')
             ->orderBy('bulan')
             ->get();
@@ -697,6 +815,8 @@ class CcDashboardController extends Controller
 
     /**
      * Get Monthly Revenue Chart
+     * FIXED: Pakai CASE WHEN dan target_revenue_sold
+     * FIXED: Pastikan handle data untuk semua 12 bulan (fill zero untuk bulan tanpa data)
      */
     private function getMonthlyRevenueChart($ccId, $tahun, $filters)
     {
@@ -714,11 +834,17 @@ class CcDashboardController extends Controller
 
             $monthlyData = $query->selectRaw('
                     bulan,
-                    SUM(real_revenue) as real_revenue,
-                    SUM(target_revenue) as target_revenue,
+                    SUM(CASE 
+                        WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                        ELSE real_revenue_bill 
+                    END) as real_revenue,
+                    SUM(target_revenue_sold) as target_revenue,
                     CASE
-                        WHEN SUM(target_revenue) > 0
-                        THEN (SUM(real_revenue) / SUM(target_revenue)) * 100
+                        WHEN SUM(target_revenue_sold) > 0
+                        THEN (SUM(CASE 
+                            WHEN tipe_revenue = "HO" THEN real_revenue_sold 
+                            ELSE real_revenue_bill 
+                        END) / SUM(target_revenue_sold)) * 100
                         ELSE 0
                     END as achievement_rate
                 ')
@@ -731,6 +857,7 @@ class CcDashboardController extends Controller
             $targetRevenue = [];
             $achievementRate = [];
 
+            // FIXED: Loop 1-12 untuk ensure semua bulan ada (fill dengan 0 jika tidak ada data)
             for ($month = 1; $month <= 12; $month++) {
                 $monthData = $monthlyData->firstWhere('bulan', $month);
 
@@ -754,6 +881,7 @@ class CcDashboardController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to get monthly chart', [
                 'cc_id' => $ccId,
+                'tahun' => $tahun,
                 'error' => $e->getMessage()
             ]);
 
@@ -784,13 +912,13 @@ class CcDashboardController extends Controller
             ],
             'tipe_revenues' => [
                 'all' => 'Semua Tipe',
-                'REGULER' => 'Revenue Reguler',
-                'NGTMA' => 'Revenue NGTMA'
+                'HO' => 'HO Revenue',
+                'BILL' => 'BILL Revenue'
             ],
             'revenue_sources' => [
                 'all' => 'Semua Source',
-                'HO' => 'HO Revenue',
-                'BILL' => 'BILL Revenue'
+                'REGULER' => 'Revenue Reguler',
+                'NGTMA' => 'Revenue NGTMA'
             ],
             'view_modes' => [
                 'agregat_bulan' => 'Agregat per Bulan',
@@ -811,6 +939,40 @@ class CcDashboardController extends Controller
             'bulan_options' => $bulanOptions,
             'current_month' => date('n')
         ];
+    }
+
+    /**
+     * AJAX: Get Chart Data without page reload
+     */
+    public function getChartData($id, Request $request)
+    {
+        try {
+            $filters = [
+                'tipe_revenue' => $request->get('tipe_revenue', 'all'),
+                'revenue_source' => $request->get('revenue_source', 'all'),
+                'chart_display' => $request->get('chart_display', 'combination')
+            ];
+
+            $tahun = $request->get('chart_tahun', date('Y'));
+            
+            $chartData = $this->getMonthlyRevenueChart($id, $tahun, $filters);
+
+            return response()->json([
+                'success' => true,
+                'chartData' => $chartData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch chart data', [
+                'cc_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data chart'
+            ], 500);
+        }
     }
 
     /**

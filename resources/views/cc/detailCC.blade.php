@@ -5,6 +5,18 @@
 @section('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <link rel="stylesheet" href="{{ asset('css/detailCC.css') }}">
+<style>
+    .clickable-am {
+        color: #3b82f6;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .clickable-am:hover {
+        color: #1d4ed8;
+        text-decoration: underline;
+    }
+</style>
 @endsection
 
 @section('content')
@@ -43,7 +55,7 @@
                 @endphp
             </div>
 
-            <!-- Profile Meta - FIXED: All Horizontal -->
+            <!-- Profile Meta - All Horizontal -->
             <div class="profile-meta-grid">
                 <!-- NIPNAS -->
                 <div class="meta-item-inline">
@@ -130,16 +142,16 @@
     <div class="content-wrapper">
         <!-- Tab Navigation -->
         <div class="tab-navigation">
-            <button class="tab-button active" data-tab="revenue-data">
+            <button class="tab-button {{ $filters['active_tab'] == 'revenue' ? 'active' : '' }}" data-tab="revenue-data">
                 <i class="fas fa-chart-bar"></i> Data Revenue
             </button>
-            <button class="tab-button" data-tab="revenue-analysis">
+            <button class="tab-button {{ $filters['active_tab'] == 'analysis' ? 'active' : '' }}" data-tab="revenue-analysis">
                 <i class="fas fa-chart-line"></i> Analisis Revenue
             </button>
         </div>
 
         <!-- Tab Content - Revenue Data -->
-        <div id="revenue-data" class="tab-content active">
+        <div id="revenue-data" class="tab-content {{ $filters['active_tab'] == 'revenue' ? 'active' : '' }}">
             <div class="tab-content-header">
                 <div class="tab-content-title">
                     <i class="fas fa-chart-bar"></i> Data Revenue & Performance
@@ -167,21 +179,21 @@
                             </select>
                         </div>
 
-                        <!-- Tipe Revenue Filter -->
-                        <div class="filter-item">
-                            <select id="tipeRevenueFilter" class="selectpicker">
-                                <option value="all" {{ $filters['tipe_revenue'] == 'all' ? 'selected' : '' }}>Semua Tipe</option>
-                                <option value="REGULER" {{ $filters['tipe_revenue'] == 'REGULER' ? 'selected' : '' }}>REGULER</option>
-                                <option value="NGTMA" {{ $filters['tipe_revenue'] == 'NGTMA' ? 'selected' : '' }}>NGTMA</option>
-                            </select>
-                        </div>
-
-                        <!-- Revenue Source Filter -->
+                        <!-- FIXED: Tipe Revenue Filter (ini revenue_source REGULER/NGTMA) -->
                         <div class="filter-item">
                             <select id="revenueSourceFilter" class="selectpicker">
                                 <option value="all" {{ $filters['revenue_source'] == 'all' ? 'selected' : '' }}>Semua Source</option>
-                                <option value="HO" {{ $filters['revenue_source'] == 'HO' ? 'selected' : '' }}>HO</option>
-                                <option value="BILL" {{ $filters['revenue_source'] == 'BILL' ? 'selected' : '' }}>BILL</option>
+                                <option value="REGULER" {{ $filters['revenue_source'] == 'REGULER' ? 'selected' : '' }}>REGULER</option>
+                                <option value="NGTMA" {{ $filters['revenue_source'] == 'NGTMA' ? 'selected' : '' }}>NGTMA</option>
+                            </select>
+                        </div>
+
+                        <!-- FIXED: Tipe Revenue Filter (ini tipe_revenue HO/BILL) -->
+                        <div class="filter-item">
+                            <select id="tipeRevenueFilter" class="selectpicker">
+                                <option value="all" {{ $filters['tipe_revenue'] == 'all' ? 'selected' : '' }}>Semua Tipe</option>
+                                <option value="HO" {{ $filters['tipe_revenue'] == 'HO' ? 'selected' : '' }}>HO</option>
+                                <option value="BILL" {{ $filters['tipe_revenue'] == 'BILL' ? 'selected' : '' }}>BILL</option>
                             </select>
                         </div>
 
@@ -205,7 +217,7 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
-                                    <th>Bulan</th>
+                                    <th>Periode</th>
 
                                     @if($filters['granularity'] == 'account_manager')
                                         <th>Account Manager</th>
@@ -215,6 +227,13 @@
                                             <th>Segment</th>
                                             <th>Source</th>
                                             <th>Tipe</th>
+                                        @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
+                                            @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
+                                                <th>Source</th>
+                                            @endif
+                                            @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
+                                                <th>Tipe</th>
+                                            @endif
                                         @endif
                                     @elseif($filters['granularity'] == 'segment')
                                         <th>Segment</th>
@@ -222,6 +241,13 @@
                                             <th>Divisi</th>
                                             <th>Source</th>
                                             <th>Tipe</th>
+                                        @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
+                                            @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
+                                                <th>Source</th>
+                                            @endif
+                                            @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
+                                                <th>Tipe</th>
+                                            @endif
                                         @endif
                                     @else
                                         @if($filters['revenue_view_mode'] == 'detail')
@@ -229,6 +255,13 @@
                                             <th>Segment</th>
                                             <th>Source</th>
                                             <th>Tipe</th>
+                                        @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
+                                            @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
+                                                <th>Source</th>
+                                            @endif
+                                            @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
+                                                <th>Tipe</th>
+                                            @endif
                                         @endif
                                     @endif
 
@@ -242,11 +275,19 @@
                                     <tr>
                                         <td class="row-number">{{ $index + 1 }}</td>
                                         <td>
-                                            <span class="month-badge">{{ $revenue->bulan_name ?? 'N/A' }}</span>
+                                            <span class="month-badge">{{ $revenue->bulan_name ?? 'N/A' }} {{ $filters['tahun'] }}</span>
                                         </td>
 
                                         @if($filters['granularity'] == 'account_manager')
-                                            <td class="customer-name">{{ $revenue->account_manager ?? 'N/A' }}</td>
+                                            <td class="customer-name">
+                                                @if(isset($revenue->account_manager_id))
+                                                    <a href="{{ route('account-manager.show', $revenue->account_manager_id) }}" class="clickable-am">
+                                                        {{ $revenue->account_manager ?? 'N/A' }}
+                                                    </a>
+                                                @else
+                                                    {{ $revenue->account_manager ?? 'N/A' }}
+                                                @endif
+                                            </td>
                                             <td class="nipnas">{{ $revenue->nik ?? 'N/A' }}</td>
                                             @if($filters['revenue_view_mode'] == 'detail')
                                                 <td>{{ $revenue->divisi ?? 'N/A' }}</td>
@@ -261,6 +302,21 @@
                                                         {{ $revenue->tipe_revenue ?? 'N/A' }}
                                                     </span>
                                                 </td>
+                                            @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
+                                                @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
+                                                    <td>
+                                                        <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
+                                                            {{ $revenue->revenue_source ?? 'N/A' }}
+                                                        </span>
+                                                    </td>
+                                                @endif
+                                                @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
+                                                    <td>
+                                                        <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
+                                                            {{ $revenue->tipe_revenue ?? 'N/A' }}
+                                                        </span>
+                                                    </td>
+                                                @endif
                                             @endif
                                         @elseif($filters['granularity'] == 'segment')
                                             <td>{{ $revenue->segment ?? 'N/A' }}</td>
@@ -276,6 +332,21 @@
                                                         {{ $revenue->tipe_revenue ?? 'N/A' }}
                                                     </span>
                                                 </td>
+                                            @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
+                                                @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
+                                                    <td>
+                                                        <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
+                                                            {{ $revenue->revenue_source ?? 'N/A' }}
+                                                        </span>
+                                                    </td>
+                                                @endif
+                                                @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
+                                                    <td>
+                                                        <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
+                                                            {{ $revenue->tipe_revenue ?? 'N/A' }}
+                                                        </span>
+                                                    </td>
+                                                @endif
                                             @endif
                                         @else
                                             @if($filters['revenue_view_mode'] == 'detail')
@@ -291,6 +362,21 @@
                                                         {{ $revenue->tipe_revenue ?? 'N/A' }}
                                                     </span>
                                                 </td>
+                                            @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
+                                                @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
+                                                    <td>
+                                                        <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
+                                                            {{ $revenue->revenue_source ?? 'N/A' }}
+                                                        </span>
+                                                    </td>
+                                                @endif
+                                                @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
+                                                    <td>
+                                                        <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
+                                                            {{ $revenue->tipe_revenue ?? 'N/A' }}
+                                                        </span>
+                                                    </td>
+                                                @endif
                                             @endif
                                         @endif
 
@@ -327,7 +413,7 @@
         </div>
 
         <!-- Tab Content - Revenue Analysis -->
-        <div id="revenue-analysis" class="tab-content">
+        <div id="revenue-analysis" class="tab-content {{ $filters['active_tab'] == 'analysis' ? 'active' : '' }}">
             <div class="tab-content-header">
                 <div class="tab-content-title">
                     <i class="fas fa-chart-line"></i> Analisis Revenue
@@ -483,12 +569,19 @@ $(document).ready(function() {
         mobile: false
     });
 
+    // Tab switching with active_tab parameter
     $('.tab-button').on('click', function() {
+        const tabId = $(this).data('tab');
+        const activeTab = tabId === 'revenue-data' ? 'revenue' : 'analysis';
+        
         $('.tab-button').removeClass('active');
         $('.tab-content').removeClass('active');
         $(this).addClass('active');
-        const tabId = $(this).data('tab');
         $('#' + tabId).addClass('active');
+        
+        // Update URL with active_tab parameter
+        updateUrlParameter('active_tab', activeTab, false);
+        
         if (tabId === 'revenue-analysis') {
             setTimeout(renderRevenueChart, 100);
         }
@@ -502,37 +595,77 @@ $(document).ready(function() {
         updateUrlParameter('granularity', $(this).val());
     });
 
-    $('#tipeRevenueFilter').on('changed.bs.select', function() {
-        updateUrlParameter('tipe_revenue', $(this).val());
-    });
-
+    // FIXED: revenue_source untuk REGULER/NGTMA
     $('#revenueSourceFilter').on('changed.bs.select', function() {
         updateUrlParameter('revenue_source', $(this).val());
+    });
+
+    // FIXED: tipe_revenue untuk HO/BILL
+    $('#tipeRevenueFilter').on('changed.bs.select', function() {
+        updateUrlParameter('tipe_revenue', $(this).val());
     });
 
     $('#revenueYearFilter').on('changed.bs.select', function() {
         updateUrlParameter('tahun', $(this).val());
     });
 
+    // AJAX filter for chart - NO RELOAD!
     $('#chartYearFilter').on('changed.bs.select', function() {
-        updateUrlParameter('chart_tahun', $(this).val());
+        const newYear = $(this).val();
+        fetchChartData(newYear, $('#chartDisplayMode').val());
     });
 
     $('#chartDisplayMode').on('changed.bs.select', function() {
-        updateUrlParameter('chart_display', $(this).val());
+        const newMode = $(this).val();
+        const currentYear = $('#chartYearFilter').val();
+        renderRevenueChart(null, newMode);
     });
 
-    function updateUrlParameter(key, value) {
+    function updateUrlParameter(key, value, reload = true) {
         const url = new URL(window.location.href);
         if (value && value !== '' && value !== 'all') {
             url.searchParams.set(key, value);
         } else {
             url.searchParams.delete(key);
         }
-        window.location.href = url.toString();
+        
+        if (reload) {
+            window.location.href = url.toString();
+        } else {
+            window.history.pushState({}, '', url.toString());
+        }
     }
 
-    function renderRevenueChart() {
+    // AJAX fetch chart data without page reload
+    function fetchChartData(tahun, displayMode) {
+        const ccId = {{ $corporateCustomer->id }};
+        const url = `/corporate-customer/${ccId}/chart-data`;
+        
+        $.ajax({
+            url: url,
+            method: 'GET',
+            data: {
+                chart_tahun: tahun,
+                chart_display: displayMode,
+                tipe_revenue: '{{ $filters["tipe_revenue"] }}',
+                revenue_source: '{{ $filters["revenue_source"] }}'
+            },
+            success: function(response) {
+                if (response.success && response.chartData) {
+                    renderRevenueChart(response.chartData, displayMode);
+                    
+                    // Update URL without reload
+                    updateUrlParameter('chart_tahun', tahun, false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching chart data:', error);
+                alert('Gagal memuat data chart. Silakan refresh halaman.');
+            }
+        });
+    }
+
+    function renderRevenueChart(chartDataParam = null, displayModeParam = null) {
         const ctx = document.getElementById('revenueChart');
         if (!ctx) return;
 
@@ -541,7 +674,10 @@ $(document).ready(function() {
             if (existingChart) existingChart.destroy();
         } catch (e) {}
 
-        const chartData = @json($revenueAnalysis['monthly_chart'] ?? null);
+        const chartData = chartDataParam || {!! json_encode($revenueAnalysis['monthly_chart'] ?? null) !!};
+        
+        console.log('Chart rendering with data:', chartData);
+        
         if (!chartData || !chartData.labels || chartData.labels.length === 0) {
             $(ctx).parent().html(
                 '<div class="empty-state">' +
@@ -552,7 +688,7 @@ $(document).ready(function() {
             return;
         }
 
-        const displayMode = '{{ $filters["chart_display"] ?? "combination" }}';
+        const displayMode = displayModeParam || '{{ $filters["chart_display"] ?? "combination" }}';
         const datasets = [];
 
         if (displayMode === 'combination' || displayMode === 'revenue') {
@@ -607,6 +743,7 @@ $(document).ready(function() {
                     font: { weight: 'bold', size: 12 },
                     color: '#4b5563'
                 },
+                beginAtZero: true, // IMPORTANT: Start from 0
                 ticks: {
                     callback: function(value) {
                         if (value >= 1000000000) {
@@ -635,6 +772,8 @@ $(document).ready(function() {
                     font: { weight: 'bold', size: 12 },
                     color: '#4b5563'
                 },
+                beginAtZero: true, // IMPORTANT: Start from 0
+                max: Math.max(...chartData.datasets.achievement_rate) * 1.2, // Add 20% padding
                 grid: {
                     drawOnChartArea: displayMode !== 'combination',
                     color: 'rgba(234, 29, 37, 0.1)'
@@ -647,6 +786,9 @@ $(document).ready(function() {
                 }
             };
         }
+
+        console.log('Chart datasets:', datasets);
+        console.log('Chart scales:', scales);
 
         try {
             new Chart(ctx, {
@@ -719,6 +861,8 @@ $(document).ready(function() {
                     }
                 }
             });
+            
+            console.log('Chart rendered successfully');
         } catch (e) {
             console.error('Error creating chart:', e);
             $(ctx).parent().html(
@@ -737,8 +881,12 @@ $(document).ready(function() {
 
     // Console log for debugging
     console.log('detailCC Dashboard initialized successfully');
-    console.log('Current filters:', @json($filters));
+    console.log('Current filters:', {!! json_encode($filters) !!});
+    
+    @if(isset($revenueData['revenues']) && $revenueData['revenues']->count() > 0)
+    console.log('Revenue data sample:', {!! json_encode($revenueData['revenues']->take(1)) !!});
+    @endif
 });
 </script>
 @endsection
-@endsection
+</document_content>

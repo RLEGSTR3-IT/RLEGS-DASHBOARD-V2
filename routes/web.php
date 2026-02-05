@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\WitelPerformController;
 use App\Http\Controllers\CCWitelPerformController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -55,7 +54,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::view('/revenue', 'revenueData')->name('revenue.index');
-    Route::get('/witel-perform', [WitelPerformController::class, 'index'])->name('witel.perform');
     Route::get('/treg3', [CCWitelPerformController::class, 'index'])->name('witel-cc-index');
     Route::get('/leaderboard', [LeaderboardAMController::class, 'index'])->name('leaderboard');
 
@@ -181,11 +179,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{id}/data', [DashboardController::class, 'getSegmentData'])->name('data')->where('id', '[0-9]+');
         Route::get('{id}/customers', [DashboardController::class, 'getSegmentCustomers'])->name('customers')->where('id', '[0-9]+');
     });
-
-    Route::post('/witel-perform/update-charts', [WitelPerformController::class, 'updateCharts'])->name('witel.update-charts');
-    Route::post('/witel-perform/filter-by-divisi', [WitelPerformController::class, 'filterByDivisi'])->name('witel.filter-by-divisi');
-    Route::post('/witel-perform/filter-by-witel', [WitelPerformController::class, 'filterByWitel'])->name('witel.filter-by-witel');
-    Route::post('/witel-perform/filter-by-regional', [WitelPerformController::class, 'filterByRegional'])->name('witel.filter-by-regional');
 
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('divisi', function () {

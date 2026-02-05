@@ -108,12 +108,16 @@ class RevenueDataController extends Controller
         }
     }
 
-    // ========================================
-    // REVENUE CC - CRUD + MAPPING AM
-    // ========================================
+
 
     /**
      * ✅ FIXED: Get Revenue CC with comprehensive search
+     * 
+     * CHANGES:
+     * - Removed leftJoin() manual joins
+     * - Removed distinct() to fix ORDER BY error
+     * - Use whereHas() for relationship search
+     * - ORDER BY only uses cc_revenues table columns
      * 
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -139,72 +143,71 @@ class RevenueDataController extends Controller
                     'segment:id,lsegment_ho,ssegment_ho',
                     'witelHo:id,nama',
                     'witelBill:id,nama'
-                ])
-                ->select('cc_revenues.*');
+                ]);
 
-            // ✅ FIX: Join with corporate_customers for search functionality
-            $query->leftJoin('corporate_customers', 'cc_revenues.corporate_customer_id', '=', 'corporate_customers.id');
-            $query->leftJoin('divisi', 'cc_revenues.divisi_id', '=', 'divisi.id');
-
-            // ✅ SEARCH FUNCTIONALITY - Search across multiple columns
+            // ✅ SEARCH FUNCTIONALITY - Use whereHas for relationship search
             if ($search) {
                 $query->where(function($q) use ($search) {
-                    $q->where('corporate_customers.nama', 'LIKE', "%{$search}%")
-                      ->orWhere('corporate_customers.nipnas', 'LIKE', "%{$search}%")
-                      ->orWhere('divisi.nama', 'LIKE', "%{$search}%")
-                      ->orWhere('divisi.kode', 'LIKE', "%{$search}%");
+                    // Search in corporate customer
+                    $q->whereHas('corporateCustomer', function($subQ) use ($search) {
+                        $subQ->where('nama', 'LIKE', "%{$search}%")
+                            ->orWhere('nipnas', 'LIKE', "%{$search}%");
+                    })
+                    // Search in divisi
+                    ->orWhereHas('divisi', function($subQ) use ($search) {
+                        $subQ->where('nama', 'LIKE', "%{$search}%")
+                            ->orWhere('kode', 'LIKE', "%{$search}%");
+                    });
                 });
             }
 
             // Filter by witel (either HO or BILL)
             if ($witelId && $witelId !== 'all') {
                 $query->where(function($q) use ($witelId) {
-                    $q->where('cc_revenues.witel_ho_id', $witelId)
-                      ->orWhere('cc_revenues.witel_bill_id', $witelId);
+                    $q->where('witel_ho_id', $witelId)
+                    ->orWhere('witel_bill_id', $witelId);
                 });
             }
 
             // Filter by divisi
             if ($divisiId && $divisiId !== 'all') {
-                $query->where('cc_revenues.divisi_id', $divisiId);
+                $query->where('divisi_id', $divisiId);
             }
 
             // Filter by segment
             if ($segmentId && $segmentId !== 'all') {
-                $query->where('cc_revenues.segment_id', $segmentId);
+                $query->where('segment_id', $segmentId);
             }
 
             // Filter by periode (YYYY-MM)
             if ($periode) {
                 list($year, $month) = explode('-', $periode);
-                $query->where('cc_revenues.tahun', $year)
-                      ->where('cc_revenues.bulan', $month);
+                $query->where('tahun', $year)
+                    ->where('bulan', $month);
             }
 
             // Filter by tipe revenue source
             if ($tipeRevenue && $tipeRevenue !== 'all') {
                 if ($tipeRevenue === 'REGULER') {
-                    $query->where('cc_revenues.revenue_source', 'REGULER');
+                    $query->where('revenue_source', 'REGULER');
                 } elseif ($tipeRevenue === 'NGTMA') {
-                    $query->where('cc_revenues.revenue_source', 'NGTMA');
+                    $query->where('revenue_source', 'NGTMA');
                 } elseif ($tipeRevenue === 'KOMBINASI') {
-                    $query->whereIn('cc_revenues.revenue_source', ['REGULER', 'NGTMA']);
+                    $query->whereIn('revenue_source', ['REGULER', 'NGTMA']);
                 }
             }
 
-            // Order by latest
-            $query->orderBy('cc_revenues.tahun', 'desc')
-                  ->orderBy('cc_revenues.bulan', 'desc')
-                  ->orderBy('corporate_customers.nama', 'asc');
+            // ✅ ORDER BY - Only use columns from cc_revenues table
+            $query->orderBy('tahun', 'desc')
+                ->orderBy('bulan', 'desc')
+                ->orderBy('id', 'asc'); // Use ID for consistent ordering
 
-            // ✅ FIX: Get total before pagination for recordsFiltered
-            $recordsFiltered = $query->count(DB::raw('DISTINCT cc_revenues.id'));
+            // ✅ Get total counts
+            $recordsFiltered = $query->count();
             $recordsTotal = CcRevenue::count();
 
-            // Paginate
-            $data = $query->distinct()
-                ->select('cc_revenues.*')
-                ->paginate($perPage, ['*'], 'page', $page);
+            // ✅ Paginate without DISTINCT
+            $data = $query->paginate($perPage, ['*'], 'page', $page);
 
             // Transform data
             $transformedData = $data->map(function($item) use ($displayMode) {
@@ -240,7 +243,7 @@ class RevenueDataController extends Controller
                 'from' => $data->firstItem(),
                 'to' => $data->lastItem(),
                 'recordsTotal' => $recordsTotal,
-                'recordsFiltered' => $recordsFiltered // ✅ Added for accurate badge counter
+                'recordsFiltered' => $recordsFiltered
             ]);
 
         } catch (\Exception $e) {
@@ -563,19 +566,30 @@ class RevenueDataController extends Controller
         }
     }
 
-    // ========================================
-    // MAPPING AM TAB - NEW FEATURE
-    // ========================================
+    /**
+     * ✅ FIXED: Get CC Revenue AM Mapping
+     * 
+     * CHANGES:
+     * - Already using proper eager loading
+     * - No JOIN issues
+     * - Clean query structure
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getCcRevenueAmMapping($id)
     {
         try {
-            $ccRevenue = CcRevenue::with('corporateCustomer')->findOrFail($id);
+            // Load CC Revenue with relationship
+            $ccRevenue = CcRevenue::with('corporateCustomer:id,nama,nipnas')
+                ->findOrFail($id);
 
-            // ✅ FIXED: Filter only by corporate_customer_id + periode (NO divisi_id)
+            // Get AM mappings for same corporate_customer + periode
             $amMappings = AmRevenue::where('corporate_customer_id', $ccRevenue->corporate_customer_id)
                 ->where('bulan', $ccRevenue->bulan)
                 ->where('tahun', $ccRevenue->tahun)
                 ->with(['accountManager:id,nama,nik'])
+                ->orderBy('id', 'asc')
                 ->get()
                 ->map(function($am) {
                     return [
@@ -623,18 +637,29 @@ class RevenueDataController extends Controller
 
 
     /**
-     * Get CC Revenue AM Mappings for Edit (with display formats)
+     * ✅ FIXED: Get CC Revenue AM Mappings for Edit (with display formats)
+     * 
+     * CHANGES:
+     * - Already using proper eager loading
+     * - No JOIN issues
+     * - Clean query structure
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getCcRevenueAmMappingsForEdit($id)
     {
         try {
-            $ccRevenue = CcRevenue::with('corporateCustomer')->findOrFail($id);
+            // Load CC Revenue with relationship
+            $ccRevenue = CcRevenue::with('corporateCustomer:id,nama,nipnas')
+                ->findOrFail($id);
 
-            // ✅ FIXED: Filter only by corporate_customer_id + periode (NO divisi_id)
+            // Get AM mappings for same corporate_customer + periode
             $amMappings = AmRevenue::where('corporate_customer_id', $ccRevenue->corporate_customer_id)
                 ->where('bulan', $ccRevenue->bulan)
                 ->where('tahun', $ccRevenue->tahun)
                 ->with(['accountManager:id,nama,nik'])
+                ->orderBy('id', 'asc')
                 ->get()
                 ->map(function($am) {
                     return [
@@ -811,6 +836,15 @@ class RevenueDataController extends Controller
 
     /**
      * ✅ FIXED: Get Revenue AM with comprehensive search
+     * 
+     * CHANGES:
+     * - Removed leftJoin() manual joins
+     * - Removed distinct() to fix ORDER BY error
+     * - Use whereHas() for relationship search
+     * - ORDER BY only uses am_revenues table columns
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getRevenueAM(Request $request)
     {
@@ -823,39 +857,43 @@ class RevenueDataController extends Controller
             $periode = $request->input('periode');
             $role = $request->input('role', 'all'); // all, AM, HOTDA
 
+            // Base query with eager loading
             $query = AmRevenue::query()
                 ->with([
                     'accountManager.witel:id,nama',
                     'accountManager.telda:id,nama',
-                    'accountManager.divisi:id,nama,kode',
+                    'accountManager.divisis:id,nama,kode', // Use divisis (plural) for many-to-many
                     'corporateCustomer:id,nama,nipnas',
                     'ccRevenue:id,corporate_customer_id,divisi_id',
                     'ccRevenue.divisi:id,nama,kode'
-                ])
-                ->select('am_revenues.*');
+                ]);
 
-            // Join for search
-            $query->leftJoin('account_managers', 'am_revenues.account_manager_id', '=', 'account_managers.id');
-            $query->leftJoin('corporate_customers', 'am_revenues.corporate_customer_id', '=', 'corporate_customers.id');
-
-            // ✅ SEARCH FUNCTIONALITY
+            // ✅ SEARCH FUNCTIONALITY - Use whereHas for relationship search
             if ($search) {
                 $query->where(function($q) use ($search) {
-                    $q->where('account_managers.nama', 'LIKE', "%{$search}%")
-                      ->orWhere('account_managers.nik', 'LIKE', "%{$search}%")
-                      ->orWhere('corporate_customers.nama', 'LIKE', "%{$search}%")
-                      ->orWhere('corporate_customers.nipnas', 'LIKE', "%{$search}%");
+                    // Search in account manager
+                    $q->whereHas('accountManager', function($subQ) use ($search) {
+                        $subQ->where('nama', 'LIKE', "%{$search}%")
+                            ->orWhere('nik', 'LIKE', "%{$search}%");
+                    })
+                    // Search in corporate customer
+                    ->orWhereHas('corporateCustomer', function($subQ) use ($search) {
+                        $subQ->where('nama', 'LIKE', "%{$search}%")
+                            ->orWhere('nipnas', 'LIKE', "%{$search}%");
+                    });
                 });
             }
 
-            // Filter by witel
+            // Filter by witel - search in account manager's witel
             if ($witelId && $witelId !== 'all') {
-                $query->where('account_managers.witel_id', $witelId);
+                $query->whereHas('accountManager', function($q) use ($witelId) {
+                    $q->where('witel_id', $witelId);
+                });
             }
 
-            // Filter by divisi
+            // Filter by divisi - search in account manager's divisis
             if ($divisiId && $divisiId !== 'all') {
-                $query->whereHas('accountManager.divisi', function($q) use ($divisiId) {
+                $query->whereHas('accountManager.divisis', function($q) use ($divisiId) {
                     $q->where('divisi.id', $divisiId);
                 });
             }
@@ -863,32 +901,35 @@ class RevenueDataController extends Controller
             // Filter by periode
             if ($periode) {
                 list($year, $month) = explode('-', $periode);
-                $query->where('am_revenues.tahun', $year)
-                      ->where('am_revenues.bulan', $month);
+                $query->where('tahun', $year)
+                    ->where('bulan', $month);
             }
 
-            // Filter by role
+            // Filter by role - search in account manager
             if ($role && $role !== 'all') {
-                $query->where('account_managers.role', $role);
+                $query->whereHas('accountManager', function($q) use ($role) {
+                    $q->where('role', $role);
+                });
             }
 
-            $query->orderBy('am_revenues.tahun', 'desc')
-                  ->orderBy('am_revenues.bulan', 'desc')
-                  ->orderBy('account_managers.nama', 'asc');
+            // ✅ ORDER BY - Only use columns from am_revenues table
+            $query->orderBy('tahun', 'desc')
+                ->orderBy('bulan', 'desc')
+                ->orderBy('id', 'asc'); // Use ID for consistent ordering
 
             // ✅ Get counts
-            $recordsFiltered = $query->count(DB::raw('DISTINCT am_revenues.id'));
+            $recordsFiltered = $query->count();
             $recordsTotal = AmRevenue::count();
 
-            $data = $query->distinct()
-                ->select('am_revenues.*')
-                ->paginate($perPage, ['*'], 'page', $page);
+            // ✅ Paginate without DISTINCT
+            $data = $query->paginate($perPage, ['*'], 'page', $page);
 
+            // Transform data
             $transformedData = $data->map(function($item) {
                 $am = $item->accountManager;
                 $cc = $item->corporateCustomer;
                 $telda = $am ? $am->telda : null;
-                $divisi = $am && $am->divisi->isNotEmpty() ? $am->divisi->first() : null;
+                $divisi = $am && $am->divisis->isNotEmpty() ? $am->divisis->first() : null;
 
                 $achievement = 0;
                 if ($item->target_revenue > 0) {
@@ -928,7 +969,9 @@ class RevenueDataController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error loading Revenue AM: ' . $e->getMessage());
+            Log::error('Error loading Revenue AM: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat data Revenue AM: ' . $e->getMessage()
@@ -1355,29 +1398,27 @@ class RevenueDataController extends Controller
         }
     }
 
+ 
     /**
-     * ✅ FIXED: Show single Data AM - Fixed 'username' column issue
+     * ✅ FIXED: Show single Data AM - Fixed query structure
+     * 
+     * CHANGES:
+     * - Removed complex JOIN query
+     * - Use simple eloquent query with eager loading
+     * - Separate query for is_registered check
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function showDataAM($id)
     {
         try {
-            $am = AccountManager::query()
-                ->with([
-                    'witel:id,nama',
-                    'telda:id,nama',
-                    'divisis:id,nama,kode' // ✅ FIXED: Use divisis (plural)
-                ])
-                ->select(
-                    'account_managers.*',
-                    'witel.nama as witel_nama',
-                    'teldas.nama as telda_nama',
-                    DB::raw('CASE WHEN users.id IS NOT NULL THEN 1 ELSE 0 END as is_registered')
-                )
-                ->leftJoin('witel', 'account_managers.witel_id', '=', 'witel.id')
-                ->leftJoin('teldas', 'account_managers.telda_id', '=', 'teldas.id')
-                ->leftJoin('users', 'account_managers.id', '=', 'users.account_manager_id') // ✅ FIXED: Use account_manager_id instead of username
-                ->where('account_managers.id', $id)
-                ->first();
+            // ✅ Simple eloquent query with eager loading
+            $am = AccountManager::with([
+                'witel:id,nama',
+                'telda:id,nama',
+                'divisis:id,nama,kode' // Use divisis (plural)
+            ])->find($id);
 
             if (!$am) {
                 return response()->json([
@@ -1386,6 +1427,10 @@ class RevenueDataController extends Controller
                 ], 404);
             }
 
+            // ✅ Separate query for is_registered check
+            $isRegistered = User::where('account_manager_id', $id)->exists();
+
+            // Transform divisis to array
             $divisiArray = [];
             if ($am->divisis && $am->divisis->isNotEmpty()) {
                 $divisiArray = $am->divisis->map(function($div) {
@@ -1405,16 +1450,17 @@ class RevenueDataController extends Controller
                     'nik' => $am->nik,
                     'role' => $am->role,
                     'witel_id' => $am->witel_id,
-                    'witel_nama' => $am->witel_nama,
+                    'witel_nama' => $am->witel ? $am->witel->nama : '-',
                     'telda_id' => $am->telda_id,
-                    'telda_nama' => $am->telda_nama,
-                    'is_registered' => (bool) $am->is_registered,
+                    'telda_nama' => $am->telda ? $am->telda->nama : '-',
+                    'is_registered' => $isRegistered,
                     'divisi' => $divisiArray
                 ]
             ]);
 
         } catch (\Exception $e) {
             Log::error('Show Data AM Error: ' . $e->getMessage(), [
+                'am_id' => $id,
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
@@ -1423,6 +1469,7 @@ class RevenueDataController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Update Data AM
@@ -1726,6 +1773,14 @@ class RevenueDataController extends Controller
 
     /**
      * ✅ FIXED: Get Data CC with comprehensive search
+     * 
+     * CHANGES:
+     * - Already clean (no JOIN issues)
+     * - Added proper search on nama and nipnas
+     * - Simple query structure
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getDataCC(Request $request)
     {
@@ -1734,22 +1789,25 @@ class RevenueDataController extends Controller
             $page = $request->input('page', 1);
             $search = $request->input('search');
 
+            // Base query
             $query = CorporateCustomer::query();
 
-            // ✅ SEARCH FUNCTIONALITY
+            // ✅ SEARCH FUNCTIONALITY - Direct search on table columns
             if ($search) {
                 $query->where(function($q) use ($search) {
                     $q->where('nama', 'LIKE', "%{$search}%")
-                      ->orWhere('nipnas', 'LIKE', "%{$search}%");
+                    ->orWhere('nipnas', 'LIKE', "%{$search}%");
                 });
             }
 
+            // Order by name
             $query->orderBy('nama', 'asc');
 
             // ✅ Get counts
             $recordsFiltered = $query->count();
             $recordsTotal = CorporateCustomer::count();
 
+            // Paginate
             $data = $query->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
@@ -1766,7 +1824,9 @@ class RevenueDataController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error loading Data CC: ' . $e->getMessage());
+            Log::error('Error loading Data CC: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat data CC: ' . $e->getMessage()

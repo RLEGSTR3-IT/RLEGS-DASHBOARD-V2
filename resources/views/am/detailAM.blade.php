@@ -331,8 +331,12 @@
                                         @if($filters['customer_view_mode'] == 'agregat_bulan')
                                             <td colspan="2" class="customer-name">{{ $customer->bulan_name ?? 'N/A' }}</td>
                                         @else
-                                            <td class="customer-name">{{ $customer->customer_name ?? $customer->nama ?? 'N/A' }}</td>
-                                            <td class="nipnas">{{ $customer->nipnas ?? 'N/A' }}</td>
+                                            <td class="customer-name">
+                                                <a href="{{ route('corporate-customer.show', $customer->customer_id ?? $customer->id ?? '#') }}" 
+                                                class="customer-link">
+                                                    {{ $customer->customer_name ?? $customer->nama ?? 'N/A' }}
+                                                </a>
+                                            </td>
                                         @endif
                                         @if($filters['customer_view_mode'] != 'agregat_bulan')
                                             <td class="customer-divisi">{{ $customer->divisi ?? 'N/A' }}</td>

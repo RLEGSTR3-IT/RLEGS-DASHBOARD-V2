@@ -179,7 +179,7 @@
                             </select>
                         </div>
 
-                        <!-- FIXED: Tipe Revenue Filter (ini revenue_source REGULER/NGTMA) -->
+                        <!-- Revenue Source Filter (REGULER/NGTMA) -->
                         <div class="filter-item">
                             <select id="revenueSourceFilter" class="selectpicker">
                                 <option value="all" {{ $filters['revenue_source'] == 'all' ? 'selected' : '' }}>Semua Source</option>
@@ -188,7 +188,7 @@
                             </select>
                         </div>
 
-                        <!-- FIXED: Tipe Revenue Filter (ini tipe_revenue HO/BILL) -->
+                        <!-- Tipe Revenue Filter (HO/BILL) -->
                         <div class="filter-item">
                             <select id="tipeRevenueFilter" class="selectpicker">
                                 <option value="all" {{ $filters['tipe_revenue'] == 'all' ? 'selected' : '' }}>Semua Tipe</option>
@@ -292,90 +292,54 @@
                                             @if($filters['revenue_view_mode'] == 'detail')
                                                 <td>{{ $revenue->divisi ?? 'N/A' }}</td>
                                                 <td>{{ $revenue->segment ?? 'N/A' }}</td>
-                                                <td>
-                                                    <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
-                                                        {{ $revenue->revenue_source ?? 'N/A' }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
-                                                        {{ $revenue->tipe_revenue ?? 'N/A' }}
-                                                    </span>
-                                                </td>
+                                                {{-- FIXED: Remove badge styling for Source --}}
+                                                <td>{{ $revenue->revenue_source ?? 'N/A' }}</td>
+                                                {{-- FIXED: Remove badge styling for Tipe --}}
+                                                <td>{{ $revenue->tipe_revenue ?? 'N/A' }}</td>
                                             @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
                                                 @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
-                                                    <td>
-                                                        <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
-                                                            {{ $revenue->revenue_source ?? 'N/A' }}
-                                                        </span>
-                                                    </td>
+                                                    {{-- FIXED: Remove badge styling --}}
+                                                    <td>{{ $revenue->revenue_source ?? 'N/A' }}</td>
                                                 @endif
                                                 @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
-                                                    <td>
-                                                        <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
-                                                            {{ $revenue->tipe_revenue ?? 'N/A' }}
-                                                        </span>
-                                                    </td>
+                                                    {{-- FIXED: Remove badge styling --}}
+                                                    <td>{{ $revenue->tipe_revenue ?? 'N/A' }}</td>
                                                 @endif
                                             @endif
                                         @elseif($filters['granularity'] == 'segment')
                                             <td>{{ $revenue->segment ?? 'N/A' }}</td>
                                             @if($filters['revenue_view_mode'] == 'detail')
                                                 <td>{{ $revenue->divisi ?? 'N/A' }}</td>
-                                                <td>
-                                                    <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
-                                                        {{ $revenue->revenue_source ?? 'N/A' }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
-                                                        {{ $revenue->tipe_revenue ?? 'N/A' }}
-                                                    </span>
-                                                </td>
+                                                {{-- FIXED: Remove badge styling for Source --}}
+                                                <td>{{ $revenue->revenue_source ?? 'N/A' }}</td>
+                                                {{-- FIXED: Remove badge styling for Tipe --}}
+                                                <td>{{ $revenue->tipe_revenue ?? 'N/A' }}</td>
                                             @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
                                                 @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
-                                                    <td>
-                                                        <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
-                                                            {{ $revenue->revenue_source ?? 'N/A' }}
-                                                        </span>
-                                                    </td>
+                                                    {{-- FIXED: Remove badge styling --}}
+                                                    <td>{{ $revenue->revenue_source ?? 'N/A' }}</td>
                                                 @endif
                                                 @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
-                                                    <td>
-                                                        <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
-                                                            {{ $revenue->tipe_revenue ?? 'N/A' }}
-                                                        </span>
-                                                    </td>
+                                                    {{-- FIXED: Remove badge styling --}}
+                                                    <td>{{ $revenue->tipe_revenue ?? 'N/A' }}</td>
                                                 @endif
                                             @endif
                                         @else
                                             @if($filters['revenue_view_mode'] == 'detail')
                                                 <td>{{ $revenue->divisi ?? 'N/A' }}</td>
                                                 <td>{{ $revenue->segment ?? 'N/A' }}</td>
-                                                <td>
-                                                    <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
-                                                        {{ $revenue->revenue_source ?? 'N/A' }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
-                                                        {{ $revenue->tipe_revenue ?? 'N/A' }}
-                                                    </span>
-                                                </td>
+                                                {{-- FIXED: Remove badge styling for Source --}}
+                                                <td>{{ $revenue->revenue_source ?? 'N/A' }}</td>
+                                                {{-- FIXED: Remove badge styling for Tipe --}}
+                                                <td>{{ $revenue->tipe_revenue ?? 'N/A' }}</td>
                                             @elseif($filters['revenue_view_mode'] == 'agregat_bulan')
                                                 @if($filters['revenue_source'] && $filters['revenue_source'] !== 'all')
-                                                    <td>
-                                                        <span class="source-badge badge-{{ strtolower($revenue->revenue_source ?? '') }}">
-                                                            {{ $revenue->revenue_source ?? 'N/A' }}
-                                                        </span>
-                                                    </td>
+                                                    {{-- FIXED: Remove badge styling --}}
+                                                    <td>{{ $revenue->revenue_source ?? 'N/A' }}</td>
                                                 @endif
                                                 @if($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all')
-                                                    <td>
-                                                        <span class="tipe-badge badge-{{ strtolower($revenue->tipe_revenue ?? '') }}">
-                                                            {{ $revenue->tipe_revenue ?? 'N/A' }}
-                                                        </span>
-                                                    </td>
+                                                    {{-- FIXED: Remove badge styling --}}
+                                                    <td>{{ $revenue->tipe_revenue ?? 'N/A' }}</td>
                                                 @endif
                                             @endif
                                         @endif
@@ -595,12 +559,12 @@ $(document).ready(function() {
         updateUrlParameter('granularity', $(this).val());
     });
 
-    // FIXED: revenue_source untuk REGULER/NGTMA
+    // Revenue source untuk REGULER/NGTMA
     $('#revenueSourceFilter').on('changed.bs.select', function() {
         updateUrlParameter('revenue_source', $(this).val());
     });
 
-    // FIXED: tipe_revenue untuk HO/BILL
+    // Tipe revenue untuk HO/BILL
     $('#tipeRevenueFilter').on('changed.bs.select', function() {
         updateUrlParameter('tipe_revenue', $(this).val());
     });
@@ -743,7 +707,7 @@ $(document).ready(function() {
                     font: { weight: 'bold', size: 12 },
                     color: '#4b5563'
                 },
-                beginAtZero: true, // IMPORTANT: Start from 0
+                beginAtZero: true,
                 ticks: {
                     callback: function(value) {
                         if (value >= 1000000000) {
@@ -772,8 +736,8 @@ $(document).ready(function() {
                     font: { weight: 'bold', size: 12 },
                     color: '#4b5563'
                 },
-                beginAtZero: true, // IMPORTANT: Start from 0
-                max: Math.max(...chartData.datasets.achievement_rate) * 1.2, // Add 20% padding
+                beginAtZero: true,
+                max: Math.max(...chartData.datasets.achievement_rate) * 1.2,
                 grid: {
                     drawOnChartArea: displayMode !== 'combination',
                     color: 'rgba(234, 29, 37, 0.1)'
@@ -889,4 +853,4 @@ $(document).ready(function() {
 });
 </script>
 @endsection
-</document_content>
+@endsection

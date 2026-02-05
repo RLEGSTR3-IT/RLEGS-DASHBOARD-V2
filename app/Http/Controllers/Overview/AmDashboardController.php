@@ -709,12 +709,13 @@ class AmDashboardController extends Controller
         ];
     }
 
-    /**
-     * Get Card Group Data
-     */
+    
     private function getCardGroupData($amId, $filters)
     {
-        $dateRange = $this->calculateDateRange($filters['period_type'], $filters['tahun'] === 'all' ? date('Y') : $filters['tahun']);
+        $dateRange = $this->calculateDateRange(
+            $filters['period_type'], 
+            $filters['tahun'] === 'all' ? date('Y') : $filters['tahun']
+        );
 
         $query = AmRevenue::where('account_manager_id', $amId);
 
@@ -725,30 +726,27 @@ class AmDashboardController extends Controller
             }
         }
 
-        // ✅ REMOVED: Filter divisi_id karena am_revenues TIDAK punya kolom divisi_id
-        // Filter divisi dilakukan di level AM (lewat pivot table account_manager_divisi)
-
+        // Filter period type
         if ($filters['period_type'] === 'MTD') {
             $query->where('bulan', date('n'));
         } else {
+            // YTD - dari Januari sampai bulan sekarang
             $query->where('bulan', '<=', date('n'));
         }
 
-        // ✅ FIXED: Filter source_data via subquery (bukan whereHas yang error)
+        // ✅ FIXED: Filter source_data menggunakan whereExists dengan match bulan+tahun
         if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
-            $query->whereIn('corporate_customer_id', function($subQuery) use ($filters) {
-                $subQuery->select('corporate_customer_id')
+            $query->whereExists(function($subQuery) use ($filters) {
+                $subQuery->select(DB::raw(1))
                     ->from('cc_revenues')
-                    ->where('source_data', $filters['source_data']);
-                
-                if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
-                    if ($filters['tahun'] !== 'all') {
-                        $subQuery->where('tahun', $filters['tahun']);
-                    }
-                }
+                    ->whereColumn('cc_revenues.corporate_customer_id', '=', 'am_revenues.corporate_customer_id')
+                    ->whereColumn('cc_revenues.bulan', '=', 'am_revenues.bulan')
+                    ->whereColumn('cc_revenues.tahun', '=', 'am_revenues.tahun')
+                    ->where('cc_revenues.source_data', '=', $filters['source_data']);
             });
         }
 
+        // Aggregate data
         $aggregated = $query->selectRaw('
                 SUM(real_revenue) as total_revenue,
                 SUM(target_revenue) as total_target,
@@ -887,67 +885,67 @@ class AmDashboardController extends Controller
     /**
      * Get Customer Data Aggregate by Month
      */
-    private function getCustomerDataAggregateByMonth($amId, $filters)
-    {
-        $query = AmRevenue::where('account_manager_id', $amId);
+private function getCustomerDataAggregateByMonth($amId, $filters)
+{
+    $query = AmRevenue::where('account_manager_id', $amId);
 
-        // ✅ FIXED: Support show_all_years
-        if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
-            if ($filters['tahun'] !== 'all') {
-                $query->where('tahun', $filters['tahun']);
-            }
+    // ✅ FIXED: Support show_all_years
+    if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
+        if ($filters['tahun'] !== 'all') {
+            $query->where('tahun', $filters['tahun']);
         }
+    }
 
-        // ✅ FIXED: Filter source_data
-        if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
-            $query->whereIn('corporate_customer_id', function($subQuery) use ($filters) {
-                $subQuery->select('corporate_customer_id')
-                    ->from('cc_revenues')
-                    ->where('source_data', $filters['source_data']);
-                
-                if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
-                    if ($filters['tahun'] !== 'all') {
-                        $subQuery->where('tahun', $filters['tahun']);
-                    }
-                }
-            });
-        }
-
-        $bulanStart = $filters['bulan_start'] ?? 1;
-        $bulanEnd = $filters['bulan_end'] ?? 12;
-
-        $query->whereBetween('bulan', [$bulanStart, $bulanEnd]);
-
-        $monthlyData = $query->selectRaw('
-                tahun,
-                bulan,
-                SUM(real_revenue) as monthly_revenue,
-                SUM(target_revenue) as monthly_target,
-                COUNT(DISTINCT corporate_customer_id) as customer_count
-            ')
-            ->groupBy('tahun', 'bulan')
-            ->orderBy('tahun', 'desc')
-            ->orderBy('bulan', 'desc')
-            ->get();
-
-        return $monthlyData->map(function ($item) {
-            $achievementRate = $item->monthly_target > 0
-                ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
-                : 0;
-
-            return (object)[
-                'bulan' => $item->bulan,
-                'tahun' => $item->tahun,
-                'bulan_name' => $this->getMonthName($item->bulan),
-                'bulan_year_name' => $this->getMonthName($item->bulan) . ' ' . $item->tahun,
-                'total_revenue' => floatval($item->monthly_revenue),
-                'total_target' => floatval($item->monthly_target),
-                'achievement_rate' => $achievementRate,
-                'achievement_color' => $this->getAchievementColor($achievementRate),
-                'customer_count' => intval($item->customer_count)
-            ];
+    // ✅ FIXED: Filter source_data menggunakan whereExists dengan match bulan+tahun
+    if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
+        $query->whereExists(function($subQuery) use ($filters) {
+            $subQuery->select(DB::raw(1))
+                ->from('cc_revenues')
+                ->whereColumn('cc_revenues.corporate_customer_id', '=', 'am_revenues.corporate_customer_id')
+                ->whereColumn('cc_revenues.bulan', '=', 'am_revenues.bulan')
+                ->whereColumn('cc_revenues.tahun', '=', 'am_revenues.tahun')
+                ->where('cc_revenues.source_data', '=', $filters['source_data']);
         });
     }
+
+    // Apply bulan range filter if provided
+    $bulanStart = $filters['bulan_start'] ?? 1;
+    $bulanEnd = $filters['bulan_end'] ?? 12;
+
+    $query->whereBetween('bulan', [$bulanStart, $bulanEnd]);
+
+    // Aggregate per tahun + bulan
+    $monthlyData = $query->selectRaw('
+            tahun,
+            bulan,
+            SUM(real_revenue) as monthly_revenue,
+            SUM(target_revenue) as monthly_target,
+            COUNT(DISTINCT corporate_customer_id) as customer_count
+        ')
+        ->groupBy('tahun', 'bulan')
+        ->orderBy('tahun', 'desc')
+        ->orderBy('bulan', 'desc')
+        ->get();
+
+    return $monthlyData->map(function ($item) {
+        $achievementRate = $item->monthly_target > 0
+            ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
+            : 0;
+
+        return (object)[
+            'bulan' => $item->bulan,
+            'tahun' => $item->tahun,
+            'bulan_name' => $this->getMonthName($item->bulan),
+            'bulan_year_name' => $this->getMonthName($item->bulan) . ' ' . $item->tahun,
+            'total_revenue' => floatval($item->monthly_revenue),
+            'total_target' => floatval($item->monthly_target),
+            'achievement_rate' => $achievementRate,
+            'achievement_color' => $this->getAchievementColor($achievementRate),
+            'customer_count' => intval($item->customer_count)
+        ];
+    });
+}
+
 
     /**
      * Get Customer Data Detail
@@ -964,19 +962,15 @@ class AmDashboardController extends Controller
             }
         }
 
-        // ✅ FIXED: Filter source_data via JOIN cc_revenues (bukan whereHas yang lambat)
+        // ✅ FIXED: Filter source_data menggunakan whereExists dengan match bulan+tahun
         if (isset($filters['source_data']) && $filters['source_data'] !== 'all') {
-            $query->whereIn('corporate_customer_id', function($subQuery) use ($filters) {
-                $subQuery->select('corporate_customer_id')
+            $query->whereExists(function($subQuery) use ($filters) {
+                $subQuery->select(DB::raw(1))
                     ->from('cc_revenues')
-                    ->where('source_data', $filters['source_data']);
-                
-                // Filter tahun di cc_revenues juga kalau ada
-                if (!isset($filters['show_all_years']) || !$filters['show_all_years']) {
-                    if ($filters['tahun'] !== 'all') {
-                        $subQuery->where('tahun', $filters['tahun']);
-                    }
-                }
+                    ->whereColumn('cc_revenues.corporate_customer_id', '=', 'am_revenues.corporate_customer_id')
+                    ->whereColumn('cc_revenues.bulan', '=', 'am_revenues.bulan')
+                    ->whereColumn('cc_revenues.tahun', '=', 'am_revenues.tahun')
+                    ->where('cc_revenues.source_data', '=', $filters['source_data']);
             });
         }
 
@@ -990,6 +984,7 @@ class AmDashboardController extends Controller
                 ? round(($item->real_revenue / $item->target_revenue) * 100, 2)
                 : 0;
 
+            // Get CC revenue untuk divisi & segment info
             $ccRevenue = CcRevenue::where('corporate_customer_id', $item->corporate_customer_id)
                 ->where('tahun', $item->tahun)
                 ->where('bulan', $item->bulan)
@@ -997,6 +992,7 @@ class AmDashboardController extends Controller
                 ->first();
 
             return (object)[
+                // ✅ IMPORTANT: customer_id untuk clickable link di Blade
                 'customer_id' => $item->corporateCustomer->id,
                 'customer_name' => $item->corporateCustomer->nama,
                 'nipnas' => $item->corporateCustomer->nipnas,
@@ -1014,6 +1010,8 @@ class AmDashboardController extends Controller
         });
     }
 
+
+    
     /**
      * Get Performance Analysis Data
      */
@@ -1071,6 +1069,7 @@ class AmDashboardController extends Controller
         ];
     }
 
+    
     /**
      * Get Filter Options
      */

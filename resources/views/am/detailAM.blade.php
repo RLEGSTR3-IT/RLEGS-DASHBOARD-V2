@@ -5,6 +5,24 @@
 @section('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <link rel="stylesheet" href="{{ asset('css/detailam.css') }}">
+<style>
+/* ✅ NEW: Customer link styling */
+.customer-link {
+    color: #4e73df;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.customer-link:hover {
+    color: #ea1d25;
+    text-decoration: underline;
+}
+
+.customer-name {
+    cursor: pointer;
+}
+</style>
 @endsection
 
 @section('content')
@@ -331,12 +349,15 @@
                                         @if($filters['customer_view_mode'] == 'agregat_bulan')
                                             <td colspan="2" class="customer-name">{{ $customer->bulan_name ?? 'N/A' }}</td>
                                         @else
+                                            {{-- ✅ FIXED: Customer name is now CLICKABLE --}}
                                             <td class="customer-name">
                                                 <a href="{{ route('corporate-customer.show', $customer->customer_id ?? $customer->id ?? '#') }}" 
-                                                class="customer-link">
+                                                   class="customer-link"
+                                                   title="Lihat detail customer">
                                                     {{ $customer->customer_name ?? $customer->nama ?? 'N/A' }}
                                                 </a>
                                             </td>
+                                            <td class="nipnas">{{ $customer->nipnas ?? 'N/A' }}</td>
                                         @endif
                                         @if($filters['customer_view_mode'] != 'agregat_bulan')
                                             <td class="customer-divisi">{{ $customer->divisi ?? 'N/A' }}</td>
@@ -654,12 +675,14 @@ $(document).ready(function() {
     // ✅ FIXED: Source Data Filter (ganti dari tipeRevenueFilter)
     $('#sourceDataFilter').on('changed.bs.select', function() {
         const sourceData = $(this).val();
+        console.log('Source Data Filter changed:', sourceData); // Debug log
         updateUrlParameter('source_data', sourceData);
     });
 
-    // Customer Year Filter
+    // ✅ FIXED: Customer Year Filter
     $('#customerYearFilter').on('changed.bs.select', function() {
         const year = $(this).val();
+        console.log('Year Filter changed:', year); // Debug log
         updateUrlParameter('tahun', year);
     });
 
@@ -726,6 +749,7 @@ $(document).ready(function() {
             url.searchParams.delete(key);
         }
 
+        console.log('Updating URL:', url.toString()); // Debug log
         window.location.href = url.toString();
     }
 
@@ -1006,180 +1030,6 @@ $(document).ready(function() {
 
     $('.selectpicker').on('hidden.bs.select', function() {
         $(this).closest('.filters-container').removeClass('filters-loading');
-    });
-
-    // Enhance metric cards with number animation
-    function animateValue(element, start, end, duration) {
-        const range = end - start;
-        const increment = range / (duration / 16);
-        let current = start;
-
-        const timer = setInterval(function() {
-            current += increment;
-            if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
-                current = end;
-                clearInterval(timer);
-            }
-
-            if (element.hasClass('revenue-card-value')) {
-                element.text('Rp ' + Math.floor(current).toLocaleString('id-ID'));
-            } else {
-                element.text(current.toFixed(2) + '%');
-            }
-        }, 16);
-    }
-
-    // Trigger animations when performance tab becomes visible
-    const performanceObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                $('.metric-value').each(function() {
-                    const finalValue = parseFloat($(this).text().replace(/[^\d.]/g, ''));
-                    if (!isNaN(finalValue)) {
-                        animateValue($(this), 0, finalValue, 1000);
-                    }
-                });
-                performanceObserver.disconnect();
-            }
-        });
-    }, { threshold: 0.1 });
-
-    const performanceTab = document.getElementById('performance-analysis');
-    if (performanceTab) {
-        performanceObserver.observe(performanceTab);
-    }
-
-    // Add tooltip for achievement badges
-    $('.achievement-badge').each(function() {
-        const achievement = parseFloat($(this).text());
-        let tip = (achievement >= 100) ? 'Excellent! Mencapai target'
-                : (achievement >= 80) ? 'Good! Mendekati target'
-                : 'Perlu peningkatan';
-
-        // gunakan atribut Bootstrap 5
-        $(this)
-            .attr('data-bs-toggle', 'tooltip')
-            .attr('data-bs-title', tip)
-            .removeAttr('title');
-    });
-
-    // Initialize tooltips if Bootstrap tooltip is available
-    if (typeof $.fn.tooltip !== 'undefined') {
-        $('[data-bs-toggle="tooltip"]').tooltip({
-            trigger: 'hover',
-            placement: 'top'
-        });
-    }
-
-    // Add search/filter functionality for customer table (optional enhancement)
-    let customerTableSearch = '';
-
-    $(document).on('keyup', function(e) {
-        // Ctrl/Cmd + F for table search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'f' && $('#customer-data').hasClass('active')) {
-            e.preventDefault();
-
-            if (!$('#table-search-input').length) {
-                const searchHtml = `
-                    <div class="table-search-container mb-3">
-                        <input type="text" id="table-search-input" class="form-control" placeholder="Cari customer...">
-                    </div>
-                `;
-                $('.data-table').before(searchHtml);
-                $('#table-search-input').focus();
-            } else {
-                $('#table-search-input').focus();
-            }
-        }
-    });
-
-    // Table search functionality
-    $(document).on('keyup', '#table-search-input', function() {
-        const searchTerm = $(this).val().toLowerCase();
-
-        $('.data-table tbody tr').each(function() {
-            const rowText = $(this).text().toLowerCase();
-            if (rowText.includes(searchTerm)) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
-    });
-
-    // Print functionality
-    function printDashboard() {
-        window.print();
-    }
-
-    // Add print button if needed (can be added to UI)
-    $(document).on('keydown', function(e) {
-        // Ctrl/Cmd + P for print
-        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-            e.preventDefault();
-            printDashboard();
-        }
-    });
-
-    // Handle browser back/forward buttons
-    window.addEventListener('popstate', function(event) {
-        location.reload();
-    });
-
-    // Add loading indicator for async operations
-    function showLoadingIndicator() {
-        if (!$('#loading-indicator').length) {
-            $('body').append(`
-                <div id="loading-indicator" style="
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(255, 255, 255, 0.95);
-                    padding: 20px 40px;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-                    z-index: 9999;
-                    display: none;
-                ">
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #ea1d25;"></i>
-                    <p style="margin-top: 10px; margin-bottom: 0; font-weight: 600;">Memuat data...</p>
-                </div>
-            `);
-        }
-        $('#loading-indicator').fadeIn(200);
-    }
-
-    function hideLoadingIndicator() {
-        $('#loading-indicator').fadeOut(200);
-    }
-
-    // Show loading when navigating
-    $('a').on('click', function(e) {
-        const href = $(this).attr('href');
-        if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-            showLoadingIndicator();
-        }
-    });
-
-    // Auto-hide loading on page load
-    $(window).on('load', function() {
-        hideLoadingIndicator();
-    });
-
-    // Accessibility: Add ARIA labels
-    $('.tab-button').attr('role', 'tab');
-    $('.tab-content').attr('role', 'tabpanel');
-
-    $('.tab-button').each(function(index) {
-        $(this).attr('aria-controls', $(this).data('tab'));
-        $(this).attr('aria-selected', $(this).hasClass('active'));
-    });
-
-    // Update ARIA attributes on tab change
-    $('.tab-button').on('click', function() {
-        $('.tab-button').attr('aria-selected', false);
-        $(this).attr('aria-selected', true);
     });
 
     // Console log for debugging (remove in production)

@@ -254,8 +254,12 @@ class RevenueDataController extends Controller
         }
     }
 
+    
     /**
-     * Show single Revenue CC
+     * ✅ FIXED: Show single Revenue CC - Return all 3 revenue fields
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function showRevenueCC($id)
     {
@@ -263,7 +267,7 @@ class RevenueDataController extends Controller
             $revenue = CcRevenue::with([
                 'corporateCustomer:id,nama,nipnas',
                 'divisi:id,nama,kode',
-                'segment:id,lsegment_ho',
+                'segment:id,lsegment_ho,ssegment_ho',
                 'witelHo:id,nama',
                 'witelBill:id,nama'
             ])->findOrFail($id);
@@ -282,20 +286,26 @@ class RevenueDataController extends Controller
                     'divisi' => $divisi ? $divisi->nama : '-',
                     'divisi_kode' => $divisi ? $divisi->kode : '-',
                     'segment' => $segment ? $segment->lsegment_ho : '-',
-                    'target_revenue' => $revenue->target_revenue_sold,
-                    'real_revenue' => $revenue->tipe_revenue === 'HO' ? $revenue->real_revenue_sold : $revenue->real_revenue_bill,
+                    
+                    // ✅ FIX: Return all 3 revenue fields separately
                     'target_revenue_sold' => $revenue->target_revenue_sold,
                     'real_revenue_sold' => $revenue->real_revenue_sold,
                     'real_revenue_bill' => $revenue->real_revenue_bill,
+                    
                     'tipe_revenue' => $revenue->tipe_revenue,
                     'revenue_source' => $revenue->revenue_source,
                     'bulan' => $revenue->bulan,
-                    'tahun' => $revenue->tahun
+                    'tahun' => $revenue->tahun,
+                    'period_name' => Carbon::create($revenue->tahun, $revenue->bulan, 1)->translatedFormat('F Y')
                 ]
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error showing Revenue CC: ' . $e->getMessage());
+            Log::error('Error showing Revenue CC: ' . $e->getMessage(), [
+                'cc_revenue_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memuat detail Revenue CC: ' . $e->getMessage()
@@ -304,14 +314,19 @@ class RevenueDataController extends Controller
     }
 
     /**
-     * Update Revenue CC
+     * ✅ FIXED: Update Revenue CC - Update all 3 revenue fields
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function updateRevenueCC(Request $request, $id)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'target_revenue' => 'required|numeric|min:0',
-                'real_revenue' => 'required|numeric|min:0'
+                'target_revenue_sold' => 'required|numeric|min:0',
+                'real_revenue_sold' => 'required|numeric|min:0',
+                'real_revenue_bill' => 'required|numeric|min:0'
             ]);
 
             if ($validator->fails()) {
@@ -326,21 +341,24 @@ class RevenueDataController extends Controller
 
             $revenue = CcRevenue::findOrFail($id);
             
-            // Update based on tipe_revenue
-            if ($revenue->tipe_revenue === 'HO') {
-                $revenue->target_revenue_sold = $request->target_revenue;
-                $revenue->real_revenue_sold = $request->real_revenue;
-            } else {
-                $revenue->target_revenue_sold = $request->target_revenue;
-                $revenue->real_revenue_bill = $request->real_revenue;
-            }
+            // ✅ FIX: Always update all 3 fields (no conditional logic)
+            $revenue->target_revenue_sold = $request->target_revenue_sold;
+            $revenue->real_revenue_sold = $request->real_revenue_sold;
+            $revenue->real_revenue_bill = $request->real_revenue_bill;
 
             $revenue->save();
 
-            // ✅ CASCADE UPDATE: Update related AM revenues
-            $this->cascadeUpdateAmRevenues($revenue);
+            // ✅ Database trigger will automatically recalculate AM revenues
+            // No need to call cascadeUpdateAmRevenues() if trigger is active
 
             DB::commit();
+
+            Log::info('Revenue CC updated successfully', [
+                'cc_revenue_id' => $id,
+                'target_revenue_sold' => $request->target_revenue_sold,
+                'real_revenue_sold' => $request->real_revenue_sold,
+                'real_revenue_bill' => $request->real_revenue_bill
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -349,7 +367,11 @@ class RevenueDataController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating Revenue CC: ' . $e->getMessage());
+            Log::error('Error updating Revenue CC: ' . $e->getMessage(), [
+                'cc_revenue_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengupdate Revenue CC: ' . $e->getMessage()

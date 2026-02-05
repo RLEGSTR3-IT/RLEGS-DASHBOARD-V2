@@ -35,8 +35,9 @@ class CCWitelPerformController extends Controller
 
         try {
             $revenueData = DB::table('cc_revenues')
-                ->select('tahun', 'bulan', 'divisi_id', 'real_revenue', 'target_revenue') // in the future might want to fetch all
-                ->where('tipe_revenue', strtoupper($request->source))
+                //->select('tahun', 'bulan', 'divisi_id', 'real_revenue', 'target_revenue') // in the future might want to fetch all
+                ->select('tahun', 'bulan', 'divisi_id', DB::raw('CASE WHEN tipe_revenue = "HO" THEN real_revenue_sold WHEN tipe_revenue = "BILL" THEN real_revenue_bill END as real_revenue'), 'target_revenue_sold as target_revenue')
+                ->where('revenue_source', strtoupper($request->source))
                 ->where(DB::raw("CONCAT(tahun, '-', LPAD(bulan, 2, '0'), '-01')"), '>=', $request->start_date)
                 ->where(DB::raw("CONCAT(tahun, '-', LPAD(bulan, 2, '0'), '-01')"), '<=', $request->end_date)
                 ->get();
@@ -98,20 +99,26 @@ class CCWitelPerformController extends Controller
         // Log::info('CCW Controller - Get ready to fetch buddy');
 
         // Get Annual Target Revenue for all Witels
-        $targetsSubquery = DB::table('cc_revenues')
-            ->select(DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'), DB::raw('SUM(target_revenue) as targetM'))
-            ->where('tipe_revenue', $dbSource)
+        // $targetsSubquery = DB::table('cc_revenues')
+        //     ->select(DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'), DB::raw('SUM(target_revenue_bill) as targetM'))
+        //     ->where('revenue_source', $dbSource)
+        //     ->groupBy('witel_id');
+        // $this->applyDateFilters($targetsSubquery, $mode, $year, $month);
+        // $targets = DB::query()->fromSub($targetsSubquery, 't')->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
+
+        // NOTE: NEW WITEL TARGET SUBQUERY
+        $targetsSubquery = DB::table('witel_target_revenues')
+            ->select('witel_id', DB::raw('SUM(target_revenue_bill) as targetM'))
             ->groupBy('witel_id');
         $this->applyDateFilters($targetsSubquery, $mode, $year, $month);
-        //$targets = DB::query()->fromSub($targetsSubquery, 't')->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
         $targets = DB::query()->fromSub($targetsSubquery, 't')->whereNotNull('witel_id')->pluck('targetM', 'witel_id');
 
         // Log::info('CCW Controller', ['wp_leaderboard_targets' => $targets]);
 
         // Get YTD Real Revenue for all Witels
         $revenueSubquery = DB::table('cc_revenues')
-            ->select(DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'), DB::raw('SUM(real_revenue) as revenueM'))
-            ->where('tipe_revenue', $dbSource)
+            ->select(DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'), DB::raw('SUM(real_revenue_sold) as revenueM'))
+            ->where('revenue_source', $dbSource)
             ->groupBy('witel_id');
         $this->applyDateFilters($revenueSubquery, $mode, $year, $month);
         //$revenues = DB::query()->fromSub($revenueSubquery, 'r')->whereNotNull('witel_id')->pluck('revenueM', 'witel_id');
@@ -139,8 +146,8 @@ class CCWitelPerformController extends Controller
         //    ->get();
 
         $customersQuery = DB::table('cc_revenues')
-            ->select('corporate_customer_id as cc_id', 'nama_cc', DB::raw('SUM(real_revenue) as total_revenue'), DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'))
-            ->where('tipe_revenue', $dbSource)
+            ->select('corporate_customer_id as cc_id', 'nama_cc', DB::raw('SUM(real_revenue_sold) as total_revenue'), DB::raw('CASE WHEN divisi_id IN (1, 2) THEN witel_ho_id WHEN divisi_id = 3 THEN witel_bill_id END as witel_id'))
+            ->where('revenue_source', $dbSource)
             ->groupBy('witel_id', 'cc_id', 'nama_cc')
             ->orderBy('witel_id')
             ->orderByDesc('total_revenue');
@@ -218,12 +225,12 @@ class CCWitelPerformController extends Controller
                     'cr.corporate_customer_id',
                     'cr.nama_cc',
                     "cr.$witelIdColumn",
-                    DB::raw('SUM(cr.real_revenue) as total_revenue'),
-                    DB::raw('SUM(cr.target_revenue) as target_revenue'),
+                    DB::raw('SUM(CASE WHEN cr.tipe_revenue = "HO" THEN cr.real_revenue_sold WHEN cr.tipe_revenue = "BILL" THEN cr.real_revenue_bill END) as total_revenue'),
+                    DB::raw('SUM(cr.target_revenue_sold) as target_revenue'),
                     'w.nama as witel_name' // Select Witel name
                 )
                 ->leftJoin('witel as w', "cr.$witelIdColumn", '=', 'w.id') // Join with Witel table
-                ->where('cr.tipe_revenue', $dbSource)
+                ->where('cr.revenue_source', $dbSource)
                 ->where('cr.divisi_id', $divisionId)
                 ->whereNotNull('cr.nama_cc')      // Ensure customer name exists
                 ->whereNotNull('cr.corporate_customer_id')

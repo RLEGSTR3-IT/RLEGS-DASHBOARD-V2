@@ -2522,8 +2522,9 @@
     </div>
 </div>
 
-<!-- ✅ EDIT MODALS (Will be continued in Part 2 JavaScript) -->
-<!-- Modal Edit Revenue CC -->
+
+
+<!-- ✅ UPDATED: Modal Edit Revenue CC - 3 Separate Revenue Fields -->
 <div class="modal fade" id="modalEditRevenueCC" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
@@ -2534,7 +2535,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: brightness(0) invert(1);"></button>
             </div>
             
-            <!-- ✅ NEW: TABS NAVIGATION -->
+            <!-- ✅ TABS NAVIGATION -->
             <div style="background: white; border-bottom: 2px solid #e9ecef;">
                 <ul class="nav nav-tabs" id="editRevenueCCTabs" role="tablist" style="border: none; padding: 0 2rem;">
                     <li class="nav-item" role="presentation">
@@ -2597,11 +2598,15 @@
                                             <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">Periode</label>
                                             <input type="text" class="form-control" id="editCCPeriode" readonly style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600;">
                                         </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">Tipe Revenue</label>
+                                            <input type="text" class="form-control" id="editCCTipeRevenue" readonly style="background: #f8f9fa; border: 2px solid #e9ecef; font-weight: 600;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Edit Revenue Section -->
+                            <!-- ✅ UPDATED: Edit Revenue Section - 3 Separate Fields -->
                             <div class="card" style="border: 2px solid #ffc107; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,193,7,0.15);">
                                 <div class="card-header" style="background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%); border-bottom: 2px solid #ffc107; padding: 1rem 1.5rem;">
                                     <h6 class="mb-0" style="color: #856404; font-weight: 700;">
@@ -2610,25 +2615,42 @@
                                 </div>
                                 <div class="card-body" style="padding: 1.5rem;">
                                     <div class="row g-3">
-                                        <div class="col-md-6">
+                                        <!-- Target Revenue Sold -->
+                                        <div class="col-md-4">
                                             <label class="form-label" style="font-weight: 600; color: #495057;">
-                                                Target Revenue <span class="text-danger">*</span>
+                                                Target Revenue Sold <span class="text-danger">*</span>
                                             </label>
                                             <input type="number" 
                                                    class="form-control" 
-                                                   id="editCCTargetRevenue" 
+                                                   id="editCCTargetRevenueSold" 
                                                    required
                                                    min="0"
                                                    step="0.01"
                                                    style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem; font-weight: 600; font-size: 1.1rem;">
                                         </div>
-                                        <div class="col-md-6">
+                                        
+                                        <!-- Real Revenue Sold -->
+                                        <div class="col-md-4">
                                             <label class="form-label" style="font-weight: 600; color: #495057;">
-                                                Real Revenue <span class="text-danger">*</span>
+                                                Real Revenue Sold <span class="text-danger">*</span>
                                             </label>
                                             <input type="number" 
                                                    class="form-control" 
-                                                   id="editCCRealRevenue" 
+                                                   id="editCCRealRevenueSold" 
+                                                   required
+                                                   min="0"
+                                                   step="0.01"
+                                                   style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem; font-weight: 600; font-size: 1.1rem;">
+                                        </div>
+                                        
+                                        <!-- Real Revenue Bill -->
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; color: #495057;">
+                                                Real Revenue Bill <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="editCCRealRevenueBill" 
                                                    required
                                                    min="0"
                                                    step="0.01"
@@ -2638,7 +2660,7 @@
                                     
                                     <div class="alert alert-info mt-3" style="border-left: 4px solid #0066cc; background: #e7f3ff; border-radius: 10px;">
                                         <i class="fa-solid fa-calculator me-2"></i>
-                                        <strong>Perubahan revenue CC akan otomatis recalculate proporsi ke semua AM terkait</strong>
+                                        <strong>Info:</strong> Perubahan revenue akan otomatis recalculate proporsi ke semua AM terkait (via database trigger)
                                     </div>
                                 </div>
                             </div>
@@ -7128,9 +7150,8 @@ $('#btnImportUpdate').click(function() {
 });
 
 
-
 // ================================================================
-// ✅ FIXED: editRevenueCC() - WITH PROPER TAB HANDLING
+// ✅ FIXED: editRevenueCC() - Populate form with 3 revenue fields
 // ================================================================
 window.editRevenueCC = function(id) {
     console.log('📝 Opening edit Revenue CC modal:', id);
@@ -7151,10 +7172,14 @@ window.editRevenueCC = function(id) {
                 $('#editCCSegment').val(data.segment);
                 $('#editCCDivisi').val(data.divisi);
                 $('#editCCPeriode').val(data.period_name || `${data.bulan}/${data.tahun}`);
-                $('#editCCTargetRevenue').val(data.target_revenue_sold);
-                $('#editCCRealRevenue').val(data.real_revenue_sold);
+                $('#editCCTipeRevenue').val(data.tipe_revenue);
+                
+                // ✅ FIX: Populate all 3 revenue fields
+                $('#editCCTargetRevenueSold').val(data.target_revenue_sold);
+                $('#editCCRealRevenueSold').val(data.real_revenue_sold);
+                $('#editCCRealRevenueBill').val(data.real_revenue_bill);
 
-                // ✅ FIX: Reset to Tab 1 (Data Revenue)
+                // ✅ Reset to Tab 1 (Data Revenue)
                 $('#tab-revenue-data-tab').addClass('active');
                 $('#tab-mapping-am-tab').removeClass('active');
                 $('#tab-revenue-data').addClass('show active');
@@ -7162,24 +7187,21 @@ window.editRevenueCC = function(id) {
 
                 console.log('✅ Reset to Tab 1 - Data Revenue');
 
-                // ✅ FIX: Attach tab click handler PROPERLY
+                // ✅ Attach tab click handler for Mapping AM
                 $('#tab-mapping-am-tab').off('click').on('click', function(e) {
                     console.log('🔄 Tab Mapping AM clicked');
                     e.preventDefault();
                     
-                    // Manual tab switching (in case Bootstrap fails)
                     $('#tab-revenue-data-tab').removeClass('active');
                     $('#tab-mapping-am-tab').addClass('active');
                     $('#tab-revenue-data').removeClass('show active');
                     $('#tab-mapping-am').addClass('show active');
                     
                     console.log('✅ Switched to Tab 2 - Mapping AM');
-                    
-                    // Load mapping AM data
                     loadMappingAMTab(id);
                 });
 
-                // ✅ FIX: Attach tab 1 click handler
+                // ✅ Attach tab 1 click handler
                 $('#tab-revenue-data-tab').off('click').on('click', function(e) {
                     console.log('🔄 Tab Data Revenue clicked');
                     e.preventDefault();
@@ -7207,6 +7229,49 @@ window.editRevenueCC = function(id) {
         }
     });
 };
+
+// ================================================================
+// ✅ FIXED: Form submit handler - Send all 3 revenue fields
+// ================================================================
+$('#formEditRevenueCC').on('submit', function(e) {
+    e.preventDefault();
+    
+    const id = $('#editCCRevenueId').val();
+    
+    // ✅ FIX: Send all 3 revenue fields
+    const data = {
+        target_revenue_sold: $('#editCCTargetRevenueSold').val(),
+        real_revenue_sold: $('#editCCRealRevenueSold').val(),
+        real_revenue_bill: $('#editCCRealRevenueBill').val()
+    };
+
+    console.log('📤 Submitting Revenue CC update:', data);
+
+    $.ajax({
+        url: `/revenue-data/revenue-cc/${id}`,
+        method: 'PUT',
+        data: JSON.stringify(data),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('✅ Update response:', response);
+            
+            if (response.success) {
+                alert(response.message);
+                bootstrap.Modal.getInstance(document.getElementById('modalEditRevenueCC')).hide();
+                loadData(); // Reload table
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Update failed:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+});
+
+
 
 // ================================================================
 // ✅ loadMappingAMTab() - Load AM mappings for CC Revenue
@@ -8431,16 +8496,36 @@ window.deleteRevenueCC = function(id) {
 
 
 // ================================================================
-// ✅ UPDATED: Form submit for Edit Revenue CC
+// ✅ FIXED: Form submit handler - Parse float & validate before submit
 // ================================================================
 $('#formEditRevenueCC').on('submit', function(e) {
     e.preventDefault();
     
     const id = $('#editCCRevenueId').val();
+    
+    // ✅ FIX: Parse values as FLOAT (remove formatting)
+    const targetRevenueSold = parseFloat($('#editCCTargetRevenueSold').val()) || 0;
+    const realRevenueSold = parseFloat($('#editCCRealRevenueSold').val()) || 0;
+    const realRevenueBill = parseFloat($('#editCCRealRevenueBill').val()) || 0;
+    
+    // ✅ VALIDATION: Check if values are valid numbers
+    if (isNaN(targetRevenueSold) || isNaN(realRevenueSold) || isNaN(realRevenueBill)) {
+        alert('❌ Error: Nilai revenue harus berupa angka valid!');
+        return;
+    }
+    
+    if (targetRevenueSold < 0 || realRevenueSold < 0 || realRevenueBill < 0) {
+        alert('❌ Error: Nilai revenue tidak boleh negatif!');
+        return;
+    }
+    
     const data = {
-        target_revenue_sold: $('#editCCTargetRevenue').val(),
-        real_revenue_sold: $('#editCCRealRevenue').val()
+        target_revenue_sold: targetRevenueSold,
+        real_revenue_sold: realRevenueSold,
+        real_revenue_bill: realRevenueBill
     };
+
+    console.log('📤 Submitting Revenue CC update:', data);
 
     $.ajax({
         url: `/revenue-data/revenue-cc/${id}`,
@@ -8449,18 +8534,61 @@ $('#formEditRevenueCC').on('submit', function(e) {
         contentType: 'application/json',
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
         success: function(response) {
+            console.log('✅ Update response:', response);
+            
             if (response.success) {
-                alert(response.message);
+                alert('✅ ' + response.message);
+                
+                // Close modal
                 bootstrap.Modal.getInstance(document.getElementById('modalEditRevenueCC')).hide();
+                
+                // Reload table data
                 loadData();
             } else {
-                alert('Error: ' + response.message);
+                alert('❌ Error: ' + response.message);
             }
         },
         error: function(xhr) {
-            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+            console.error('❌ Update failed:', xhr);
+            
+            let errorMsg = 'Terjadi kesalahan';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            } else if (xhr.statusText) {
+                errorMsg = xhr.statusText;
+            }
+            
+            alert('❌ Error: ' + errorMsg);
         }
     });
+});
+
+// ================================================================
+// ✅ OPTIONAL: Add input formatting (show with thousand separator)
+// ================================================================
+function formatNumberInput(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    input.addEventListener('blur', function() {
+        let value = parseFloat(this.value.replace(/,/g, ''));
+        if (!isNaN(value)) {
+            // Format with thousand separator for display
+            this.value = value.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+        }
+    });
+    
+    input.addEventListener('focus', function() {
+        // Remove formatting for editing
+        this.value = this.value.replace(/,/g, '');
+    });
+}
+
+// Apply formatting to all revenue inputs
+$(document).ready(function() {
+    formatNumberInput('editCCTargetRevenueSold');
+    formatNumberInput('editCCRealRevenueSold');
+    formatNumberInput('editCCRealRevenueBill');
 });
 
 // ================================================================

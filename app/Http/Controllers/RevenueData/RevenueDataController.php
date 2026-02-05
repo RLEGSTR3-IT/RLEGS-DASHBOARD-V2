@@ -30,9 +30,12 @@ use Carbon\Carbon;
  * 4. ✅ getRevenueCC() - Fixed empty table issue with proper query
  * 5. ✅ All GET methods - Added comprehensive search functionality
  * 6. ✅ All GET methods - Added recordsFiltered for accurate badge counter
+ * 7. ✅ DELETE METHODS - Fixed FK column name (cc_revenue_id → corporate_customer_id)
+ * 8. ✅ DELETE DATA CC - Added warning + log option for related data
+ * 9. ✅ DELETE REVENUE CC - Improved with warning (no log option)
  * 
  * @author RLEGS Team
- * @version 2.0 - Fixed (2026-02-04)
+ * @version 3.0 - Fixed Delete Methods (2026-02-05)
  */
 class RevenueDataController extends Controller
 {
@@ -355,79 +358,153 @@ class RevenueDataController extends Controller
     }
 
     /**
-     * Delete Revenue CC
+     * ✅ FIXED: Delete single Revenue CC - NO LOG OPTION
+     * 
+     * Improved with proper FK handling and warning
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function deleteRevenueCC($id)
     {
         try {
             DB::beginTransaction();
 
-            $revenue = CcRevenue::findOrFail($id);
+            $ccRevenue = CcRevenue::findOrFail($id);
 
-            // Delete related AM revenues first
-            AmRevenue::where('cc_revenue_id', $id)->delete();
+            // ✅ FIX: Count related AM revenues dengan FK yang BENAR
+            // am_revenues memiliki corporate_customer_id yang reference ke master CC
+            // BUKAN cc_revenue_id!
+            $relatedAmRevenues = AmRevenue::where('corporate_customer_id', $ccRevenue->corporate_customer_id)
+                ->where('bulan', $ccRevenue->bulan)
+                ->where('tahun', $ccRevenue->tahun)
+                ->count();
 
-            $revenue->delete();
+            Log::info('Delete Revenue CC:', [
+                'cc_revenue_id' => $id,
+                'cc_name' => $ccRevenue->nama_cc,
+                'periode' => $ccRevenue->bulan . '/' . $ccRevenue->tahun,
+                'related_am_revenues' => $relatedAmRevenues
+            ]);
+
+            // Delete related AM revenues first (same corporate_customer + periode)
+            if ($relatedAmRevenues > 0) {
+                AmRevenue::where('corporate_customer_id', $ccRevenue->corporate_customer_id)
+                    ->where('bulan', $ccRevenue->bulan)
+                    ->where('tahun', $ccRevenue->tahun)
+                    ->delete();
+            }
+
+            // Delete CC Revenue
+            $ccRevenue->delete();
 
             DB::commit();
 
+            $message = $relatedAmRevenues > 0
+                ? "Revenue CC '{$ccRevenue->nama_cc}' dan {$relatedAmRevenues} Revenue AM terkait berhasil dihapus"
+                : "Revenue CC '{$ccRevenue->nama_cc}' berhasil dihapus";
+
             return response()->json([
                 'success' => true,
-                'message' => 'Revenue CC berhasil dihapus'
+                'message' => $message,
+                'deleted_data' => [
+                    'cc_revenues' => 1,
+                    'am_revenues' => $relatedAmRevenues
+                ]
             ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            Log::error('Revenue CC not found: ' . $id);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Revenue CC tidak ditemukan'
+            ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error deleting Revenue CC: ' . $e->getMessage());
+            Log::error('Error deleting Revenue CC: ' . $e->getMessage(), [
+                'cc_revenue_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus Revenue CC: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Bulk delete Revenue CC
+     * ✅ FIXED: Bulk delete Revenue CC - NO LOG OPTION
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function bulkDeleteRevenueCC(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|integer|exists:cc_revenues,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
-            $validator = Validator::make($request->all(), [
-                'ids' => 'required|array|min:1',
-                'ids.*' => 'required|integer|exists:cc_revenues,id'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
             DB::beginTransaction();
 
-            $ids = $request->ids;
+            $ids = $request->input('ids');
 
-            // Delete related AM revenues
-            AmRevenue::whereIn('cc_revenue_id', $ids)->delete();
+            // Get CC revenues to find related AM revenues
+            $ccRevenues = CcRevenue::whereIn('id', $ids)->get();
+            
+            // Collect conditions for AM revenues deletion
+            $amRevenueDeleteCount = 0;
+            foreach ($ccRevenues as $ccRev) {
+                $count = AmRevenue::where('corporate_customer_id', $ccRev->corporate_customer_id)
+                    ->where('bulan', $ccRev->bulan)
+                    ->where('tahun', $ccRev->tahun)
+                    ->delete();
+                $amRevenueDeleteCount += $count;
+            }
 
             // Delete CC revenues
-            $deleted = CcRevenue::whereIn('id', $ids)->delete();
+            $deletedCount = CcRevenue::whereIn('id', $ids)->delete();
 
             DB::commit();
 
+            Log::info('Bulk deleted Revenue CC:', [
+                'deleted_cc_revenues' => $deletedCount,
+                'deleted_am_revenues' => $amRevenueDeleteCount
+            ]);
+
+            $message = $amRevenueDeleteCount > 0
+                ? "{$deletedCount} Revenue CC dan {$amRevenueDeleteCount} Revenue AM terkait berhasil dihapus"
+                : "{$deletedCount} Revenue CC berhasil dihapus";
+
             return response()->json([
                 'success' => true,
-                'message' => "{$deleted} Revenue CC berhasil dihapus"
+                'message' => $message,
+                'deleted_data' => [
+                    'cc_revenues' => $deletedCount,
+                    'am_revenues' => $amRevenueDeleteCount
+                ]
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error bulk deleting Revenue CC: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus Revenue CC: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -674,7 +751,10 @@ class RevenueDataController extends Controller
      */
     private function cascadeUpdateAmRevenues($ccRevenue)
     {
-        $amRevenues = AmRevenue::where('cc_revenue_id', $ccRevenue->id)->get();
+        $amRevenues = AmRevenue::where('corporate_customer_id', $ccRevenue->corporate_customer_id)
+            ->where('bulan', $ccRevenue->bulan)
+            ->where('tahun', $ccRevenue->tahun)
+            ->get();
 
         foreach ($amRevenues as $amRevenue) {
             $amRevenue->real_revenue = $ccRevenue->real_revenue_sold * $amRevenue->proporsi;
@@ -1529,7 +1609,7 @@ class RevenueDataController extends Controller
     }
 
     // ========================================
-    // DATA CC - CRUD
+    // DATA CC - CRUD WITH LOG OPTIONS
     // ========================================
 
     /**
@@ -1648,40 +1728,192 @@ class RevenueDataController extends Controller
     }
 
     /**
-     * Delete Data CC
+     * ✅ FIXED: Delete single Data CC (Master) - WITH LOG OPTION
+     * 
+     * Check related cc_revenues and am_revenues count
+     * Option to save deletion log or permanent delete
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function deleteDataCC($id)
     {
         try {
             DB::beginTransaction();
 
+            // Find CC
             $cc = CorporateCustomer::findOrFail($id);
 
-            // Check if CC has related revenues
-            $hasRevenues = CcRevenue::where('corporate_customer_id', $id)->exists();
-            
-            if ($hasRevenues) {
+            // ✅ FIX #1: Count related data dengan FK yang BENAR
+            $relatedCcRevenues = CcRevenue::where('corporate_customer_id', $id)->count();
+            $relatedAmRevenues = AmRevenue::where('corporate_customer_id', $id)->count();
+
+            Log::info('Delete Data CC request:', [
+                'cc_id' => $id,
+                'cc_name' => $cc->nama,
+                'nipnas' => $cc->nipnas,
+                'related_cc_revenues' => $relatedCcRevenues,
+                'related_am_revenues' => $relatedAmRevenues
+            ]);
+
+            // ✅ FIX #2: Check if has related data
+            if ($relatedCcRevenues > 0 || $relatedAmRevenues > 0) {
+                // Return warning info (frontend will show confirmation modal)
+                DB::rollBack();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tidak dapat menghapus CC yang memiliki data revenue'
-                ], 422);
+                    'requires_confirmation' => true,
+                    'message' => 'Data CC memiliki data terkait yang akan ikut terhapus!',
+                    'warning_data' => [
+                        'cc_name' => $cc->nama,
+                        'nipnas' => $cc->nipnas,
+                        'cc_revenues_count' => $relatedCcRevenues,
+                        'am_revenues_count' => $relatedAmRevenues,
+                        'total_related' => $relatedCcRevenues + $relatedAmRevenues
+                    ]
+                ], 200);
             }
 
+            // ✅ No related data, safe to delete
             $cc->delete();
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data CC berhasil dihapus'
+                'message' => "Data CC '{$cc->nama}' berhasil dihapus"
             ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            Log::error('Data CC not found: ' . $id);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Data CC tidak ditemukan'
+            ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error deleting Data CC: ' . $e->getMessage());
+            Log::error('Error deleting Data CC: ' . $e->getMessage(), [
+                'cc_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus data CC: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * ✅ NEW METHOD: Confirm delete Data CC with option
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function confirmDeleteDataCC(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'delete_type' => 'required|in:permanent,with_log'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter tidak valid',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $cc = CorporateCustomer::findOrFail($id);
+            $deleteType = $request->input('delete_type');
+
+            // Get related data BEFORE deletion
+            $relatedCcRevenues = CcRevenue::where('corporate_customer_id', $id)->get();
+            $relatedAmRevenues = AmRevenue::where('corporate_customer_id', $id)->get();
+
+            Log::info('Confirm delete Data CC:', [
+                'cc_id' => $id,
+                'cc_name' => $cc->nama,
+                'delete_type' => $deleteType,
+                'cc_revenues' => $relatedCcRevenues->count(),
+                'am_revenues' => $relatedAmRevenues->count()
+            ]);
+
+            // ✅ OPTION 1: Save log before deleting
+            if ($deleteType === 'with_log') {
+                $logData = [
+                    'deleted_at' => now()->toDateTimeString(),
+                    'cc' => $cc->toArray(),
+                    'cc_revenues' => $relatedCcRevenues->toArray(),
+                    'am_revenues' => $relatedAmRevenues->toArray()
+                ];
+
+                // Save log to file
+                $logFileName = 'deleted_cc_' . $cc->id . '_' . now()->format('Y-m-d_His') . '.json';
+                $logPath = storage_path('logs/deleted_data/' . $logFileName);
+                
+                // Ensure directory exists
+                if (!file_exists(dirname($logPath))) {
+                    mkdir(dirname($logPath), 0755, true);
+                }
+                
+                file_put_contents($logPath, json_encode($logData, JSON_PRETTY_PRINT));
+
+                Log::info('Deletion log saved:', ['path' => $logPath]);
+            }
+
+            // Delete related AM revenues first (FK constraint)
+            AmRevenue::where('corporate_customer_id', $id)->delete();
+            
+            // Delete related CC revenues
+            CcRevenue::where('corporate_customer_id', $id)->delete();
+            
+            // Finally delete the CC itself
+            $cc->delete();
+
+            DB::commit();
+
+            $message = $deleteType === 'with_log' 
+                ? "Data CC '{$cc->nama}' dan {$relatedCcRevenues->count()} Revenue CC serta {$relatedAmRevenues->count()} Revenue AM berhasil dihapus (log tersimpan)"
+                : "Data CC '{$cc->nama}' dan semua data terkait berhasil dihapus permanen";
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'deleted_data' => [
+                    'cc' => 1,
+                    'cc_revenues' => $relatedCcRevenues->count(),
+                    'am_revenues' => $relatedAmRevenues->count()
+                ]
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            Log::error('Data CC not found: ' . $id);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Data CC tidak ditemukan'
+            ], 404);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error confirming delete Data CC: ' . $e->getMessage(), [
+                'cc_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1726,38 +1958,60 @@ class RevenueDataController extends Controller
     }
 
     /**
-     * Bulk delete Data CC
+     * ✅ FIXED: Bulk delete Data CC (Master) - WITH LOG OPTION
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function bulkDeleteDataCC(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|integer|exists:corporate_customers,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
-            $validator = Validator::make($request->all(), [
-                'ids' => 'required|array|min:1',
-                'ids.*' => 'required|integer|exists:corporate_customers,id'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
             DB::beginTransaction();
 
-            $ids = $request->ids;
+            $ids = $request->input('ids');
 
-            // Check if any CC has revenues
-            $hasRevenues = CcRevenue::whereIn('corporate_customer_id', $ids)->exists();
-            
-            if ($hasRevenues) {
+            // ✅ Count related data for ALL selected CCs
+            $totalCcRevenues = CcRevenue::whereIn('corporate_customer_id', $ids)->count();
+            $totalAmRevenues = AmRevenue::whereIn('corporate_customer_id', $ids)->count();
+
+            Log::info('Bulk delete Data CC request:', [
+                'cc_ids' => $ids,
+                'count' => count($ids),
+                'related_cc_revenues' => $totalCcRevenues,
+                'related_am_revenues' => $totalAmRevenues
+            ]);
+
+            // ✅ Check if has related data
+            if ($totalCcRevenues > 0 || $totalAmRevenues > 0) {
+                DB::rollBack();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tidak dapat menghapus CC yang memiliki data revenue'
-                ], 422);
+                    'requires_confirmation' => true,
+                    'message' => count($ids) . ' Data CC memiliki data terkait yang akan ikut terhapus!',
+                    'warning_data' => [
+                        'selected_cc' => count($ids),
+                        'cc_revenues_count' => $totalCcRevenues,
+                        'am_revenues_count' => $totalAmRevenues,
+                        'total_related' => $totalCcRevenues + $totalAmRevenues
+                    ]
+                ], 200);
             }
 
+            // Safe to delete (no related data)
             $deleted = CorporateCustomer::whereIn('id', $ids)->delete();
 
             DB::commit();
@@ -1770,47 +2024,252 @@ class RevenueDataController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error bulk deleting Data CC: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus data CC: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Bulk delete ALL Data CC
+     * ✅ NEW METHOD: Confirm bulk delete Data CC
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function confirmBulkDeleteDataCC(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|integer|exists:corporate_customers,id',
+            'delete_type' => 'required|in:permanent,with_log'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $ids = $request->input('ids');
+            $deleteType = $request->input('delete_type');
+
+            // Get all CCs and related data BEFORE deletion
+            $ccs = CorporateCustomer::whereIn('id', $ids)->get();
+            $relatedCcRevenues = CcRevenue::whereIn('corporate_customer_id', $ids)->get();
+            $relatedAmRevenues = AmRevenue::whereIn('corporate_customer_id', $ids)->get();
+
+            Log::info('Confirm bulk delete Data CC:', [
+                'cc_ids' => $ids,
+                'delete_type' => $deleteType,
+                'cc_count' => $ccs->count(),
+                'cc_revenues' => $relatedCcRevenues->count(),
+                'am_revenues' => $relatedAmRevenues->count()
+            ]);
+
+            // ✅ OPTION: Save log before deleting
+            if ($deleteType === 'with_log') {
+                $logData = [
+                    'deleted_at' => now()->toDateTimeString(),
+                    'cc_count' => $ccs->count(),
+                    'corporate_customers' => $ccs->toArray(),
+                    'cc_revenues' => $relatedCcRevenues->toArray(),
+                    'am_revenues' => $relatedAmRevenues->toArray()
+                ];
+
+                $logFileName = 'deleted_cc_bulk_' . now()->format('Y-m-d_His') . '.json';
+                $logPath = storage_path('logs/deleted_data/' . $logFileName);
+                
+                if (!file_exists(dirname($logPath))) {
+                    mkdir(dirname($logPath), 0755, true);
+                }
+                
+                file_put_contents($logPath, json_encode($logData, JSON_PRETTY_PRINT));
+
+                Log::info('Bulk deletion log saved:', ['path' => $logPath]);
+            }
+
+            // Delete in correct order (FK constraints)
+            AmRevenue::whereIn('corporate_customer_id', $ids)->delete();
+            CcRevenue::whereIn('corporate_customer_id', $ids)->delete();
+            $deletedCount = CorporateCustomer::whereIn('id', $ids)->delete();
+
+            DB::commit();
+
+            $message = $deleteType === 'with_log'
+                ? "{$deletedCount} Data CC, {$relatedCcRevenues->count()} Revenue CC, dan {$relatedAmRevenues->count()} Revenue AM berhasil dihapus (log tersimpan)"
+                : "{$deletedCount} Data CC dan semua data terkait berhasil dihapus permanen";
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'deleted_data' => [
+                    'cc' => $deletedCount,
+                    'cc_revenues' => $relatedCcRevenues->count(),
+                    'am_revenues' => $relatedAmRevenues->count()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error confirming bulk delete Data CC: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * ✅ FIXED: Bulk delete ALL Data CC (Master) - WITH LOG OPTION
+     * 
+     * @return \Illuminate\Http\JsonResponse
      */
     public function bulkDeleteAllDataCC()
     {
         try {
             DB::beginTransaction();
 
-            // Check if any CC has revenues
-            $hasRevenues = CcRevenue::exists();
-            
-            if ($hasRevenues) {
+            // Count all
+            $totalCc = CorporateCustomer::count();
+            $totalCcRevenues = CcRevenue::count();
+            $totalAmRevenues = AmRevenue::count();
+
+            Log::warning('Bulk delete ALL Data CC requested:', [
+                'total_cc' => $totalCc,
+                'total_cc_revenues' => $totalCcRevenues,
+                'total_am_revenues' => $totalAmRevenues
+            ]);
+
+            if ($totalCc === 0) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tidak dapat menghapus semua CC karena ada yang memiliki data revenue'
-                ], 422);
+                    'message' => 'Tidak ada Data CC untuk dihapus'
+                ], 404);
             }
 
-            $deleted = CorporateCustomer::count();
+            // Require confirmation
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'requires_confirmation' => true,
+                'message' => 'Anda akan menghapus SEMUA Data CC!',
+                'warning_data' => [
+                    'total_cc' => $totalCc,
+                    'cc_revenues_count' => $totalCcRevenues,
+                    'am_revenues_count' => $totalAmRevenues,
+                    'total_all' => $totalCc + $totalCcRevenues + $totalAmRevenues
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error bulk delete all Data CC: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * ✅ NEW METHOD: Confirm bulk delete ALL Data CC
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function confirmBulkDeleteAllDataCC(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'delete_type' => 'required|in:permanent,with_log',
+            'confirmation_text' => 'required|string|in:DELETE ALL'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal. Ketik "DELETE ALL" untuk konfirmasi.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $deleteType = $request->input('delete_type');
+
+            // Get ALL data before deletion
+            $allCc = CorporateCustomer::all();
+            $allCcRevenues = CcRevenue::all();
+            $allAmRevenues = AmRevenue::all();
+
+            Log::warning('Confirming delete ALL Data CC:', [
+                'delete_type' => $deleteType,
+                'cc_count' => $allCc->count(),
+                'cc_revenues_count' => $allCcRevenues->count(),
+                'am_revenues_count' => $allAmRevenues->count()
+            ]);
+
+            // Save log if requested
+            if ($deleteType === 'with_log') {
+                $logData = [
+                    'deleted_at' => now()->toDateTimeString(),
+                    'type' => 'BULK_DELETE_ALL',
+                    'corporate_customers' => $allCc->toArray(),
+                    'cc_revenues' => $allCcRevenues->toArray(),
+                    'am_revenues' => $allAmRevenues->toArray()
+                ];
+
+                $logFileName = 'deleted_ALL_cc_' . now()->format('Y-m-d_His') . '.json';
+                $logPath = storage_path('logs/deleted_data/' . $logFileName);
+                
+                if (!file_exists(dirname($logPath))) {
+                    mkdir(dirname($logPath), 0755, true);
+                }
+                
+                file_put_contents($logPath, json_encode($logData, JSON_PRETTY_PRINT));
+
+                Log::warning('ALL CC deletion log saved:', ['path' => $logPath]);
+            }
+
+            // Delete in correct order
+            AmRevenue::truncate();
+            CcRevenue::truncate();
             CorporateCustomer::truncate();
 
             DB::commit();
 
+            $message = $deleteType === 'with_log'
+                ? "SEMUA Data CC ({$allCc->count()}), Revenue CC ({$allCcRevenues->count()}), dan Revenue AM ({$allAmRevenues->count()}) berhasil dihapus (log tersimpan)"
+                : "SEMUA Data CC dan data terkait berhasil dihapus permanen";
+
             return response()->json([
                 'success' => true,
-                'message' => "{$deleted} Data CC berhasil dihapus"
+                'message' => $message,
+                'deleted_data' => [
+                    'cc' => $allCc->count(),
+                    'cc_revenues' => $allCcRevenues->count(),
+                    'am_revenues' => $allAmRevenues->count()
+                ]
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error bulk deleting all Data CC: ' . $e->getMessage());
+            Log::error('Error confirming delete ALL Data CC: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus semua data CC: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -45,6 +45,70 @@
             text-align: right !important;
         }
 
+        #modalEditRevenueAM .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        #modalEditRevenueAM .info-section {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+
+        #modalEditRevenueAM .edit-section {
+            background-color: #fff8e1;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #ffc107;
+        }
+
+        #modalEditRevenueAM .calculated-section {
+            background-color: #f0f8ff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #0dcaf0;
+        }
+
+        #modalEditRevenueAM .form-control[readonly] {
+            cursor: not-allowed !important;
+        }
+
+        #modalEditRevenueAM .other-ams-table {
+            font-size: 0.9rem;
+        }
+
+        #modalEditRevenueAM .other-ams-table th {
+            background-color: #e9ecef;
+            font-weight: 600;
+        }
+
+        #modalEditRevenueAM .other-ams-table td {
+            vertical-align: middle;
+        }
+
+        #proporsiValidationAlert.alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        #proporsiValidationAlert.alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        #proporsiValidationAlert.alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
         /* ===================================================
            ✅ FIX #2: MONTH PICKER ACTIVE HOVER STATE
            Fixed: Active button hover shows RED text on WHITE bg
@@ -1380,6 +1444,446 @@
             font-weight: 600;
         }
 
+
+        /* ========================================
+        DELETE MODAL - MODERN MINIMALIST STYLES
+        ======================================== */
+
+      /* Modal backdrop blur effect */
+      .delete-modal-backdrop {
+          backdrop-filter: blur(4px);
+          background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      /* Main modal styling */
+      .delete-confirm-modal .modal-content {
+          border: none;
+          border-radius: 16px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          overflow: hidden;
+      }
+
+      /* Header - Gradient danger background */
+      .delete-confirm-modal .modal-header {
+          background: #ea1d25;
+          border: none;
+          padding: 20px 24px;
+          position: relative;
+      }
+
+      .delete-confirm-modal .modal-header::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+      }
+
+      .delete-confirm-modal .modal-title {
+          color: #ffffff !important;
+          font-weight: 600;
+          font-size: 1.125rem;
+          display: flex;
+          align-items: center;
+          margin: 0;
+      }
+
+      .delete-confirm-modal .modal-title i {
+          font-size: 1.25rem;
+          margin-right: 10px;
+          animation: pulse-warning 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse-warning {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.1); }
+      }
+
+      .delete-confirm-modal .btn-close {
+          filter: brightness(0) invert(1);
+          opacity: 0.8;
+          transition: all 0.2s ease;
+      }
+
+      .delete-confirm-modal .btn-close:hover {
+          opacity: 1;
+          transform: rotate(90deg);
+      }
+
+      /* Body styling */
+      .delete-confirm-modal .modal-body {
+          padding: 24px;
+          background: #ffffff;
+      }
+
+      /* Warning alert box - Modern gradient */
+      .delete-warning-box {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: none;
+          border-left: 4px solid #f59e0b;
+          border-radius: 12px;
+          padding: 16px;
+          margin-bottom: 20px;
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+      }
+
+      .delete-warning-box .warning-icon {
+          color: #f59e0b;
+          font-size: 1.25rem;
+          margin-right: 12px;
+      }
+
+      .delete-warning-box .warning-title {
+          color: #92400e;
+          font-weight: 600;
+          font-size: 1rem;
+          margin: 0;
+      }
+
+      .delete-warning-box .warning-text {
+          color: #78350f;
+          font-size: 0.9rem;
+          margin: 8px 0 0 0;
+          line-height: 1.5;
+      }
+
+      /* Related Data Table - Modern card style */
+      .related-data-card {
+          background: #f9fafb;
+          border-radius: 12px;
+          padding: 16px;
+          margin-bottom: 20px;
+          border: 1px solid #e5e7eb;
+      }
+
+      .related-data-card h6 {
+          color: #374151;
+          font-weight: 600;
+          font-size: 0.875rem;
+          margin-bottom: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+      }
+
+      .related-data-table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          background: white;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .related-data-table tbody tr {
+          transition: background-color 0.2s ease;
+      }
+
+      .related-data-table tbody tr:hover {
+          background-color: #f3f4f6;
+      }
+
+      .related-data-table td {
+          padding: 12px 16px;
+          border-bottom: 1px solid #f3f4f6;
+          font-size: 0.875rem;
+      }
+
+      .related-data-table td:first-child {
+          color: #6b7280;
+          font-weight: 500;
+      }
+
+      .related-data-table td:last-child {
+          text-align: right;
+          color: #111827;
+          font-weight: 600;
+      }
+
+      .related-data-table tbody tr:last-child td {
+          border-bottom: none;
+      }
+
+      .related-data-table tbody tr.total-row {
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      }
+
+      .related-data-table tbody tr.total-row td {
+          font-weight: 700;
+          color: #111827;
+      }
+
+      /* Delete Options - Modern Radio Buttons */
+      .delete-options-card {
+          background: #ffffff;
+          border-radius: 12px;
+          padding: 20px;
+          margin-top: 20px;
+          border: 1px solid #e5e7eb;
+      }
+
+      .delete-options-card h6 {
+          color: #374151;
+          font-weight: 600;
+          font-size: 0.875rem;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+      }
+
+      /* Custom Radio Button Container */
+      .delete-option-radio {
+          position: relative;
+          margin-bottom: 12px;
+      }
+
+      .delete-option-radio input[type="radio"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+
+      .delete-option-radio label {
+          display: block;
+          padding: 16px 20px 16px 52px;
+          background: #f9fafb;
+          border: 2px solid #e5e7eb;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          margin: 0;
+      }
+
+      .delete-option-radio label::before {
+          content: '';
+          position: absolute;
+          left: 18px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 20px;
+          height: 20px;
+          border: 2px solid #d1d5db;
+          border-radius: 50%;
+          background: white;
+          transition: all 0.3s ease;
+      }
+
+      .delete-option-radio label::after {
+          content: '';
+          position: absolute;
+          left: 24px;
+          top: 50%;
+          transform: translateY(-50%) scale(0);
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: white;
+          transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+
+      .delete-option-radio input[type="radio"]:checked + label {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          border-color: #3b82f6;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      }
+
+      .delete-option-radio input[type="radio"]:checked + label::before {
+          background: #3b82f6;
+          border-color: #3b82f6;
+      }
+
+      .delete-option-radio input[type="radio"]:checked + label::after {
+          transform: translateY(-50%) scale(1);
+      }
+
+      .delete-option-radio label:hover {
+          border-color: #9ca3af;
+          background: #f3f4f6;
+          transform: translateX(2px);
+      }
+
+      .delete-option-radio input[type="radio"]:checked + label:hover {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          border-color: #3b82f6;
+      }
+
+      .delete-option-radio .option-title {
+          display: block;
+          color: #111827;
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin-bottom: 4px;
+      }
+
+      .delete-option-radio .option-description {
+          display: block;
+          color: #6b7280;
+          font-size: 0.8rem;
+          line-height: 1.4;
+      }
+
+      .delete-option-radio input[type="radio"]:checked + label .option-title {
+          color: #1e40af;
+      }
+
+      .delete-option-radio input[type="radio"]:checked + label .option-description {
+          color: #1e40af;
+      }
+
+      /* Confirmation Text Section - DANGER ZONE */
+      .danger-zone-card {
+          background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+          border: 2px solid #dc2626;
+          border-radius: 12px;
+          padding: 20px;
+          margin-top: 20px;
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+          animation: pulse-danger 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse-danger {
+          0%, 100% { box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15); }
+          50% { box-shadow: 0 4px 20px rgba(220, 38, 38, 0.25); }
+      }
+
+      .danger-zone-card .danger-icon {
+          color: #dc2626;
+          font-size: 1.5rem;
+          margin-right: 12px;
+      }
+
+      .danger-zone-card .danger-title {
+          color: #991b1b;
+          font-weight: 700;
+          font-size: 1rem;
+          margin: 0 0 12px 0;
+      }
+
+      .danger-zone-card .danger-text {
+          color: #7f1d1d;
+          font-size: 0.875rem;
+          margin: 8px 0;
+          line-height: 1.5;
+      }
+
+      .danger-zone-card .confirmation-input {
+          margin-top: 12px;
+          padding: 12px 16px;
+          border: 2px solid #dc2626;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          transition: all 0.3s ease;
+      }
+
+      .danger-zone-card .confirmation-input:focus {
+          outline: none;
+          border-color: #991b1b;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+          background: white;
+      }
+
+      .danger-zone-card .confirmation-input::placeholder {
+          color: #dc2626;
+          opacity: 0.5;
+      }
+
+      /* Modal Footer */
+      .delete-confirm-modal .modal-footer {
+          border: none;
+          padding: 16px 24px 20px;
+          background: #f9fafb;
+          display: flex;
+          gap: 12px;
+      }
+
+      .delete-confirm-modal .btn-cancel {
+          flex: 1;
+          padding: 12px 24px;
+          background: white;
+          border: 2px solid #e5e7eb;
+          color: #6b7280;
+          font-weight: 600;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+      }
+
+      .delete-confirm-modal .btn-cancel:hover {
+          background: #f3f4f6;
+          border-color: #d1d5db;
+          color: #374151;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .delete-confirm-modal .btn-delete-confirm {
+          flex: 1;
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+          border: none;
+          color: white;
+          font-weight: 600;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+      }
+
+      .delete-confirm-modal .btn-delete-confirm:hover {
+          background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+      }
+
+      .delete-confirm-modal .btn-delete-confirm:active {
+          transform: translateY(0);
+      }
+
+      .delete-confirm-modal .btn-delete-confirm i,
+      .delete-confirm-modal .btn-cancel i {
+          margin-right: 8px;
+      }
+
+      /* Smooth modal animation */
+      .delete-confirm-modal.fade .modal-dialog {
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .delete-confirm-modal.show .modal-dialog {
+          transform: scale(1);
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 576px) {
+          .delete-confirm-modal .modal-dialog {
+              margin: 0.5rem;
+          }
+          
+          .delete-confirm-modal .modal-body {
+              padding: 16px;
+          }
+          
+          .delete-option-radio label {
+              padding: 12px 16px 12px 44px;
+          }
+          
+          .delete-option-radio label::before {
+              left: 14px;
+              width: 18px;
+              height: 18px;
+          }
+          
+          .delete-option-radio label::after {
+              left: 20px;
+              width: 6px;
+              height: 6px;
+          }
+      }
+
         /* ===================================================
            🆕 NEW FEATURES - BADGES & VIEW MODE
            =================================================== */
@@ -2051,6 +2555,7 @@
                             <option value="">Pilih Jenis</option>
                             <option value="revenue">Real Revenue</option>
                             <option value="target">Target Revenue</option>
+                            <option value="lengkap">Lengkap (Revenue + Target)</option>
                         </select>
                     </div>
 
@@ -2301,7 +2806,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Revenue CC</h5>
+                <h5 class="modal-title" style="color: white;">Edit Revenue CC</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             
@@ -2355,41 +2860,201 @@
 
 <!-- Other Edit Modals (Revenue AM, Data AM, Data CC) -->
 <!-- Modal Edit Revenue AM -->
-<div class="modal fade" id="modalEditRevenueAM" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="modalEditRevenueAM" tabindex="-1" aria-labelledby="modalEditRevenueAMLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Revenue AM</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="modalEditRevenueAMLabel">
+                    <i class="fa-solid fa-pen-to-square me-2"></i>Edit Revenue AM
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            
             <form id="formEditRevenueAM">
                 <div class="modal-body">
                     <input type="hidden" id="editAMRevenueId">
-                    <div class="mb-3">
-                        <label class="form-label">Nama AM</label>
-                        <input type="text" class="form-control" id="editAMNamaAM" readonly>
+                    <input type="hidden" id="editAMCCRevenueId">
+                    <input type="hidden" id="editAMCCTargetSold">
+                    <input type="hidden" id="editAMCCRealSold">
+                    
+                    <!-- ============================================
+                         INFO SECTION - Read Only
+                         ============================================ -->
+                    <div class="info-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fa-solid fa-info-circle me-2"></i>Informasi Mapping
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nama Account Manager</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editAMNamaAM" 
+                                       readonly 
+                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-lock me-1"></i>Tidak dapat diubah
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Corporate Customer</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editAMCCName" 
+                                       readonly 
+                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-lock me-1"></i>Tidak dapat diubah
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Periode</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editAMPeriode" 
+                                       readonly 
+                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">CC Target Sold</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editAMCCTargetDisplay" 
+                                       readonly 
+                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <small class="text-muted">Base revenue CC</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">CC Real Sold</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editAMCCRealDisplay" 
+                                       readonly 
+                                       style="background-color: #f8f9fa; cursor: not-allowed;">
+                                <small class="text-muted">Base revenue CC</small>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Proporsi (%)</label>
-                        <input type="number" class="form-control" id="editAMProporsi" min="0" max="100" step="0.01" required>
+                    
+                    <hr>
+                    
+                    <!-- ============================================
+                         EDITABLE SECTION - Proporsi Only
+                         ============================================ -->
+                    <div class="edit-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fa-solid fa-edit me-2"></i>Edit Proporsi
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">
+                                    Proporsi (%)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="editAMProporsi" 
+                                           min="0" 
+                                           max="100" 
+                                           step="0.01" 
+                                           required
+                                           placeholder="Masukkan proporsi (0-100)">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-info-circle me-1"></i>
+                                    Total proporsi untuk 1 CC harus = 100%
+                                </small>
+                                
+                                <!-- Proporsi Validation Alert -->
+                                <div id="proporsiValidationAlert" class="alert mt-2" style="display: none;"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Target Revenue</label>
-                        <input type="number" class="form-control" id="editAMTargetRevenue" required>
+                    
+                    <hr>
+                    
+                    <!-- ============================================
+                         CALCULATED REVENUE SECTION - Read Only
+                         ============================================ -->
+                    <div class="calculated-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fa-solid fa-calculator me-2"></i>Revenue (Auto-Calculated)
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Target Revenue</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editAMTargetRevenueDisplay" 
+                                       readonly 
+                                       style="background-color: #e7f3ff; cursor: not-allowed; font-weight: bold; color: #0056b3;">
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-calculator me-1"></i>
+                                    Formula: CC Target Sold × Proporsi
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Real Revenue</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editAMRealRevenueDisplay" 
+                                       readonly 
+                                       style="background-color: #e7ffe7; cursor: not-allowed; font-weight: bold; color: #28a745;">
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-calculator me-1"></i>
+                                    Formula: CC Real Sold × Proporsi
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fa-solid fa-lightbulb me-2"></i>
+                            <strong>Catatan:</strong> 
+                            Revenue AM dihitung otomatis berdasarkan proporsi yang Anda masukkan. 
+                            Untuk mengubah revenue, edit proporsi atau update Revenue CC di tab Revenue Corporate Customer.
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Real Revenue</label>
-                        <input type="number" class="form-control" id="editAMRealRevenue" required>
+                    
+                    <!-- ============================================
+                         OTHER AMS SECTION (if multiple AMs)
+                         ============================================ -->
+                    <div id="otherAMsSection" class="other-ams-section mb-3" style="display: none;">
+                        <hr>
+                        <h6 class="section-title">
+                            <i class="fa-solid fa-users me-2"></i>AM Lain untuk CC Ini
+                        </h6>
+                        <div id="otherAMsList" class="table-responsive">
+                            <!-- Will be populated dynamically -->
+                        </div>
                     </div>
+                    
                 </div>
+                
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-times me-2"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveEditAM">
+                        <i class="fa-solid fa-save me-2"></i>Simpan Perubahan
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
 
 <!-- Modal Edit Data AM -->
 <div class="modal fade" id="modalEditDataAM" tabindex="-1">
@@ -2533,6 +3198,101 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal - Modern Design -->
+<div class="modal fade delete-confirm-modal" id="deleteConfirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Konfirmasi Hapus Data</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <!-- Warning Message -->
+                <div class="delete-warning-box">
+                    <div class="d-flex align-items-start">
+                        <i class="fa-solid fa-exclamation-circle warning-icon"></i>
+                        <div class="flex-grow-1">
+                            <div class="warning-title" id="warningTitle">Peringatan!</div>
+                            <div class="warning-text" id="warningText"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Data Info -->
+                <div id="relatedDataInfo" class="related-data-card" style="display: none;">
+                    <h6>Data yang akan ikut terhapus:</h6>
+                    <table class="related-data-table">
+                        <tbody>
+                            <tr>
+                                <td>Revenue CC</td>
+                                <td><span id="relatedCcRevenues">0</span> data</td>
+                            </tr>
+                            <tr>
+                                <td>Revenue AM</td>
+                                <td><span id="relatedAmRevenues">0</span> data</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>Total</td>
+                                <td><span id="relatedTotal">0</span> data</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Log Option (only for Data CC) -->
+                <div id="logOptionSection" class="delete-options-card" style="display: none;">
+                    <h6>Pilih Metode Hapus:</h6>
+                    
+                    <div class="delete-option-radio">
+                        <input type="radio" name="deleteType" id="deletePermanent" value="permanent" checked>
+                        <label for="deletePermanent">
+                            <span class="option-title">Hapus Permanen</span>
+                            <span class="option-description">Data langsung dihapus dari database tanpa backup</span>
+                        </label>
+                    </div>
+
+                    <div class="delete-option-radio">
+                        <input type="radio" name="deleteType" id="deleteWithLog" value="with_log">
+                        <label for="deleteWithLog">
+                            <span class="option-title">Hapus dengan Simpan Log</span>
+                            <span class="option-description">Data disimpan sebagai log JSON sebelum dihapus</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Confirmation Text for DELETE ALL -->
+                <div id="confirmTextSection" class="danger-zone-card" style="display: none;">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fa-solid fa-skull-crossbones danger-icon"></i>
+                        <div class="danger-title">PERINGATAN SERIUS!</div>
+                    </div>
+                    <p class="danger-text">Anda akan menghapus SEMUA data. Tindakan ini sangat berbahaya!</p>
+                    <p class="danger-text mb-3">Ketik <strong>DELETE ALL</strong> untuk konfirmasi:</p>
+                    <input type="text" class="form-control confirmation-input" id="confirmationText" placeholder="DELETE ALL" autocomplete="off">
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times"></i>
+                    Batal
+                </button>
+                <button type="button" class="btn btn-delete-confirm" id="btnConfirmDelete">
+                    <i class="fa-solid fa-trash"></i>
+                    Ya, Hapus!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -2561,6 +3321,7 @@ $(document).ready(function() {
   // ========================================
   // 🎯 STATE MANAGEMENT - COMPLETE
   // ========================================
+  let pendingDeleteAction = null; // Stores delete action info
   let currentTab = 'tab-cc-revenue';
   let currentPage = 1;
   let perPage = 25;
@@ -4401,7 +5162,7 @@ $('#formDataCC, #formDataAM').submit(function(e) {
     }
 });
 
- $('#formRevenueCC').submit(function(e) {
+$('#formRevenueCC').submit(function(e) {
     e.preventDefault();
 
     try {
@@ -4425,44 +5186,61 @@ $('#formDataCC, #formDataAM').submit(function(e) {
             fileSize: file?.size
         });
 
-        // ✅ FIX #1: Validate all required fields with specific messages
+        // ✅ VALIDATION 1: Periode
         if (!year || !month) {
             console.error('❌ Periode not selected');
-            alert('❌ Pilih Periode terlebih dahulu!');
+            alert('❌ PERIODE BELUM DIPILIH!\n\nSilakan pilih bulan dan tahun terlebih dahulu.');
+            $('#import-cc-periode').focus();
             return;
         }
 
+        // ✅ VALIDATION 2: Divisi
         if (!divisi || divisi === '') {
             console.error('❌ Divisi not selected');
-            alert('❌ Pilih Divisi terlebih dahulu!');
+            alert('❌ DIVISI BELUM DIPILIH!\n\nSilakan pilih divisi (DGS/DSS/DPS) terlebih dahulu.');
+            $('#revCCDivisiImport').focus();
             return;
         }
 
+        // ✅ VALIDATION 3: Tipe Revenue
         if (!tipeRevenue || tipeRevenue === '') {
             console.error('❌ Tipe Revenue not selected');
-            alert('❌ Pilih Tipe Revenue terlebih dahulu!');
+            alert('❌ TIPE REVENUE BELUM DIPILIH!\n\nSilakan pilih:\n• Revenue Sold (HO) - untuk kolom REVENUE_SOLD\n• Revenue Bill - untuk kolom REVENUE_BILL');
+            $('#revCCTipeRevenueImport').focus();
             return;
         }
 
+        // ✅ VALIDATION 4: Jenis Data (CRITICAL - New validation)
         if (!jenisData || jenisData === '') {
             console.error('❌ Jenis Data not selected');
-            alert('❌ Pilih Jenis Data (Real Revenue/Target Revenue) terlebih dahulu!');
+            alert('❌ JENIS DATA BELUM DIPILIH!\n\nSilakan pilih salah satu:\n\n• Real Revenue - hanya import REVENUE_SOLD\n• Target Revenue - hanya import TARGET_REVENUE_SOLD\n• Lengkap - import REVENUE_SOLD + TARGET_REVENUE_SOLD');
+            $('#revCCJenisDataImport').focus();
             return;
         }
 
+        // ✅ VALIDATION 5: File
         if (!file || !(file instanceof File)) {
             console.error('❌ File not selected or invalid');
-            alert('❌ Silakan pilih file CSV terlebih dahulu!');
+            alert('❌ FILE CSV BELUM DIPILIH!\n\nSilakan pilih file CSV yang akan diimport.');
             return;
         }
 
+        // ✅ VALIDATION 6: File size
         if (file.size <= 0) {
             console.error('❌ File is empty');
-            alert('❌ File yang dipilih kosong atau tidak valid');
+            alert('❌ FILE KOSONG!\n\nFile yang dipilih tidak memiliki data.\nSilakan pilih file yang valid.');
             return;
         }
 
-        // ✅ FIX #2: Set form data with validated values
+        // ✅ VALIDATION 7: File type
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.csv') && !fileName.endsWith('.txt')) {
+            console.error('❌ Invalid file type:', fileName);
+            alert('❌ TIPE FILE TIDAK VALID!\n\nHanya file CSV (.csv atau .txt) yang diperbolehkan.\nFile Anda: ' + file.name);
+            return;
+        }
+
+        // ✅ Set form data with validated values
         currentFormData.set('year', parseInt(year));
         currentFormData.set('month', parseInt(month));
 
@@ -4483,13 +5261,13 @@ $('#formDataCC, #formDataAM').submit(function(e) {
             file: file.name
         });
 
+        // ✅ PROCEED TO IMPORT
         handleImportPreview(currentFormData, currentImportType);
 
     } catch (error) {
-        // ✅ FIX #3: Catch any unexpected errors
         console.error('❌ Error in formRevenueCC submit:', error);
         console.error('Error stack:', error.stack);
-        alert('Error: Terjadi kesalahan - ' + error.message);
+        alert('❌ TERJADI KESALAHAN!\n\n' + error.message + '\n\nSilakan coba lagi atau hubungi admin.');
     }
 });
 
@@ -4917,8 +5695,189 @@ function requestPreviewAfterChunks(sessionId, importType, originalFormData) {
     });
 }
 
-
+$(document).on('input', '#editAMProporsi', function() {
+    const proporsiPercent = parseFloat($(this).val()) || 0;
+    
+    // Validate range
+    if (proporsiPercent < 0 || proporsiPercent > 100) {
+        $('#proporsiValidationAlert')
+            .removeClass('alert-success alert-warning')
+            .addClass('alert-danger')
+            .html('<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Error:</strong> Proporsi harus antara 0-100%')
+            .show();
+        $('#btnSaveEditAM').prop('disabled', true);
+        return;
+    }
+    
+    // Convert to decimal for calculation
+    const proporsiDecimal = proporsiPercent / 100;
+    
+    // Get CC Revenue base
+    const ccTargetSold = parseFloat($('#editAMCCTargetSold').val()) || 0;
+    const ccRealSold = parseFloat($('#editAMCCRealSold').val()) || 0;
+    
+    // Calculate new revenues
+    const newTargetRevenue = ccTargetSold * proporsiDecimal;
+    const newRealRevenue = ccRealSold * proporsiDecimal;
+    
+    // Update display
+    $('#editAMTargetRevenueDisplay').val(formatCurrency(newTargetRevenue));
+    $('#editAMRealRevenueDisplay').val(formatCurrency(newRealRevenue));
+    
+    console.log('📊 Proporsi changed:', {
+        proporsi_percent: proporsiPercent,
+        proporsi_decimal: proporsiDecimal,
+        cc_target_sold: ccTargetSold,
+        cc_real_sold: ccRealSold,
+        calculated_target: newTargetRevenue,
+        calculated_real: newRealRevenue
+    });
+    
+    // Note: We can't validate total proporsi here without knowing other AMs' proporsi
+    // Validation will be done server-side
+    $('#proporsiValidationAlert')
+        .removeClass('alert-danger alert-warning')
+        .addClass('alert-success')
+        .html('<i class="fa-solid fa-check-circle me-2"></i><strong>OK:</strong> Proporsi valid. Revenue akan dihitung ulang saat disimpan.')
+        .show();
+    
+    $('#btnSaveEditAM').prop('disabled', false);
+});
   
+
+function renderOtherAMs(otherAMs, totalProporsi) {
+    let html = `
+        <table class="table table-bordered table-sm other-ams-table">
+            <thead>
+                <tr>
+                    <th>Nama AM</th>
+                    <th>NIK</th>
+                    <th class="text-end">Proporsi</th>
+                    <th class="text-end">Target Revenue</th>
+                    <th class="text-end">Real Revenue</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    otherAMs.forEach(am => {
+        const proporsiPercent = (parseFloat(am.proporsi) * 100).toFixed(2);
+        html += `
+            <tr>
+                <td>${am.account_manager_nama}</td>
+                <td><small>${am.account_manager_nik}</small></td>
+                <td class="text-end">${proporsiPercent}%</td>
+                <td class="text-end">${formatCurrency(am.target_revenue)}</td>
+                <td class="text-end">${formatCurrency(am.real_revenue)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+            </tbody>
+            <tfoot>
+                <tr class="table-secondary">
+                    <th colspan="2">Total Proporsi</th>
+                    <th class="text-end">${(totalProporsi * 100).toFixed(2)}%</th>
+                    <th colspan="2"></th>
+                </tr>
+            </tfoot>
+        </table>
+    `;
+    
+    $('#otherAMsList').html(html);
+}
+
+function validateProporsiTotal(totalProporsi) {
+    const totalPercent = (totalProporsi * 100).toFixed(2);
+    
+    if (Math.abs(totalProporsi - 1.0) < 0.01) {
+        // Valid
+        $('#proporsiValidationAlert')
+            .removeClass('alert-warning alert-danger')
+            .addClass('alert-success')
+            .html(`<i class="fa-solid fa-check-circle me-2"></i><strong>Valid:</strong> Total proporsi = ${totalPercent}%`)
+            .show();
+    } else if (totalProporsi < 1.0) {
+        // Under 100%
+        const remaining = ((1.0 - totalProporsi) * 100).toFixed(2);
+        $('#proporsiValidationAlert')
+            .removeClass('alert-success alert-danger')
+            .addClass('alert-warning')
+            .html(`<i class="fa-solid fa-exclamation-triangle me-2"></i><strong>Warning:</strong> Total proporsi = ${totalPercent}% (sisa ${remaining}%)`)
+            .show();
+    } else {
+        // Over 100%
+        const excess = ((totalProporsi - 1.0) * 100).toFixed(2);
+        $('#proporsiValidationAlert')
+            .removeClass('alert-success alert-warning')
+            .addClass('alert-danger')
+            .html(`<i class="fa-solid fa-times-circle me-2"></i><strong>Error:</strong> Total proporsi = ${totalPercent}% (kelebihan ${excess}%)`)
+            .show();
+    }
+}
+
+/**
+ * ✅ Form submit handler
+ */
+$('#formEditRevenueAM').on('submit', function(e) {
+    e.preventDefault();
+    
+    const id = $('#editAMRevenueId').val();
+    const proporsiPercent = parseFloat($('#editAMProporsi').val()) || 0;
+    
+    // Validate
+    if (proporsiPercent <= 0 || proporsiPercent > 100) {
+        alert('Proporsi harus antara 0-100%');
+        return;
+    }
+    
+    // Convert to decimal (50% → 0.5)
+    const proporsiDecimal = proporsiPercent / 100;
+    
+    const data = {
+        proporsi: proporsiDecimal
+        // ✅ Note: target_revenue & real_revenue will be calculated server-side
+    };
+    
+    console.log('📤 Submitting AM Revenue update:', data);
+    
+    $.ajax({
+        url: `/revenue-data/revenue-am/${id}`,
+        method: 'PUT',
+        data: JSON.stringify(data),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('✅ Update response:', response);
+            
+            if (response.success) {
+                alert(response.message || 'Revenue AM berhasil diupdate!');
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('modalEditRevenueAM')).hide();
+                
+                // Reload data
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Update failed:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+});
+
+/**
+ * ✅ Helper: Format currency
+ */
+function formatCurrency(value) {
+    if (!value) return 'Rp 0';
+    return 'Rp ' + parseFloat(value).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+}
+
 
 function uploadFileDirect(formData, importType) {
     console.log('📤 Sending to /import/preview:');
@@ -5056,6 +6015,47 @@ function uploadFileDirect(formData, importType) {
         }
     });
 }
+
+function updateTemplateLinks() {
+    const jenisData = $('#revCCJenisDataImport').val();
+    const linkReal = $('#linkTemplateRealRevCC');
+    const linkTarget = $('#linkTemplateTargetRevCC');
+    
+    // Hide both initially
+    linkReal.hide();
+    linkTarget.hide();
+    
+    // Show appropriate link based on selection
+    if (jenisData === 'revenue') {
+        // Show only Real Revenue template
+        linkReal.show();
+    } else if (jenisData === 'target') {
+        // Show only Target Revenue template
+        linkTarget.show();
+    } else if (jenisData === 'lengkap') {
+        // Show both templates
+        linkReal.show();
+        linkTarget.show();
+    }
+    // If empty/not selected, hide both (default)
+}
+
+// ✅ ATTACH EVENT LISTENER
+$(document).ready(function() {
+    // Listen for changes on Jenis Data dropdown
+    $('#revCCJenisDataImport').on('change', function() {
+        updateTemplateLinks();
+    });
+    
+    // Initial call on page load
+    updateTemplateLinks();
+    
+    // Re-initialize when import modal is shown
+    $('#importModal').on('shown.bs.modal', function() {
+        updateTemplateLinks();
+    });
+});
+
 
   // ========================================
   // ✅ FIXED: showPreviewModal - Handle Multiple Response Structures
@@ -5272,239 +6272,252 @@ function uploadFileDirect(formData, importType) {
     }
 }
 
-function executeImportWithFilter(filterType) {
-    console.log('🎯 executeImportWithFilter called with:', filterType);
+  // ============================================================================
+// 🔧 FIXED FUNCTION #4 (FINAL REVISION): showPreviewModal()
+// ============================================================================
+// Location: Line ~6194
+// Priority: HIGH
+// Issue: Missing field name mapping for revenue_am
+// ============================================================================
 
+function showPreviewModal(data, importType) {
+    console.log('📊 showPreviewModal called with:', {
+        importType: importType,
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : []
+    });
+
+    // ✅ FIX #1: Validate data exists
+    if (!data) {
+        console.error('❌ Preview data is undefined or null');
+        alert('Terjadi kesalahan: Data preview tidak tersedia');
+        return;
+    }
+
+    // ✅ FIX #2: Handle multiple response structures (summary/stats/statistics)
+    const summary = data.summary || data.stats || data.statistics || {};
+    
+    console.log('📊 Summary extracted:', summary);
+
+    // ✅ FIX #3: Validate summary is not empty
+    if (!summary || Object.keys(summary).length === 0) {
+        console.error('❌ No valid summary found in response:', {
+            hasSummary: !!data.summary,
+            hasStats: !!data.stats,
+            hasStatistics: !!data.statistics,
+            dataKeys: Object.keys(data)
+        });
+        alert('Terjadi kesalahan: Data summary tidak tersedia atau kosong');
+        return;
+    }
+
+    // ✅ FIX #4: Normalize field names based on import type
+    let normalizedSummary = {
+        total_rows: summary.total_rows || 0,
+        new_count: 0,
+        update_count: 0,
+        error_count: 0,
+        unique_count: 0
+    };
+
+    // ✅ FIX #5: Handle different field names per import type
+    if (importType === 'data_am') {
+        // Data AM uses: new_ams, existing_ams, duplicate_niks, multi_divisi_ams
+        normalizedSummary.new_count = summary.new_ams || summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.existing_ams || summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.unique_am_count || 0;
+        normalizedSummary.multi_divisi_count = summary.multi_divisi_ams || 0;
+        normalizedSummary.duplicate_count = summary.duplicate_niks || 0;
+        
+    } else if (importType === 'data_cc') {
+        // Data CC uses: new_cc, existing_cc
+        normalizedSummary.new_count = summary.new_cc || summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.existing_cc || summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.unique_cc_count || 0;
+        
+    } else if (importType === 'revenue_am') {
+        // ✅ NEW: Revenue AM uses: new_mappings, existing_mappings, invalid_proporsi
+        normalizedSummary.new_count = summary.new_mappings || summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.existing_mappings || summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || summary.invalid_proporsi || 0;
+        normalizedSummary.unique_count = summary.unique_am_count || summary.total_am_count || 0;
+        normalizedSummary.unique_cc_count = summary.unique_cc_count || summary.total_cc_count || 0;
+        
+    } else if (importType === 'revenue_cc') {
+        // Revenue CC uses: new_count, update_count
+        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.unique_cc_count || 0;
+        
+    } else {
+        // Generic fallback
+        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
+    }
+
+    console.log('✅ Summary normalized:', normalizedSummary);
+
+    // Store preview data globally
+    previewData = data;
+
+    let summaryHTML = '';
+
+    // Total Rows Card
+    summaryHTML += `
+      <div class="preview-card total">
+        <div class="icon"><i class="fa-solid fa-file-lines"></i></div>
+        <h3>${normalizedSummary.total_rows}</h3>
+        <p>Total Baris Data</p>
+      </div>
+    `;
+
+    // Unique Count Card (varies by import type)
+    if (importType === 'revenue_am' && (normalizedSummary.unique_count > 0 || normalizedSummary.unique_cc_count > 0)) {
+        // For Revenue AM, show both AM and CC counts if available
+        if (normalizedSummary.unique_count > 0) {
+            summaryHTML += `
+              <div class="preview-card unique">
+                <div class="icon"><i class="fa-solid fa-user-tie"></i></div>
+                <h3>${normalizedSummary.unique_count}</h3>
+                <p>Account Manager</p>
+              </div>
+            `;
+        }
+        if (normalizedSummary.unique_cc_count > 0) {
+            summaryHTML += `
+              <div class="preview-card unique">
+                <div class="icon"><i class="fa-solid fa-building"></i></div>
+                <h3>${normalizedSummary.unique_cc_count}</h3>
+                <p>Corporate Customer</p>
+              </div>
+            `;
+        }
+    } else if (normalizedSummary.unique_count > 0) {
+        let uniqueLabel = 'Unique Records';
+        let uniqueIcon = 'fa-solid fa-fingerprint';
+        
+        if (importType === 'revenue_cc' || importType === 'data_cc') {
+            uniqueLabel = 'Corporate Customer';
+            uniqueIcon = 'fa-solid fa-building';
+        } else if (importType === 'data_am') {
+            uniqueLabel = 'Account Manager';
+            uniqueIcon = 'fa-solid fa-user-tie';
+        }
+        
+        summaryHTML += `
+          <div class="preview-card unique">
+            <div class="icon"><i class="${uniqueIcon}"></i></div>
+            <h3>${normalizedSummary.unique_count}</h3>
+            <p>${uniqueLabel}</p>
+          </div>
+        `;
+    }
+
+    // Update Count Card
+    summaryHTML += `
+      <div class="preview-card update">
+        <div class="icon"><i class="fa-solid fa-edit"></i></div>
+        <h3>${normalizedSummary.update_count}</h3>
+        <p>Akan Di-update</p>
+      </div>
+    `;
+
+    // New Count Card
+    summaryHTML += `
+      <div class="preview-card new">
+        <div class="icon"><i class="fa-solid fa-plus"></i></div>
+        <h3>${normalizedSummary.new_count}</h3>
+        <p>Data Baru</p>
+      </div>
+    `;
+
+    // Error/Conflict Card
+    summaryHTML += `
+      <div class="preview-card conflict">
+        <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
+        <h3>${normalizedSummary.error_count}</h3>
+        <p>Error/Konflik</p>
+      </div>
+    `;
+
+    $('#previewSummary').html(summaryHTML);
+
+    // Calculate counts safely
+    const totalCount = normalizedSummary.new_count + normalizedSummary.update_count;
+    const newCount = normalizedSummary.new_count;
+    const updateCount = normalizedSummary.update_count;
+    const errorCount = normalizedSummary.error_count;
+
+    // Update badge counts
+    $('#badgeAllCount').text(`${totalCount} data`);
+    $('#badgeNewCount').text(`${newCount} data`);
+    $('#badgeUpdateCount').text(`${updateCount} data`);
+
+    // Enable/disable import buttons
+    $('#btnImportAll').prop('disabled', totalCount === 0);
+    $('#btnImportNew').prop('disabled', newCount === 0);
+    $('#btnImportUpdate').prop('disabled', updateCount === 0);
+
+    // Show/hide error info
+    if (errorCount > 0) {
+        $('#errorMessage').text(`${errorCount} baris data mengandung error dan akan diskip.`);
+        $('#errorInfo').show();
+    } else {
+        $('#errorInfo').hide();
+    }
+
+    // Handle large dataset info
+    const previewInfo = $('#previewInfo');
+    if (data.full_data_stored && totalCount > 100) {
+        previewInfo.html(`
+          <div class="alert alert-info">
+            <i class="fa-solid fa-info-circle me-2"></i>
+            <strong>Info:</strong> Dataset besar terdeteksi (${totalCount} data). 
+            Import akan memproses semua data sesuai filter yang dipilih.
+          </div>
+        `);
+        previewInfo.show();
+    } else {
+        previewInfo.hide();
+    }
+
+    // Additional info for Data AM
+    if (importType === 'data_am' && normalizedSummary.multi_divisi_count > 0) {
+        const existingInfo = previewInfo.html() || '';
+        previewInfo.html(existingInfo + `
+          <div class="alert alert-success mt-2">
+            <i class="fa-solid fa-sitemap me-2"></i>
+            <strong>Info:</strong> ${normalizedSummary.multi_divisi_count} AM dengan multiple divisi terdeteksi.
+          </div>
+        `);
+        previewInfo.show();
+    }
+
+    // Show modal
     try {
-        // ✅ FIX #1: Validate filter type
-        if (!['all', 'new', 'update'].includes(filterType)) {
-            console.error('❌ Invalid filter type:', filterType);
-            alert('Error: Filter type tidak valid');
-            return;
-        }
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
 
-        // ✅ FIX #2: Validate previewData exists
-        if (!previewData) {
-            console.error('❌ previewData is null or undefined');
-            alert('Error: Data preview tidak tersedia. Silakan upload ulang file.');
-            return;
-        }
-
-        // ✅ FIX #3: Validate summary exists
-        const summary = previewData.summary || previewData.stats || previewData.statistics || {};
-        
-        if (!summary || Object.keys(summary).length === 0) {
-            console.error('❌ Summary data is empty:', previewData);
-            alert('Error: Data summary tidak tersedia. Silakan upload ulang file.');
-            return;
-        }
-
-        // ✅ FIX #4: Normalize field names based on import type
-        let newCount = 0;
-        let updateCount = 0;
-        
-        if (currentImportType === 'data_am') {
-            newCount = summary.new_ams || summary.new_count || summary.created_count || 0;
-            updateCount = summary.existing_ams || summary.update_count || summary.updated_count || 0;
-        } else if (currentImportType === 'data_cc') {
-            newCount = summary.new_cc || summary.new_count || summary.created_count || 0;
-            updateCount = summary.existing_cc || summary.update_count || summary.updated_count || 0;
-        } else {
-            // Revenue CC/AM use standard field names
-            newCount = summary.new_count || summary.created_count || 0;
-            updateCount = summary.update_count || summary.updated_count || 0;
-        }
-
-        // Calculate counts based on filter
-        let count = 0;
-        let filterLabel = '';
-        
-        if (filterType === 'all') {
-            count = newCount + updateCount;
-            filterLabel = 'semua';
-        } else if (filterType === 'new') {
-            count = newCount;
-            filterLabel = 'data baru';
-        } else if (filterType === 'update') {
-            count = updateCount;
-            filterLabel = 'data update';
-        }
-
-        console.log(`📊 Filter stats:`, {
-            filterType: filterType,
-            count: count,
-            filterLabel: filterLabel,
-            newCount: newCount,
-            updateCount: updateCount,
-            importType: currentImportType
+        console.log('✅ Preview modal shown successfully', {
+            importType,
+            totalCount,
+            newCount,
+            updateCount,
+            errorCount,
+            originalSummary: summary,
+            normalizedSummary: normalizedSummary
         });
-
-        // ✅ FIX #5: Validate count is positive
-        if (count === 0) {
-            console.warn(`⚠️ No ${filterLabel} to import`);
-            alert(`Tidak ada ${filterLabel} untuk diimport`);
-            return;
-        }
-
-        // ✅ FIX #6: Validate currentSessionId exists
-        if (!currentSessionId) {
-            console.error('❌ currentSessionId is missing');
-            alert('Error: Session ID tidak tersedia. Silakan upload ulang file.');
-            return;
-        }
-
-        // ✅ FIX #7: Validate currentImportType exists
-        if (!currentImportType) {
-            console.error('❌ currentImportType is missing');
-            alert('Error: Import type tidak tersedia. Silakan upload ulang file.');
-            return;
-        }
-
-        // Confirm import
-        if (!confirm(`Import ${count} ${filterLabel}?`)) {
-            console.log('❌ User cancelled import');
-            return;
-        }
-
-        // Close preview modal
-        const previewModal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
-        if (previewModal) {
-            previewModal.hide();
-        }
-
-        // Show progress
-        showProgressSnackbar(`Mengimport ${count} data...`);
-        updateProgress(10, 'Mengirim data ke server...');
-
-        // Build payload
-        const payload = {
-            session_id: currentSessionId,
-            filter_type: filterType,
-            import_type: currentImportType
-        };
-
-        // Add year/month for revenue imports
-        if (currentImportType === 'revenue_am' || currentImportType === 'revenue_cc') {
-            if (!currentImportYear || !currentImportMonth) {
-                console.error('❌ Year/Month missing for revenue import');
-                hideProgressSnackbar();
-                alert('Error: Data periode tidak lengkap. Silakan upload ulang.');
-                return;
-            }
-            payload.year = currentImportYear;
-            payload.month = currentImportMonth;
-        }
-
-        // Add Revenue CC specific fields
-        if (currentImportType === 'revenue_cc') {
-            if (!currentImportDivisiId || !currentImportTipeRevenue || !currentImportJenisData) {
-                console.error('❌ Revenue CC parameters missing:', {
-                    divisi_id: currentImportDivisiId,
-                    tipe_revenue: currentImportTipeRevenue,
-                    jenis_data: currentImportJenisData
-                });
-                hideProgressSnackbar();
-                alert('Error: Parameter Revenue CC tidak lengkap. Silakan upload ulang.');
-                return;
-            }
-            payload.divisi_id = currentImportDivisiId;
-            payload.tipe_revenue = currentImportTipeRevenue;
-            payload.jenis_data = currentImportJenisData;
-        }
-
-        console.log('✅ Executing import with payload:', payload);
-
-        // Execute import
-        $.ajax({
-            url: '/revenue-data/import/execute',
-            method: 'POST',
-            data: JSON.stringify(payload),
-            contentType: 'application/json',
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            xhr: function() {
-                const xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener("progress", function(evt) {
-                    if (evt.lengthComputable) {
-                        const percentComplete = 10 + (evt.loaded / evt.total) * 80;
-                        updateProgress(percentComplete, 'Memproses import...');
-                    }
-                }, false);
-                return xhr;
-            },
-            success: function(response) {
-                console.log('✅ Import execute response:', response);
-
-                updateProgress(100, 'Import selesai!');
-
-                setTimeout(() => {
-                    hideProgressSnackbar();
-
-                    // ✅ FIX #8: Validate response
-                    if (!response) {
-                        console.error('❌ Execute response is null');
-                        alert('Error: Server tidak memberikan response');
-                        return;
-                    }
-
-                    if (response.success) {
-                        console.log('✅ Import completed successfully');
-                        showImportResult(response);
-                        
-                        // Reload data
-                        loadData();
-                    } else {
-                        console.error('❌ Import failed:', response);
-                        alert('Import gagal: ' + (response.message || 'Unknown error'));
-                    }
-                }, 500);
-            },
-            error: function(xhr, status, error) {
-                hideProgressSnackbar();
-                
-                console.error('❌ Import execute error:', {
-                    status: status,
-                    error: error,
-                    statusCode: xhr.status,
-                    response: xhr.responseJSON,
-                    responseText: xhr.responseText
-                });
-                
-                let errorMsg = 'Terjadi kesalahan saat import';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMsg = xhr.responseJSON.message;
-                } else if (xhr.responseText) {
-                    try {
-                        const parsed = JSON.parse(xhr.responseText);
-                        errorMsg = parsed.message || errorMsg;
-                    } catch (e) {
-                        errorMsg = xhr.statusText || errorMsg;
-                    }
-                }
-                
-                alert('Error: ' + errorMsg);
-            }
-        });
-
     } catch (error) {
-        // ✅ FIX #9: Catch any unexpected errors
-        console.error('❌ Unexpected error in executeImportWithFilter:', error);
-        console.error('Error stack:', error.stack);
-        hideProgressSnackbar();
-        alert('Error: Terjadi kesalahan tidak terduga - ' + error.message);
+        console.error('❌ Error showing modal:', error);
+        alert('Error: Gagal menampilkan preview modal - ' + error.message);
     }
 }
 
-  $('#btnImportAll').click(function() {
-    executeImportWithFilter('all');
-  });
 
-  $('#btnImportNew').click(function() {
-    executeImportWithFilter('new');
-  });
-
-  $('#btnImportUpdate').click(function() {
-    executeImportWithFilter('update');
-  });
 
   function showImportResult(response) {
     console.log('📊 Showing import result:', response);
@@ -5707,6 +6720,263 @@ function executeImportWithFilter(filterType) {
         successRate
     });
 }
+
+// ========================================
+// ✅ EXECUTE IMPORT WITH FILTER
+// ========================================
+function executeImportWithFilter(filterType) {
+    console.log('🎯 executeImportWithFilter called with:', filterType);
+
+    try {
+        if (!['all', 'new', 'update'].includes(filterType)) {
+            console.error('❌ Invalid filter type:', filterType);
+            alert('Error: Filter type tidak valid');
+            return;
+        }
+
+        if (!previewData) {
+            console.error('❌ previewData is null or undefined');
+            alert('Error: Data preview tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        const summary = previewData.summary || previewData.stats || previewData.statistics || {};
+        
+        if (!summary || Object.keys(summary).length === 0) {
+            console.error('❌ Summary data is empty:', previewData);
+            alert('Error: Data summary tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        let newCount = 0;
+        let updateCount = 0;
+        
+        if (currentImportType === 'data_am') {
+            newCount = summary.new_ams || summary.new_count || summary.created_count || 0;
+            updateCount = summary.existing_ams || summary.update_count || summary.updated_count || 0;
+        } else if (currentImportType === 'data_cc') {
+            newCount = summary.new_cc || summary.new_count || summary.created_count || 0;
+            updateCount = summary.existing_cc || summary.update_count || summary.updated_count || 0;
+        } else if (currentImportType === 'revenue_am') {
+            newCount = summary.new_mappings || summary.new_count || summary.created_count || 0;
+            updateCount = summary.existing_mappings || summary.update_count || summary.updated_count || 0;
+        } else if (currentImportType === 'revenue_cc') {
+            newCount = summary.new_count || summary.created_count || 0;
+            updateCount = summary.update_count || summary.updated_count || 0;
+        } else {
+            newCount = summary.new_count || summary.created_count || 0;
+            updateCount = summary.update_count || summary.updated_count || 0;
+        }
+
+        let count = 0;
+        let filterLabel = '';
+        
+        if (filterType === 'all') {
+            count = newCount + updateCount;
+            filterLabel = 'semua';
+        } else if (filterType === 'new') {
+            count = newCount;
+            filterLabel = 'data baru';
+        } else if (filterType === 'update') {
+            count = updateCount;
+            filterLabel = 'data update';
+        }
+
+        console.log(`📊 Filter stats:`, {
+            filterType: filterType,
+            count: count,
+            filterLabel: filterLabel,
+            newCount: newCount,
+            updateCount: updateCount,
+            importType: currentImportType
+        });
+
+        if (count === 0) {
+            console.warn(`⚠️ No ${filterLabel} to import`);
+            alert(`Tidak ada ${filterLabel} untuk diimport`);
+            return;
+        }
+
+        if (!currentSessionId) {
+            console.error('❌ currentSessionId is missing');
+            alert('Error: Session ID tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        if (!currentImportType) {
+            console.error('❌ currentImportType is missing');
+            alert('Error: Import type tidak tersedia. Silakan upload ulang file.');
+            return;
+        }
+
+        if (!confirm(`Import ${count} ${filterLabel}?`)) {
+            console.log('❌ User cancelled import');
+            return;
+        }
+
+        const previewModal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+        if (previewModal) {
+            previewModal.hide();
+        }
+
+        showProgressSnackbar(`Mengimport ${count} data...`);
+        updateProgress(10, 'Mengirim data ke server...');
+
+        const payload = {
+            session_id: currentSessionId,
+            filter_type: filterType,
+            import_type: currentImportType
+        };
+
+        if (currentImportType === 'revenue_am' || currentImportType === 'revenue_cc') {
+            if (!currentImportYear || !currentImportMonth) {
+                console.error('❌ Year/Month missing for revenue import:', {
+                    year: currentImportYear,
+                    month: currentImportMonth,
+                    importType: currentImportType
+                });
+                hideProgressSnackbar();
+                alert('Error: Data periode tidak lengkap. Silakan upload ulang.');
+                return;
+            }
+            payload.year = currentImportYear;
+            payload.month = currentImportMonth;
+            
+            console.log('✅ Added year/month to payload:', {
+                year: payload.year,
+                month: payload.month
+            });
+        }
+
+        if (currentImportType === 'revenue_cc') {
+            if (!currentImportDivisiId || !currentImportTipeRevenue || !currentImportJenisData) {
+                console.error('❌ Revenue CC parameters missing:', {
+                    divisi_id: currentImportDivisiId,
+                    tipe_revenue: currentImportTipeRevenue,
+                    jenis_data: currentImportJenisData
+                });
+                hideProgressSnackbar();
+                alert('Error: Parameter Revenue CC tidak lengkap. Silakan upload ulang.');
+                return;
+            }
+            payload.divisi_id = currentImportDivisiId;
+            payload.tipe_revenue = currentImportTipeRevenue;
+            payload.jenis_data = currentImportJenisData;
+            
+            console.log('✅ Added Revenue CC params to payload:', {
+                divisi_id: payload.divisi_id,
+                tipe_revenue: payload.tipe_revenue,
+                jenis_data: payload.jenis_data
+            });
+        }
+
+        console.log('✅ Executing import with complete payload:', payload);
+
+        $.ajax({
+            url: '/revenue-data/import/execute',
+            method: 'POST',
+            data: JSON.stringify(payload),
+            contentType: 'application/json',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            timeout: 300000,
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        const percentComplete = 10 + (evt.loaded / evt.total) * 80;
+                        updateProgress(percentComplete, 'Memproses import...');
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function(response) {
+                console.log('✅ Import execute response:', response);
+
+                updateProgress(100, 'Import selesai!');
+
+                setTimeout(() => {
+                    hideProgressSnackbar();
+
+                    if (!response) {
+                        console.error('❌ Execute response is null');
+                        alert('Error: Server tidak memberikan response');
+                        return;
+                    }
+
+                    if (response.success) {
+                        console.log('✅ Import completed successfully');
+                        showImportResult(response);
+                        loadData();
+                    } else {
+                        console.error('❌ Import failed:', response);
+                        alert('Import gagal: ' + (response.message || response.error || 'Unknown error'));
+                    }
+                }, 500);
+            },
+            error: function(xhr, status, error) {
+                hideProgressSnackbar();
+                
+                console.error('❌ Import execute error:', {
+                    status: status,
+                    error: error,
+                    statusCode: xhr.status,
+                    response: xhr.responseJSON,
+                    responseText: xhr.responseText
+                });
+                
+                let errorMsg = 'Terjadi kesalahan saat import';
+                
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON.errors) {
+                        const errors = xhr.responseJSON.errors;
+                        if (typeof errors === 'object') {
+                            const errorMessages = Object.values(errors).flat();
+                            errorMsg = errorMessages.join(', ');
+                        } else {
+                            errorMsg = errors;
+                        }
+                    }
+                } else if (xhr.responseText) {
+                    try {
+                        const parsed = JSON.parse(xhr.responseText);
+                        errorMsg = parsed.message || parsed.error || errorMsg;
+                    } catch (e) {
+                        errorMsg = xhr.statusText || errorMsg;
+                    }
+                }
+                
+                alert('Error: ' + errorMsg);
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Unexpected error in executeImportWithFilter:', error);
+        console.error('Error stack:', error.stack);
+        hideProgressSnackbar();
+        alert('Error: Terjadi kesalahan tidak terduga - ' + error.message);
+    }
+}
+
+// ========================================
+// ✅ BUTTON EVENT HANDLERS FOR IMPORT
+// ========================================
+$('#btnImportAll').click(function() {
+    executeImportWithFilter('all');
+});
+
+$('#btnImportNew').click(function() {
+    executeImportWithFilter('new');
+});
+
+$('#btnImportUpdate').click(function() {
+    executeImportWithFilter('update');
+});
+
+
   // ========================================
   // ✅ EDIT FUNCTIONS
   // ========================================
@@ -5945,29 +7215,80 @@ function executeImportWithFilter(filterType) {
   };
 
   window.editRevenueAM = function(id) {
+    console.log('🔧 Opening edit modal for AM Revenue ID:', id);
+    
     $.ajax({
-      url: `/revenue-data/revenue-am/${id}`,
-      method: 'GET',
-      success: function(response) {
-        if (response.success) {
-          const data = response.data;
-          $('#editAMRevenueId').val(data.id);
-          $('#editAMNamaAM').val(data.nama_am);
-          $('#editAMProporsi').val(data.proporsi);
-          $('#editAMTargetRevenue').val(data.target_revenue);
-          $('#editAMRealRevenue').val(data.real_revenue);
+        url: `/revenue-data/revenue-am/${id}`,
+        method: 'GET',
+        success: function(response) {
+            console.log('✅ AM Revenue data loaded:', response);
+            
+            if (!response.success) {
+                alert('Error: ' + response.message);
+                return;
+            }
 
-          const modal = new bootstrap.Modal(document.getElementById('modalEditRevenueAM'));
-          modal.show();
-        } else {
-          alert('Error: ' + response.message);
+            const data = response.data;
+            
+            // ============================================
+            // POPULATE READ-ONLY INFO FIELDS
+            // ============================================
+            $('#editAMRevenueId').val(data.id);
+            $('#editAMNamaAM').val(data.account_manager_nama || 'N/A');
+            $('#editAMCCName').val(data.corporate_customer_nama || 'N/A');
+            $('#editAMPeriode').val(data.period_name || 'N/A');
+            
+            // Store CC Revenue IDs for calculation
+            $('#editAMCCRevenueId').val(data.cc_revenue_id || '');
+            $('#editAMCCTargetSold').val(data.cc_target_revenue_sold || 0);
+            $('#editAMCCRealSold').val(data.cc_real_revenue_sold || 0);
+            
+            // Display CC Revenue (formatted)
+            $('#editAMCCTargetDisplay').val(formatCurrency(data.cc_target_revenue_sold || 0));
+            $('#editAMCCRealDisplay').val(formatCurrency(data.cc_real_revenue_sold || 0));
+            
+            // ============================================
+            // POPULATE EDITABLE PROPORSI FIELD
+            // ============================================
+            // Convert decimal to percentage (0.5 → 50)
+            const proporsiPercent = (parseFloat(data.proporsi) * 100).toFixed(2);
+            $('#editAMProporsi').val(proporsiPercent);
+            
+            // ============================================
+            // POPULATE CALCULATED REVENUE FIELDS
+            // ============================================
+            $('#editAMTargetRevenueDisplay').val(formatCurrency(data.target_revenue || 0));
+            $('#editAMRealRevenueDisplay').val(formatCurrency(data.real_revenue || 0));
+            
+            // ============================================
+            // SHOW OTHER AMs (if multiple)
+            // ============================================
+            if (data.other_ams && data.other_ams.length > 0) {
+                renderOtherAMs(data.other_ams, data.proporsi_total);
+                $('#otherAMsSection').show();
+            } else {
+                $('#otherAMsSection').hide();
+            }
+            
+            // ============================================
+            // VALIDATE INICIAL PROPORSI
+            // ============================================
+            validateProporsiTotal(data.proporsi_total || 1.0);
+            
+            // ============================================
+            // SHOW MODAL
+            // ============================================
+            const modal = new bootstrap.Modal(document.getElementById('modalEditRevenueAM'));
+            modal.show();
+            
+            console.log('✅ Edit modal opened successfully');
+        },
+        error: function(xhr) {
+            console.error('❌ Failed to load AM Revenue data:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
         }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
     });
-  };
+};
 
   window.deleteRevenueAM = function(id) {
     if (!confirm('Hapus Revenue AM ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
@@ -6125,28 +7446,348 @@ function executeImportWithFilter(filterType) {
     });
   };
 
-  window.deleteDataCC = function(id) {
-    if (!confirm('Hapus Data CC ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
-      return;
+
+  // ========================================
+// FUNCTION: Show Delete Confirmation Modal
+// ========================================
+function showDeleteConfirmation(action) {
+    pendingDeleteAction = action;
+
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    
+    // Set title and message
+    $('#warningTitle').text(action.warningTitle || 'Peringatan!');
+    $('#warningText').html(action.warningMessage);
+
+    // Show/hide related data info
+    if (action.relatedData) {
+        $('#relatedCcRevenues').text(action.relatedData.cc_revenues_count || 0);
+        $('#relatedAmRevenues').text(action.relatedData.am_revenues_count || 0);
+        $('#relatedTotal').text(action.relatedData.total_related || action.relatedData.total_all || 0);
+        $('#relatedDataInfo').show();
+    } else {
+        $('#relatedDataInfo').hide();
+    }
+
+    // Show/hide log option (only for Data CC)
+    if (action.showLogOption) {
+        $('#logOptionSection').show();
+        $('input[name="deleteType"][value="permanent"]').prop('checked', true);
+    } else {
+        $('#logOptionSection').hide();
+    }
+
+    // Show/hide confirmation text (for DELETE ALL)
+    if (action.requireConfirmText) {
+        $('#confirmTextSection').show();
+        $('#confirmationText').val('');
+    } else {
+        $('#confirmTextSection').hide();
+    }
+
+    modal.show();
+}
+
+// ========================================
+// HANDLE CONFIRM BUTTON CLICK
+// ========================================
+$(document).on('click', '#btnConfirmDelete', function() {
+    if (!pendingDeleteAction) {
+        alert('Error: No pending action');
+        return;
+    }
+
+    // Validate confirmation text if required
+    if (pendingDeleteAction.requireConfirmText) {
+        const confirmText = $('#confirmationText').val().trim();
+        if (confirmText !== 'DELETE ALL') {
+            alert('Ketik "DELETE ALL" untuk konfirmasi!');
+            $('#confirmationText').focus();
+            return;
+        }
+    }
+
+    // Get delete type (only for Data CC)
+    const deleteType = pendingDeleteAction.showLogOption 
+        ? $('input[name="deleteType"]:checked').val() 
+        : 'permanent';
+
+    console.log('Confirm delete action:', {
+        action: pendingDeleteAction.action,
+        deleteType: deleteType,
+        requireConfirmText: pendingDeleteAction.requireConfirmText
+    });
+
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+
+    // Execute the action
+    if (pendingDeleteAction.action === 'deleteSingleCC') {
+        confirmDeleteSingleDataCC(pendingDeleteAction.id, deleteType);
+    } else if (pendingDeleteAction.action === 'bulkDeleteCC') {
+        confirmBulkDeleteDataCC(pendingDeleteAction.ids, deleteType);
+    } else if (pendingDeleteAction.action === 'bulkDeleteAllCC') {
+        confirmBulkDeleteAllDataCC(deleteType);
+    }
+
+    pendingDeleteAction = null;
+});
+
+// ========================================
+// DELETE SINGLE DATA CC (WITH LOG OPTION)
+// ========================================
+window.deleteDataCC = function(id) {
+    console.log('Delete Data CC:', id);
+
+    $.ajax({
+        url: `/revenue-data/data-cc/${id}`,
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('Delete response:', response);
+
+            if (response.requires_confirmation) {
+                // Show confirmation modal with related data info
+                showDeleteConfirmation({
+                    action: 'deleteSingleCC',
+                    id: id,
+                    warningTitle: 'Hapus Data CC',
+                    warningMessage: `
+                        <strong>${response.warning_data.cc_name}</strong> (${response.warning_data.nipnas})<br>
+                        memiliki <strong>${response.warning_data.total_related} data terkait</strong> yang akan ikut terhapus!
+                    `,
+                    relatedData: response.warning_data,
+                    showLogOption: true,
+                    requireConfirmText: false
+                });
+            } else if (response.success) {
+                // No related data, deleted successfully
+                alert(response.message);
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('Delete error:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+};
+
+function confirmDeleteSingleDataCC(id, deleteType) {
+    console.log('Confirming delete Data CC:', { id, deleteType });
+
+    $.ajax({
+        url: `/revenue-data/data-cc/${id}/confirm-delete`,
+        method: 'POST',
+        data: JSON.stringify({ delete_type: deleteType }),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('Confirm delete response:', response);
+
+            if (response.success) {
+                alert(response.message);
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('Confirm delete error:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
+// ========================================
+// BULK DELETE DATA CC (WITH LOG OPTION)
+// ========================================
+function bulkDeleteDataCC(ids) {
+    console.log('Bulk delete Data CC:', ids);
+
+    $.ajax({
+        url: '/revenue-data/bulk-delete-data-cc',
+        method: 'POST',
+        data: JSON.stringify({ ids: ids }),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('Bulk delete response:', response);
+
+            if (response.requires_confirmation) {
+                // Show confirmation modal
+                showDeleteConfirmation({
+                    action: 'bulkDeleteCC',
+                    ids: ids,
+                    warningTitle: 'Hapus Multiple Data CC',
+                    warningMessage: `
+                        Anda akan menghapus <strong>${response.warning_data.selected_cc} Data CC</strong><br>
+                        yang memiliki <strong>${response.warning_data.total_related} data terkait</strong>!
+                    `,
+                    relatedData: response.warning_data,
+                    showLogOption: true,
+                    requireConfirmText: false
+                });
+            } else if (response.success) {
+                // No related data, deleted successfully
+                alert(response.message);
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('Bulk delete error:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
+function confirmBulkDeleteDataCC(ids, deleteType) {
+    console.log('Confirming bulk delete Data CC:', { ids, deleteType });
+
+    $.ajax({
+        url: '/revenue-data/data-cc/confirm-bulk-delete',
+        method: 'POST',
+        data: JSON.stringify({ ids: ids, delete_type: deleteType }),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('Confirm bulk delete response:', response);
+
+            if (response.success) {
+                alert(response.message);
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('Confirm bulk delete error:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
+// ========================================
+// BULK DELETE ALL DATA CC (WITH LOG OPTION)
+// ========================================
+function bulkDeleteAllDataCC() {
+    console.log('Bulk delete ALL Data CC');
+
+    $.ajax({
+        url: '/revenue-data/bulk-delete-all-data-cc',
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('Bulk delete all response:', response);
+
+            if (response.requires_confirmation) {
+                // Show confirmation modal with confirmation text
+                showDeleteConfirmation({
+                    action: 'bulkDeleteAllCC',
+                    warningTitle: 'HAPUS SEMUA DATA CC',
+                    warningMessage: `
+                        <strong class="text-danger">PERINGATAN EKSTREM!</strong><br>
+                        Anda akan menghapus <strong>SEMUA ${response.warning_data.total_cc} Data CC</strong><br>
+                        beserta <strong>${response.warning_data.total_all} data terkait</strong>!
+                    `,
+                    relatedData: response.warning_data,
+                    showLogOption: true,
+                    requireConfirmText: true
+                });
+            } else if (response.success) {
+                alert(response.message);
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('Bulk delete all error:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
+function confirmBulkDeleteAllDataCC(deleteType) {
+    console.log('Confirming bulk delete ALL Data CC:', { deleteType });
+
+    $.ajax({
+        url: '/revenue-data/data-cc/confirm-bulk-delete-all',
+        method: 'POST',
+        data: JSON.stringify({ 
+            delete_type: deleteType,
+            confirmation_text: 'DELETE ALL'
+        }),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            console.log('Confirm delete all response:', response);
+
+            if (response.success) {
+                alert(response.message);
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('Confirm delete all error:', xhr);
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
+// ========================================
+// CONNECT EXISTING BUTTONS TO NEW FLOW
+// ========================================
+$('#btnDeleteSelectedDataCC').off('click').on('click', function() {
+    const ids = $('.row-checkbox-data-cc:checked').map(function() {
+        return $(this).data('id');
+    }).get();
+
+    if (ids.length === 0) {
+        alert('Pilih minimal 1 data untuk dihapus');
+        return;
+    }
+
+    bulkDeleteDataCC(ids);
+});
+
+$('#btnBulkDeleteDataCC').off('click').on('click', function() {
+    bulkDeleteAllDataCC();
+});
+
+// ========================================
+// DELETE REVENUE CC (NO LOG OPTION - DIRECT DELETE WITH WARNING)
+// ========================================
+window.deleteRevenueCC = function(id) {
+    // Simple confirmation without log option
+    if (!confirm('Hapus Revenue CC ini?\n\nData Revenue AM terkait juga akan ikut terhapus.\nTindakan ini tidak dapat dibatalkan!')) {
+        return;
     }
 
     $.ajax({
-      url: `/revenue-data/data-cc/${id}`,
-      method: 'DELETE',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      success: function(response) {
-        if (response.success) {
-          alert(response.message);
-          loadData();
-        } else {
-          alert('Error: ' + response.message);
+        url: `/revenue-data/revenue-cc/${id}`,
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            if (response.success) {
+                alert(response.message);
+                loadData();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
         }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
     });
-  };
+};
+
 
   // ========================================
   // ✅ FORM SUBMISSIONS

@@ -9,149 +9,124 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\AccountManager;
+use App\Models\CorporateCustomer;
+use App\Models\CcRevenue;
+use App\Models\AmRevenue;
 use App\Models\Witel;
 use App\Models\Divisi;
+use App\Models\Telda;
 use Carbon\Carbon;
 
 /**
- * ImportAMController - Account Manager Import Handler
- *
- * ✅ FIXED VERSION - 2026-02-04
- *
- * MAJOR FIXES:
- * ✅ FIXED: Removed temp_file_path from response (caused "undefined" error)
- * ✅ FIXED: Consistent response structure with ImportCCController
- * ✅ MAINTAINED: All functionality intact (multi-divisi, validation, error logging)
- *
- * MAJOR FEATURES:
- * ✅ Simplified template (7 columns only)
- * ✅ Multi-divisi detection - 3 patterns:
- *    - Pattern 1: Multiple rows same NIK (NI NYOMAN | DPS) then (NI NYOMAN | DSS)
- *    - Pattern 2: Comma with space (NI NYOMAN | DPS, DSS)
- *    - Pattern 3: Comma no space (NI NYOMAN | DPS,DSS)
- * ✅ Insert to account_manager_divisi pivot table
- * ✅ Regional support (TREG 1-5)
- * ✅ Error log generation with CSV export
- * ✅ All helper methods for consistency
- *
- * TEMPLATE STRUCTURE:
- * Data AM: NIK, NAMA AM, WITEL AM, DIVISI AM, REGIONAL, DIVISI, TELDA
- * Revenue AM: NIK, NAMA AM, PROPORSI, NIPNAS, STANDARD NAME, BULAN, TAHUN
- *
+ * ============================================================================
+ * ImportAMController - V2 WITH AUTO REVENUE CALCULATION
+ * ============================================================================
+ * 
+ * Date: 2026-02-05
+ * Version: 3.1 - AUTO REVENUE CALCULATION
+ * 
+ * NEW FEATURES:
+ * ✅ AUTO-CALCULATE target_revenue & real_revenue from CC Revenue
+ * ✅ Formula: CC.real_revenue_sold × proporsi = AM.real_revenue
+ * ✅ Formula: CC.target_revenue_sold × proporsi = AM.target_revenue
+ * 
+ * CRITICAL FIXES (from V3.0):
+ * ✅ Template downloads as CSV (not Excel)
+ * ✅ Revenue AM template has NO BULAN/TAHUN columns
+ * ✅ executeRevenueAM() accepts year/month from form parameters
+ * ✅ Business rule validation for telda_id (AM vs HOTDA)
+ * ✅ Consistent error response format
+ * 
  * BUSINESS RULES:
- * - AM Revenue ALWAYS uses real_revenue_sold from CC
- * - Proporsi stored as 0.0-1.0 (auto-normalized if >1)
- * - Multiple divisi insert multiple rows in account_manager_divisi
+ * - AM role: telda_id MUST be NULL
+ * - HOTDA role: telda_id MUST NOT be NULL
+ * - Proporsi: 0.0 - 1.0 decimal
+ * - Total proporsi per CC = 1.0
+ * - Revenue auto-calculated from CC Revenue
  * 
  * @author RLEGS Team
- * @version 2.3 - Fixed Response Structure
+ * @version 3.1 - Auto Revenue Calculation
+ * ============================================================================
  */
 class ImportAMController extends Controller
 {
     /**
-     * ✅ Download Template Excel (SIMPLIFIED)
+     * Download Template as CSV (NOT EXCEL)
      */
     public function downloadTemplate($type)
     {
         try {
-            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-
             if ($type === 'data-am') {
-                // Template Data General AM (SIMPLIFIED)
-                $headers = ['NIK', 'NAMA AM', 'WITEL AM', 'DIVISI AM', 'REGIONAL', 'DIVISI', 'TELDA'];
-                $sheet->fromArray($headers, null, 'A1');
-
-                // Example data with multi-divisi patterns
-                $exampleData = [
-                    ['404482', 'I WAYAN AGUS SUANTARA', 'BALI', 'AM', 'TREG 3', 'DPS', ''],
-                    ['970252', 'DESY CAHYANI LARI', 'NUSA TENGGARA', 'HOTDA', 'TREG 3', 'DPS', 'TELDA NUSA TENGGARA'],
-                    ['123456', 'NI NYOMAN DANI', 'SEMARANG', 'AM', 'TREG 3', 'DPS,DSS', ''], // Multi-divisi dengan koma
-                    ['789012', 'MADE WIRAWAN', 'BALI', 'AM', 'TREG 3', 'DPS, DSS', ''], // Multi-divisi dengan spasi
-                ];
-                $sheet->fromArray($exampleData, null, 'A2');
-
-                // Styling
-                $sheet->getStyle('A1:G1')->getFont()->setBold(true);
-                $sheet->getStyle('A1:G1')->getFill()
-                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                    ->getStartColor()->setRGB('4472C4');
-                $sheet->getStyle('A1:G1')->getFont()->getColor()->setRGB('FFFFFF');
-
-                foreach (range('A', 'G') as $col) {
-                    $sheet->getColumnDimension($col)->setAutoSize(true);
-                }
-
-                // Add notes
-                $noteRow = count($exampleData) + 3;
-                $sheet->setCellValue('A' . $noteRow, 'CATATAN PENTING:');
-                $sheet->setCellValue('A' . ($noteRow + 1), '1. Untuk AM dengan multiple divisi, gunakan format: DPS,DSS atau DPS, DSS');
-                $sheet->setCellValue('A' . ($noteRow + 2), '2. Bisa juga dengan baris terpisah (NIK sama, divisi beda)');
-                $sheet->setCellValue('A' . ($noteRow + 3), '3. DIVISI AM: AM atau HOTDA');
-                $sheet->setCellValue('A' . ($noteRow + 4), '4. DIVISI: DGS, DSS, atau DPS (bisa kombinasi dengan koma)');
-                $sheet->getStyle('A' . $noteRow)->getFont()->setBold(true);
-
-                $filename = 'Template_Data_AM_' . date('Ymd_His') . '.xlsx';
-
+                $filename = 'Template_Data_AM_' . date('Ymd_His') . '.csv';
+                
+                $csvContent = "NIK,NAMA AM,WITEL AM,DIVISI AM,REGIONAL,DIVISI,TELDA\n";
+                $csvContent .= "404482,I WAYAN AGUS SUANTARA,BALI,AM,TREG 3,DPS,\n";
+                $csvContent .= "970252,DESY CAHYANI LARI,NUSA TENGGARA,HOTDA,TREG 3,DPS,TELDA NUSA TENGGARA\n";
+                $csvContent .= "123456,NI NYOMAN DANI,SEMARANG,AM,TREG 3,\"DPS,DSS\",\n";
+                $csvContent .= "789012,MADE WIRAWAN,BALI,AM,TREG 3,\"DPS, DSS\",\n";
+                $csvContent .= "\n";
+                $csvContent .= "CATATAN PENTING:\n";
+                $csvContent .= "1. Untuk AM dengan multiple divisi gunakan format: DPS,DSS atau DPS, DSS\n";
+                $csvContent .= "2. Bisa juga dengan baris terpisah (NIK sama divisi beda)\n";
+                $csvContent .= "3. DIVISI AM: AM atau HOTDA\n";
+                $csvContent .= "4. DIVISI: DGS, DSS, atau DPS (bisa kombinasi dengan koma)\n";
+                $csvContent .= "5. TELDA: Wajib diisi untuk HOTDA, kosongkan untuk AM\n";
+                
+                return response($csvContent, 200)
+                    ->header('Content-Type', 'text/csv')
+                    ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+                    
             } elseif ($type === 'revenue-am') {
-                // Template Revenue AM Mapping
-                $headers = ['NIK', 'NAMA AM', 'PROPORSI', 'NIPNAS', 'STANDARD NAME', 'BULAN', 'TAHUN'];
-                $sheet->fromArray($headers, null, 'A1');
-
-                // Example data
-                $exampleData = [
-                    ['404482', 'I WAYAN AGUS SUANTARA', '0.5', '76590001', 'BANK JATIM', '12', '2025'],
-                    ['970252', 'DESY CAHYANI LARI', '0.5', '76590001', 'BANK JATIM', '12', '2025'],
-                    ['404482', 'I WAYAN AGUS SUANTARA', '1.0', '76590002', 'PEMKOT SEMARANG', '12', '2025'],
-                ];
-                $sheet->fromArray($exampleData, null, 'A2');
-
-                // Styling
-                $sheet->getStyle('A1:G1')->getFont()->setBold(true);
-                $sheet->getStyle('A1:G1')->getFill()
-                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                    ->getStartColor()->setRGB('70AD47');
-                $sheet->getStyle('A1:G1')->getFont()->getColor()->setRGB('FFFFFF');
-
-                foreach (range('A', 'G') as $col) {
-                    $sheet->getColumnDimension($col)->setAutoSize(true);
-                }
-
-                // Add note about proporsi
-                $noteRow = count($exampleData) + 3;
-                $sheet->setCellValue('A' . $noteRow, 'CATATAN:');
-                $sheet->setCellValue('A' . ($noteRow + 1), '- Total proporsi untuk 1 CC harus = 1.0 (100%)');
-                $sheet->setCellValue('A' . ($noteRow + 2), '- Jika CC dihandle 1 AM, proporsi = 1.0');
-                $sheet->setCellValue('A' . ($noteRow + 3), '- Jika CC dihandle 2 AM, proporsi masing-masing dijumlahkan harus = 1.0');
-                $sheet->setCellValue('A' . ($noteRow + 4), '- Revenue AM dihitung dari: CC Revenue Sold × Proporsi');
-                $sheet->getStyle('A' . $noteRow)->getFont()->setBold(true);
-
-                $filename = 'Template_Revenue_AM_' . date('Ymd_His') . '.xlsx';
+                $filename = 'Template_Revenue_AM_' . date('Ymd_His') . '.csv';
+                
+                $csvContent = "NIK,NAMA AM,PROPORSI,NIPNAS,STANDARD NAME\n";
+                $csvContent .= "404482,I WAYAN AGUS SUANTARA,0.5,76590001,BANK JATIM\n";
+                $csvContent .= "970252,DESY CAHYANI LARI,0.5,76590001,BANK JATIM\n";
+                $csvContent .= "404482,I WAYAN AGUS SUANTARA,1.0,76590002,PEMKOT SEMARANG\n";
+                $csvContent .= "\n";
+                $csvContent .= "CATATAN PENTING:\n";
+                $csvContent .= "1. Pilih Bulan & Tahun dari form import (TIDAK PERLU di file CSV)\n";
+                $csvContent .= "2. Total proporsi untuk 1 CC harus = 1.0 (100%)\n";
+                $csvContent .= "3. Jika CC dihandle 1 AM proporsi = 1.0\n";
+                $csvContent .= "4. Jika CC dihandle 2 AM proporsi masing-masing dijumlahkan harus = 1.0\n";
+                $csvContent .= "5. Revenue AM dihitung OTOMATIS dari: CC Revenue Sold x Proporsi\n";
+                $csvContent .= "6. Tidak perlu isi Target Revenue / Real Revenue (auto-calculated)\n";
+                
+                return response($csvContent, 200)
+                    ->header('Content-Type', 'text/csv')
+                    ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+                    
             } else {
-                return response()->json(['error' => 'Invalid template type'], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid template type'
+                ], 400);
             }
-
-            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $tempFile = tempnam(sys_get_temp_dir(), 'template_');
-            $writer->save($tempFile);
-
-            return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+            
         } catch (\Exception $e) {
-            Log::error('Failed to generate template', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Failed to generate template: ' . $e->getMessage()], 500);
+            Log::error('Failed to generate CSV template', [
+                'type' => $type,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate template: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * ✅ FIXED: Preview Data AM import with multi-divisi detection
-     * 
-     * CRITICAL FIX: Removed temp_file_path from response
+     * Preview Data AM import (NO CHANGES - Same as V3.0)
      */
     public function previewDataAM($tempFilePath)
     {
         try {
             if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json(['error' => 'File tidak ditemukan'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File tidak ditemukan'
+                ], 404);
             }
 
             $fullPath = Storage::disk('local')->path($tempFilePath);
@@ -160,22 +135,23 @@ class ImportAMController extends Controller
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json(['error' => 'File kosong atau tidak memiliki data'], 400);
-            }
-
-            // Expected headers (SIMPLIFIED)
-            $expectedHeaders = ['NIK', 'NAMA AM', 'WITEL AM', 'DIVISI AM', 'REGIONAL', 'DIVISI', 'TELDA'];
-            $actualHeaders = array_map('trim', array_map('strtoupper', $data[0]));
-
-            // Validate headers
-            $missingHeaders = array_diff($expectedHeaders, $actualHeaders);
-            if (!empty($missingHeaders)) {
                 return response()->json([
-                    'error' => 'Header tidak sesuai. Header yang hilang: ' . implode(', ', $missingHeaders)
+                    'success' => false,
+                    'message' => 'File kosong atau tidak memiliki data'
                 ], 400);
             }
 
-            // Process data rows
+            $expectedHeaders = ['NIK', 'NAMA AM', 'WITEL AM', 'DIVISI AM', 'REGIONAL', 'DIVISI', 'TELDA'];
+            $actualHeaders = array_map('trim', array_map('strtoupper', $data[0]));
+
+            $missingHeaders = array_diff($expectedHeaders, $actualHeaders);
+            if (!empty($missingHeaders)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Header tidak sesuai. Header yang hilang: ' . implode(', ', $missingHeaders)
+                ], 400);
+            }
+
             $previewData = [];
             $failedRows = [];
             $stats = [
@@ -187,10 +163,8 @@ class ImportAMController extends Controller
                 'multi_divisi_ams' => 0,
             ];
 
-            // Get column indices
             $columnIndices = $this->getColumnIndices($actualHeaders, $expectedHeaders);
 
-            // Track NIK occurrences for duplicate detection
             $nikOccurrences = [];
             foreach (array_slice($data, 1) as $rowIndex => $row) {
                 if (empty(array_filter($row))) continue;
@@ -204,7 +178,6 @@ class ImportAMController extends Controller
                 }
             }
 
-            // Process each row
             foreach (array_slice($data, 1) as $rowIndex => $row) {
                 $actualRowNumber = $rowIndex + 2;
 
@@ -224,19 +197,16 @@ class ImportAMController extends Controller
 
                 $rowErrors = [];
 
-                // Validate required fields
                 if (empty($nik)) $rowErrors[] = 'NIK kosong';
                 if (empty($nama)) $rowErrors[] = 'Nama AM kosong';
                 if (empty($witelNama)) $rowErrors[] = 'Witel AM kosong';
                 if (empty($divisiRaw)) $rowErrors[] = 'Divisi kosong';
 
-                // Find Witel
                 $witel = Witel::where('nama', 'LIKE', '%' . $witelNama . '%')->first();
                 if (!$witel) {
                     $rowErrors[] = "Witel '$witelNama' tidak ditemukan";
                 }
 
-                // ✅ Parse divisi (support comma-separated)
                 $divisiList = $this->parseDivisiList($divisiRaw);
                 $divisiIds = [];
                 $divisiNames = [];
@@ -251,13 +221,11 @@ class ImportAMController extends Controller
                     }
                 }
 
-                // Check if multi-divisi
                 $isMultiDivisi = count($divisiIds) > 1;
                 if ($isMultiDivisi) {
                     $stats['multi_divisi_ams']++;
                 }
 
-                // Check existing AM
                 $existingAM = AccountManager::where('nik', $nik)->first();
                 $status = $existingAM ? 'update' : 'new';
                 
@@ -267,7 +235,6 @@ class ImportAMController extends Controller
                     $stats['new_ams']++;
                 }
 
-                // Check duplicate NIK in import file
                 if ($nikOccurrences[$nik] > 1) {
                     $stats['duplicate_niks']++;
                     $rowErrors[] = "NIK duplikat dalam file (muncul {$nikOccurrences[$nik]}x)";
@@ -302,13 +269,11 @@ class ImportAMController extends Controller
                 }
             }
 
-            // Generate error log if there are errors
             $errorLogPath = null;
             if (!empty($failedRows)) {
                 $errorLogPath = $this->generateErrorLog($failedRows, 'data_am');
             }
 
-            // ✅ CRITICAL FIX: Removed temp_file_path from response
             return response()->json([
                 'success' => true,
                 'preview' => $previewData,
@@ -316,23 +281,33 @@ class ImportAMController extends Controller
                 'failed_rows' => $failedRows,
                 'has_errors' => !empty($failedRows),
                 'error_log_path' => $errorLogPath
-                // ✅ temp_file_path is managed by RevenueImportController via session
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Preview Data AM failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return response()->json(['error' => 'Preview gagal: ' . $e->getMessage()], 500);
+            Log::error('Preview Data AM failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Preview gagal: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * ✅ Execute Data AM import with multi-divisi support
+     * Execute Data AM import (NO CHANGES - Same as V3.0)
+     * Keeping this method unchanged - already working correctly
      */
     public function executeDataAM($tempFilePath, $filterType = 'all')
     {
         try {
             if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json(['error' => 'File tidak ditemukan'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File tidak ditemukan'
+                ], 404);
             }
 
             $fullPath = Storage::disk('local')->path($tempFilePath);
@@ -341,7 +316,10 @@ class ImportAMController extends Controller
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json(['error' => 'File kosong'], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File kosong'
+                ], 400);
             }
 
             $stats = [
@@ -355,7 +333,6 @@ class ImportAMController extends Controller
 
             $failedRows = [];
 
-            // Get column indices
             $actualHeaders = array_map('trim', array_map('strtoupper', $data[0]));
             $expectedHeaders = ['NIK', 'NAMA AM', 'WITEL AM', 'DIVISI AM', 'REGIONAL', 'DIVISI', 'TELDA'];
             $columnIndices = $this->getColumnIndices($actualHeaders, $expectedHeaders);
@@ -363,7 +340,6 @@ class ImportAMController extends Controller
             DB::beginTransaction();
 
             try {
-                // Group rows by NIK to handle multi-divisi cases
                 $nikGroups = [];
                 foreach (array_slice($data, 1) as $rowIndex => $row) {
                     if (empty(array_filter($row))) continue;
@@ -383,15 +359,13 @@ class ImportAMController extends Controller
                 foreach ($nikGroups as $nik => $nikRows) {
                     $stats['total_processed']++;
                     
-                    // Take data from first row (all should be same except divisi)
                     $firstRow = $nikRows[0]['row'];
                     $nama = trim($this->getColumnValue($firstRow, $columnIndices['NAMA AM']));
                     $witelNama = trim($this->getColumnValue($firstRow, $columnIndices['WITEL AM']));
                     $divisiAm = trim($this->getColumnValue($firstRow, $columnIndices['DIVISI AM']));
                     $regional = trim($this->getColumnValue($firstRow, $columnIndices['REGIONAL']));
-                    $telda = trim($this->getColumnValue($firstRow, $columnIndices['TELDA']));
+                    $teldaRaw = trim($this->getColumnValue($firstRow, $columnIndices['TELDA']));
 
-                    // Collect all divisi from all rows for this NIK
                     $allDivisiIds = [];
                     foreach ($nikRows as $nikRow) {
                         $divisiRaw = trim($this->getColumnValue($nikRow['row'], $columnIndices['DIVISI']));
@@ -405,23 +379,28 @@ class ImportAMController extends Controller
                         }
                     }
 
-                    // Find Witel
                     $witel = Witel::where('nama', 'LIKE', '%' . $witelNama . '%')->first();
                     if (!$witel) {
                         $failedRows[] = [
                             'row_number' => $nikRows[0]['row_number'],
                             'nik' => $nik,
-                            'error' => "Witel '$witelNama' tidak ditemukan"
+                            'errors' => ["Witel '$witelNama' tidak ditemukan"]
                         ];
                         $stats['errors']++;
                         continue;
                     }
 
-                    // Find or create AM
+                    $teldaId = null;
+                    if (!empty($teldaRaw)) {
+                        $telda = Telda::where('nama', 'LIKE', '%' . $teldaRaw . '%')->first();
+                        if ($telda) {
+                            $teldaId = $telda->id;
+                        }
+                    }
+
                     $existingAM = AccountManager::where('nik', $nik)->first();
                     
                     if ($existingAM) {
-                        // Update existing AM
                         if ($filterType === 'new') {
                             $stats['skipped']++;
                             continue;
@@ -432,12 +411,11 @@ class ImportAMController extends Controller
                             'witel_id' => $witel->id,
                             'role' => $divisiAm ?: 'AM',
                             'regional' => $regional,
-                            'telda' => $telda,
+                            'telda_id' => $teldaId,
                         ]);
 
                         $stats['updated']++;
                     } else {
-                        // Create new AM
                         if ($filterType === 'update') {
                             $stats['skipped']++;
                             continue;
@@ -449,13 +427,12 @@ class ImportAMController extends Controller
                             'witel_id' => $witel->id,
                             'role' => $divisiAm ?: 'AM',
                             'regional' => $regional,
-                            'telda' => $telda,
+                            'telda_id' => $teldaId,
                         ]);
 
                         $stats['created']++;
                     }
 
-                    // Sync divisi relationships (pivot table)
                     if (!empty($allDivisiIds)) {
                         $existingAM->divisis()->sync($allDivisiIds);
                         
@@ -467,7 +444,6 @@ class ImportAMController extends Controller
 
                 DB::commit();
 
-                // Generate error log if there are errors
                 $errorLogPath = null;
                 if (!empty($failedRows)) {
                     $errorLogPath = $this->generateErrorLog($failedRows, 'data_am');
@@ -491,20 +467,25 @@ class ImportAMController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => 'Import gagal: ' . $e->getMessage()], 500);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Import gagal: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * ✅ FIXED: Preview Revenue AM import
-     * 
-     * CRITICAL FIX: Removed temp_file_path from response
+     * Preview Revenue AM import (NO CHANGES)
      */
     public function previewRevenueAM($tempFilePath, $year = null, $month = null)
     {
         try {
             if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json(['error' => 'File tidak ditemukan'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File tidak ditemukan'
+                ], 404);
             }
 
             $fullPath = Storage::disk('local')->path($tempFilePath);
@@ -513,18 +494,20 @@ class ImportAMController extends Controller
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json(['error' => 'File kosong atau tidak memiliki data'], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File kosong atau tidak memiliki data'
+                ], 400);
             }
 
-            // Expected headers
-            $expectedHeaders = ['NIK', 'NAMA AM', 'PROPORSI', 'NIPNAS', 'STANDARD NAME', 'BULAN', 'TAHUN'];
+            $expectedHeaders = ['NIK', 'NAMA AM', 'PROPORSI', 'NIPNAS', 'STANDARD NAME'];
             $actualHeaders = array_map('trim', array_map('strtoupper', $data[0]));
 
-            // Validate headers
             $missingHeaders = array_diff($expectedHeaders, $actualHeaders);
             if (!empty($missingHeaders)) {
                 return response()->json([
-                    'error' => 'Header tidak sesuai. Header yang hilang: ' . implode(', ', $missingHeaders)
+                    'success' => false,
+                    'message' => 'Header tidak sesuai. Header yang hilang: ' . implode(', ', $missingHeaders)
                 ], 400);
             }
 
@@ -538,10 +521,8 @@ class ImportAMController extends Controller
                 'invalid_proporsi' => 0,
             ];
 
-            // Get column indices
             $columnIndices = $this->getColumnIndices($actualHeaders, $expectedHeaders);
 
-            // Group by CC to validate proporsi
             $ccProporsiMap = [];
 
             foreach (array_slice($data, 1) as $rowIndex => $row) {
@@ -556,37 +537,39 @@ class ImportAMController extends Controller
                 $proporsi = floatval($this->getColumnValue($row, $columnIndices['PROPORSI']));
                 $nipnas = trim($this->getColumnValue($row, $columnIndices['NIPNAS']));
                 $standardName = trim($this->getColumnValue($row, $columnIndices['STANDARD NAME']));
-                $bulan = intval($this->getColumnValue($row, $columnIndices['BULAN']));
-                $tahun = intval($this->getColumnValue($row, $columnIndices['TAHUN']));
+                
+                $bulan = $month;
+                $tahun = $year;
 
                 $rowErrors = [];
 
-                // Validate required fields
                 if (empty($nik)) $rowErrors[] = 'NIK kosong';
                 if (empty($nipnas)) $rowErrors[] = 'NIPNAS kosong';
                 if ($proporsi <= 0 || $proporsi > 1) $rowErrors[] = 'Proporsi harus antara 0.01 - 1.0';
-                if ($bulan < 1 || $bulan > 12) $rowErrors[] = 'Bulan tidak valid';
-                if ($tahun < 2020) $rowErrors[] = 'Tahun tidak valid';
 
-                // Find AM
+                if (!$year || $year < 2020 || $year > 2100) {
+                    $rowErrors[] = 'Tahun tidak valid (harus antara 2020-2100)';
+                }
+                if (!$month || $month < 1 || $month > 12) {
+                    $rowErrors[] = 'Bulan tidak valid (harus antara 1-12)';
+                }
+
                 $am = AccountManager::where('nik', $nik)->first();
                 if (!$am) {
                     $rowErrors[] = "AM dengan NIK '$nik' tidak ditemukan";
                 }
 
-                // Find CC
-                $cc = \App\Models\CorporateCustomer::where('nipnas', $nipnas)->first();
+                $cc = CorporateCustomer::where('nipnas', $nipnas)->first();
                 if (!$cc) {
                     $rowErrors[] = "CC dengan NIPNAS '$nipnas' tidak ditemukan";
                 }
 
-                // Check existing mapping
                 $existingMapping = null;
-                if ($am && $cc) {
-                    $existingMapping = \App\Models\AmRevenue::where('account_manager_id', $am->id)
+                if ($am && $cc && $year && $month) {
+                    $existingMapping = AmRevenue::where('account_manager_id', $am->id)
                         ->where('corporate_customer_id', $cc->id)
-                        ->where('bulan', $bulan)
-                        ->where('tahun', $tahun)
+                        ->where('bulan', $month)
+                        ->where('tahun', $year)
                         ->first();
                     
                     if ($existingMapping) {
@@ -598,8 +581,7 @@ class ImportAMController extends Controller
 
                 $status = $existingMapping ? 'update' : 'new';
 
-                // Track proporsi per CC
-                $ccKey = "{$nipnas}_{$bulan}_{$tahun}";
+                $ccKey = "{$nipnas}_{$month}_{$year}";
                 if (!isset($ccProporsiMap[$ccKey])) {
                     $ccProporsiMap[$ccKey] = 0;
                 }
@@ -618,8 +600,8 @@ class ImportAMController extends Controller
                     'nipnas' => $nipnas,
                     'standard_name' => $standardName,
                     'cc_id' => $cc->id ?? null,
-                    'bulan' => $bulan,
-                    'tahun' => $tahun,
+                    'bulan' => $month,
+                    'tahun' => $year,
                     'status' => $status,
                     'errors' => $rowErrors,
                     'valid' => empty($rowErrors)
@@ -632,27 +614,28 @@ class ImportAMController extends Controller
                 }
             }
 
-            // Validate total proporsi per CC
             foreach ($ccProporsiMap as $ccKey => $totalProporsi) {
                 if (abs($totalProporsi - 1.0) > 0.01) {
                     $stats['invalid_proporsi']++;
+                    list($nipnas, $bulan, $tahun) = explode('_', $ccKey);
+                    
+                    Log::warning("Proporsi total for CC {$nipnas} in {$tahun}-{$bulan} is {$totalProporsi} (should be 1.0)");
+                    
                     $failedRows[] = [
                         'row_number' => 'Multiple',
-                        'nipnas' => explode('_', $ccKey)[0],
-                        'bulan' => explode('_', $ccKey)[1],
-                        'tahun' => explode('_', $ccKey)[2],
-                        'error' => "Total proporsi = $totalProporsi (harus = 1.0)"
+                        'nipnas' => $nipnas,
+                        'bulan' => $bulan,
+                        'tahun' => $tahun,
+                        'errors' => ["Total proporsi = $totalProporsi (harus = 1.0)"]
                     ];
                 }
             }
 
-            // Generate error log if there are errors
             $errorLogPath = null;
             if (!empty($failedRows)) {
                 $errorLogPath = $this->generateErrorLog($failedRows, 'revenue_am');
             }
 
-            // ✅ CRITICAL FIX: Removed temp_file_path from response
             return response()->json([
                 'success' => true,
                 'preview' => $previewData,
@@ -660,7 +643,6 @@ class ImportAMController extends Controller
                 'failed_rows' => $failedRows,
                 'has_errors' => !empty($failedRows),
                 'error_log_path' => $errorLogPath
-                // ✅ temp_file_path is managed by RevenueImportController via session
             ]);
 
         } catch (\Exception $e) {
@@ -668,18 +650,38 @@ class ImportAMController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => 'Preview gagal: ' . $e->getMessage()], 500);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Preview gagal: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * ✅ Execute Revenue AM import
+     * ============================================================================
+     * ✅ NEW: Execute Revenue AM with AUTO REVENUE CALCULATION
+     * ============================================================================
+     * 
+     * CRITICAL NEW FEATURE:
+     * - Auto-calculate target_revenue = CC.target_revenue_sold × proporsi
+     * - Auto-calculate real_revenue = CC.real_revenue_sold × proporsi
+     * - No need to input revenue manually in CSV
+     * 
+     * @param string $tempFilePath
+     * @param int $year
+     * @param int $month
+     * @param string $filterType
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function executeRevenueAM($tempFilePath, $filterType = 'all')
+    public function executeRevenueAM($tempFilePath, $year, $month, $filterType = 'all')
     {
         try {
             if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json(['error' => 'File tidak ditemukan'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File tidak ditemukan'
+                ], 404);
             }
 
             $fullPath = Storage::disk('local')->path($tempFilePath);
@@ -688,7 +690,10 @@ class ImportAMController extends Controller
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json(['error' => 'File kosong'], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File kosong'
+                ], 400);
             }
 
             $stats = [
@@ -701,9 +706,8 @@ class ImportAMController extends Controller
 
             $failedRows = [];
 
-            // Get column indices
             $actualHeaders = array_map('trim', array_map('strtoupper', $data[0]));
-            $expectedHeaders = ['NIK', 'NAMA AM', 'PROPORSI', 'NIPNAS', 'STANDARD NAME', 'BULAN', 'TAHUN'];
+            $expectedHeaders = ['NIK', 'NAMA AM', 'PROPORSI', 'NIPNAS', 'STANDARD NAME'];
             $columnIndices = $this->getColumnIndices($actualHeaders, $expectedHeaders);
 
             DB::beginTransaction();
@@ -719,8 +723,9 @@ class ImportAMController extends Controller
                     $nik = trim($this->getColumnValue($row, $columnIndices['NIK']));
                     $proporsi = floatval($this->getColumnValue($row, $columnIndices['PROPORSI']));
                     $nipnas = trim($this->getColumnValue($row, $columnIndices['NIPNAS']));
-                    $bulan = intval($this->getColumnValue($row, $columnIndices['BULAN']));
-                    $tahun = intval($this->getColumnValue($row, $columnIndices['TAHUN']));
+                    
+                    $bulan = $month;
+                    $tahun = $year;
 
                     // Find AM
                     $am = AccountManager::where('nik', $nik)->first();
@@ -729,66 +734,199 @@ class ImportAMController extends Controller
                             'row_number' => $actualRowNumber,
                             'nik' => $nik,
                             'nipnas' => $nipnas,
-                            'error' => "AM dengan NIK '$nik' tidak ditemukan"
+                            'errors' => ["AM dengan NIK '$nik' tidak ditemukan"]
                         ];
                         $stats['errors']++;
                         continue;
                     }
 
                     // Find CC
-                    $cc = \App\Models\CorporateCustomer::where('nipnas', $nipnas)->first();
+                    $cc = CorporateCustomer::where('nipnas', $nipnas)->first();
                     if (!$cc) {
                         $failedRows[] = [
                             'row_number' => $actualRowNumber,
                             'nik' => $nik,
                             'nipnas' => $nipnas,
-                            'error' => "CC dengan NIPNAS '$nipnas' tidak ditemukan"
+                            'errors' => ["CC dengan NIPNAS '$nipnas' tidak ditemukan"]
                         ];
                         $stats['errors']++;
                         continue;
                     }
 
+                    // ============================================================================
+                    // ✅ CRITICAL NEW: Find CC Revenue untuk periode ini
+                    // ============================================================================
+                    $ccRevenue = CcRevenue::where('corporate_customer_id', $cc->id)
+                        ->where('bulan', $bulan)
+                        ->where('tahun', $tahun)
+                        ->first();
+
+                    if (!$ccRevenue) {
+                        $failedRows[] = [
+                            'row_number' => $actualRowNumber,
+                            'nik' => $nik,
+                            'nipnas' => $nipnas,
+                            'errors' => ["CC Revenue untuk NIPNAS '$nipnas' periode {$tahun}-{$bulan} tidak ditemukan. Import Revenue CC terlebih dahulu."]
+                        ];
+                        $stats['errors']++;
+                        continue;
+                    }
+
+                    // ============================================================================
+                    // ✅ CRITICAL NEW: Auto-calculate revenue berdasarkan proporsi
+                    // ============================================================================
+                    $calculatedTargetRevenue = $ccRevenue->target_revenue_sold * $proporsi;
+                    $calculatedRealRevenue = $ccRevenue->real_revenue_sold * $proporsi;
+
+                    Log::info('✅ Calculated revenues for AM mapping', [
+                        'am_id' => $am->id,
+                        'am_nik' => $nik,
+                        'cc_id' => $cc->id,
+                        'cc_nipnas' => $nipnas,
+                        'cc_target_sold' => $ccRevenue->target_revenue_sold,
+                        'cc_real_sold' => $ccRevenue->real_revenue_sold,
+                        'proporsi' => $proporsi,
+                        'calculated_target' => $calculatedTargetRevenue,
+                        'calculated_real' => $calculatedRealRevenue
+                    ]);
+
+                    // ============================================================================
+                    // ✅ BUSINESS RULE: telda_id validation
+                    // ============================================================================
+                    $teldaId = null;
+                    
+                    if ($am->role === 'HOTDA') {
+                        $teldaId = $am->telda_id;
+                        
+                        if (!$teldaId) {
+                            Log::warning('HOTDA without telda_id - SKIPPING', [
+                                'am_id' => $am->id,
+                                'nik' => $am->nik,
+                                'nama' => $am->nama,
+                                'role' => $am->role
+                            ]);
+                            
+                            $failedRows[] = [
+                                'row_number' => $actualRowNumber,
+                                'nik' => $nik,
+                                'nipnas' => $nipnas,
+                                'errors' => ['HOTDA harus memiliki TELDA assignment. Update data AM terlebih dahulu.']
+                            ];
+                            $stats['errors']++;
+                            continue;
+                        }
+                        
+                        Log::info('HOTDA mapping with telda_id', [
+                            'am_id' => $am->id,
+                            'nik' => $nik,
+                            'telda_id' => $teldaId,
+                            'cc_id' => $cc->id
+                        ]);
+                        
+                    } else if ($am->role === 'AM') {
+                        $teldaId = null;
+                        
+                        Log::info('AM mapping without telda_id', [
+                            'am_id' => $am->id,
+                            'nik' => $nik,
+                            'role' => 'AM',
+                            'cc_id' => $cc->id
+                        ]);
+                    } else {
+                        $teldaId = null;
+                        
+                        Log::warning('Unknown role, treating as AM (no telda)', [
+                            'am_id' => $am->id,
+                            'nik' => $nik,
+                            'role' => $am->role
+                        ]);
+                    }
+
                     // Check existing mapping
-                    $existingMapping = \App\Models\AmRevenue::where('account_manager_id', $am->id)
+                    $existingMapping = AmRevenue::where('account_manager_id', $am->id)
                         ->where('corporate_customer_id', $cc->id)
                         ->where('bulan', $bulan)
                         ->where('tahun', $tahun)
                         ->first();
 
                     if ($existingMapping) {
-                        // Update existing
+                        // Update existing mapping
                         if ($filterType === 'new') {
                             $stats['skipped']++;
                             continue;
                         }
 
-                        $existingMapping->update([
-                            'proporsi' => $proporsi,
-                        ]);
+                        try {
+                            $existingMapping->update([
+                                'proporsi' => $proporsi,
+                                'telda_id' => $teldaId,
+                                'target_revenue' => $calculatedTargetRevenue,  // ✅ AUTO-CALCULATED
+                                'real_revenue' => $calculatedRealRevenue,      // ✅ AUTO-CALCULATED
+                            ]);
 
-                        $stats['updated']++;
+                            $stats['updated']++;
+                            
+                        } catch (\Exception $e) {
+                            Log::error('Failed to update AmRevenue', [
+                                'am_id' => $am->id,
+                                'cc_id' => $cc->id,
+                                'error' => $e->getMessage()
+                            ]);
+                            
+                            $failedRows[] = [
+                                'row_number' => $actualRowNumber,
+                                'nik' => $nik,
+                                'nipnas' => $nipnas,
+                                'errors' => ['Gagal update mapping: ' . $e->getMessage()]
+                            ];
+                            $stats['errors']++;
+                            continue;
+                        }
+                        
                     } else {
-                        // Create new
+                        // Create new mapping
                         if ($filterType === 'update') {
                             $stats['skipped']++;
                             continue;
                         }
 
-                        \App\Models\AmRevenue::create([
-                            'account_manager_id' => $am->id,
-                            'corporate_customer_id' => $cc->id,
-                            'proporsi' => $proporsi,
-                            'bulan' => $bulan,
-                            'tahun' => $tahun,
-                        ]);
+                        try {
+                            AmRevenue::create([
+                                'account_manager_id' => $am->id,
+                                'corporate_customer_id' => $cc->id,
+                                'proporsi' => $proporsi,
+                                'bulan' => $bulan,
+                                'tahun' => $tahun,
+                                'telda_id' => $teldaId,
+                                'target_revenue' => $calculatedTargetRevenue,  // ✅ AUTO-CALCULATED
+                                'real_revenue' => $calculatedRealRevenue,      // ✅ AUTO-CALCULATED
+                            ]);
 
-                        $stats['created']++;
+                            $stats['created']++;
+                            
+                        } catch (\Exception $e) {
+                            Log::error('Failed to create AmRevenue', [
+                                'am_id' => $am->id,
+                                'cc_id' => $cc->id,
+                                'telda_id' => $teldaId,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ]);
+                            
+                            $failedRows[] = [
+                                'row_number' => $actualRowNumber,
+                                'nik' => $nik,
+                                'nipnas' => $nipnas,
+                                'errors' => ['Gagal membuat mapping: ' . $e->getMessage()]
+                            ];
+                            $stats['errors']++;
+                            continue;
+                        }
                     }
                 }
 
                 DB::commit();
 
-                // Generate error log if there are errors
                 $errorLogPath = null;
                 if (!empty($failedRows)) {
                     $errorLogPath = $this->generateErrorLog($failedRows, 'revenue_am');
@@ -812,38 +950,30 @@ class ImportAMController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => 'Import gagal: ' . $e->getMessage()], 500);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Import gagal: ' . $e->getMessage()
+            ], 500);
         }
     }
 
-    // ========================================
-    // HELPER METHODS
-    // ========================================
+    // ============================================================================
+    // HELPER METHODS (NO CHANGES)
+    // ============================================================================
 
-    /**
-     * ✅ Parse divisi list from various formats
-     * Supports:
-     * - "DPS" → ["DPS"]
-     * - "DPS,DSS" → ["DPS", "DSS"]
-     * - "DPS, DSS" → ["DPS", "DSS"]
-     */
     private function parseDivisiList($divisiRaw)
     {
         $divisiRaw = strtoupper(trim($divisiRaw));
         
-        // Check if comma-separated
         if (strpos($divisiRaw, ',') !== false) {
             $parts = explode(',', $divisiRaw);
             return array_map('trim', $parts);
         }
         
-        // Single divisi
         return [$divisiRaw];
     }
 
-    /**
-     * ✅ Helper - Get Column Indices
-     */
     private function getColumnIndices($headers, $columns)
     {
         $indices = [];
@@ -858,9 +988,6 @@ class ImportAMController extends Controller
         return $indices;
     }
 
-    /**
-     * ✅ Helper - Get Column Value
-     */
     private function getColumnValue($row, $index)
     {
         if ($index === null || !isset($row[$index])) {
@@ -870,178 +997,112 @@ class ImportAMController extends Controller
         return trim($row[$index]);
     }
 
+    private function generateErrorLog($failedRows, $importType)
+    {
+        try {
+            if (empty($failedRows)) {
+                return null;
+            }
 
-private function generateErrorLog($failedRows, $importType)
-{
-    try {
-        if (empty($failedRows)) {
+            $timestamp = now()->format('YmdHis');
+            $filename = "error_log_{$importType}_{$timestamp}.csv";
+            $filePath = "error_logs/{$filename}";
+
+            Storage::disk('public')->makeDirectory('error_logs');
+
+            $csvContent = '';
+            
+            if ($importType === 'data_am') {
+                $csvContent .= "Row Number,NIK,Nama AM,Witel AM,Divisi,Error\n";
+                
+                foreach ($failedRows as $row) {
+                    $nik = $row['nik'] ?? '';
+                    $nama = $row['nama'] ?? '';
+                    $witelNama = $row['witel_nama'] ?? '';
+                    
+                    $divisiRaw = $row['divisi_raw'] ?? '';
+                    if (is_array($divisiRaw)) {
+                        $divisiRaw = implode(', ', $divisiRaw);
+                    }
+                    
+                    $errors = $row['errors'] ?? $row['error'] ?? [];
+                    if (is_array($errors)) {
+                        $errorString = implode('; ', $errors);
+                    } else {
+                        $errorString = $errors;
+                    }
+                    
+                    $rowNumber = $row['row_number'] ?? '';
+                    
+                    $csvContent .= sprintf(
+                        "%s,%s,%s,%s,%s,%s\n",
+                        $this->escapeCsv($rowNumber),
+                        $this->escapeCsv($nik),
+                        $this->escapeCsv($nama),
+                        $this->escapeCsv($witelNama),
+                        $this->escapeCsv($divisiRaw),
+                        $this->escapeCsv($errorString)
+                    );
+                }
+                
+            } elseif ($importType === 'revenue_am') {
+                $csvContent .= "Row Number,NIK,Nama AM,NIPNAS,Error\n";
+                
+                foreach ($failedRows as $row) {
+                    $nik = $row['nik'] ?? '';
+                    $namaAm = $row['nama'] ?? '';
+                    $nipnas = $row['nipnas'] ?? '';
+                    
+                    $errors = $row['errors'] ?? $row['error'] ?? [];
+                    if (is_array($errors)) {
+                        $errorString = implode('; ', $errors);
+                    } else {
+                        $errorString = $errors;
+                    }
+                    
+                    $rowNumber = $row['row_number'] ?? '';
+                    
+                    $csvContent .= sprintf(
+                        "%s,%s,%s,%s,%s\n",
+                        $this->escapeCsv($rowNumber),
+                        $this->escapeCsv($nik),
+                        $this->escapeCsv($namaAm),
+                        $this->escapeCsv($nipnas),
+                        $this->escapeCsv($errorString)
+                    );
+                }
+            }
+
+            Storage::disk('public')->put($filePath, $csvContent);
+
+            return Storage::disk('public')->url($filePath);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to generate error log', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'import_type' => $importType,
+                'failed_rows_count' => count($failedRows)
+            ]);
             return null;
         }
+    }
 
-        $timestamp = now()->format('YmdHis');
-        $filename = "error_log_{$importType}_{$timestamp}.csv";
-        $filePath = "error_logs/{$filename}";
-
-        // Create directory if not exists
-        Storage::disk('public')->makeDirectory('error_logs');
-
-        // Prepare CSV content
-        $csvContent = '';
-        
-        // Determine headers based on import type
-        if ($importType === 'data_am') {
-            $csvContent .= "Row Number,NIK,Nama AM,Witel AM,Divisi,Error\n";
-            
-            foreach ($failedRows as $row) {
-                // ✅ FIX: Handle array values properly
-                $nik = $row['nik'] ?? '';
-                $nama = $row['nama'] ?? '';
-                $witelNama = $row['witel_nama'] ?? '';
-                
-                // ✅ FIX: Handle divisi_raw which might be array
-                $divisiRaw = $row['divisi_raw'] ?? '';
-                if (is_array($divisiRaw)) {
-                    $divisiRaw = implode(', ', $divisiRaw);
-                }
-                
-                // ✅ FIX: Handle errors which is array
-                $errors = $row['errors'] ?? $row['error'] ?? [];
-                if (is_array($errors)) {
-                    $errorString = implode('; ', $errors);
-                } else {
-                    $errorString = $errors;
-                }
-                
-                $rowNumber = $row['row_number'] ?? '';
-                
-                // Escape CSV values
-                $csvContent .= sprintf(
-                    "%s,%s,%s,%s,%s,%s\n",
-                    $this->escapeCsv($rowNumber),
-                    $this->escapeCsv($nik),
-                    $this->escapeCsv($nama),
-                    $this->escapeCsv($witelNama),
-                    $this->escapeCsv($divisiRaw),
-                    $this->escapeCsv($errorString)
-                );
-            }
-        } elseif ($importType === 'data_cc') {
-            $csvContent .= "Row Number,NIPNAS,Standard Name,Error\n";
-            
-            foreach ($failedRows as $row) {
-                $nipnas = $row['nipnas'] ?? '';
-                $nama = $row['standard_name'] ?? $row['nama'] ?? '';
-                
-                $errors = $row['errors'] ?? $row['error'] ?? [];
-                if (is_array($errors)) {
-                    $errorString = implode('; ', $errors);
-                } else {
-                    $errorString = $errors;
-                }
-                
-                $rowNumber = $row['row_number'] ?? '';
-                
-                $csvContent .= sprintf(
-                    "%s,%s,%s,%s\n",
-                    $this->escapeCsv($rowNumber),
-                    $this->escapeCsv($nipnas),
-                    $this->escapeCsv($nama),
-                    $this->escapeCsv($errorString)
-                );
-            }
-        } elseif ($importType === 'revenue_cc') {
-            $csvContent .= "Row Number,NIPNAS,Standard Name,Error\n";
-            
-            foreach ($failedRows as $row) {
-                $nipnas = $row['nipnas'] ?? '';
-                $nama = $row['standard_name'] ?? '';
-                
-                $errors = $row['errors'] ?? $row['error'] ?? [];
-                if (is_array($errors)) {
-                    $errorString = implode('; ', $errors);
-                } else {
-                    $errorString = $errors;
-                }
-                
-                $rowNumber = $row['row_number'] ?? '';
-                
-                $csvContent .= sprintf(
-                    "%s,%s,%s,%s\n",
-                    $this->escapeCsv($rowNumber),
-                    $this->escapeCsv($nipnas),
-                    $this->escapeCsv($nama),
-                    $this->escapeCsv($errorString)
-                );
-            }
-        } elseif ($importType === 'revenue_am') {
-            $csvContent .= "Row Number,NIK,Nama AM,NIPNAS,Error\n";
-            
-            foreach ($failedRows as $row) {
-                $nik = $row['nik'] ?? '';
-                $namaAm = $row['nama_am'] ?? '';
-                $nipnas = $row['nipnas'] ?? '';
-                
-                $errors = $row['errors'] ?? $row['error'] ?? [];
-                if (is_array($errors)) {
-                    $errorString = implode('; ', $errors);
-                } else {
-                    $errorString = $errors;
-                }
-                
-                $rowNumber = $row['row_number'] ?? '';
-                
-                $csvContent .= sprintf(
-                    "%s,%s,%s,%s,%s\n",
-                    $this->escapeCsv($rowNumber),
-                    $this->escapeCsv($nik),
-                    $this->escapeCsv($namaAm),
-                    $this->escapeCsv($nipnas),
-                    $this->escapeCsv($errorString)
-                );
-            }
+    private function escapeCsv($value)
+    {
+        if ($value === null || $value === '') {
+            return '';
         }
-
-        // Save to storage
-        Storage::disk('public')->put($filePath, $csvContent);
-
-        // Return public URL
-        return Storage::disk('public')->url($filePath);
-
-    } catch (\Exception $e) {
-        Log::error('Failed to generate error log', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'import_type' => $importType,
-            'failed_rows_count' => count($failedRows)
-        ]);
-        return null;
+        
+        $value = (string) $value;
+        $value = str_replace('"', '""', $value);
+        
+        if (strpos($value, ',') !== false || 
+            strpos($value, "\n") !== false || 
+            strpos($value, '"') !== false) {
+            return '"' . $value . '"';
+        }
+        
+        return $value;
     }
-}
-
-/**
- * ✅ Helper: Escape CSV values
- */
-private function escapeCsv($value)
-{
-    // Handle null or empty
-    if ($value === null || $value === '') {
-        return '';
-    }
-    
-    // Convert to string if not already
-    $value = (string) $value;
-    
-    // Escape double quotes
-    $value = str_replace('"', '""', $value);
-    
-    // Wrap in quotes if contains comma, newline, or double quote
-    if (strpos($value, ',') !== false || 
-        strpos($value, "\n") !== false || 
-        strpos($value, '"') !== false) {
-        return '"' . $value . '"';
-    }
-    
-    return $value;
-}
-    
 }

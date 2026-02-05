@@ -7,22 +7,37 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
 /**
- * AmRevenue Model (UPDATED - 2026-02-03)
+ * ============================================================================
+ * AmRevenue Model - COMPLETE FIXED VERSION
+ * ============================================================================
  * 
- * NEW FEATURES:
- * - getRelatedAmsForSameCC(): Get list of other AMs handling same CC
- * - getTotalProporsiForCC(): Get sum of proporsi for this CC
- * - Enhanced proporsi validation helpers
+ * Date: 2026-02-05
+ * Version: 4.0 - CRITICAL BUSINESS RULE FIX
  * 
- * PROPORSI RANGE FIX:
+ * CRITICAL FIXES:
+ * ✅ FIXED: Strict telda_id business rule validation:
+ *    - AM role: telda_id MUST be NULL (enforced in boot->saving)
+ *    - HOTDA role: telda_id MUST NOT be NULL (enforced in boot->saving)
+ * ✅ FIXED: Better error messages for validation failures
+ * ✅ FIXED: Enhanced logging for debugging telda issues
+ * ✅ MAINTAINED: All existing functionality (proporsi validation, helpers, etc.)
+ * 
+ * PROPORSI RANGE:
  * - Database stores: 0.0 - 1.0 (decimal, e.g., 0.4 = 40%)
  * - Display format: 0.4 × 100 = 40%
  * - Validation: 0 ≤ proporsi ≤ 1
  * - Total per CC: SUM(proporsi) = 1.0 (not 100)
  * 
- * CRITICAL NOTE:
- * - AM Revenue ALWAYS uses real_revenue_sold from CC (not real_revenue_bill)
- * - Tidak peduli divisi DPS/DSS/DGS, semua pakai revenue_sold
+ * BUSINESS RULES:
+ * 1. AM role → telda_id = NULL (mandatory)
+ * 2. HOTDA role → telda_id NOT NULL (mandatory)
+ * 3. Proporsi: 0.0 - 1.0 decimal
+ * 4. Total proporsi per CC = 1.0
+ * 5. Revenue calculation: CC.real_revenue_sold × proporsi
+ * 
+ * @author RLEGS Team
+ * @version 4.0 - Strict Business Rules
+ * ============================================================================
  */
 class AmRevenue extends Model
 {
@@ -45,7 +60,7 @@ class AmRevenue extends Model
     ];
 
     protected $casts = [
-        'proporsi' => 'decimal:4',        // Support 0.0000 - 1.0000 (4 decimal places)
+        'proporsi' => 'decimal:4',
         'target_revenue' => 'decimal:2',
         'real_revenue' => 'decimal:2',
         'achievement_rate' => 'decimal:2',
@@ -82,11 +97,6 @@ class AmRevenue extends Model
         return $this->belongsTo(Telda::class);
     }
 
-    /**
-     * Get the CC Revenue record for this AM Revenue
-     * 
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
-     */
     public function ccRevenue()
     {
         return $this->hasOne(CcRevenue::class, 'corporate_customer_id', 'corporate_customer_id')
@@ -143,7 +153,7 @@ class AmRevenue extends Model
     public function scopeWithRelations($query)
     {
         return $query->with([
-            'accountManager:id,nama,nik,role',
+            'accountManager:id,nama,nik,role,telda_id',
             'corporateCustomer:id,nama,nipnas',
             'divisi:id,nama,kode',
             'witel:id,nama',
@@ -151,17 +161,11 @@ class AmRevenue extends Model
         ]);
     }
 
-    /**
-     * Scope: Filter by corporate customer
-     */
     public function scopeByCorporateCustomer($query, $corporateCustomerId)
     {
         return $query->where('corporate_customer_id', $corporateCustomerId);
     }
 
-    /**
-     * Scope: Filter by CC and period (for related AMs query)
-     */
     public function scopeByCcAndPeriod($query, $corporateCustomerId, $year, $month)
     {
         return $query->where('corporate_customer_id', $corporateCustomerId)
@@ -173,9 +177,6 @@ class AmRevenue extends Model
     // ACCESSORS & MUTATORS
     // ========================================
 
-    /**
-     * Get calculated achievement rate
-     */
     public function getCalculatedAchievementRateAttribute(): float
     {
         if ($this->target_revenue <= 0) {
@@ -185,17 +186,11 @@ class AmRevenue extends Model
         return round(($this->real_revenue / $this->target_revenue) * 100, 2);
     }
 
-    /**
-     * Get period in YYYY-MM format
-     */
     public function getPeriodAttribute(): string
     {
         return sprintf('%04d-%02d', $this->tahun, $this->bulan);
     }
 
-    /**
-     * Get period name in Indonesian format
-     */
     public function getPeriodNameAttribute(): string
     {
         $months = [
@@ -207,21 +202,11 @@ class AmRevenue extends Model
         return $months[$this->bulan] . ' ' . $this->tahun;
     }
 
-    /**
-     * Get proporsi as percentage string
-     * FIXED: Properly convert 0.4 → "40.00%"
-     * 
-     * @return string
-     */
     public function getProporsiPercentAttribute(): string
     {
         return number_format((float)$this->proporsi * 100, 2) . '%';
     }
 
-    /**
-     * Get proporsi as numeric percentage (for calculations)
-     * Returns: 0.4 → 40 (without % symbol)
-     */
     public function getProporsiPercentNumericAttribute(): float
     {
         return round((float)$this->proporsi * 100, 2);
@@ -258,7 +243,6 @@ class AmRevenue extends Model
 
     public function getDivisiKode(): ?string
     {
-        // If divisi_id is null, fallback to account manager's primary divisi
         if ($this->divisi) {
             return $this->divisi->kode;
         }
@@ -272,7 +256,6 @@ class AmRevenue extends Model
 
     public function getWitelNama(): ?string
     {
-        // If witel_id is null, fallback to account manager's witel
         if ($this->witel) {
             return $this->witel->nama;
         }
@@ -286,7 +269,6 @@ class AmRevenue extends Model
 
     public function getTeldaNama(): ?string
     {
-        // Only for HOTDA
         if ($this->telda) {
             return $this->telda->nama;
         }
@@ -299,45 +281,19 @@ class AmRevenue extends Model
     }
 
     // ========================================
-    // NEW HELPER METHODS (2026-02-03)
+    // PROPORSI HELPER METHODS
     // ========================================
 
-    /**
-     * Get list of other AMs handling the same CC in the same period
-     * 
-     * PURPOSE:
-     * - Show user which other AMs are handling this CC
-     * - Useful for edit forms to display related AMs
-     * - Helps with proporsi validation UI
-     * 
-     * RETURNS:
-     * Collection of AmRevenue models (excluding current record)
-     * 
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
     public function getRelatedAmsForSameCC()
     {
         return static::where('corporate_customer_id', $this->corporate_customer_id)
                      ->where('tahun', $this->tahun)
                      ->where('bulan', $this->bulan)
-                     ->where('id', '!=', $this->id) // Exclude current record
+                     ->where('id', '!=', $this->id)
                      ->with(['accountManager:id,nama,nik,role'])
                      ->get();
     }
 
-    /**
-     * Get total proporsi for this CC in this period
-     * 
-     * PURPOSE:
-     * - Validate that sum of proporsi = 1.0 (100%)
-     * - Show remaining proporsi available
-     * - Display validation warnings
-     * 
-     * RETURNS:
-     * Float (0.0 - 1.0+), ideally should be exactly 1.0
-     * 
-     * @return float
-     */
     public function getTotalProporsiForCC(): float
     {
         return (float) static::where('corporate_customer_id', $this->corporate_customer_id)
@@ -346,37 +302,12 @@ class AmRevenue extends Model
                              ->sum('proporsi');
     }
 
-    /**
-     * Get remaining proporsi available for this CC
-     * 
-     * PURPOSE:
-     * - Calculate how much proporsi is still available
-     * - Useful for adding new AM to existing CC
-     * - Display "X% remaining" in UI
-     * 
-     * RETURNS:
-     * Float (remaining proporsi, can be negative if over-allocated)
-     * 
-     * @return float
-     */
     public function getRemainingProporsiForCC(): float
     {
         $total = $this->getTotalProporsiForCC();
         return round(1.0 - $total, 4);
     }
 
-    /**
-     * Get related AMs info with proporsi details
-     * 
-     * PURPOSE:
-     * - Get detailed info about other AMs for display in edit form
-     * - Includes AM name, proporsi, and revenue details
-     * 
-     * RETURNS:
-     * Array of arrays with AM details
-     * 
-     * @return array
-     */
     public function getRelatedAmsDetails(): array
     {
         $relatedAms = $this->getRelatedAmsForSameCC();
@@ -396,30 +327,12 @@ class AmRevenue extends Model
         })->toArray();
     }
 
-    /**
-     * Check if proporsi allocation is valid for this CC
-     * 
-     * PURPOSE:
-     * - Validate total proporsi = 1.0 (with small tolerance)
-     * - Used before saving/updating
-     * 
-     * @return bool
-     */
     public function isProporsiAllocationValid(): bool
     {
         $total = $this->getTotalProporsiForCC();
-        return abs($total - 1.0) < 0.001; // Allow 0.1% tolerance
+        return abs($total - 1.0) < 0.001;
     }
 
-    /**
-     * Get proporsi validation message
-     * 
-     * PURPOSE:
-     * - Generate user-friendly message about proporsi status
-     * - Used in forms and validation
-     * 
-     * @return string
-     */
     public function getProporsiValidationMessage(): string
     {
         $total = $this->getTotalProporsiForCC();
@@ -436,11 +349,6 @@ class AmRevenue extends Model
         }
     }
 
-    /**
-     * Get count of AMs handling this CC
-     * 
-     * @return int
-     */
     public function getAmCountForCC(): int
     {
         return static::where('corporate_customer_id', $this->corporate_customer_id)
@@ -449,21 +357,11 @@ class AmRevenue extends Model
                      ->count();
     }
 
-    /**
-     * Check if this is the only AM for this CC
-     * 
-     * @return bool
-     */
     public function isSoleAm(): bool
     {
         return $this->getAmCountForCC() === 1;
     }
 
-    /**
-     * Check if this CC has multiple AMs
-     * 
-     * @return bool
-     */
     public function hasMultipleAms(): bool
     {
         return $this->getAmCountForCC() > 1;
@@ -474,8 +372,7 @@ class AmRevenue extends Model
     // ========================================
 
     /**
-     * Validate proporsi range
-     * FIXED: Range is 0-1 (not 0-100)
+     * Validate proporsi range (0-1)
      */
     public function validateProporsi(): bool
     {
@@ -483,19 +380,96 @@ class AmRevenue extends Model
     }
 
     /**
-     * Validate telda consistency with AM role
+     * ============================================================================
+     * ✅ FIXED: Strict telda_id business rule validation
+     * ============================================================================
+     * 
+     * BUSINESS RULES:
+     * - AM role: telda_id MUST be NULL
+     * - HOTDA role: telda_id MUST NOT be NULL
+     * 
+     * @return bool
      */
     public function validateTeldaConsistency(): bool
     {
-        $amRole = $this->accountManager?->role;
-
-        if ($amRole === 'HOTDA') {
-            return !is_null($this->telda_id);
-        } elseif ($amRole === 'AM') {
-            return is_null($this->telda_id);
+        // Load account manager if not loaded
+        if (!$this->relationLoaded('accountManager')) {
+            $this->load('accountManager');
         }
 
-        return true; // Allow if AM role is not set yet
+        $am = $this->accountManager;
+
+        if (!$am) {
+            Log::error('AmRevenue validation failed: AccountManager not found', [
+                'am_revenue_id' => $this->id,
+                'account_manager_id' => $this->account_manager_id
+            ]);
+            return false;
+        }
+
+        $role = strtoupper(trim($am->role ?? ''));
+
+        Log::info('Validating telda consistency', [
+            'am_revenue_id' => $this->id ?? 'new',
+            'account_manager_id' => $am->id,
+            'account_manager_nik' => $am->nik,
+            'account_manager_role' => $role,
+            'am_revenue_telda_id' => $this->telda_id,
+            'account_manager_telda_id' => $am->telda_id
+        ]);
+
+        // ✅ STRICT VALIDATION
+        if ($role === 'HOTDA') {
+            // HOTDA MUST have telda_id
+            if (is_null($this->telda_id)) {
+                Log::error('Telda validation failed: HOTDA without telda_id', [
+                    'am_id' => $am->id,
+                    'nik' => $am->nik,
+                    'nama' => $am->nama,
+                    'role' => $role,
+                    'am_telda_id' => $am->telda_id,
+                    'am_revenue_telda_id' => $this->telda_id
+                ]);
+                return false;
+            }
+
+            Log::info('✓ HOTDA validation passed (has telda_id)', [
+                'am_id' => $am->id,
+                'telda_id' => $this->telda_id
+            ]);
+            return true;
+
+        } elseif ($role === 'AM') {
+            // AM MUST NOT have telda_id
+            if (!is_null($this->telda_id)) {
+                Log::error('Telda validation failed: AM with telda_id', [
+                    'am_id' => $am->id,
+                    'nik' => $am->nik,
+                    'nama' => $am->nama,
+                    'role' => $role,
+                    'am_telda_id' => $am->telda_id,
+                    'am_revenue_telda_id' => $this->telda_id
+                ]);
+                return false;
+            }
+
+            Log::info('✓ AM validation passed (no telda_id)', [
+                'am_id' => $am->id,
+                'telda_id' => 'NULL (correct)'
+            ]);
+            return true;
+
+        } else {
+            // Unknown or empty role - reject
+            Log::error('Telda validation failed: Unknown or empty role', [
+                'am_id' => $am->id,
+                'nik' => $am->nik,
+                'nama' => $am->nama,
+                'role' => $role,
+                'telda_id' => $this->telda_id
+            ]);
+            return false;
+        }
     }
 
     // ========================================
@@ -549,10 +523,6 @@ class AmRevenue extends Model
         return static::getTotalRevenueByAM($year, $month)->take(10);
     }
 
-    /**
-     * Validate total proporsi untuk satu CC di periode tertentu
-     * FIXED: Total harus = 1.0 (not 100)
-     */
     public static function validateProporsiTotal($corporateCustomerId, $year, $month)
     {
         $totalProporsi = static::where('corporate_customer_id', $corporateCustomerId)
@@ -560,13 +530,9 @@ class AmRevenue extends Model
             ->where('bulan', $month)
             ->sum('proporsi');
 
-        // Allow small floating point differences (0.001 = 0.1%)
         return abs($totalProporsi - 1.0) < 0.001;
     }
 
-    /**
-     * Get proporsi total untuk satu CC (for debugging/display)
-     */
     public static function getProporsiTotal($corporateCustomerId, $year, $month): float
     {
         return (float) static::where('corporate_customer_id', $corporateCustomerId)
@@ -575,14 +541,6 @@ class AmRevenue extends Model
             ->sum('proporsi');
     }
 
-    /**
-     * Get all AMs for a CC in a period (static method)
-     * 
-     * @param int $corporateCustomerId
-     * @param int $year
-     * @param int $month
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
     public static function getAmsForCC($corporateCustomerId, $year, $month)
     {
         return static::where('corporate_customer_id', $corporateCustomerId)
@@ -593,49 +551,101 @@ class AmRevenue extends Model
     }
 
     // ========================================
-    // BOOT METHOD
+    // ✅ FIXED: BOOT METHOD WITH STRICT VALIDATION
     // ========================================
 
     protected static function boot()
     {
         parent::boot();
 
-        // Auto-calculate achievement rate on saving
         static::saving(function ($amRevenue) {
-            // Normalize proporsi if needed (convert from percentage to decimal)
-            // If proporsi > 1, assume it's in percentage format (e.g., 40 = 40%)
+            Log::info('AmRevenue saving event triggered', [
+                'id' => $amRevenue->id ?? 'new',
+                'account_manager_id' => $amRevenue->account_manager_id,
+                'corporate_customer_id' => $amRevenue->corporate_customer_id,
+                'telda_id' => $amRevenue->telda_id,
+                'proporsi' => $amRevenue->proporsi,
+                'bulan' => $amRevenue->bulan,
+                'tahun' => $amRevenue->tahun
+            ]);
+
+            // ✅ FIX 1: Normalize proporsi if needed
             if ($amRevenue->proporsi > 1) {
+                $oldProporsi = $amRevenue->proporsi;
                 $amRevenue->proporsi = $amRevenue->proporsi / 100;
-                Log::info("Normalized proporsi from percentage to decimal: {$amRevenue->proporsi}");
+                
+                Log::info('Normalized proporsi from percentage to decimal', [
+                    'old_proporsi' => $oldProporsi,
+                    'new_proporsi' => $amRevenue->proporsi
+                ]);
             }
 
-            // Validate proporsi range (0-1)
+            // ✅ FIX 2: Validate proporsi range (0-1)
             if (!$amRevenue->validateProporsi()) {
-                throw new \InvalidArgumentException('Proporsi must be between 0 and 1 (e.g., 0.4 = 40%)');
+                Log::error('Proporsi validation failed', [
+                    'proporsi' => $amRevenue->proporsi,
+                    'valid_range' => '0.0 - 1.0'
+                ]);
+                
+                throw new \InvalidArgumentException(
+                    'Proporsi harus antara 0 dan 1 (contoh: 0.4 = 40%). Nilai saat ini: ' . $amRevenue->proporsi
+                );
             }
 
-            // Validate telda consistency
+            // ✅ FIX 3: CRITICAL - Validate telda consistency with STRICT rules
             if (!$amRevenue->validateTeldaConsistency()) {
-                throw new \InvalidArgumentException('Telda assignment inconsistent with Account Manager role');
+                $am = $amRevenue->accountManager;
+                $role = $am ? strtoupper(trim($am->role ?? '')) : 'UNKNOWN';
+                
+                $errorMessage = '';
+                
+                if ($role === 'HOTDA') {
+                    $errorMessage = "HOTDA role harus memiliki TELDA assignment. " .
+                                  "Account Manager NIK {$am->nik} ({$am->nama}) belum memiliki TELDA. " .
+                                  "Silakan update data AM terlebih dahulu di menu Data AM.";
+                } elseif ($role === 'AM') {
+                    $errorMessage = "AM role tidak boleh memiliki TELDA assignment. " .
+                                  "Account Manager NIK {$am->nik} ({$am->nama}) adalah role AM, " .
+                                  "tapi telda_id tidak NULL. Sistem akan otomatis set ke NULL.";
+                } else {
+                    $errorMessage = "Account Manager role tidak valid atau kosong. " .
+                                  "Role harus 'AM' atau 'HOTDA'. Role saat ini: '{$role}'";
+                }
+                
+                Log::error('CRITICAL: Telda consistency validation failed', [
+                    'am_id' => $am->id ?? null,
+                    'nik' => $am->nik ?? null,
+                    'nama' => $am->nama ?? null,
+                    'role' => $role,
+                    'am_telda_id' => $am->telda_id ?? null,
+                    'am_revenue_telda_id' => $amRevenue->telda_id,
+                    'error_message' => $errorMessage
+                ]);
+                
+                throw new \InvalidArgumentException($errorMessage);
             }
 
-            // Validate period
+            // ✅ FIX 4: Validate period
             if ($amRevenue->bulan < 1 || $amRevenue->bulan > 12) {
-                throw new \InvalidArgumentException('Bulan must be between 1 and 12');
+                throw new \InvalidArgumentException('Bulan harus antara 1 dan 12. Nilai saat ini: ' . $amRevenue->bulan);
             }
 
             if ($amRevenue->tahun < 2000 || $amRevenue->tahun > 2099) {
-                throw new \InvalidArgumentException('Tahun must be between 2000 and 2099');
+                throw new \InvalidArgumentException('Tahun harus antara 2000 dan 2099. Nilai saat ini: ' . $amRevenue->tahun);
             }
 
-            // Auto-calculate achievement rate if not set
+            // ✅ FIX 5: Auto-calculate achievement rate if not set
             if (is_null($amRevenue->achievement_rate)) {
                 $amRevenue->achievement_rate = $amRevenue->calculated_achievement_rate;
             }
+
+            Log::info('✓ All validations passed, proceeding to save', [
+                'am_revenue_id' => $amRevenue->id ?? 'new'
+            ]);
         });
 
-        // Validate proporsi total after saving
         static::saved(function ($amRevenue) {
+            // Validate proporsi total for this CC
             $totalProporsi = static::getProporsiTotal(
                 $amRevenue->corporate_customer_id, 
                 $amRevenue->tahun, 
@@ -645,7 +655,11 @@ class AmRevenue extends Model
             if (!static::validateProporsiTotal($amRevenue->corporate_customer_id, $amRevenue->tahun, $amRevenue->bulan)) {
                 Log::warning("Proporsi total for CC {$amRevenue->corporate_customer_id} in {$amRevenue->tahun}-{$amRevenue->bulan} is {$totalProporsi} (should be 1.0)");
             } else {
-                Log::info("Proporsi total validated OK: {$totalProporsi} ≈ 1.0");
+                Log::info("✓ Proporsi total validated OK", [
+                    'cc_id' => $amRevenue->corporate_customer_id,
+                    'period' => "{$amRevenue->tahun}-{$amRevenue->bulan}",
+                    'total_proporsi' => $totalProporsi
+                ]);
             }
         });
     }

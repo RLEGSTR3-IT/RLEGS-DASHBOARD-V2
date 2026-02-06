@@ -7001,7 +7001,6 @@ function executeImportWithFilter(filterType) {
 }
 
 
-
 // ========================================
 // ✅ BUTTON EVENT HANDLERS FOR IMPORT
 // ========================================
@@ -7141,217 +7140,7 @@ $('#formEditRevenueCC').on('submit', function(e) {
 
 
 
-// ================================================================
-// ✅ loadMappingAMTab() - Load AM mappings for CC Revenue
-// ================================================================
-function loadMappingAMTab(ccRevenueId) {
-    console.log('📊 Loading mapping AM for CC Revenue ID:', ccRevenueId);
-    
-    const container = $('#mappingAmContent');
-    
-    container.html(`
-        <div class="text-center text-muted py-5">
-            <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
-            <p>Loading mapping AM...</p>
-        </div>
-    `);
 
-    $.ajax({
-        url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings/edit`,
-        method: 'GET',
-        success: function(response) {
-            console.log('✅ Mapping AM data loaded:', response);
-            
-            if (response.success) {
-                renderMappingAMContent(response.data);
-            } else {
-                container.html(`
-                    <div class="alert alert-danger">
-                        <i class="fa-solid fa-exclamation-triangle me-2"></i>
-                        ${response.message || 'Gagal memuat data'}
-                    </div>
-                `);
-            }
-        },
-        error: function(xhr) {
-            console.error('❌ Error loading mapping AM:', xhr);
-            
-            container.html(`
-                <div class="alert alert-danger">
-                    <i class="fa-solid fa-exclamation-triangle me-2"></i>
-                    Terjadi kesalahan: ${xhr.responseJSON?.message || xhr.statusText}
-                </div>
-            `);
-        }
-    });
-}
-
-
-function renderMappingAMContent(data) {
-    console.log('🎨 Rendering mapping AM content:', data);
-    
-    const container = $('#mappingAmContent');
-
-    if (!data.am_mappings || data.am_mappings.length === 0) {
-        container.html(`
-            <div class="text-center text-muted py-5">
-                <i class="fa-solid fa-info-circle fa-3x mb-3"></i>
-                <h5>Belum ada Account Manager</h5>
-                <p>Belum ada Account Manager yang dikaitkan dengan Revenue CC ini</p>
-                <small class="text-muted">Import Revenue AM untuk menambahkan mapping</small>
-            </div>
-        `);
-        return;
-    }
-
-    let html = `
-        <!-- ✅ MODERN TABLE CARD ONLY -->
-        <div class="card" style="border: none; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
-            <div class="card-header" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border: none; padding: 1.5rem 2rem;">
-                <h6 class="mb-0" style="color: #fff; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center;">
-                    <i class="fa-solid fa-users-gear me-3" style="font-size: 1.5rem; opacity: 0.9;"></i>
-                    Mapping Account Manager
-                </h6>
-            </div>
-            <div class="card-body" style="padding: 0;">
-                <div class="table-responsive">
-                    <table class="table mb-0" style="border-collapse: separate; border-spacing: 0;">
-                        <thead>
-                            <tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
-                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">NIK</th>
-                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Nama AM</th>
-                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; width: 180px;">
-                                    Proporsi (%)
-                                    <i class="fa-solid fa-circle-question ms-1" 
-                                       data-bs-toggle="tooltip" 
-                                       title="Total proporsi harus = 100%"
-                                       style="color: #6c757d; cursor: help; font-size: 0.75rem;"></i>
-                                </th>
-                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Real Revenue</th>
-                                <th style="padding: 1.25rem 1.5rem; border: none; font-weight: 700; color: #495057; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Target Revenue</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-    `;
-
-    data.am_mappings.forEach(function(am, index) {
-        const bgColor = index % 2 === 0 ? 'white' : '#f8f9fa';
-        html += `
-            <tr style="background: ${bgColor}; transition: all 0.2s ease;">
-                <td style="padding: 1.25rem 1.5rem; border: none; font-weight: 600; color: #495057; font-family: 'Courier New', monospace;">${am.nik}</td>
-                <td style="padding: 1.25rem 1.5rem; border: none;">
-                    <div style="font-weight: 600; color: #212529; font-size: 1rem;">${am.nama}</div>
-                </td>
-                <td style="padding: 1.25rem 1.5rem; border: none;">
-                    <div style="position: relative;">
-                        <input type="number" 
-                               class="form-control proporsi-input mapping-proporsi-input" 
-                               data-am-revenue-id="${am.am_revenue_id}"
-                               value="${am.proporsi_percent_display}" 
-                               min="0" 
-                               max="100" 
-                               step="0.01"
-                               style="border: 2px solid #e9ecef; border-radius: 10px; padding: 0.75rem 1rem; text-align: center; font-weight: 700; font-size: 1.1rem; background: white; transition: all 0.3s ease;">
-                    </div>
-                </td>
-                <td class="real-revenue-display" style="padding: 1.25rem 1.5rem; border: none; text-align: right; font-weight: 700; font-size: 1.1rem; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    ${formatCurrency(am.real_revenue_display)}
-                </td>
-                <td class="target-revenue-display" style="padding: 1.25rem 1.5rem; border: none; text-align: right; font-weight: 700; font-size: 1.1rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    ${formatCurrency(am.target_revenue_display)}
-                </td>
-            </tr>
-        `;
-    });
-
-    html += `
-                        </tbody>
-                        <tfoot>
-                            <tr style="background: linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%); border-top: 3px solid #ffc107;">
-                                <th colspan="2" style="padding: 1.5rem; font-weight: 700; color: #856404; font-size: 1.1rem;">
-                                    <i class="fa-solid fa-calculator me-2"></i>Total Proporsi
-                                </th>
-                                <th style="padding: 1.5rem;">
-                                    <span id="mappingTotalProporsi" style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">100.00%</span>
-                                </th>
-                                <th colspan="2" style="padding: 1.5rem;"></th>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ VALIDATION ALERT -->
-        <div id="mappingProporsiAlert" class="alert mt-4" style="display: none; border-radius: 12px; border-left-width: 4px; font-weight: 600;"></div>
-
-        <!-- ✅ SAVE BUTTON -->
-        <button type="button" class="btn w-100 mt-4" id="btnSaveMappingAM" disabled 
-                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                       border: none; 
-                       border-radius: 12px; 
-                       padding: 1rem 2rem; 
-                       font-weight: 700; 
-                       font-size: 1.1rem;
-                       color: white;
-                       box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-                       transition: all 0.3s ease;">
-            <i class="fa-solid fa-save me-2"></i>Simpan Mapping
-        </button>
-    `;
-
-    container.html(html);
-
-    // ✅ Add hover effect to table rows
-    container.find('tbody tr').hover(
-        function() {
-            $(this).css({
-                'background': 'linear-gradient(135deg, #fff8e6 0%, #fff0cc 100%)',
-                'transform': 'translateX(4px)',
-                'box-shadow': '0 2px 8px rgba(0,0,0,0.1)'
-            });
-        },
-        function() {
-            const index = $(this).index();
-            const bgColor = index % 2 === 0 ? 'white' : '#f8f9fa';
-            $(this).css({
-                'background': bgColor,
-                'transform': 'translateX(0)',
-                'box-shadow': 'none'
-            });
-        }
-    );
-
-    // ✅ Add focus effect to inputs
-    container.find('.proporsi-input').on('focus', function() {
-        $(this).css({
-            'border-color': '#667eea',
-            'box-shadow': '0 0 0 0.25rem rgba(102, 126, 234, 0.25)',
-            'transform': 'scale(1.02)'
-        });
-    }).on('blur', function() {
-        $(this).css({
-            'border-color': '#e9ecef',
-            'box-shadow': 'none',
-            'transform': 'scale(1)'
-        });
-    });
-
-    // ✅ Attach input listeners
-    $('.mapping-proporsi-input').on('input', function() {
-        recalculateMappingAM(data);
-    });
-
-    // ✅ Attach save button
-    $('#btnSaveMappingAM').off('click').on('click', function() {
-        saveMappingAM(data.cc_revenue.id);
-    });
-    
-    // ✅ Initialize tooltips
-    $('[data-bs-toggle="tooltip"]').tooltip();
-    
-    console.log('✅ Mapping AM content rendered successfully');
-}
 
 // ================================================================
 // ✅ NEW: recalculateMappingAM() - Real-time recalculation
@@ -7438,276 +7227,209 @@ function saveMappingAM(ccRevenueId) {
 
 
 
-  function loadMappingAMTab(ccRevenueId) {
+function loadMappingAMTab(ccRevenueId) {
     const container = $('#mappingAmContent');
+
     container.html(`
-      <div class="text-center text-muted py-5">
-        <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
-        <p>Loading mapping AM...</p>
-      </div>
+        <div class="text-center text-muted py-5">
+            <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
+            <p>Loading mapping AM...</p>
+        </div>
     `);
 
     $.ajax({
-      url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings/edit`,
-      method: 'GET',
-      success: function(response) {
-        if (response.success) {
-          renderMappingAMContent(response.data);
-        } else {
-          container.html(`
-            <div class="alert alert-danger">
-              <i class="fa-solid fa-exclamation-triangle me-2"></i>
-              ${response.message || 'Gagal memuat data'}
-            </div>
-          `);
+        url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings/edit`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                renderMappingAMContent(response.data);
+            } else {
+                container.html(`
+                    <div class="alert alert-danger">
+                        <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                        ${response.message || 'Gagal memuat data'}
+                    </div>
+                `);
+            }
+        },
+        error: function(xhr) {
+            container.html(`
+                <div class="alert alert-danger">
+                    <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                    ${xhr.responseJSON?.message || 'Terjadi kesalahan server'}
+                </div>
+            `);
         }
-      },
-      error: function(xhr) {
-        container.html(`
-          <div class="alert alert-danger">
-            <i class="fa-solid fa-exclamation-triangle me-2"></i>
-            Terjadi kesalahan: ${xhr.responseJSON?.message || xhr.statusText}
-          </div>
-        `);
-      }
     });
-  }
+}
 
-  function renderMappingAMContent(data) {
+
+function renderMappingAMContent(data) {
     const container = $('#mappingAmContent');
 
     if (!data.am_mappings || data.am_mappings.length === 0) {
-      container.html(`
-        <div class="text-center text-muted py-5">
-          <i class="fa-solid fa-info-circle fa-3x mb-3"></i>
-          <h5>Belum ada Account Manager</h5>
-          <p>Belum ada Account Manager yang dikaitkan dengan Revenue CC ini</p>
-          <small class="text-muted">Import Revenue AM untuk menambahkan mapping</small>
-        </div>
-      `);
-      return;
+        container.html(`
+            <div class="text-center text-muted py-5">
+                <i class="fa-solid fa-info-circle fa-3x mb-3"></i>
+                <h5>Belum ada Account Manager</h5>
+                <p>Belum ada Account Manager yang dikaitkan dengan Revenue CC ini</p>
+                <small class="text-muted">Import Revenue AM untuk menambahkan mapping</small>
+            </div>
+        `);
+        return;
     }
 
     let html = `
-
-      <div class="table-responsive">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>NIK</th>
-              <th>Nama AM</th>
-              <th>Proporsi (%)</th>
-              <th class="text-end">Real Revenue</th>
-              <th class="text-end">Target Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>NIK</th>
+                        <th>Nama AM</th>
+                        <th>Proporsi (%)</th>
+                        <th class="text-end">Real Revenue</th>
+                        <th class="text-end">Target Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
 
     data.am_mappings.forEach(function(am) {
-      html += `
-        <tr>
-          <td>${am.nik}</td>
-          <td>${am.nama}</td>
-          <td>
-            <input type="number" 
-                   class="form-control form-control-sm proporsi-input" 
-                   data-am-revenue-id="${am.am_revenue_id}"
-                   value="${am.proporsi_percent_display}" 
-                   min="0" 
-                   max="100" 
-                   step="0.01">
-          </td>
-          <td class="text-end real-revenue-display">${formatCurrency(am.real_revenue_display)}</td>
-          <td class="text-end target-revenue-display">${formatCurrency(am.target_revenue_display)}</td>
-        </tr>
-      `;
+        const val = parseFloat(am.proporsi_percent_display) || 0;
+
+        html += `
+            <tr>
+                <td>${am.nik}</td>
+                <td>${am.nama}</td>
+                <td>
+                    <input type="number"
+                           class="form-control form-control-sm proporsi-input"
+                           data-am-revenue-id="${am.am_revenue_id}"
+                           value="${val}"
+                           min="0"
+                           max="100"
+                           step="0.01">
+                </td>
+                <td class="text-end real-revenue-display">${formatCurrency(am.real_revenue_display)}</td>
+                <td class="text-end target-revenue-display">${formatCurrency(am.target_revenue_display)}</td>
+            </tr>
+        `;
     });
 
     html += `
-          </tbody>
-          <tfoot>
-            <tr>
-              <th colspan="2">Total</th>
-              <th id="totalProporsi">100%</th>
-              <th colspan="2"></th>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="2">Total</th>
+                        <th id="totalProporsi">0%</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
 
-      <button type="button" class="btn btn-primary w-100" id="btnSaveMappingAM" disabled>
-        <i class="fa-solid fa-save me-2"></i>Simpan Mapping
-      </button>
+        <button type="button" class="btn btn-primary w-100" id="btnSaveMappingAM" disabled>
+            <i class="fa-solid fa-save me-2"></i>Simpan Mapping
+        </button>
     `;
 
     container.html(html);
 
     $('.proporsi-input').on('input', function() {
-      recalculateMappingAM(data);
+        recalculateMappingAM(data);
     });
 
-    $('#btnSaveMappingAM').off('click').on('click', function() {
-      saveMappingAM(data.cc_revenue.id);
+    $('#btnSaveMappingAM').off().on('click', function() {
+        saveMappingAM(data.cc_revenue.id);
     });
-  }
 
-  function recalculateMappingAM(data) {
+    recalculateMappingAM(data);
+}
+
+function recalculateMappingAM(data) {
     let totalProporsi = 0;
-    const baseSold = data.cc_revenue.real_revenue_sold;
-    const baseTarget = data.cc_revenue.target_revenue_sold;
+
+    const baseSold = parseFloat(data.cc_revenue.real_revenue_sold) || 0;
+    const baseTarget = parseFloat(data.cc_revenue.target_revenue_sold) || 0;
 
     $('.proporsi-input').each(function() {
-      const proporsi = parseFloat($(this).val()) || 0;
-      totalProporsi += proporsi;
+        let proporsi = parseFloat($(this).val());
 
-      const row = $(this).closest('tr');
-      const realRevenue = (baseSold * proporsi) / 100;
-      const targetRevenue = (baseTarget * proporsi) / 100;
+        if (isNaN(proporsi)) proporsi = 0;
 
-      row.find('.real-revenue-display').text(formatCurrency(realRevenue));
-      row.find('.target-revenue-display').text(formatCurrency(targetRevenue));
+        // Clamp 0–100
+        proporsi = Math.max(0, Math.min(100, proporsi));
+        $(this).val(proporsi);
+
+        totalProporsi += proporsi;
+
+        const row = $(this).closest('tr');
+
+        const realRevenue = (baseSold * proporsi) / 100;
+        const targetRevenue = (baseTarget * proporsi) / 100;
+
+        row.find('.real-revenue-display').text(formatCurrency(realRevenue));
+        row.find('.target-revenue-display').text(formatCurrency(targetRevenue));
     });
 
     $('#totalProporsi').text(totalProporsi.toFixed(2) + '%');
 
     const isValid = Math.abs(totalProporsi - 100) < 0.01;
+
     $('#btnSaveMappingAM').prop('disabled', !isValid);
 
-    if (isValid) {
-      $('#totalProporsi').removeClass('text-danger').addClass('text-success');
-    } else {
-      $('#totalProporsi').removeClass('text-success').addClass('text-danger');
-    }
-  }
+    $('#totalProporsi')
+        .toggleClass('text-success', isValid)
+        .toggleClass('text-danger', !isValid);
+}
 
-  function saveMappingAM(ccRevenueId) {
+
+function saveMappingAM(ccRevenueId) {
+    const btn = $('#btnSaveMappingAM');
+
+    btn.prop('disabled', true)
+       .html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Menyimpan...');
+
     const mappings = [];
-    
+
     $('.proporsi-input').each(function() {
-      mappings.push({
-        am_revenue_id: $(this).data('am-revenue-id'),
-        proporsi: parseFloat($(this).val()) / 100
-      });
+        const val = parseFloat($(this).val()) || 0;
+
+        mappings.push({
+            am_revenue_id: $(this).data('am-revenue-id'),
+            proporsi: val / 100
+        });
     });
 
     $.ajax({
-      url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings`,
-      method: 'PUT',
-      data: JSON.stringify({ am_mappings: mappings }),
-      contentType: 'application/json',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      success: function(response) {
-        if (response.success) {
-          alert('Mapping AM berhasil disimpan!');
-          loadData();
-        } else {
-          alert('Error: ' + response.message);
-        }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
-    });
-  }
+        url: `/revenue-data/revenue-cc/${ccRevenueId}/am-mappings`,
+        method: 'PUT',
+        data: JSON.stringify({ am_mappings: mappings }),
+        contentType: 'application/json',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
 
-  window.deleteRevenueCC = function(id) {
-    if (!confirm('Hapus Revenue CC ini?\n\nTindakan ini tidak dapat dibatalkan!')) {
-      return;
-    }
-
-    $.ajax({
-      url: `/revenue-data/revenue-cc/${id}`,
-      method: 'DELETE',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      success: function(response) {
-        if (response.success) {
-          alert(response.message);
-          loadData();
-        } else {
-          alert('Error: ' + response.message);
-        }
-      },
-      error: function(xhr) {
-        alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
-      }
-    });
-  };
-
-
-window.editRevenueAM = function(id) {
-    console.log('🔧 Opening edit modal for AM Revenue ID:', id);
-    
-    $.ajax({
-        url: `/revenue-data/revenue-am/${id}`,
-        method: 'GET',
         success: function(response) {
-            console.log('✅ Full Response:', response);
-            
-            if (!response.success) {
-                alert('Error: ' + response.message);
-                return;
+            if (response.success) {
+                alert('Mapping AM berhasil disimpan!');
+                loadData();
+            } else {
+                alert(response.message || 'Gagal menyimpan');
             }
-
-            const data = response.data;
-            
-            // ✅ CRITICAL DEBUG: Check CC Revenue values
-            console.log('🔍 CC Revenue Check:', {
-                cc_revenue_id: data.cc_revenue_id,
-                cc_target_revenue_sold: data.cc_target_revenue_sold,
-                cc_real_revenue_sold: data.cc_real_revenue_sold
-            });
-            
-            if (!data.cc_revenue_id) {
-                console.error('❌ WARNING: CC Revenue ID is missing!');
-            }
-            
-            if (data.cc_target_revenue_sold === 0 && data.cc_real_revenue_sold === 0) {
-                console.error('❌ WARNING: CC Revenue values are ZERO!');
-            }
-            
-            // POPULATE HEADER
-            $('#editAMHeaderNama').text(data.account_manager_nama || 'N/A');
-            $('#editAMHeaderCC').text(data.corporate_customer_nama || 'N/A');
-            $('#editAMHeaderPeriod').text(data.period_name || 'N/A');
-            
-            // POPULATE HIDDEN FIELDS
-            $('#editAMRevenueId').val(data.id);
-            $('#editAMCCRevenueId').val(data.cc_revenue_id || '');
-            $('#editAMCCTargetSold').val(data.cc_target_revenue_sold || 0);
-            $('#editAMCCRealSold').val(data.cc_real_revenue_sold || 0);
-            
-            // ✅ VERIFY VALUES WERE SET
-            console.log('✅ Hidden inputs populated:', {
-                editAMCCRevenueId: $('#editAMCCRevenueId').val(),
-                editAMCCTargetSold: $('#editAMCCTargetSold').val(),
-                editAMCCRealSold: $('#editAMCCRealSold').val()
-            });
-            
-            // POPULATE CC INFO (READ-ONLY)
-            $('#editAMCCName').val(data.corporate_customer_nama || 'N/A');
-            $('#editAMCCNipnas').val(data.corporate_customer_nipnas || 'N/A');
-            $('#editAMCCTargetDisplay').val(formatCurrency(data.cc_target_revenue_sold || 0));
-            $('#editAMCCRealDisplay').val(formatCurrency(data.cc_real_revenue_sold || 0));
-            
-            // POPULATE AM MAPPING TABLE
-            renderAMTableForEdit(data, data.other_ams || []);
-            
-            // VALIDATE INICIAL PROPORSI
-            validateProporsiTotal(data.proporsi_total || 1.0);
-            
-            // SHOW MODAL
-            const modal = new bootstrap.Modal(document.getElementById('modalEditRevenueAM'));
-            modal.show();
-            
-            console.log('✅ Edit modal opened successfully');
         },
+
         error: function(xhr) {
-            console.error('❌ Failed to load AM Revenue data:', xhr);
-            alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || xhr.statusText));
+            alert(xhr.responseJSON?.message || 'Terjadi kesalahan server');
+        },
+
+        complete: function() {
+            btn.prop('disabled', false)
+               .html('<i class="fa-solid fa-save me-2"></i>Simpan Mapping');
         }
     });
-};
+}
+
+
+
 
 // ================================================================
 // ✅ NEW: renderAMTableForEdit() - Render AM mapping table

@@ -63,14 +63,6 @@ class ImportAMController extends Controller
                 $csvContent .= "970252,DESY CAHYANI LARI,NUSA TENGGARA,HOTDA,TREG 3,DPS,TELDA NUSA TENGGARA\n";
                 $csvContent .= "123456,NI NYOMAN DANI,SEMARANG,AM,TREG 3,\"DPS,DSS\",\n";
                 $csvContent .= "789012,MADE WIRAWAN,BALI,AM,TREG 3,\"DPS, DSS\",\n";
-                $csvContent .= "\n";
-                $csvContent .= "CATATAN PENTING:\n";
-                $csvContent .= "1. Untuk AM dengan multiple divisi gunakan format: DPS,DSS atau DPS, DSS\n";
-                $csvContent .= "2. Bisa juga dengan baris terpisah (NIK sama divisi beda)\n";
-                $csvContent .= "3. DIVISI AM: AM atau HOTDA\n";
-                $csvContent .= "4. DIVISI: DGS, DSS, atau DPS (bisa kombinasi dengan koma)\n";
-                $csvContent .= "5. TELDA: Wajib diisi untuk HOTDA, kosongkan untuk AM\n";
-                $csvContent .= "6. Maksimal 3 divisi per AM\n";
                 
                 return response($csvContent, 200)
                     ->header('Content-Type', 'text/csv')

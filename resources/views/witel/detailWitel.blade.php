@@ -5,6 +5,7 @@
 @section('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <link rel="stylesheet" href="{{ asset('css/detailWitel.css') }}">
+<link rel="stylesheet" href="{{ asset('css/detailWitel.override.css') }}">
 @endsection
 
 @section('content')
@@ -12,19 +13,19 @@
 
     <!-- Profile Overview -->
     <div class="profile-overview">
-        {{-- ✅ Buang wrapper .profile-main-row biar grid header bisa jalan rapih --}}
-        <div class="profile-avatar-container">
-            <div class="cc-avatar">
-                <i class="fas fa-map-marked-alt"></i>
+        <div class="profile-main-row">
+            <div class="profile-avatar-container">
+                <div class="cc-avatar">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+            </div>
+
+            <div class="profile-header">
+                <h2 class="profile-name">WITEL {{ strtoupper($profileData['nama'] ?? '') }}</h2>
             </div>
         </div>
 
-        <div class="profile-header">
-            {{-- ✅ Prefix judul jadi WITEL --}}
-            <h2 class="profile-name">WITEL {{ strtoupper($profileData['nama'] ?? '') }}</h2>
-        </div>
-
-        {{-- ✅ Meta tetap di bawah avatar (kolom kiri) --}}
+        <!-- Meta (posisi di bawah avatar via CSS grid) -->
         <div class="profile-details">
             <div class="profile-meta-grid">
                 <div class="meta-item-inline">
@@ -103,9 +104,7 @@
                 </div>
 
                 <div class="filters-wrapper">
-                    {{-- ✅ 1 baris: toggle + semua dropdown --}}
-                    <div class="filters-row-all">
-
+                    <div class="filters-row-top">
                         <div class="view-mode-toggle">
                             <button type="button"
                                 class="view-mode-btn {{ ($filters['revenue_view_mode'] ?? 'detail') == 'detail' ? 'active' : '' }}"
@@ -118,7 +117,9 @@
                                 <i class="fas fa-calendar"></i> Agregat
                             </button>
                         </div>
+                    </div>
 
+                    <div class="filters-row-bottom">
                         <div class="filter-dropdowns-row">
                             <div class="filter-item">
                                 <select id="granularityFilter" class="selectpicker">
@@ -162,12 +163,11 @@
                                 </select>
                             </div>
                         </div>
-
                     </div>
                 </div>
+
             </div>
 
-            <!-- Revenue Table -->
             <div class="data-card">
                 @if($revenueData && $revenueData['revenues']->count() > 0)
                     <div class="table-responsive">
@@ -219,7 +219,6 @@
                                             @if(($filters['revenue_view_mode'] ?? 'detail') == 'detail')
                                                 <td>{{ $revenue->divisi ?? 'N/A' }}</td>
                                             @endif
-
                                         @elseif(($filters['granularity'] ?? '') == 'divisi')
                                             <td class="customer-name">{{ $revenue->divisi ?? 'N/A' }}</td>
                                             @if(($filters['revenue_view_mode'] ?? 'detail') == 'detail')
@@ -229,7 +228,6 @@
                                                     </span>
                                                 </td>
                                             @endif
-
                                         @elseif(($filters['granularity'] ?? '') == 'corporate_customer')
                                             <td class="customer-name">{{ $revenue->customer_name ?? 'N/A' }}</td>
                                             <td class="nipnas">{{ $revenue->nipnas ?? 'N/A' }}</td>
@@ -286,7 +284,6 @@
                         $avgAch = $summary['average_achievement'] ?? 0;
                         $trend = $summary['trend'] ?? 'stabil';
                     @endphp
-
                     <p><strong>Witel {{ $profileData['nama'] ?? '' }}</strong> menunjukkan performa yang
                         @if($avgAch >= 90) <strong class="text-success">sangat baik</strong>
                         @elseif($avgAch >= 80) <strong class="text-warning">baik</strong>
@@ -294,77 +291,10 @@
                         @endif
                         dengan rata-rata achievement <strong>{{ number_format($avgAch, 2) }}%</strong>.
                     </p>
-
                     <p>Total revenue sepanjang waktu mencapai <strong>Rp {{ number_format($summary['total_revenue_all_time'] ?? 0, 0, ',', '.') }}</strong>
                         dari target <strong>Rp {{ number_format($summary['total_target_all_time'] ?? 0, 0, ',', '.') }}</strong>.
-                        Tren revenue menunjukkan kondisi
-                        <strong class="{{ $trend == 'naik' ? 'text-success' : ($trend == 'turun' ? 'text-danger' : 'text-muted') }}">
-                            {{ $trend }}
-                        </strong>
-                        dalam 3 bulan terakhir.
-                    </p>
-                </div>
-            </div>
-
-            <div class="insight-metrics">
-                <div class="metric-card">
-                    <div class="metric-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="metric-content">
-                        <div class="metric-label">Achievement Tertinggi</div>
-                        <div class="metric-value">{{ number_format($summary['highest_achievement']['value'] ?? 0, 2) }}%</div>
-                        <div class="metric-period">{{ $summary['highest_achievement']['bulan'] ?? 'N/A' }}</div>
-                    </div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-icon"><i class="fas fa-money-bill-wave"></i></div>
-                    <div class="metric-content">
-                        <div class="metric-label">Revenue Tertinggi</div>
-                        <div class="metric-value">
-                            @php
-                                $highestRevenue = $summary['highest_revenue']['value'] ?? 0;
-                                if ($highestRevenue >= 1000000000) $formatted = number_format($highestRevenue / 1000000000, 2) . ' M';
-                                elseif ($highestRevenue >= 1000000) $formatted = number_format($highestRevenue / 1000000, 2) . ' Jt';
-                                else $formatted = number_format($highestRevenue, 0, ',', '.');
-                            @endphp
-                            Rp {{ $formatted }}
-                        </div>
-                        <div class="metric-period">{{ $summary['highest_revenue']['bulan'] ?? 'N/A' }}</div>
-                    </div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-icon"><i class="fas fa-bullseye"></i></div>
-                    <div class="metric-content">
-                        <div class="metric-label">Rata-rata Achievement</div>
-                        <div class="metric-value">{{ number_format($summary['average_achievement'] ?? 0, 2) }}%</div>
-                        <div class="metric-period">Sepanjang Waktu</div>
-                    </div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        @if($trend == 'naik')
-                            <i class="fas fa-arrow-up text-success"></i>
-                        @elseif($trend == 'turun')
-                            <i class="fas fa-arrow-down text-danger"></i>
-                        @else
-                            <i class="fas fa-minus text-muted"></i>
-                        @endif
-                    </div>
-                    <div class="metric-content">
-                        <div class="metric-label">Tren Revenue</div>
-                        <div class="metric-value">
-                            @if($trend == 'naik')
-                                <span class="text-success">Meningkat</span>
-                            @elseif($trend == 'turun')
-                                <span class="text-danger">Menurun</span>
-                            @else
-                                <span class="text-muted">Stabil</span>
-                            @endif
-                        </div>
-                        <div class="metric-period">{{ $summary['trend_description'] ?? '3 bulan terakhir' }}</div>
-                    </div>
+                        Tren revenue menunjukkan kondisi <strong class="{{ $trend == 'naik' ? 'text-success' : ($trend == 'turun' ? 'text-danger' : 'text-muted') }}">{{ $trend }}</strong>
+                        dalam 3 bulan terakhir.</p>
                 </div>
             </div>
             @endif
@@ -407,149 +337,170 @@
 </div>
 @endsection
 
-{{-- ✅ Scripts MUST di luar @section('content') --}}
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/js/bootstrap-select.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  window.__WITEL_CHART_DATA__ = @json($revenueAnalysis['monthly_chart'] ?? null);
+  window.__WITEL_FILTERS__ = @json($filters ?? []);
+</script>
 
 <script>
-$(document).ready(function() {
-    $('.selectpicker').selectpicker({ liveSearch: false, size: 6, mobile: false });
+/* ===================================
+   DETAIL WITEL - JS (Bootstrap-select + filters + tab + chart)
+   File: public/js/detailWitel.js
+   =================================== */
 
-    $('.tab-button').on('click', function() {
-        $('.tab-button').removeClass('active');
-        $('.tab-content').removeClass('active');
-        $(this).addClass('active');
+(function () {
+  function updateUrlParameter(key, value) {
+    const url = new URL(window.location.href);
+    if (value && value !== '' && value !== 'all') url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+    window.location.href = url.toString();
+  }
 
-        const tabId = $(this).data('tab');
-        $('#' + tabId).addClass('active');
+  function renderRevenueChart() {
+    const ctx = document.getElementById('revenueChart');
+    if (!ctx || typeof Chart === 'undefined') return;
 
-        if (tabId === 'revenue-analysis') {
-            setTimeout(renderRevenueChart, 100);
-        }
-    });
+    try {
+      const existing = Chart.getChart(ctx);
+      if (existing) existing.destroy();
+    } catch (e) {}
 
-    $('.view-mode-btn').on('click', function() {
-        updateUrlParameter('revenue_view_mode', $(this).data('mode'));
-    });
+    const chartData = window.__WITEL_CHART_DATA__ || null;
+    const filters = window.__WITEL_FILTERS__ || {};
+    if (!chartData || !chartData.labels || chartData.labels.length === 0) return;
 
-    $('#granularityFilter').on('changed.bs.select', function() { updateUrlParameter('granularity', $(this).val()); });
-    $('#roleFilter').on('changed.bs.select', function() { updateUrlParameter('role_filter', $(this).val()); });
-    $('#tipeRevenueFilter').on('changed.bs.select', function() { updateUrlParameter('tipe_revenue', $(this).val()); });
-    $('#revenueSourceFilter').on('changed.bs.select', function() { updateUrlParameter('revenue_source', $(this).val()); });
-    $('#revenueYearFilter').on('changed.bs.select', function() { updateUrlParameter('tahun', $(this).val()); });
+    const displayMode = filters.chart_display || 'combination';
+    const datasets = [];
 
-    $('#chartYearFilter').on('changed.bs.select', function() { updateUrlParameter('chart_tahun', $(this).val()); });
-    $('#chartDisplayMode').on('changed.bs.select', function() { updateUrlParameter('chart_display', $(this).val()); });
-
-    function updateUrlParameter(key, value) {
-        const url = new URL(window.location.href);
-        if (value && value !== '' && value !== 'all') url.searchParams.set(key, value);
-        else url.searchParams.delete(key);
-        window.location.href = url.toString();
+    if (displayMode === 'combination' || displayMode === 'revenue') {
+      datasets.push({
+        label: 'Real Revenue',
+        data: chartData.datasets.real_revenue,
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        borderColor: 'rgba(16, 185, 129, 1)',
+        borderWidth: 2,
+        yAxisID: 'y'
+      });
+      datasets.push({
+        label: 'Target Revenue',
+        data: chartData.datasets.target_revenue,
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 2,
+        yAxisID: 'y'
+      });
     }
 
-    function renderRevenueChart() {
-        const ctx = document.getElementById('revenueChart');
-        if (!ctx) return;
-
-        try {
-            const existingChart = Chart.getChart(ctx);
-            if (existingChart) existingChart.destroy();
-        } catch (e) {}
-
-        const chartData = @json($revenueAnalysis['monthly_chart'] ?? null);
-        if (!chartData || !chartData.labels || chartData.labels.length === 0) {
-            $(ctx).parent().html(
-                '<div class="empty-state">' +
-                '<div class="empty-icon"><i class="fas fa-chart-bar"></i></div>' +
-                '<p class="empty-text">Tidak ada data revenue</p>' +
-                '</div>'
-            );
-            return;
-        }
-
-        const displayMode = '{{ $filters["chart_display"] ?? "combination" }}';
-        const datasets = [];
-
-        if (displayMode === 'combination' || displayMode === 'revenue') {
-            datasets.push({
-                label: 'Real Revenue',
-                data: chartData.datasets.real_revenue,
-                backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                borderColor: 'rgba(16, 185, 129, 1)',
-                borderWidth: 2,
-                yAxisID: 'y'
-            });
-            datasets.push({
-                label: 'Target Revenue',
-                data: chartData.datasets.target_revenue,
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: 2,
-                yAxisID: 'y'
-            });
-        }
-
-        if (displayMode === 'combination' || displayMode === 'achievement') {
-            datasets.push({
-                label: 'Achievement (%)',
-                data: chartData.datasets.achievement_rate,
-                type: 'line',
-                backgroundColor: 'rgba(234, 29, 37, 0.1)',
-                borderColor: 'rgba(234, 29, 37, 1)',
-                borderWidth: 3,
-                pointBackgroundColor: 'rgba(234, 29, 37, 1)',
-                pointBorderColor: '#fff',
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                fill: true,
-                tension: 0.4,
-                yAxisID: 'y1'
-            });
-        }
-
-        const scales = {};
-
-        if (displayMode === 'combination' || displayMode === 'revenue') {
-            scales.y = {
-                type: 'linear',
-                display: true,
-                position: 'left',
-                ticks: {
-                    callback: function(value) {
-                        if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(1) + ' M';
-                        if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(1) + ' Jt';
-                        if (value >= 1000) return 'Rp ' + (value / 1000).toFixed(0) + ' K';
-                        return 'Rp ' + value;
-                    }
-                }
-            };
-        }
-
-        if (displayMode === 'combination' || displayMode === 'achievement') {
-            scales.y1 = {
-                type: 'linear',
-                display: true,
-                position: 'right',
-                ticks: { callback: (v) => v.toFixed(0) + '%' }
-            };
-        }
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: { labels: chartData.labels, datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                scales,
-                plugins: { legend: { position: 'top' } }
-            }
-        });
+    if (displayMode === 'combination' || displayMode === 'achievement') {
+      datasets.push({
+        label: 'Achievement (%)',
+        data: chartData.datasets.achievement_rate,
+        type: 'line',
+        backgroundColor: 'rgba(234, 29, 37, 0.1)',
+        borderColor: 'rgba(234, 29, 37, 1)',
+        borderWidth: 3,
+        pointBackgroundColor: 'rgba(234, 29, 37, 1)',
+        pointBorderColor: '#fff',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4,
+        yAxisID: 'y1'
+      });
     }
 
-    if ($('#revenue-analysis').hasClass('active')) setTimeout(renderRevenueChart, 300);
-});
+    const scales = {};
+    if (displayMode === 'combination' || displayMode === 'revenue') {
+      scales.y = {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        ticks: {
+          callback: function (value) {
+            if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toFixed(1) + ' M';
+            if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(1) + ' Jt';
+            if (value >= 1000) return 'Rp ' + (value / 1000).toFixed(0) + ' K';
+            return 'Rp ' + value;
+          }
+        },
+        grid: { color: 'rgba(0,0,0,0.05)' }
+      };
+    }
+
+    if (displayMode === 'combination' || displayMode === 'achievement') {
+      scales.y1 = {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        ticks: { callback: (v) => (Number(v) || 0).toFixed(0) + '%' },
+        grid: {
+          drawOnChartArea: displayMode !== 'combination',
+          color: 'rgba(234, 29, 37, 0.1)'
+        }
+      };
+    }
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: { labels: chartData.labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: scales,
+        plugins: { legend: { position: 'top' } }
+      }
+    });
+  }
+
+  function init() {
+    // bootstrap-select init: container body biar dropdown gak ke-clip
+    if (typeof $ !== 'undefined' && $.fn && $.fn.selectpicker) {
+      $('.selectpicker').selectpicker({
+        liveSearch: false,
+        size: 6,
+        mobile: false,
+        container: 'body'
+      });
+    }
+
+    // tab switching
+    $('.tab-button').on('click', function () {
+      $('.tab-button').removeClass('active');
+      $('.tab-content').removeClass('active');
+
+      $(this).addClass('active');
+      const tabId = $(this).data('tab');
+      $('#' + tabId).addClass('active');
+
+      try { $('.selectpicker').selectpicker('refresh'); } catch (e) {}
+      if (tabId === 'revenue-analysis') setTimeout(renderRevenueChart, 120);
+    });
+
+    // view mode toggle
+    $('.view-mode-btn').on('click', function () {
+      updateUrlParameter('revenue_view_mode', $(this).data('mode'));
+    });
+
+    // filter changes
+    $('#granularityFilter').on('changed.bs.select', function () { updateUrlParameter('granularity', $(this).val()); });
+    $('#roleFilter').on('changed.bs.select', function () { updateUrlParameter('role_filter', $(this).val()); });
+    $('#tipeRevenueFilter').on('changed.bs.select', function () { updateUrlParameter('tipe_revenue', $(this).val()); });
+    $('#revenueSourceFilter').on('changed.bs.select', function () { updateUrlParameter('revenue_source', $(this).val()); });
+    $('#revenueYearFilter').on('changed.bs.select', function () { updateUrlParameter('tahun', $(this).val()); });
+
+    $('#chartYearFilter').on('changed.bs.select', function () { updateUrlParameter('chart_tahun', $(this).val()); });
+    $('#chartDisplayMode').on('changed.bs.select', function () { updateUrlParameter('chart_display', $(this).val()); });
+
+    if ($('#revenue-analysis').hasClass('active')) setTimeout(renderRevenueChart, 250);
+  }
+
+  if (typeof $ !== 'undefined') $(document).ready(init);
+  else document.addEventListener('DOMContentLoaded', init);
+})();
+
 </script>
 @endsection

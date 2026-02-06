@@ -192,7 +192,7 @@
 
 .profile-name {
     font-size: 2rem;
-    font-weight: 600;
+    font-weight: 300;
     color: #dc2626;
     margin: 0;
     letter-spacing: -0.02em;
@@ -2052,7 +2052,7 @@
 
 .profile-name {
     font-size: 2.6rem !important;
-    font-weight: 900 !important;
+    font-weight: 800 !important;
     letter-spacing: -0.02em !important;
     color: var(--telkom-red) !important;
     margin: 0 !important;
@@ -2097,7 +2097,7 @@
 }
 
 .meta-label { font-weight: 700 !important; color: #64748b !important; }
-.meta-value { font-weight: 800 !important; color: #0f172a !important; }
+.meta-value { font-weight: 600 !important; color: #0f172a !important; }
 
 /* ✅ Revenue cards: fill width + equal sizing */
 .revenue-cards-group {

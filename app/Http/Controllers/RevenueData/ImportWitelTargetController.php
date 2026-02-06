@@ -3,761 +3,835 @@
 namespace App\Http\Controllers\RevenueData;
 
 use App\Http\Controllers\Controller;
+use App\Models\Witel;
+use App\Models\Divisi;
+use App\Models\WitelTargetRevenue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Response;
+use League\Csv\Reader;
+use League\Csv\Writer;
+use League\Csv\Exception as CsvException;
 
 /**
- * RevenueImportController - Main Import Router
- *
- * ✅ UPDATED VERSION - 2026-02-04
- *
- * ========================================
- * MAJOR CHANGES
- * ========================================
- *
- * ✅ NEW: Proporsi validation after Revenue AM import
- *    - Validate sum(proporsi) per CC = 1.0 (100%)
- *    - Return warnings for invalid proporsi (but allow import)
- *    - Auto-calculate proporsi = 1.0 if only 1 AM per CC
- *
- * ✅ NEW: Enhanced statistics reporting
- *    - Report proporsi_warnings count
- *    - Report auto_calculated_proporsi count
- *    - Detail list of invalid proporsi CCs
- *
- * ✅ MAINTAINED: All existing functionality
- *    - Chunked upload support
- *    - Session management
- *    - Preview functionality
- *    - Execute routing to specific controllers
+ * ImportWitelTargetController
+ * 
+ * Controller untuk handle import Target Revenue BILL Witel (khusus DPS/DSS)
+ * 
+ * BUSINESS RULES:
+ * ===============
+ * 1. Witel Target Revenue BILL hanya untuk divisi DPS dan DSS
+ * 2. DGS tidak memiliki witel target revenue bill karena witel_ho = witel_bill
+ * 3. Template format:
+ *    - WITEL_NAME
+ *    - DIVISI (DPS/DSS)
+ *    - TARGET_REVENUE_BILL
+ *    - YEAR
+ *    - MONTH
+ * 
+ * FEATURES:
+ * =========
+ * ✅ Download template CSV
+ * ✅ Preview import data
+ * ✅ Execute import with validation
+ * ✅ Update or Insert logic (upsert)
+ * ✅ Comprehensive error handling
+ * ✅ Detailed logging
+ * 
+ * @version 1.0.0
+ * @date 2026-02-06
  */
-class RevenueImportController extends Controller
+class ImportWitelTargetController extends Controller
 {
-    private const TEMP_CHUNKS_DIR = 'app/temp_chunks';
-    private const CHUNK_TIMEOUT = 7200; // 2 hours
-
     /**
-     * ✅ MAINTAINED: Upload chunk for large files
+     * Download template CSV untuk import Witel Target Revenue BILL
+     * 
+     * Template columns:
+     * - WITEL_NAME: Nama witel (harus sesuai dengan master witel)
+     * - DIVISI: Kode divisi (DPS atau DSS only)
+     * - TARGET_REVENUE_BILL: Target revenue dalam rupiah
+     * - YEAR: Tahun (4 digit)
+     * - MONTH: Bulan (1-12)
+     * 
+     * @return \Illuminate\Http\Response
      */
-    public function uploadChunk(Request $request)
+    public function downloadTemplate()
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'file_chunk' => 'required|file',
-                'chunk_index' => 'required|integer|min:0',
-                'total_chunks' => 'required|integer|min:1',
-                'session_id' => 'required|string|max:100',
-                'file_name' => 'required|string|max:255',
-                'import_type' => 'required|string|in:data_cc,data_am,revenue_cc,revenue_am',
-                'is_first_chunk' => 'required|in:0,1',
-                'rows_in_chunk' => 'required|integer|min:1',
-            ]);
+            Log::info('Downloading Witel Target Revenue BILL template');
 
-            if ($validator->fails()) {
-                Log::warning('Chunk upload validation failed', [
-                    'errors' => $validator->errors()->toArray()
-                ]);
+            // Create CSV in memory
+            $csv = Writer::createFromString('');
+            
+            // Set BOM for Excel UTF-8 compatibility
+            $csv->setOutputBOM(Writer::BOM_UTF8);
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi chunk gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $sessionId = $request->input('session_id');
-            $chunkIndex = (int) $request->input('chunk_index');
-            $totalChunks = (int) $request->input('total_chunks');
-            $fileName = $request->input('file_name');
-            $importType = $request->input('import_type');
-            $isFirstChunk = $request->input('is_first_chunk') === '1';
-            $rowsInChunk = (int) $request->input('rows_in_chunk');
-
-            // Create chunks directory
-            $chunkDir = storage_path(self::TEMP_CHUNKS_DIR . "/{$sessionId}");
-            if (!file_exists($chunkDir)) {
-                mkdir($chunkDir, 0755, true);
-            }
-
-            // Save chunk
-            $chunk = $request->file('file_chunk');
-            $paddedIndex = str_pad($chunkIndex, 4, '0', STR_PAD_LEFT);
-            $chunkFileName = "chunk_{$paddedIndex}.csv";
-            $chunk->move($chunkDir, $chunkFileName);
-
-            Log::info("Chunk uploaded", [
-                'session_id' => $sessionId,
-                'chunk' => $chunkIndex + 1,
-                'total' => $totalChunks,
-                'import_type' => $importType,
-                'rows' => $rowsInChunk,
-                'is_first' => $isFirstChunk
-            ]);
-
-            // Store metadata in cache
-            $metadata = $this->getChunkMetadata($sessionId) ?? [
-                'file_name' => $fileName,
-                'import_type' => $importType,
-                'total_chunks' => $totalChunks,
-                'uploaded_at' => now()->toDateTimeString(),
-                'total_rows' => 0,
-                'chunks_info' => []
+            // Header row
+            $headers = [
+                'WITEL_NAME',
+                'DIVISI',
+                'TARGET_REVENUE_BILL',
+                'YEAR',
+                'MONTH'
             ];
+            
+            $csv->insertOne($headers);
 
-            $metadata['chunks_info'][$chunkIndex] = [
-                'uploaded_at' => now()->toDateTimeString(),
-                'rows' => $rowsInChunk,
-                'is_first' => $isFirstChunk
-            ];
+            // Get sample data from database
+            $sampleWitels = Witel::orderBy('nama')->limit(3)->get();
+            $currentYear = date('Y');
+            $currentMonth = date('n');
 
-            $metadata['total_rows'] += $rowsInChunk;
-            $this->saveChunkMetadata($sessionId, $metadata);
-
-            // Check if all chunks uploaded
-            $uploadedChunks = count($metadata['chunks_info']);
-            $allChunksUploaded = $uploadedChunks === $totalChunks;
-
-            if ($allChunksUploaded) {
-                Log::info('All chunks uploaded, merging...', [
-                    'session_id' => $sessionId,
-                    'total_chunks' => $totalChunks
-                ]);
-
-                $mergedFilePath = $this->mergeChunks($sessionId, $totalChunks, $metadata);
-
-                if ($mergedFilePath) {
-                    Cache::put("merged_file_{$sessionId}", $mergedFilePath, now()->addSeconds(self::CHUNK_TIMEOUT));
-                    Log::info('Chunks merged successfully', [
-                        'session_id' => $sessionId,
-                        'merged_file' => $mergedFilePath
+            // Add example rows
+            if ($sampleWitels->count() > 0) {
+                foreach ($sampleWitels as $index => $witel) {
+                    $divisi = $index % 2 === 0 ? 'DPS' : 'DSS';
+                    
+                    $csv->insertOne([
+                        $witel->nama,
+                        $divisi,
+                        ($index + 1) * 1000000000, // Example: 1M, 2M, 3M
+                        $currentYear,
+                        $currentMonth
                     ]);
                 }
+            } else {
+                // Fallback examples if no witel data
+                $csv->insertOne([
+                    'BALI',
+                    'DPS',
+                    5000000000,
+                    $currentYear,
+                    $currentMonth
+                ]);
+                
+                $csv->insertOne([
+                    'NUSA TENGGARA',
+                    'DSS',
+                    3000000000,
+                    $currentYear,
+                    $currentMonth
+                ]);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => "Chunk {$chunkIndex} uploaded",
-                'uploaded_chunks' => $uploadedChunks,
-                'total_chunks' => $totalChunks,
-                'all_chunks_uploaded' => $allChunksUploaded,
-                'total_rows' => $metadata['total_rows']
+            // Generate filename
+            $filename = 'template_witel_target_bill_' . date('Ymd_His') . '.csv';
+
+            Log::info('Witel Target Revenue BILL template generated', [
+                'filename' => $filename,
+                'sample_rows' => $sampleWitels->count()
+            ]);
+
+            // Return as download
+            return Response::make($csv->toString(), 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0'
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Upload chunk error: ' . $e->getMessage(), [
+            Log::error('Failed to generate Witel Target Revenue template', [
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal upload chunk: ' . $e->getMessage()
+                'message' => 'Gagal generate template: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * ✅ MAINTAINED: Preview import data
+     * Preview import data Witel Target Revenue BILL
+     * 
+     * Validates and shows preview of data to be imported
+     * 
+     * @param string $tempFilePath Path to uploaded CSV file
+     * @return array Preview result
      */
-    public function previewImport(Request $request)
+    public function previewWitelTarget($tempFilePath)
     {
-        Log::info('RIC - Commencing Preview Import');
-
         try {
-            $validator = Validator::make($request->all(), [
-                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am'
+            Log::info('IWTC - Previewing Witel Target Revenue BILL', [
+                'file_path' => $tempFilePath
             ]);
 
-            if ($validator->fails()) {
-                return response()->json([
+            if (!file_exists($tempFilePath)) {
+                return [
                     'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $importType = $request->input('import_type');
-            $sessionId = $request->input('session_id');
-            $tempFilePath = null;
-
-            // Check if this is a chunked upload
-            if ($sessionId) {
-                $tempFilePath = Cache::get("merged_file_{$sessionId}");
-                Log::info('Preview: Got merged file from cache', [
-                    'session_id' => $sessionId,
-                    'file_path' => $tempFilePath
-                ]);
-            }
-
-            // Otherwise, handle regular file upload
-            if (!$tempFilePath && $request->hasFile('file')) {
-                $file = $request->file('file');
-                $sessionId = uniqid('import_', true);
-                $tempFilePath = storage_path('app/temp/' . $sessionId . '_' . $file->getClientOriginalName());
-
-                if (!file_exists(storage_path('app/temp'))) {
-                    mkdir(storage_path('app/temp'), 0755, true);
-                }
-
-                $file->move(storage_path('app/temp'), basename($tempFilePath));
-
-                session([
-                    "import_session_{$sessionId}" => [
-                        'temp_file_path' => $tempFilePath,
-                        'import_type' => $importType,
-                        'created_at' => now()->toDateTimeString()
-                    ]
-                ]);
-
-                Log::info('Preview: Stored temp file in session', [
-                    'session_id' => $sessionId,
-                    'file_path' => $tempFilePath
-                ]);
-            }
-
-            if (!$tempFilePath || !file_exists($tempFilePath)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'File tidak ditemukan. Pastikan file sudah diupload.'
-                ], 404);
-            }
-
-            // Additional validation for revenue imports
-            if ($importType === 'revenue_cc') {
-                $additionalValidator = Validator::make($request->all(), [
-                    'divisi_id' => 'required|exists:divisi,id',
-                    'year' => 'required|integer|min:2000|max:2099',
-                    'month' => 'required|integer|min:1|max:12',
-                    'tipe_revenue' => 'required|in:HO,BILL'
-                ]);
-
-                if ($additionalValidator->fails()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validasi parameter gagal',
-                        'errors' => $additionalValidator->errors()
-                    ], 422);
-                }
-            }
-
-            // Route to appropriate preview method
-            $previewResult = null;
-
-            switch ($importType) {
-                case 'data_cc':
-                    $previewResult = app(ImportCCController::class)->previewDataCC($tempFilePath);
-                    break;
-
-                case 'revenue_cc':
-                    $previewResult = app(ImportCCController::class)->previewRevenueCC(
-                        $request,
-                        $tempFilePath
-                    );
-                    break;
-
-                case 'data_am':
-                    $previewResult = app(ImportAMController::class)->previewDataAM($tempFilePath);
-                    break;
-
-                case 'revenue_am':
-                    $previewResult = app(ImportAMController::class)->previewRevenueAM($tempFilePath);
-                    break;
-
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tipe import tidak valid'
-                    ], 400);
-            }
-
-            if (!$previewResult['success']) {
-                return response()->json($previewResult, 422);
-            }
-
-            $previewResult['session_id'] = $sessionId;
-            $previewResult['temp_file_path'] = $tempFilePath;
-
-            return response()->json($previewResult);
-
-        } catch (\Exception $e) {
-            Log::error('Preview Import Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * ✅ UPDATED: Execute import with proporsi validation for Revenue AM
-     */
-    public function executeImport(Request $request)
-    {
-        Log::info('RIC - Commencing Execute Import');
-
-        try {
-            $validator = Validator::make($request->all(), [
-                'session_id' => 'required|string',
-                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
-                'filter_type' => 'required|in:all,new,update'
-            ]);
-
-            if ($validator->fails()) {
-                Log::warning('Execute Import - Validation failed', [
-                    'errors' => $validator->errors()->toArray()
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $sessionId = $request->input('session_id');
-            $importType = $request->input('import_type');
-            $filterType = $request->input('filter_type');
-
-            // Get temp file path
-            $tempFilePath = null;
-
-            $sessionData = session("import_session_{$sessionId}");
-            if ($sessionData && isset($sessionData['temp_file_path'])) {
-                $tempFilePath = $sessionData['temp_file_path'];
-                Log::info('Got temp file path from session', [
-                    'session_id' => $sessionId,
-                    'file_path' => $tempFilePath
-                ]);
-            }
-
-            if (!$tempFilePath) {
-                $tempFilePath = Cache::get("merged_file_{$sessionId}");
-                Log::info('Got temp file path from cache', [
-                    'session_id' => $sessionId,
-                    'file_path' => $tempFilePath
-                ]);
-            }
-
-            if (!$tempFilePath || !file_exists($tempFilePath)) {
-                Log::error('Temp file not found', [
-                    'session_id' => $sessionId,
-                    'expected_path' => $tempFilePath
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'File sementara tidak ditemukan. Silakan upload dan preview ulang.'
-                ], 404);
-            }
-
-            // Additional validation based on import type
-            $additionalRules = [];
-            if ($importType === 'revenue_cc') {
-                $additionalRules = [
-                    'divisi_id' => 'required|exists:divisi,id',
-                    'year' => 'required|integer|min:2000|max:2099',
-                    'month' => 'required|integer|min:1|max:12',
-                    'tipe_revenue' => 'required|in:HO,BILL'
-                ];
-            } elseif ($importType === 'revenue_am') {
-                $additionalRules = [
-                    'year' => 'required|integer|min:2000|max:2099',
-                    'month' => 'required|integer|min:1|max:12'
+                    'message' => 'File tidak ditemukan'
                 ];
             }
 
-            if (!empty($additionalRules)) {
-                $additionalValidator = Validator::make($request->all(), $additionalRules);
+            // Read CSV
+            $csv = Reader::createFromPath($tempFilePath, 'r');
+            $csv->setHeaderOffset(0);
+            
+            $headers = $csv->getHeader();
+            $records = iterator_to_array($csv->getRecords());
 
-                if ($additionalValidator->fails()) {
-                    Log::warning('Execute Import - Additional validation failed', [
-                        'import_type' => $importType,
-                        'errors' => $additionalValidator->errors()->toArray()
-                    ]);
+            // Validate headers
+            $requiredHeaders = ['WITEL_NAME', 'DIVISI', 'TARGET_REVENUE_BILL', 'YEAR', 'MONTH'];
+            $missingHeaders = array_diff($requiredHeaders, $headers);
 
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validasi parameter tambahan gagal',
-                        'errors' => $additionalValidator->errors()
-                    ], 422);
+            if (!empty($missingHeaders)) {
+                Log::warning('Missing required headers', [
+                    'missing' => $missingHeaders
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'Header tidak lengkap. Missing: ' . implode(', ', $missingHeaders),
+                    'required_headers' => $requiredHeaders,
+                    'found_headers' => $headers
+                ];
+            }
+
+            // Get master data for validation
+            $witels = Witel::pluck('id', 'nama')->toArray();
+            $divisiMap = Divisi::pluck('id', 'kode')->toArray();
+
+            // Process records
+            $validRecords = [];
+            $invalidRecords = [];
+            $stats = [
+                'total_rows' => count($records),
+                'valid_rows' => 0,
+                'invalid_rows' => 0,
+                'will_insert' => 0,
+                'will_update' => 0
+            ];
+
+            foreach ($records as $index => $record) {
+                $rowNumber = $index + 2; // +2 because header is row 1, data starts at row 2
+
+                // Clean and validate data
+                $witelName = trim($record['WITEL_NAME'] ?? '');
+                $divisiKode = strtoupper(trim($record['DIVISI'] ?? ''));
+                $targetRevenueBill = $this->parseDecimal($record['TARGET_REVENUE_BILL'] ?? '0');
+                $year = (int) ($record['YEAR'] ?? 0);
+                $month = (int) ($record['MONTH'] ?? 0);
+
+                $errors = [];
+
+                // Validate Witel
+                if (empty($witelName)) {
+                    $errors[] = 'WITEL_NAME kosong';
+                } elseif (!isset($witels[$witelName])) {
+                    $errors[] = "WITEL_NAME '{$witelName}' tidak ditemukan di master";
                 }
-            }
 
-            // Route to appropriate controller
-            $result = null;
-
-            switch ($importType) {
-                case 'data_cc':
-                    $result = app(ImportCCController::class)->executeDataCC(
-                        $tempFilePath,
-                        $filterType
-                    );
-                    break;
-
-                case 'revenue_cc':
-                    $result = app(ImportCCController::class)->executeRevenueCC(
-                        $request,
-                        $tempFilePath,
-                        $filterType
-                    );
-                    break;
-
-                case 'data_am':
-                    $result = app(ImportAMController::class)->executeDataAM(
-                        $tempFilePath,
-                        $filterType
-                    );
-                    break;
-
-                case 'revenue_am':
-                    $result = app(ImportAMController::class)->executeRevenueAM(
-                        $request,
-                        $tempFilePath,
-                        $filterType
-                    );
-
-                    // ✅ NEW: Validate proporsi after Revenue AM import
-                    if ($result['success']) {
-                        $year = $request->input('year');
-                        $month = $request->input('month');
-                        
-                        $proporsiValidation = $this->validateProporsiAfterImport($year, $month);
-                        
-                        // Add warnings to result
-                        $result['proporsi_validation'] = $proporsiValidation;
-                        
-                        if ($proporsiValidation['has_warnings']) {
-                            $result['message'] .= ' | ⚠️ ' . $proporsiValidation['summary'];
-                        }
-                    }
-                    break;
-
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tipe import tidak valid'
-                    ], 400);
-            }
-
-            // Cleanup temp file after successful import
-            if ($result['success'] && file_exists($tempFilePath)) {
-                try {
-                    unlink($tempFilePath);
-                    Log::info('Cleaned up temp file', ['file_path' => $tempFilePath]);
-                } catch (\Exception $e) {
-                    Log::warning('Failed to cleanup temp file', [
-                        'file_path' => $tempFilePath,
-                        'error' => $e->getMessage()
-                    ]);
+                // Validate Divisi (DPS/DSS only)
+                if (empty($divisiKode)) {
+                    $errors[] = 'DIVISI kosong';
+                } elseif (!in_array($divisiKode, ['DPS', 'DSS'])) {
+                    $errors[] = "DIVISI '{$divisiKode}' tidak valid. Harus DPS atau DSS";
+                } elseif (!isset($divisiMap[$divisiKode])) {
+                    $errors[] = "DIVISI '{$divisiKode}' tidak ditemukan di master";
                 }
-            }
 
-            // Clear session data
-            session()->forget("import_session_{$sessionId}");
-            Cache::forget("merged_file_{$sessionId}");
+                // Validate target revenue
+                if ($targetRevenueBill < 0) {
+                    $errors[] = 'TARGET_REVENUE_BILL tidak boleh negatif';
+                }
 
-            return response()->json($result);
+                // Validate year
+                if ($year < 2000 || $year > 2099) {
+                    $errors[] = "YEAR '{$year}' tidak valid. Harus 2000-2099";
+                }
 
-        } catch (\Exception $e) {
-            Log::error('Execute Import Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+                // Validate month
+                if ($month < 1 || $month > 12) {
+                    $errors[] = "MONTH '{$month}' tidak valid. Harus 1-12";
+                }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat execute: ' . $e->getMessage()
-            ], 500);
-        }
-    }
+                if (empty($errors)) {
+                    $witelId = $witels[$witelName];
+                    $divisiId = $divisiMap[$divisiKode];
 
-    /**
-     * ✅ NEW: Validate proporsi after Revenue AM import
-     * 
-     * Checks:
-     * 1. Sum(proporsi) per CC = 1.0 (100%)
-     * 2. Auto-calculate proporsi = 1.0 if only 1 AM
-     * 
-     * @param int $year
-     * @param int $month
-     * @return array Validation results with warnings
-     */
-    private function validateProporsiAfterImport($year, $month)
-    {
-        try {
-            // Get all CCs with AM revenues in this period
-            $ccGroups = DB::table('am_revenues')
-                ->select(
-                    'corporate_customer_id',
-                    'divisi_id',
-                    DB::raw('COUNT(*) as am_count'),
-                    DB::raw('SUM(proporsi) as total_proporsi')
-                )
-                ->where('tahun', $year)
-                ->where('bulan', $month)
-                ->groupBy('corporate_customer_id', 'divisi_id')
-                ->get();
-
-            $warnings = [];
-            $autoFixedCount = 0;
-
-            foreach ($ccGroups as $group) {
-                $ccId = $group->corporate_customer_id;
-                $divisiId = $group->divisi_id;
-                $amCount = $group->am_count;
-                $totalProporsi = (float) $group->total_proporsi;
-
-                // ✅ AUTO-FIX: If only 1 AM and proporsi != 1.0, set to 1.0
-                if ($amCount === 1 && abs($totalProporsi - 1.0) > 0.001) {
-                    DB::table('am_revenues')
-                        ->where('corporate_customer_id', $ccId)
+                    // Check if record exists
+                    $existing = WitelTargetRevenue::where('witel_id', $witelId)
                         ->where('divisi_id', $divisiId)
                         ->where('tahun', $year)
                         ->where('bulan', $month)
-                        ->update(['proporsi' => 1.0]);
+                        ->first();
 
-                    $autoFixedCount++;
+                    $action = $existing ? 'update' : 'insert';
                     
-                    Log::info('Auto-fixed proporsi for single AM', [
-                        'cc_id' => $ccId,
+                    if ($action === 'update') {
+                        $stats['will_update']++;
+                    } else {
+                        $stats['will_insert']++;
+                    }
+
+                    $validRecords[] = [
+                        'row' => $rowNumber,
+                        'witel_name' => $witelName,
+                        'witel_id' => $witelId,
+                        'divisi_kode' => $divisiKode,
                         'divisi_id' => $divisiId,
-                        'old_proporsi' => $totalProporsi,
-                        'new_proporsi' => 1.0
-                    ]);
-                    
-                    continue; // Skip warning for this CC
-                }
-
-                // Check if total proporsi is valid (≈ 1.0)
-                if (abs($totalProporsi - 1.0) > 0.001) {
-                    // Get CC info
-                    $ccInfo = DB::table('corporate_customers')
-                        ->select('nipnas', 'nama')
-                        ->where('id', $ccId)
-                        ->first();
-
-                    $divisiInfo = DB::table('divisi')
-                        ->select('kode')
-                        ->where('id', $divisiId)
-                        ->first();
-
-                    $warnings[] = [
-                        'cc_id' => $ccId,
-                        'cc_nipnas' => $ccInfo->nipnas ?? 'N/A',
-                        'cc_nama' => $ccInfo->nama ?? 'N/A',
-                        'divisi_kode' => $divisiInfo->kode ?? 'N/A',
-                        'am_count' => $amCount,
-                        'total_proporsi' => $totalProporsi,
-                        'total_proporsi_percent' => round($totalProporsi * 100, 2),
-                        'difference' => round((1.0 - $totalProporsi) * 100, 2),
-                        'status' => $totalProporsi < 1.0 ? 'kurang' : 'berlebih'
+                        'target_revenue_bill' => $targetRevenueBill,
+                        'year' => $year,
+                        'month' => $month,
+                        'action' => $action,
+                        'existing_value' => $existing ? $existing->target_revenue_bill : null
                     ];
+
+                    $stats['valid_rows']++;
+                } else {
+                    $invalidRecords[] = [
+                        'row' => $rowNumber,
+                        'data' => $record,
+                        'errors' => $errors
+                    ];
+
+                    $stats['invalid_rows']++;
                 }
             }
 
-            // Generate summary message
-            $summary = '';
-            if ($autoFixedCount > 0) {
-                $summary .= "{$autoFixedCount} CC dengan 1 AM di-set proporsi 100%";
-            }
-            
-            if (!empty($warnings)) {
-                if ($summary) {
-                    $summary .= ' | ';
-                }
-                $summary .= count($warnings) . ' CC memiliki total proporsi tidak valid';
-            }
+            Log::info('IWTC - Preview completed', [
+                'stats' => $stats
+            ]);
 
             return [
-                'has_warnings' => !empty($warnings),
-                'warning_count' => count($warnings),
-                'auto_fixed_count' => $autoFixedCount,
-                'warnings' => $warnings,
-                'summary' => $summary ?: 'Semua proporsi valid'
+                'success' => true,
+                'message' => 'Preview berhasil',
+                'stats' => $stats,
+                'valid_records' => array_slice($validRecords, 0, 100), // Limit to 100 for preview
+                'invalid_records' => array_slice($invalidRecords, 0, 50), // Limit to 50 errors
+                'has_more_valid' => count($validRecords) > 100,
+                'has_more_invalid' => count($invalidRecords) > 50
+            ];
+
+        } catch (CsvException $e) {
+            Log::error('IWTC - CSV parsing error', [
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal membaca file CSV: ' . $e->getMessage()
             ];
 
         } catch (\Exception $e) {
-            Log::error('Proporsi validation error: ' . $e->getMessage());
-            
+            Log::error('IWTC - Preview error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return [
-                'has_warnings' => false,
-                'warning_count' => 0,
-                'auto_fixed_count' => 0,
-                'warnings' => [],
-                'summary' => 'Gagal validasi proporsi: ' . $e->getMessage()
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat preview: ' . $e->getMessage()
             ];
         }
     }
 
     /**
-     * ✅ MAINTAINED: Cancel import and cleanup
+     * Execute import Witel Target Revenue BILL
+     * 
+     * Imports data to witel_target_revenues table with upsert logic
+     * 
+     * @param string $tempFilePath Path to uploaded CSV file
+     * @param string $filterType Filter type: 'all', 'new', or 'update'
+     * @return array Import result
      */
-    public function cancelImport(Request $request)
+    public function executeWitelTarget($tempFilePath, $filterType = 'all')
+    {
+        DB::beginTransaction();
+
+        try {
+            Log::info('IWTC - Executing Witel Target Revenue BILL import', [
+                'file_path' => $tempFilePath,
+                'filter_type' => $filterType
+            ]);
+
+            if (!file_exists($tempFilePath)) {
+                return [
+                    'success' => false,
+                    'message' => 'File tidak ditemukan'
+                ];
+            }
+
+            // Read CSV
+            $csv = Reader::createFromPath($tempFilePath, 'r');
+            $csv->setHeaderOffset(0);
+            $records = iterator_to_array($csv->getRecords());
+
+            // Get master data
+            $witels = Witel::pluck('id', 'nama')->toArray();
+            $divisiMap = Divisi::pluck('id', 'kode')->toArray();
+
+            // Process records
+            $stats = [
+                'total_rows' => count($records),
+                'processed' => 0,
+                'inserted' => 0,
+                'updated' => 0,
+                'skipped' => 0,
+                'errors' => 0
+            ];
+
+            $errors = [];
+
+            foreach ($records as $index => $record) {
+                $rowNumber = $index + 2;
+
+                try {
+                    // Clean data
+                    $witelName = trim($record['WITEL_NAME'] ?? '');
+                    $divisiKode = strtoupper(trim($record['DIVISI'] ?? ''));
+                    $targetRevenueBill = $this->parseDecimal($record['TARGET_REVENUE_BILL'] ?? '0');
+                    $year = (int) ($record['YEAR'] ?? 0);
+                    $month = (int) ($record['MONTH'] ?? 0);
+
+                    // Skip if invalid
+                    if (empty($witelName) || !isset($witels[$witelName])) {
+                        $stats['skipped']++;
+                        continue;
+                    }
+
+                    if (empty($divisiKode) || !in_array($divisiKode, ['DPS', 'DSS']) || !isset($divisiMap[$divisiKode])) {
+                        $stats['skipped']++;
+                        continue;
+                    }
+
+                    if ($year < 2000 || $year > 2099 || $month < 1 || $month > 12) {
+                        $stats['skipped']++;
+                        continue;
+                    }
+
+                    $witelId = $witels[$witelName];
+                    $divisiId = $divisiMap[$divisiKode];
+
+                    // Check if exists
+                    $existing = WitelTargetRevenue::where('witel_id', $witelId)
+                        ->where('divisi_id', $divisiId)
+                        ->where('tahun', $year)
+                        ->where('bulan', $month)
+                        ->first();
+
+                    $isUpdate = $existing !== null;
+
+                    // Apply filter
+                    if ($filterType === 'new' && $isUpdate) {
+                        $stats['skipped']++;
+                        continue;
+                    }
+
+                    if ($filterType === 'update' && !$isUpdate) {
+                        $stats['skipped']++;
+                        continue;
+                    }
+
+                    // Upsert
+                    WitelTargetRevenue::updateOrCreate(
+                        [
+                            'witel_id' => $witelId,
+                            'divisi_id' => $divisiId,
+                            'tahun' => $year,
+                            'bulan' => $month
+                        ],
+                        [
+                            'target_revenue_bill' => $targetRevenueBill
+                        ]
+                    );
+
+                    if ($isUpdate) {
+                        $stats['updated']++;
+                    } else {
+                        $stats['inserted']++;
+                    }
+
+                    $stats['processed']++;
+
+                } catch (\Exception $e) {
+                    Log::error('IWTC - Error processing row', [
+                        'row' => $rowNumber,
+                        'error' => $e->getMessage()
+                    ]);
+
+                    $errors[] = [
+                        'row' => $rowNumber,
+                        'error' => $e->getMessage()
+                    ];
+
+                    $stats['errors']++;
+                }
+            }
+
+            DB::commit();
+
+            Log::info('IWTC - Import completed', [
+                'stats' => $stats
+            ]);
+
+            $message = sprintf(
+                'Import selesai: %d diproses, %d baru, %d diupdate, %d diskip, %d error',
+                $stats['processed'],
+                $stats['inserted'],
+                $stats['updated'],
+                $stats['skipped'],
+                $stats['errors']
+            );
+
+            return [
+                'success' => true,
+                'message' => $message,
+                'stats' => $stats,
+                'errors' => array_slice($errors, 0, 20) // Limit to 20 errors
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('IWTC - Execute import error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Import gagal: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Get import summary/statistics
+     * 
+     * Returns current state of witel target revenues
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getSummary(Request $request)
     {
         try {
-            $sessionId = $request->input('session_id');
+            $year = $request->input('year', date('Y'));
+            $month = $request->input('month', date('n'));
 
-            if (!$sessionId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Session ID tidak ditemukan'
-                ], 400);
-            }
+            $summary = WitelTargetRevenue::with(['witel', 'divisi'])
+                ->where('tahun', $year)
+                ->where('bulan', $month)
+                ->get()
+                ->groupBy('divisi.kode')
+                ->map(function($items, $divisiKode) {
+                    return [
+                        'divisi' => $divisiKode,
+                        'witel_count' => $items->count(),
+                        'total_target' => $items->sum('target_revenue_bill'),
+                        'avg_target' => $items->avg('target_revenue_bill'),
+                        'min_target' => $items->min('target_revenue_bill'),
+                        'max_target' => $items->max('target_revenue_bill')
+                    ];
+                });
 
-            // Get temp file path
-            $sessionData = session("import_session_{$sessionId}");
-            $tempFilePath = $sessionData['temp_file_path'] ?? Cache::get("merged_file_{$sessionId}");
-
-            // Delete temp file
-            if ($tempFilePath && file_exists($tempFilePath)) {
-                unlink($tempFilePath);
-                Log::info('Deleted temp file on cancel', ['file_path' => $tempFilePath]);
-            }
-
-            // Delete chunks directory
-            $chunkDir = storage_path(self::TEMP_CHUNKS_DIR . "/{$sessionId}");
-            if (is_dir($chunkDir)) {
-                $this->deleteDirectory($chunkDir);
-                Log::info('Deleted chunk directory', ['dir' => $chunkDir]);
-            }
-
-            // Clear session & cache
-            session()->forget("import_session_{$sessionId}");
-            Cache::forget("merged_file_{$sessionId}");
-            Cache::forget("chunk_metadata_{$sessionId}");
+            $totalRecords = WitelTargetRevenue::where('tahun', $year)
+                ->where('bulan', $month)
+                ->count();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Import dibatalkan dan file temporary dihapus'
+                'year' => $year,
+                'month' => $month,
+                'total_records' => $totalRecords,
+                'summary_by_divisi' => $summary->values()
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Cancel import error: ' . $e->getMessage());
+            Log::error('IWTC - Get summary error', [
+                'error' => $e->getMessage()
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal membatalkan import: ' . $e->getMessage()
+                'message' => 'Gagal get summary: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * ✅ MAINTAINED: Health check
+     * Delete witel target revenues by period
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteByPeriod(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'year' => 'required|integer|min:2000|max:2099',
+                'month' => 'required|integer|min:1|max:12',
+                'divisi_id' => 'nullable|exists:divisi,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $year = $request->input('year');
+            $month = $request->input('month');
+            $divisiId = $request->input('divisi_id');
+
+            $query = WitelTargetRevenue::where('tahun', $year)
+                ->where('bulan', $month);
+
+            if ($divisiId) {
+                $query->where('divisi_id', $divisiId);
+            }
+
+            $count = $query->count();
+            $query->delete();
+
+            Log::info('IWTC - Deleted witel target revenues', [
+                'year' => $year,
+                'month' => $month,
+                'divisi_id' => $divisiId,
+                'deleted_count' => $count
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil menghapus {$count} record",
+                'deleted_count' => $count
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('IWTC - Delete error', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export witel target revenues to CSV
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function exportToCSV(Request $request)
+    {
+        try {
+            $year = $request->input('year', date('Y'));
+            $month = $request->input('month', date('n'));
+            $divisiId = $request->input('divisi_id');
+
+            $query = WitelTargetRevenue::with(['witel', 'divisi'])
+                ->where('tahun', $year)
+                ->where('bulan', $month);
+
+            if ($divisiId) {
+                $query->where('divisi_id', $divisiId);
+            }
+
+            $data = $query->orderBy('witel_id')->orderBy('divisi_id')->get();
+
+            // Create CSV
+            $csv = Writer::createFromString('');
+            $csv->setOutputBOM(Writer::BOM_UTF8);
+
+            // Header
+            $csv->insertOne([
+                'WITEL_NAME',
+                'DIVISI',
+                'TARGET_REVENUE_BILL',
+                'YEAR',
+                'MONTH'
+            ]);
+
+            // Data rows
+            foreach ($data as $record) {
+                $csv->insertOne([
+                    $record->witel->nama ?? 'N/A',
+                    $record->divisi->kode ?? 'N/A',
+                    $record->target_revenue_bill,
+                    $record->tahun,
+                    $record->bulan
+                ]);
+            }
+
+            $filename = "witel_target_revenue_{$year}_{$month}_" . date('Ymd_His') . '.csv';
+
+            Log::info('IWTC - Exported witel target revenues', [
+                'year' => $year,
+                'month' => $month,
+                'record_count' => $data->count()
+            ]);
+
+            return Response::make($csv->toString(), 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('IWTC - Export error', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal export data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Validate import file
+     * 
+     * Quick validation without full preview
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function validateFile(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'file' => 'required|file|mimes:csv,txt|max:10240' // Max 10MB
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi file gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $file = $request->file('file');
+            
+            // Basic checks
+            $csv = Reader::createFromPath($file->getRealPath(), 'r');
+            $csv->setHeaderOffset(0);
+            
+            $headers = $csv->getHeader();
+            $recordCount = iterator_count($csv->getRecords());
+
+            $requiredHeaders = ['WITEL_NAME', 'DIVISI', 'TARGET_REVENUE_BILL', 'YEAR', 'MONTH'];
+            $missingHeaders = array_diff($requiredHeaders, $headers);
+
+            if (!empty($missingHeaders)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Header tidak lengkap',
+                    'missing_headers' => $missingHeaders
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'File valid',
+                'record_count' => $recordCount,
+                'headers' => $headers
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('IWTC - Validate file error', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi file gagal: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // =====================================================
+    // HELPER METHODS
+    // =====================================================
+
+    /**
+     * Parse decimal value from string
+     * 
+     * Handles various formats:
+     * - "1000000" → 1000000.00
+     * - "1,000,000" → 1000000.00
+     * - "1.000.000,00" (European) → 1000000.00
+     * - "1000000.50" → 1000000.50
+     * 
+     * @param string $value
+     * @return float
+     */
+    private function parseDecimal($value)
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        // Remove all non-numeric except dot and comma
+        $cleaned = preg_replace('/[^\d.,]/', '', $value);
+
+        // Handle European format (1.000.000,00)
+        if (substr_count($cleaned, '.') > 1 || (strpos($cleaned, '.') !== false && strpos($cleaned, ',') !== false && strpos($cleaned, '.') < strrpos($cleaned, ','))) {
+            $cleaned = str_replace('.', '', $cleaned);
+            $cleaned = str_replace(',', '.', $cleaned);
+        } else {
+            // Handle US format (1,000,000.00)
+            $cleaned = str_replace(',', '', $cleaned);
+        }
+
+        return (float) $cleaned;
+    }
+
+    /**
+     * Format number to Indonesian rupiah format
+     * 
+     * @param float $number
+     * @return string
+     */
+    private function formatRupiah($number)
+    {
+        return 'Rp ' . number_format($number, 0, ',', '.');
+    }
+
+    /**
+     * Get month name in Indonesian
+     * 
+     * @param int $month 1-12
+     * @return string
+     */
+    private function getMonthName($month)
+    {
+        $months = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        return $months[$month] ?? 'Unknown';
+    }
+
+    /**
+     * Health check endpoint
+     * 
+     * @return \Illuminate\Http\JsonResponse
      */
     public function health()
     {
         return response()->json([
             'success' => true,
-            'message' => 'Revenue Import Controller is healthy',
-            'timestamp' => now()->toIso8601String()
+            'message' => 'Import Witel Target Controller is healthy',
+            'timestamp' => now()->toIso8601String(),
+            'version' => '1.0.0'
         ]);
-    }
-
-    // =====================================================
-    // HELPER METHODS (MAINTAINED)
-    // =====================================================
-
-    private function getChunkMetadata($sessionId)
-    {
-        return Cache::get("chunk_metadata_{$sessionId}");
-    }
-
-    private function saveChunkMetadata($sessionId, $metadata)
-    {
-        Cache::put("chunk_metadata_{$sessionId}", $metadata, now()->addSeconds(self::CHUNK_TIMEOUT));
-    }
-
-    private function mergeChunks($sessionId, $totalChunks, $metadata)
-    {
-        try {
-            $chunkDir = storage_path(self::TEMP_CHUNKS_DIR . "/{$sessionId}");
-            $mergedFilePath = storage_path("app/temp/merged_{$sessionId}.csv");
-
-            if (!file_exists(storage_path('app/temp'))) {
-                mkdir(storage_path('app/temp'), 0755, true);
-            }
-
-            $mergedFile = fopen($mergedFilePath, 'w');
-            $headerWritten = false;
-
-            for ($i = 0; $i < $totalChunks; $i++) {
-                $paddedIndex = str_pad($i, 4, '0', STR_PAD_LEFT);
-                $chunkPath = "{$chunkDir}/chunk_{$paddedIndex}.csv";
-
-                if (!file_exists($chunkPath)) {
-                    Log::error("Chunk file not found", ['chunk' => $i, 'path' => $chunkPath]);
-                    fclose($mergedFile);
-                    return null;
-                }
-
-                $chunkFile = fopen($chunkPath, 'r');
-                $isFirstChunk = $metadata['chunks_info'][$i]['is_first'] ?? false;
-
-                while (($line = fgets($chunkFile)) !== false) {
-                    // Write header only once (from first chunk)
-                    if (!$headerWritten && $isFirstChunk) {
-                        fwrite($mergedFile, $line);
-                        $headerWritten = true;
-                    } elseif ($headerWritten) {
-                        // Skip header rows from subsequent chunks
-                        $trimmed = trim($line);
-                        if (empty($trimmed)) continue;
-                        
-                        // Simple heuristic: if line contains common header keywords, skip
-                        $upperLine = strtoupper($line);
-                        if (strpos($upperLine, 'NIPNAS') !== false || 
-                            strpos($upperLine, 'NIK') !== false ||
-                            strpos($upperLine, 'YEAR') !== false) {
-                            continue;
-                        }
-                        
-                        fwrite($mergedFile, $line);
-                    }
-                }
-
-                fclose($chunkFile);
-            }
-
-            fclose($mergedFile);
-
-            // Cleanup chunks directory
-            $this->deleteDirectory($chunkDir);
-            Cache::forget("chunk_metadata_{$sessionId}");
-
-            Log::info('Chunks merged successfully', [
-                'session_id' => $sessionId,
-                'merged_file' => $mergedFilePath,
-                'total_chunks' => $totalChunks
-            ]);
-
-            return $mergedFilePath;
-
-        } catch (\Exception $e) {
-            Log::error('Merge chunks error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            return null;
-        }
-    }
-
-    private function deleteDirectory($dir)
-    {
-        if (!is_dir($dir)) {
-            return false;
-        }
-
-        $files = array_diff(scandir($dir), ['.', '..']);
-        
-        foreach ($files as $file) {
-            $path = "$dir/$file";
-            is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
-        }
-
-        return rmdir($dir);
     }
 }

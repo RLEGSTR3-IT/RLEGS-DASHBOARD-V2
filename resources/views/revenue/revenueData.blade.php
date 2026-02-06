@@ -6230,228 +6230,15 @@ $(document).ready(function() {
 });
 
 
-  // ========================================
-  // ✅ FIXED: showPreviewModal - Handle Multiple Response Structures
-  // ========================================
-  function showPreviewModal(data, importType) {
-    console.log('📊 showPreviewModal called with:', {
-        importType: importType,
-        hasData: !!data,
-        dataKeys: data ? Object.keys(data) : []
-    });
 
-    // ✅ FIX #1: Validate data exists
-    if (!data) {
-        console.error('❌ Preview data is undefined or null');
-        alert('Terjadi kesalahan: Data preview tidak tersedia');
-        return;
-    }
-
-    // ✅ FIX #2: Handle multiple response structures (summary/stats/statistics)
-    const summary = data.summary || data.stats || data.statistics || {};
-    
-    console.log('📊 Summary extracted:', summary);
-
-    // ✅ FIX #3: Validate summary is not empty
-    if (!summary || Object.keys(summary).length === 0) {
-        console.error('❌ No valid summary found in response:', {
-            hasSummary: !!data.summary,
-            hasStats: !!data.stats,
-            hasStatistics: !!data.statistics,
-            dataKeys: Object.keys(data)
-        });
-        alert('Terjadi kesalahan: Data summary tidak tersedia atau kosong');
-        return;
-    }
-
-    // ✅ FIX #4: Normalize field names based on import type
-    let normalizedSummary = {
-        total_rows: summary.total_rows || 0,
-        new_count: 0,
-        update_count: 0,
-        error_count: 0,
-        unique_count: 0
-    };
-
-    // ✅ FIX #5: Handle different field names per import type
-    if (importType === 'data_am') {
-        // Data AM uses: new_ams, existing_ams, duplicate_niks, multi_divisi_ams
-        normalizedSummary.new_count = summary.new_ams || summary.new_count || summary.created_count || 0;
-        normalizedSummary.update_count = summary.existing_ams || summary.update_count || summary.updated_count || 0;
-        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
-        normalizedSummary.unique_count = summary.unique_am_count || 0;
-        normalizedSummary.multi_divisi_count = summary.multi_divisi_ams || 0;
-        normalizedSummary.duplicate_count = summary.duplicate_niks || 0;
-    } else if (importType === 'data_cc') {
-        // Data CC uses: new_cc, existing_cc
-        normalizedSummary.new_count = summary.new_cc || summary.new_count || summary.created_count || 0;
-        normalizedSummary.update_count = summary.existing_cc || summary.update_count || summary.updated_count || 0;
-        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
-        normalizedSummary.unique_count = summary.unique_cc_count || 0;
-    } else if (importType === 'revenue_cc') {
-        // Revenue CC uses: new_count, update_count
-        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
-        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
-        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
-        normalizedSummary.unique_count = summary.unique_cc_count || 0;
-    } else if (importType === 'revenue_am') {
-        // Revenue AM uses: new_count, update_count
-        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
-        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
-        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
-        normalizedSummary.unique_count = summary.unique_am_count || 0;
-    } else {
-        // Generic fallback
-        normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
-        normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
-        normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
-    }
-
-    console.log('✅ Summary normalized:', normalizedSummary);
-
-    // Store preview data globally
-    previewData = data;
-
-    let summaryHTML = '';
-
-    // Total Rows Card
-    summaryHTML += `
-      <div class="preview-card total">
-        <div class="icon"><i class="fa-solid fa-file-lines"></i></div>
-        <h3>${normalizedSummary.total_rows}</h3>
-        <p>Total Baris Data</p>
-      </div>
-    `;
-
-    // Unique Count Card (varies by import type)
-    if (normalizedSummary.unique_count > 0) {
-        let uniqueLabel = 'Unique Records';
-        let uniqueIcon = 'fa-solid fa-fingerprint';
-        
-        if (importType === 'revenue_cc' || importType === 'data_cc') {
-            uniqueLabel = 'Corporate Customer';
-            uniqueIcon = 'fa-solid fa-building';
-        } else if (importType === 'revenue_am' || importType === 'data_am') {
-            uniqueLabel = 'Account Manager';
-            uniqueIcon = 'fa-solid fa-user-tie';
-        }
-        
-        summaryHTML += `
-          <div class="preview-card unique">
-            <div class="icon"><i class="${uniqueIcon}"></i></div>
-            <h3>${normalizedSummary.unique_count}</h3>
-            <p>${uniqueLabel}</p>
-          </div>
-        `;
-    }
-
-    // Update Count Card
-    summaryHTML += `
-      <div class="preview-card update">
-        <div class="icon"><i class="fa-solid fa-edit"></i></div>
-        <h3>${normalizedSummary.update_count}</h3>
-        <p>Akan Di-update</p>
-      </div>
-    `;
-
-    // New Count Card
-    summaryHTML += `
-      <div class="preview-card new">
-        <div class="icon"><i class="fa-solid fa-plus"></i></div>
-        <h3>${normalizedSummary.new_count}</h3>
-        <p>Data Baru</p>
-      </div>
-    `;
-
-    // Error/Conflict Card
-    summaryHTML += `
-      <div class="preview-card conflict">
-        <div class="icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
-        <h3>${normalizedSummary.error_count}</h3>
-        <p>Error/Konflik</p>
-      </div>
-    `;
-
-    $('#previewSummary').html(summaryHTML);
-
-    // Calculate counts safely
-    const totalCount = normalizedSummary.new_count + normalizedSummary.update_count;
-    const newCount = normalizedSummary.new_count;
-    const updateCount = normalizedSummary.update_count;
-    const errorCount = normalizedSummary.error_count;
-
-    // Update badge counts
-    $('#badgeAllCount').text(`${totalCount} data`);
-    $('#badgeNewCount').text(`${newCount} data`);
-    $('#badgeUpdateCount').text(`${updateCount} data`);
-
-    // Enable/disable import buttons
-    $('#btnImportAll').prop('disabled', totalCount === 0);
-    $('#btnImportNew').prop('disabled', newCount === 0);
-    $('#btnImportUpdate').prop('disabled', updateCount === 0);
-
-    // Show/hide error info
-    if (errorCount > 0) {
-        $('#errorMessage').text(`${errorCount} baris data mengandung error dan akan diskip.`);
-        $('#errorInfo').show();
-    } else {
-        $('#errorInfo').hide();
-    }
-
-    // Handle large dataset info
-    const previewInfo = $('#previewInfo');
-    if (data.full_data_stored && totalCount > 100) {
-        previewInfo.html(`
-          <div class="alert alert-info">
-            <i class="fa-solid fa-info-circle me-2"></i>
-            <strong>Info:</strong> Dataset besar terdeteksi (${totalCount} data). 
-            Import akan memproses semua data sesuai filter yang dipilih.
-          </div>
-        `);
-        previewInfo.show();
-    } else {
-        previewInfo.hide();
-    }
-
-    // Additional info for Data AM
-    if (importType === 'data_am' && normalizedSummary.multi_divisi_count > 0) {
-        const existingInfo = previewInfo.html() || '';
-        previewInfo.html(existingInfo + `
-          <div class="alert alert-success mt-2">
-            <i class="fa-solid fa-sitemap me-2"></i>
-            <strong>Info:</strong> ${normalizedSummary.multi_divisi_count} AM dengan multiple divisi terdeteksi.
-          </div>
-        `);
-        previewInfo.show();
-    }
-
-    // Show modal
-    try {
-        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
-        modal.show();
-
-        console.log('✅ Preview modal shown successfully', {
-            importType,
-            totalCount,
-            newCount,
-            updateCount,
-            errorCount,
-            originalSummary: summary,
-            normalizedSummary: normalizedSummary
-        });
-    } catch (error) {
-        console.error('❌ Error showing modal:', error);
-        alert('Error: Gagal menampilkan preview modal - ' + error.message);
-    }
-}
-
-  // ============================================================================
-// 🔧 FIXED FUNCTION #4 (FINAL REVISION): showPreviewModal()
-// ============================================================================
-// Location: Line ~6194
-// Priority: HIGH
-// Issue: Missing field name mapping for revenue_am
-// ============================================================================
+/**
+ * ================================================================
+ * ✅ FINAL COMPLETE: showPreviewModal() - ALL IMPORT TYPES
+ * ================================================================
+ * Supports: data_am, data_cc, revenue_am, revenue_cc, target_witel
+ * Replace BOTH duplicate functions with this single version
+ * ================================================================
+ */
 
 function showPreviewModal(data, importType) {
     console.log('📊 showPreviewModal called with:', {
@@ -6493,8 +6280,16 @@ function showPreviewModal(data, importType) {
         unique_count: 0
     };
 
+    // ✅ CRITICAL: Debug import type matching
+    console.log('🔍 Import type check:', {
+        importType: importType,
+        typeOf: typeof importType,
+        is_target_witel: importType === 'target_witel'
+    });
+
     // ✅ FIX #5: Handle different field names per import type
     if (importType === 'data_am') {
+        console.log('✅ Matched: data_am');
         // Data AM uses: new_ams, existing_ams, duplicate_niks, multi_divisi_ams
         normalizedSummary.new_count = summary.new_ams || summary.new_count || summary.created_count || 0;
         normalizedSummary.update_count = summary.existing_ams || summary.update_count || summary.updated_count || 0;
@@ -6504,6 +6299,7 @@ function showPreviewModal(data, importType) {
         normalizedSummary.duplicate_count = summary.duplicate_niks || 0;
         
     } else if (importType === 'data_cc') {
+        console.log('✅ Matched: data_cc');
         // Data CC uses: new_cc, existing_cc
         normalizedSummary.new_count = summary.new_cc || summary.new_count || summary.created_count || 0;
         normalizedSummary.update_count = summary.existing_cc || summary.update_count || summary.updated_count || 0;
@@ -6511,7 +6307,8 @@ function showPreviewModal(data, importType) {
         normalizedSummary.unique_count = summary.unique_cc_count || 0;
         
     } else if (importType === 'revenue_am') {
-        // ✅ NEW: Revenue AM uses: new_mappings, existing_mappings, invalid_proporsi
+        console.log('✅ Matched: revenue_am');
+        // Revenue AM uses: new_mappings, existing_mappings, invalid_proporsi
         normalizedSummary.new_count = summary.new_mappings || summary.new_count || summary.created_count || 0;
         normalizedSummary.update_count = summary.existing_mappings || summary.update_count || summary.updated_count || 0;
         normalizedSummary.error_count = summary.error_count || summary.failed_count || summary.invalid_proporsi || 0;
@@ -6519,13 +6316,32 @@ function showPreviewModal(data, importType) {
         normalizedSummary.unique_cc_count = summary.unique_cc_count || summary.total_cc_count || 0;
         
     } else if (importType === 'revenue_cc') {
+        console.log('✅ Matched: revenue_cc');
         // Revenue CC uses: new_count, update_count
         normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
         normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
         normalizedSummary.error_count = summary.error_count || summary.failed_count || 0;
         normalizedSummary.unique_count = summary.unique_cc_count || 0;
         
+    } else if (importType === 'target_witel') {
+        console.log('🎯 Matched: target_witel');
+        // ✅ CRITICAL FIX: Target Witel uses: will_insert, will_update, valid_rows, invalid_rows
+        normalizedSummary.new_count = summary.will_insert || summary.new_count || summary.created_count || 0;
+        normalizedSummary.update_count = summary.will_update || summary.update_count || summary.updated_count || 0;
+        normalizedSummary.error_count = summary.invalid_rows || summary.error_count || summary.failed_count || 0;
+        normalizedSummary.unique_count = summary.valid_rows || 0;
+        
+        console.log('🎯 target_witel mapping:', {
+            will_insert: summary.will_insert,
+            will_update: summary.will_update,
+            invalid_rows: summary.invalid_rows,
+            valid_rows: summary.valid_rows,
+            new_count: normalizedSummary.new_count,
+            update_count: normalizedSummary.update_count
+        });
+        
     } else {
+        console.warn('⚠️ No match, using generic fallback for:', importType);
         // Generic fallback
         normalizedSummary.new_count = summary.new_count || summary.created_count || 0;
         normalizedSummary.update_count = summary.update_count || summary.updated_count || 0;
@@ -6579,6 +6395,9 @@ function showPreviewModal(data, importType) {
         } else if (importType === 'data_am') {
             uniqueLabel = 'Account Manager';
             uniqueIcon = 'fa-solid fa-user-tie';
+        } else if (importType === 'target_witel') {
+            uniqueLabel = 'Valid Rows';
+            uniqueIcon = 'fa-solid fa-check-circle';
         }
         
         summaryHTML += `
@@ -6590,21 +6409,21 @@ function showPreviewModal(data, importType) {
         `;
     }
 
-    // Update Count Card
-    summaryHTML += `
-      <div class="preview-card update">
-        <div class="icon"><i class="fa-solid fa-edit"></i></div>
-        <h3>${normalizedSummary.update_count}</h3>
-        <p>Akan Di-update</p>
-      </div>
-    `;
-
     // New Count Card
     summaryHTML += `
       <div class="preview-card new">
         <div class="icon"><i class="fa-solid fa-plus"></i></div>
         <h3>${normalizedSummary.new_count}</h3>
         <p>Data Baru</p>
+      </div>
+    `;
+
+    // Update Count Card
+    summaryHTML += `
+      <div class="preview-card update">
+        <div class="icon"><i class="fa-solid fa-edit"></i></div>
+        <h3>${normalizedSummary.update_count}</h3>
+        <p>Akan Di-update</p>
       </div>
     `;
 
@@ -6625,6 +6444,13 @@ function showPreviewModal(data, importType) {
     const updateCount = normalizedSummary.update_count;
     const errorCount = normalizedSummary.error_count;
 
+    console.log('📊 Final counts:', {
+        totalCount: totalCount,
+        newCount: newCount,
+        updateCount: updateCount,
+        errorCount: errorCount
+    });
+
     // Update badge counts
     $('#badgeAllCount').text(`${totalCount} data`);
     $('#badgeNewCount').text(`${newCount} data`);
@@ -6634,6 +6460,12 @@ function showPreviewModal(data, importType) {
     $('#btnImportAll').prop('disabled', totalCount === 0);
     $('#btnImportNew').prop('disabled', newCount === 0);
     $('#btnImportUpdate').prop('disabled', updateCount === 0);
+
+    console.log('🔘 Button states:', {
+        btnImportAll_disabled: totalCount === 0,
+        btnImportNew_disabled: newCount === 0,
+        btnImportUpdate_disabled: updateCount === 0
+    });
 
     // Show/hide error info
     if (errorCount > 0) {
@@ -6689,6 +6521,7 @@ function showPreviewModal(data, importType) {
         alert('Error: Gagal menampilkan preview modal - ' + error.message);
     }
 }
+
 
 
 
@@ -6894,8 +6727,9 @@ function showPreviewModal(data, importType) {
     });
 }
 
+
 // ========================================
-// ✅ EXECUTE IMPORT WITH FILTER
+// ✅ EXECUTE IMPORT WITH FILTER - COMPLETE & FINAL
 // ========================================
 function executeImportWithFilter(filterType) {
     console.log('🎯 executeImportWithFilter called with:', filterType);
@@ -6924,6 +6758,7 @@ function executeImportWithFilter(filterType) {
         let newCount = 0;
         let updateCount = 0;
         
+        // ✅ Handle different field names per import type
         if (currentImportType === 'data_am') {
             newCount = summary.new_ams || summary.new_count || summary.created_count || 0;
             updateCount = summary.existing_ams || summary.update_count || summary.updated_count || 0;
@@ -6936,6 +6771,16 @@ function executeImportWithFilter(filterType) {
         } else if (currentImportType === 'revenue_cc') {
             newCount = summary.new_count || summary.created_count || 0;
             updateCount = summary.update_count || summary.updated_count || 0;
+        } else if (currentImportType === 'target_witel') {
+            // ✅ NEW: Target Witel uses will_insert and will_update
+            newCount = summary.will_insert || summary.new_count || summary.created_count || 0;
+            updateCount = summary.will_update || summary.update_count || summary.updated_count || 0;
+            console.log('🎯 target_witel counts extracted:', {
+                will_insert: summary.will_insert,
+                will_update: summary.will_update,
+                newCount: newCount,
+                updateCount: updateCount
+            });
         } else {
             newCount = summary.new_count || summary.created_count || 0;
             updateCount = summary.update_count || summary.updated_count || 0;
@@ -7001,7 +6846,8 @@ function executeImportWithFilter(filterType) {
             import_type: currentImportType
         };
 
-        if (currentImportType === 'revenue_am' || currentImportType === 'revenue_cc') {
+        // ✅ Add year/month for revenue imports and target_witel
+        if (currentImportType === 'revenue_am' || currentImportType === 'revenue_cc' || currentImportType === 'target_witel') {
             if (!currentImportYear || !currentImportMonth) {
                 console.error('❌ Year/Month missing for revenue import:', {
                     year: currentImportYear,
@@ -7021,6 +6867,7 @@ function executeImportWithFilter(filterType) {
             });
         }
 
+        // ✅ Add Revenue CC specific params
         if (currentImportType === 'revenue_cc') {
             if (!currentImportDivisiId || !currentImportTipeRevenue || !currentImportJenisData) {
                 console.error('❌ Revenue CC parameters missing:', {
@@ -7040,6 +6887,25 @@ function executeImportWithFilter(filterType) {
                 divisi_id: payload.divisi_id,
                 tipe_revenue: payload.tipe_revenue,
                 jenis_data: payload.jenis_data
+            });
+        }
+
+        // ✅ Add Target Witel specific params
+        if (currentImportType === 'target_witel') {
+            if (!currentImportDivisiId) {
+                console.error('❌ Target Witel divisi_id missing:', {
+                    divisi_id: currentImportDivisiId
+                });
+                hideProgressSnackbar();
+                alert('Error: Divisi ID tidak tersedia. Silakan upload ulang.');
+                return;
+            }
+            payload.divisi_id = currentImportDivisiId;
+            
+            console.log('✅ Added Target Witel params to payload:', {
+                divisi_id: payload.divisi_id,
+                year: payload.year,
+                month: payload.month
             });
         }
 
@@ -7133,6 +6999,8 @@ function executeImportWithFilter(filterType) {
         alert('Error: Terjadi kesalahan tidak terduga - ' + error.message);
     }
 }
+
+
 
 // ========================================
 // ✅ BUTTON EVENT HANDLERS FOR IMPORT

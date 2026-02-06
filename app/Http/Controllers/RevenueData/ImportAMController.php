@@ -19,23 +19,21 @@ use Carbon\Carbon;
 
 /**
  * ============================================================================
- * ImportAMController - V2 WITH AUTO REVENUE CALCULATION
+ * ImportAMController - V3.2 COMPLETE FIXED
  * ============================================================================
  * 
- * Date: 2026-02-05
- * Version: 3.1 - AUTO REVENUE CALCULATION
+ * Date: 2026-02-06
+ * Version: 3.2 - CRITICAL FIXES
  * 
- * NEW FEATURES:
- * ✅ AUTO-CALCULATE target_revenue & real_revenue from CC Revenue
- * ✅ Formula: CC.real_revenue_sold × proporsi = AM.real_revenue
- * ✅ Formula: CC.target_revenue_sold × proporsi = AM.target_revenue
- * 
- * CRITICAL FIXES (from V3.0):
- * ✅ Template downloads as CSV (not Excel)
- * ✅ Revenue AM template has NO BULAN/TAHUN columns
- * ✅ executeRevenueAM() accepts year/month from form parameters
- * ✅ Business rule validation for telda_id (AM vs HOTDA)
- * ✅ Consistent error response format
+ * CRITICAL FIXES:
+ * ✅ Changed Storage::disk('local')->exists() to file_exists() for absolute paths
+ * ✅ Fixed file path checking in ALL methods (preview & execute)
+ * ✅ Enhanced multi-divisi handling in account_manager_divisi table
+ * ✅ Supports 3 divisi input formats:
+ *    1. "DPS, DSS" (comma with space)
+ *    2. "DPS,DSS" (comma without space)
+ *    3. Multiple rows with same NIK but different DIVISI
+ * ✅ Auto-sync account_manager_divisi pivot table
  * 
  * BUSINESS RULES:
  * - AM role: telda_id MUST be NULL
@@ -43,9 +41,10 @@ use Carbon\Carbon;
  * - Proporsi: 0.0 - 1.0 decimal
  * - Total proporsi per CC = 1.0
  * - Revenue auto-calculated from CC Revenue
+ * - Max 3 divisi per AM (DGS, DPS, DSS)
  * 
  * @author RLEGS Team
- * @version 3.1 - Auto Revenue Calculation
+ * @version 3.2 - Complete Fixed
  * ============================================================================
  */
 class ImportAMController extends Controller
@@ -71,6 +70,7 @@ class ImportAMController extends Controller
                 $csvContent .= "3. DIVISI AM: AM atau HOTDA\n";
                 $csvContent .= "4. DIVISI: DGS, DSS, atau DPS (bisa kombinasi dengan koma)\n";
                 $csvContent .= "5. TELDA: Wajib diisi untuk HOTDA, kosongkan untuk AM\n";
+                $csvContent .= "6. Maksimal 3 divisi per AM\n";
                 
                 return response($csvContent, 200)
                     ->header('Content-Type', 'text/csv')
@@ -117,28 +117,40 @@ class ImportAMController extends Controller
     }
 
     /**
-     * Preview Data AM import (NO CHANGES - Same as V3.0)
+     * ============================================================================
+     * ✅ FIXED: Preview Data AM - Absolute Path Support
+     * ============================================================================
      */
     public function previewDataAM($tempFilePath)
     {
         try {
-            if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json([
+            Log::info('IAMC - Preview Data AM called', [
+                'temp_file_path' => $tempFilePath,
+                'file_exists' => file_exists($tempFilePath)
+            ]);
+
+            // ✅ FIX: Use file_exists() instead of Storage::disk('local')->exists()
+            if (!file_exists($tempFilePath)) {
+                Log::error('IAMC - File not found', [
+                    'expected_path' => $tempFilePath
+                ]);
+                
+                return [
                     'success' => false,
                     'message' => 'File tidak ditemukan'
-                ], 404);
+                ];
             }
 
-            $fullPath = Storage::disk('local')->path($tempFilePath);
-            $spreadsheet = IOFactory::load($fullPath);
+            // ✅ Use $tempFilePath directly (it's already absolute path)
+            $spreadsheet = IOFactory::load($tempFilePath);
             $sheet = $spreadsheet->getActiveSheet();
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json([
+                return [
                     'success' => false,
                     'message' => 'File kosong atau tidak memiliki data'
-                ], 400);
+                ];
             }
 
             $expectedHeaders = ['NIK', 'NAMA AM', 'WITEL AM', 'DIVISI AM', 'REGIONAL', 'DIVISI', 'TELDA'];
@@ -146,10 +158,10 @@ class ImportAMController extends Controller
 
             $missingHeaders = array_diff($expectedHeaders, $actualHeaders);
             if (!empty($missingHeaders)) {
-                return response()->json([
+                return [
                     'success' => false,
                     'message' => 'Header tidak sesuai. Header yang hilang: ' . implode(', ', $missingHeaders)
-                ], 400);
+                ];
             }
 
             $previewData = [];
@@ -161,11 +173,15 @@ class ImportAMController extends Controller
                 'new_ams' => 0,
                 'existing_ams' => 0,
                 'multi_divisi_ams' => 0,
+                'unique_am_count' => 0
             ];
 
             $columnIndices = $this->getColumnIndices($actualHeaders, $expectedHeaders);
 
+            // ✅ ENHANCED: Group by NIK first to handle multi-divisi
             $nikOccurrences = [];
+            $uniqueNiks = [];
+            
             foreach (array_slice($data, 1) as $rowIndex => $row) {
                 if (empty(array_filter($row))) continue;
                 
@@ -173,10 +189,13 @@ class ImportAMController extends Controller
                 if (!empty($nik)) {
                     if (!isset($nikOccurrences[$nik])) {
                         $nikOccurrences[$nik] = 0;
+                        $uniqueNiks[] = $nik;
                     }
                     $nikOccurrences[$nik]++;
                 }
             }
+
+            $stats['unique_am_count'] = count($uniqueNiks);
 
             foreach (array_slice($data, 1) as $rowIndex => $row) {
                 $actualRowNumber = $rowIndex + 2;
@@ -207,15 +226,23 @@ class ImportAMController extends Controller
                     $rowErrors[] = "Witel '$witelNama' tidak ditemukan";
                 }
 
+                // ✅ Parse divisi list (supports comma-separated)
                 $divisiList = $this->parseDivisiList($divisiRaw);
                 $divisiIds = [];
                 $divisiNames = [];
                 
+                // ✅ Validate max 3 divisi
+                if (count($divisiList) > 3) {
+                    $rowErrors[] = 'Maksimal 3 divisi per AM (DGS, DPS, DSS)';
+                }
+                
                 foreach ($divisiList as $divisiCode) {
                     $divisi = Divisi::where('kode', strtoupper($divisiCode))->first();
                     if ($divisi) {
-                        $divisiIds[] = $divisi->id;
-                        $divisiNames[] = $divisi->nama;
+                        if (!in_array($divisi->id, $divisiIds)) {
+                            $divisiIds[] = $divisi->id;
+                            $divisiNames[] = $divisi->nama;
+                        }
                     } else {
                         $rowErrors[] = "Divisi '$divisiCode' tidak ditemukan";
                     }
@@ -237,7 +264,6 @@ class ImportAMController extends Controller
 
                 if ($nikOccurrences[$nik] > 1) {
                     $stats['duplicate_niks']++;
-                    $rowErrors[] = "NIK duplikat dalam file (muncul {$nikOccurrences[$nik]}x)";
                 }
 
                 if (empty($rowErrors)) {
@@ -255,6 +281,7 @@ class ImportAMController extends Controller
                     'divisi_raw' => $divisiRaw,
                     'divisi_ids' => $divisiIds,
                     'divisi_names' => $divisiNames,
+                    'divisi_count' => count($divisiIds),
                     'is_multi_divisi' => $isMultiDivisi,
                     'telda' => $telda,
                     'status' => $status,
@@ -274,14 +301,19 @@ class ImportAMController extends Controller
                 $errorLogPath = $this->generateErrorLog($failedRows, 'data_am');
             }
 
-            return response()->json([
+            Log::info('IAMC - Preview completed', [
+                'stats' => $stats,
+                'preview_count' => count($previewData)
+            ]);
+
+            return [
                 'success' => true,
                 'preview' => $previewData,
                 'stats' => $stats,
                 'failed_rows' => $failedRows,
                 'has_errors' => !empty($failedRows),
                 'error_log_path' => $errorLogPath
-            ]);
+            ];
 
         } catch (\Exception $e) {
             Log::error('Preview Data AM failed', [
@@ -289,37 +321,49 @@ class ImportAMController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
+            return [
                 'success' => false,
                 'message' => 'Preview gagal: ' . $e->getMessage()
-            ], 500);
+            ];
         }
     }
 
     /**
-     * Execute Data AM import (NO CHANGES - Same as V3.0)
-     * Keeping this method unchanged - already working correctly
+     * ============================================================================
+     * ✅ FIXED: Execute Data AM - Absolute Path Support + Enhanced Multi-Divisi
+     * ============================================================================
      */
     public function executeDataAM($tempFilePath, $filterType = 'all')
     {
         try {
-            if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json([
+            Log::info('IAMC - Execute Data AM called', [
+                'temp_file_path' => $tempFilePath,
+                'filter_type' => $filterType,
+                'file_exists' => file_exists($tempFilePath)
+            ]);
+
+            // ✅ FIX: Use file_exists() instead of Storage::disk('local')->exists()
+            if (!file_exists($tempFilePath)) {
+                Log::error('IAMC - File not found', [
+                    'expected_path' => $tempFilePath
+                ]);
+                
+                return [
                     'success' => false,
                     'message' => 'File tidak ditemukan'
-                ], 404);
+                ];
             }
 
-            $fullPath = Storage::disk('local')->path($tempFilePath);
-            $spreadsheet = IOFactory::load($fullPath);
+            // ✅ Use $tempFilePath directly (it's already absolute path)
+            $spreadsheet = IOFactory::load($tempFilePath);
             $sheet = $spreadsheet->getActiveSheet();
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json([
+                return [
                     'success' => false,
                     'message' => 'File kosong'
-                ], 400);
+                ];
             }
 
             $stats = [
@@ -340,6 +384,7 @@ class ImportAMController extends Controller
             DB::beginTransaction();
 
             try {
+                // ✅ ENHANCED: Group rows by NIK to handle multi-divisi properly
                 $nikGroups = [];
                 foreach (array_slice($data, 1) as $rowIndex => $row) {
                     if (empty(array_filter($row))) continue;
@@ -356,9 +401,16 @@ class ImportAMController extends Controller
                     }
                 }
 
+                Log::info('IAMC - Grouped by NIK', [
+                    'unique_niks' => count($nikGroups),
+                    'total_rows' => array_sum(array_map('count', $nikGroups))
+                ]);
+
+                // ✅ Process each unique NIK
                 foreach ($nikGroups as $nik => $nikRows) {
                     $stats['total_processed']++;
                     
+                    // Use first row for AM master data
                     $firstRow = $nikRows[0]['row'];
                     $nama = trim($this->getColumnValue($firstRow, $columnIndices['NAMA AM']));
                     $witelNama = trim($this->getColumnValue($firstRow, $columnIndices['WITEL AM']));
@@ -366,6 +418,7 @@ class ImportAMController extends Controller
                     $regional = trim($this->getColumnValue($firstRow, $columnIndices['REGIONAL']));
                     $teldaRaw = trim($this->getColumnValue($firstRow, $columnIndices['TELDA']));
 
+                    // ✅ ENHANCED: Collect ALL divisi from ALL rows with same NIK
                     $allDivisiIds = [];
                     foreach ($nikRows as $nikRow) {
                         $divisiRaw = trim($this->getColumnValue($nikRow['row'], $columnIndices['DIVISI']));
@@ -378,6 +431,25 @@ class ImportAMController extends Controller
                             }
                         }
                     }
+
+                    // ✅ Validate max 3 divisi
+                    if (count($allDivisiIds) > 3) {
+                        $failedRows[] = [
+                            'row_number' => $nikRows[0]['row_number'],
+                            'nik' => $nik,
+                            'errors' => ['AM tidak boleh tergabung lebih dari 3 divisi']
+                        ];
+                        $stats['errors']++;
+                        continue;
+                    }
+
+                    Log::info('IAMC - Processing AM', [
+                        'nik' => $nik,
+                        'nama' => $nama,
+                        'divisi_count' => count($allDivisiIds),
+                        'divisi_ids' => $allDivisiIds,
+                        'rows_count' => count($nikRows)
+                    ]);
 
                     $witel = Witel::where('nama', 'LIKE', '%' . $witelNama . '%')->first();
                     if (!$witel) {
@@ -406,12 +478,18 @@ class ImportAMController extends Controller
                             continue;
                         }
 
+                        // Update existing AM
                         $existingAM->update([
                             'nama' => $nama,
                             'witel_id' => $witel->id,
                             'role' => $divisiAm ?: 'AM',
                             'regional' => $regional,
                             'telda_id' => $teldaId,
+                        ]);
+
+                        Log::info('IAMC - Updated AM', [
+                            'am_id' => $existingAM->id,
+                            'nik' => $nik
                         ]);
 
                         $stats['updated']++;
@@ -421,6 +499,7 @@ class ImportAMController extends Controller
                             continue;
                         }
 
+                        // Create new AM
                         $existingAM = AccountManager::create([
                             'nik' => $nik,
                             'nama' => $nama,
@@ -430,32 +509,65 @@ class ImportAMController extends Controller
                             'telda_id' => $teldaId,
                         ]);
 
+                        Log::info('IAMC - Created AM', [
+                            'am_id' => $existingAM->id,
+                            'nik' => $nik
+                        ]);
+
                         $stats['created']++;
                     }
 
+                    // ✅ CRITICAL: Sync account_manager_divisi pivot table
                     if (!empty($allDivisiIds)) {
-                        $existingAM->divisis()->sync($allDivisiIds);
+                        Log::info('IAMC - Syncing divisi for AM', [
+                            'am_id' => $existingAM->id,
+                            'nik' => $nik,
+                            'divisi_ids_before' => $existingAM->divisis->pluck('id')->toArray(),
+                            'divisi_ids_new' => $allDivisiIds
+                        ]);
+
+                        // ✅ CRITICAL FIX: Use syncWithoutDetaching() to ADD new divisi WITHOUT removing old ones
+                        // This will:
+                        // 1. Keep ALL existing divisi (tidak hapus yang lama)
+                        // 2. Add ONLY new divisi yang belum ada
+                        // 3. Skip divisi yang sudah ada (no duplicate)
+                        $existingAM->divisis()->syncWithoutDetaching($allDivisiIds);
                         
-                        if (count($allDivisiIds) > 1) {
+                        // Reload to get fresh count
+                        $existingAM->load('divisis');
+                        
+                        if ($existingAM->divisis()->count() > 1) {
                             $stats['multi_divisi_processed']++;
                         }
+
+                        Log::info('IAMC - Divisi synced successfully (WITHOUT DETACHING)', [
+                            'am_id' => $existingAM->id,
+                            'nik' => $nik,
+                            'divisi_ids_added' => $allDivisiIds,
+                            'final_divisi_count' => $existingAM->divisis()->count(),
+                            'final_divisi_ids' => $existingAM->divisis->pluck('id')->toArray()
+                        ]);
                     }
                 }
 
                 DB::commit();
+
+                Log::info('IAMC - Execute completed successfully', [
+                    'stats' => $stats
+                ]);
 
                 $errorLogPath = null;
                 if (!empty($failedRows)) {
                     $errorLogPath = $this->generateErrorLog($failedRows, 'data_am');
                 }
 
-                return response()->json([
+                return [
                     'success' => true,
                     'stats' => $stats,
                     'failed_rows' => $failedRows,
                     'error_log_path' => $errorLogPath,
                     'message' => "Import selesai. {$stats['created']} AM baru, {$stats['updated']} AM diupdate."
-                ]);
+                ];
 
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -468,36 +580,50 @@ class ImportAMController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
+            return [
                 'success' => false,
                 'message' => 'Import gagal: ' . $e->getMessage()
-            ], 500);
+            ];
         }
     }
 
     /**
-     * Preview Revenue AM import (NO CHANGES)
+     * ============================================================================
+     * ✅ FIXED: Preview Revenue AM - Absolute Path Support
+     * ============================================================================
      */
     public function previewRevenueAM($tempFilePath, $year = null, $month = null)
     {
         try {
-            if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json([
+            Log::info('IAMC - Preview Revenue AM called', [
+                'temp_file_path' => $tempFilePath,
+                'year' => $year,
+                'month' => $month,
+                'file_exists' => file_exists($tempFilePath)
+            ]);
+
+            // ✅ FIX: Use file_exists() instead of Storage::disk('local')->exists()
+            if (!file_exists($tempFilePath)) {
+                Log::error('IAMC - File not found', [
+                    'expected_path' => $tempFilePath
+                ]);
+                
+                return [
                     'success' => false,
                     'message' => 'File tidak ditemukan'
-                ], 404);
+                ];
             }
 
-            $fullPath = Storage::disk('local')->path($tempFilePath);
-            $spreadsheet = IOFactory::load($fullPath);
+            // ✅ Use $tempFilePath directly (it's already absolute path)
+            $spreadsheet = IOFactory::load($tempFilePath);
             $sheet = $spreadsheet->getActiveSheet();
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json([
+                return [
                     'success' => false,
                     'message' => 'File kosong atau tidak memiliki data'
-                ], 400);
+                ];
             }
 
             $expectedHeaders = ['NIK', 'NAMA AM', 'PROPORSI', 'NIPNAS', 'STANDARD NAME'];
@@ -505,10 +631,10 @@ class ImportAMController extends Controller
 
             $missingHeaders = array_diff($expectedHeaders, $actualHeaders);
             if (!empty($missingHeaders)) {
-                return response()->json([
+                return [
                     'success' => false,
                     'message' => 'Header tidak sesuai. Header yang hilang: ' . implode(', ', $missingHeaders)
-                ], 400);
+                ];
             }
 
             $previewData = [];
@@ -519,11 +645,15 @@ class ImportAMController extends Controller
                 'new_mappings' => 0,
                 'existing_mappings' => 0,
                 'invalid_proporsi' => 0,
+                'unique_am_count' => 0,
+                'unique_cc_count' => 0
             ];
 
             $columnIndices = $this->getColumnIndices($actualHeaders, $expectedHeaders);
 
             $ccProporsiMap = [];
+            $uniqueAMs = [];
+            $uniqueCCs = [];
 
             foreach (array_slice($data, 1) as $rowIndex => $row) {
                 $actualRowNumber = $rowIndex + 2;
@@ -562,6 +692,14 @@ class ImportAMController extends Controller
                 $cc = CorporateCustomer::where('nipnas', $nipnas)->first();
                 if (!$cc) {
                     $rowErrors[] = "CC dengan NIPNAS '$nipnas' tidak ditemukan";
+                }
+
+                if ($am && !in_array($am->id, $uniqueAMs)) {
+                    $uniqueAMs[] = $am->id;
+                }
+
+                if ($cc && !in_array($cc->id, $uniqueCCs)) {
+                    $uniqueCCs[] = $cc->id;
                 }
 
                 $existingMapping = null;
@@ -614,6 +752,9 @@ class ImportAMController extends Controller
                 }
             }
 
+            $stats['unique_am_count'] = count($uniqueAMs);
+            $stats['unique_cc_count'] = count($uniqueCCs);
+
             foreach ($ccProporsiMap as $ccKey => $totalProporsi) {
                 if (abs($totalProporsi - 1.0) > 0.01) {
                     $stats['invalid_proporsi']++;
@@ -636,14 +777,19 @@ class ImportAMController extends Controller
                 $errorLogPath = $this->generateErrorLog($failedRows, 'revenue_am');
             }
 
-            return response()->json([
+            Log::info('IAMC - Preview completed', [
+                'stats' => $stats,
+                'preview_count' => count($previewData)
+            ]);
+
+            return [
                 'success' => true,
                 'preview' => $previewData,
                 'stats' => $stats,
                 'failed_rows' => $failedRows,
                 'has_errors' => !empty($failedRows),
                 'error_log_path' => $errorLogPath
-            ]);
+            ];
 
         } catch (\Exception $e) {
             Log::error('Preview Revenue AM failed', [
@@ -651,49 +797,51 @@ class ImportAMController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
+            return [
                 'success' => false,
                 'message' => 'Preview gagal: ' . $e->getMessage()
-            ], 500);
+            ];
         }
     }
 
     /**
      * ============================================================================
-     * ✅ NEW: Execute Revenue AM with AUTO REVENUE CALCULATION
+     * ✅ FIXED: Execute Revenue AM - Absolute Path + Auto Revenue Calculation
      * ============================================================================
-     * 
-     * CRITICAL NEW FEATURE:
-     * - Auto-calculate target_revenue = CC.target_revenue_sold × proporsi
-     * - Auto-calculate real_revenue = CC.real_revenue_sold × proporsi
-     * - No need to input revenue manually in CSV
-     * 
-     * @param string $tempFilePath
-     * @param int $year
-     * @param int $month
-     * @param string $filterType
-     * @return \Illuminate\Http\JsonResponse
      */
     public function executeRevenueAM($tempFilePath, $year, $month, $filterType = 'all')
     {
         try {
-            if (!Storage::disk('local')->exists($tempFilePath)) {
-                return response()->json([
+            Log::info('IAMC - Execute Revenue AM called', [
+                'temp_file_path' => $tempFilePath,
+                'year' => $year,
+                'month' => $month,
+                'filter_type' => $filterType,
+                'file_exists' => file_exists($tempFilePath)
+            ]);
+
+            // ✅ FIX: Use file_exists() instead of Storage::disk('local')->exists()
+            if (!file_exists($tempFilePath)) {
+                Log::error('IAMC - File not found', [
+                    'expected_path' => $tempFilePath
+                ]);
+                
+                return [
                     'success' => false,
                     'message' => 'File tidak ditemukan'
-                ], 404);
+                ];
             }
 
-            $fullPath = Storage::disk('local')->path($tempFilePath);
-            $spreadsheet = IOFactory::load($fullPath);
+            // ✅ Use $tempFilePath directly (it's already absolute path)
+            $spreadsheet = IOFactory::load($tempFilePath);
             $sheet = $spreadsheet->getActiveSheet();
             $data = $sheet->toArray();
 
             if (empty($data) || count($data) < 2) {
-                return response()->json([
+                return [
                     'success' => false,
                     'message' => 'File kosong'
-                ], 400);
+                ];
             }
 
             $stats = [
@@ -754,7 +902,7 @@ class ImportAMController extends Controller
                     }
 
                     // ============================================================================
-                    // ✅ CRITICAL NEW: Find CC Revenue untuk periode ini
+                    // ✅ CRITICAL: Find CC Revenue untuk periode ini
                     // ============================================================================
                     $ccRevenue = CcRevenue::where('corporate_customer_id', $cc->id)
                         ->where('bulan', $bulan)
@@ -773,7 +921,7 @@ class ImportAMController extends Controller
                     }
 
                     // ============================================================================
-                    // ✅ CRITICAL NEW: Auto-calculate revenue berdasarkan proporsi
+                    // ✅ CRITICAL: Auto-calculate revenue berdasarkan proporsi
                     // ============================================================================
                     $calculatedTargetRevenue = $ccRevenue->target_revenue_sold * $proporsi;
                     $calculatedRealRevenue = $ccRevenue->real_revenue_sold * $proporsi;
@@ -927,18 +1075,22 @@ class ImportAMController extends Controller
 
                 DB::commit();
 
+                Log::info('IAMC - Execute completed successfully', [
+                    'stats' => $stats
+                ]);
+
                 $errorLogPath = null;
                 if (!empty($failedRows)) {
                     $errorLogPath = $this->generateErrorLog($failedRows, 'revenue_am');
                 }
 
-                return response()->json([
+                return [
                     'success' => true,
                     'stats' => $stats,
                     'failed_rows' => $failedRows,
                     'error_log_path' => $errorLogPath,
                     'message' => "Import selesai. {$stats['created']} mapping baru, {$stats['updated']} mapping diupdate."
-                ]);
+                ];
 
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -951,26 +1103,38 @@ class ImportAMController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
+            return [
                 'success' => false,
                 'message' => 'Import gagal: ' . $e->getMessage()
-            ], 500);
+            ];
         }
     }
 
     // ============================================================================
-    // HELPER METHODS (NO CHANGES)
+    // HELPER METHODS
     // ============================================================================
 
+    /**
+     * ✅ ENHANCED: Parse divisi list with multiple format support
+     * 
+     * Supports:
+     * 1. "DPS, DSS" (comma with space)
+     * 2. "DPS,DSS" (comma without space)
+     * 3. Single divisi "DPS"
+     */
     private function parseDivisiList($divisiRaw)
     {
         $divisiRaw = strtoupper(trim($divisiRaw));
         
+        // Handle comma-separated (with or without space)
         if (strpos($divisiRaw, ',') !== false) {
             $parts = explode(',', $divisiRaw);
-            return array_map('trim', $parts);
+            $parts = array_map('trim', $parts);
+            $parts = array_filter($parts); // Remove empty strings
+            return array_values($parts);
         }
         
+        // Single divisi
         return [$divisiRaw];
     }
 

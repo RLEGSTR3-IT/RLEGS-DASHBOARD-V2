@@ -23,25 +23,24 @@
 <div class="main-content">
     <!-- Profile Overview -->
 <div class="profile-overview">
-    {{-- BARIS 1: AVATAR + NAMA (HORIZONTAL) --}}
-    <div class="profile-header-row">
-        {{-- Avatar --}}
-        <div class="profile-avatar-container">
-            <div class="cc-avatar segment-{{ strtolower($profileData['segment']->segment_code ?? 'default') }}">
-                <i class="fas fa-building"></i>
-            </div>
+    {{-- FOTO / AVATAR CC --}}
+    <div class="profile-avatar-container">
+        <div class="cc-avatar segment-{{ strtolower($profileData['segment']->segment_code ?? 'default') }}">
+            <i class="fas fa-building"></i>
         </div>
+    </div>
 
-        {{-- Nama Perusahaan --}}
+    {{-- BARIS 1: NAMA PERUSAHAAN --}}
+    <div class="profile-details">
         <div class="profile-name-section">
             <h2 class="profile-name">{{ $profileData['nama'] }}</h2>
         </div>
     </div>
 
-    {{-- BARIS 2: META LABELS (NIPNAS, SEGMENT, WITEL, DIVISI) - FULL WIDTH --}}
-    <div class="profile-meta-grid">
+    {{-- BARIS 2: META (NIPNAS, SEGMENT, WITEL, DIVISI) --}}
+    <div class="profile-meta">
         {{-- NIPNAS --}}
-        <div class="meta-item-inline">
+        <div class="meta-item">
             <i class="fas fa-barcode"></i>
             <span class="meta-label">NIPNAS:</span>
             <span class="meta-value">{{ $profileData['nipnas'] }}</span>
@@ -49,7 +48,7 @@
 
         {{-- SEGMENT --}}
         @if($profileData['segment'])
-        <div class="meta-item-inline">
+        <div class="meta-item">
             <i class="fas fa-tags"></i>
             <span class="meta-label">SEGMENT:</span>
             <span class="meta-value">{{ $profileData['segment']->lsegment_ho }}</span>
@@ -58,7 +57,7 @@
 
         {{-- WITEL --}}
         @if($profileData['witel'])
-        <div class="meta-item-inline">
+        <div class="meta-item">
             <i class="fas fa-map-marker-alt"></i>
             <span class="meta-label">WITEL:</span>
             <span class="meta-value">{{ $profileData['witel']->nama }}</span>
@@ -67,7 +66,7 @@
 
         {{-- DIVISI --}}
         @if($profileData['divisi'])
-        <div class="meta-item-inline">
+        <div class="meta-item">
             <i class="lni lni-network"></i>
             <span class="meta-label">DIVISI:</span>
             <span class="divisi-pill {{ strtolower($profileData['divisi']->kode) }}">

@@ -15,6 +15,7 @@
         "laravel/passport": "^12.4",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
+        "league/csv": "^9.28",
         "maatwebsite/excel": "^3.1"
     },
     "require-dev": {

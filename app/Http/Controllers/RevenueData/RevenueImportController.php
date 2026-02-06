@@ -24,7 +24,7 @@ class RevenueImportController extends Controller
                 'total_chunks' => 'required|integer|min:1',
                 'session_id' => 'required|string|max:100',
                 'file_name' => 'required|string|max:255',
-                'import_type' => 'required|string|in:data_cc,data_am,revenue_cc,revenue_am',
+                'import_type' => 'required|string|in:data_cc,data_am,revenue_cc,revenue_am,target_witel',
                 'is_first_chunk' => 'required|in:0,1',
                 'rows_in_chunk' => 'required|integer|min:1',
             ]);
@@ -141,11 +141,11 @@ class RevenueImportController extends Controller
             if ($isChunkedUpload) {
                 $validator = Validator::make($request->all(), [
                     'session_id' => 'required|string',
-                    'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
+                    'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am,target_witel',
                 ]);
             } else {
                 $validator = Validator::make($request->all(), [
-                    'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
+                    'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am,target_witel',
                     'file' => 'required|file|mimes:csv,txt,xlsx|max:102400'
                 ]);
             }
@@ -185,6 +185,12 @@ class RevenueImportController extends Controller
                 ];
             } elseif ($importType === 'revenue_am') {
                 $additionalRules = [
+                    'year' => 'required|integer|min:2000|max:2099',
+                    'month' => 'required|integer|min:1|max:12'
+                ];
+            } elseif ($importType === 'target_witel') {
+                $additionalRules = [
+                    'divisi_id' => 'required|exists:divisi,id',
                     'year' => 'required|integer|min:2000|max:2099',
                     'month' => 'required|integer|min:1|max:12'
                 ];
@@ -243,11 +249,10 @@ class RevenueImportController extends Controller
                 $absolutePath = $privateDir . '/' . $fileName;
                 $file->move($privateDir, $fileName);
 
-                $tempFilePath = 'temp_imports/' . $fileName;
+                $tempFilePath = $absolutePath;
 
                 Log::info('Saved direct upload file', [
                     'session_id' => $sessionId,
-                    'relative_path' => $tempFilePath,
                     'absolute_path' => $absolutePath,
                     'file_exists_check' => file_exists($absolutePath),
                     'file_size' => filesize($absolutePath)
@@ -256,7 +261,6 @@ class RevenueImportController extends Controller
                 if (!file_exists($absolutePath)) {
                     Log::error('File storage verification failed', [
                         'session_id' => $sessionId,
-                        'relative_path' => $tempFilePath,
                         'absolute_path' => $absolutePath
                     ]);
 
@@ -297,6 +301,10 @@ class RevenueImportController extends Controller
                         $year,
                         $month
                     );
+                    break;
+
+                case 'target_witel':
+                    $controllerResult = app(ImportWitelTargetController::class)->previewWitelTarget($tempFilePath);
                     break;
 
                 default:
@@ -345,7 +353,7 @@ class RevenueImportController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'session_id' => 'required|string',
-                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am',
+                'import_type' => 'required|in:data_cc,data_am,revenue_cc,revenue_am,target_witel',
                 'filter_type' => 'required|in:all,new,update'
             ]);
 
@@ -406,6 +414,7 @@ class RevenueImportController extends Controller
                 $absolutePath = storage_path('app/private/' . $tempFilePath);
                 if (file_exists($absolutePath)) {
                     $fileExists = true;
+                    $tempFilePath = $absolutePath;
                     Log::info('File found via prepended path', [
                         'relative_path' => $tempFilePath,
                         'absolute_path' => $absolutePath
@@ -438,6 +447,12 @@ class RevenueImportController extends Controller
                 ];
             } elseif ($importType === 'revenue_am') {
                 $additionalRules = [
+                    'year' => 'required|integer|min:2000|max:2099',
+                    'month' => 'required|integer|min:1|max:12'
+                ];
+            } elseif ($importType === 'target_witel') {
+                $additionalRules = [
+                    'divisi_id' => 'required|exists:divisi,id',
                     'year' => 'required|integer|min:2000|max:2099',
                     'month' => 'required|integer|min:1|max:12'
                 ];
@@ -487,6 +502,13 @@ class RevenueImportController extends Controller
                     );
                     break;
 
+                case 'target_witel':
+                    $result = app(ImportWitelTargetController::class)->executeWitelTarget(
+                        $tempFilePath,
+                        $filterType
+                    );
+                    break;
+
                 default:
                     return response()->json([
                         'success' => false,
@@ -524,7 +546,7 @@ class RevenueImportController extends Controller
             return response()->json($resultData);
 
         } catch (\Exception $e) {
-            Log::rollBack();
+            DB::rollBack();
             Log::error('Execute Import Error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
@@ -610,7 +632,7 @@ class RevenueImportController extends Controller
                 DB::connection()->getPdo();
                 $health['database']['connected'] = true;
 
-                $requiredTables = ['divisi', 'corporate_customers', 'account_managers', 'cc_revenues', 'am_revenues'];
+                $requiredTables = ['divisi', 'corporate_customers', 'account_managers', 'cc_revenues', 'am_revenues', 'witel_target_revenues'];
                 foreach ($requiredTables as $table) {
                     $health['database']['tables_exist'][$table] = DB::getSchemaBuilder()->hasTable($table);
                 }

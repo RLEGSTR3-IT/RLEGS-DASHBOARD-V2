@@ -9,6 +9,7 @@ use App\Models\Divisi;
 use App\Models\CcRevenue;
 use App\Models\AmRevenue;
 use App\Models\CorporateCustomer;
+use App\Models\WitelTargetRevenue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -216,10 +217,14 @@ class WitelDashboardController extends Controller
 
     /**
      * Get Card Summary Data
+     * 
+     * Witel Revenue = SUM(real_revenue_bill) dari cc_revenues (SEMUA divisi)
+     * Witel Target = SUM(target_revenue_sold) dari cc_revenues + SUM(target_revenue_bill) dari witel_target_revenues
      */
     private function getCardGroupData($witelId, $filters)
     {
-        // Revenue from cc_revenues (with DPS/DGS/DSS rule)
+        // === REAL REVENUE WITEL ===
+        // Hanya dari cc_revenues.real_revenue_bill (SEMUA divisi)
         $ccQuery = CcRevenue::where('tahun', $filters['tahun'])
             ->where(function ($query) use ($witelId) {
                 $query->where(function ($q) use ($witelId) {
@@ -247,43 +252,64 @@ class WitelDashboardController extends Controller
             $ccQuery->where('bulan', '<=', $filters['bulan_end']);
         }
 
-        $ccAggregated = $ccQuery->selectRaw('
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target
-            ')
-            ->first();
+        // WITEL: Real Revenue = SUM(real_revenue_bill)
+        $realRevenueBill = $ccQuery->sum('real_revenue_bill');
 
-        // Revenue from am_revenues
-        $amQuery = AmRevenue::where('witel_id', $witelId)
+        // === TARGET REVENUE WITEL ===
+        // 1. Target dari cc_revenues (target_revenue_sold)
+        $ccTargetQuery = CcRevenue::where('tahun', $filters['tahun'])
+            ->where(function ($query) use ($witelId) {
+                $query->where(function ($q) use ($witelId) {
+                    $q->where('divisi_id', 3)->where('witel_bill_id', $witelId);
+                })->orWhere(function ($q) use ($witelId) {
+                    $q->whereIn('divisi_id', [1, 2])->where('witel_ho_id', $witelId);
+                });
+            });
+
+        if ($filters['tipe_revenue'] && $filters['tipe_revenue'] !== 'all') {
+            $ccTargetQuery->where('tipe_revenue', $filters['tipe_revenue']);
+        }
+
+        if ($filters['revenue_source'] && $filters['revenue_source'] !== 'all') {
+            $ccTargetQuery->where('revenue_source', $filters['revenue_source']);
+        }
+
+        if ($filters['period_type'] === 'MTD') {
+            $ccTargetQuery->where('bulan', $filters['bulan_end']);
+        } else {
+            $ccTargetQuery->where('bulan', '<=', $filters['bulan_end']);
+        }
+
+        $targetFromCC = $ccTargetQuery->sum('target_revenue_sold');
+
+        // 2. Target dari witel_target_revenues (target_revenue_bill)
+        $witelTargetQuery = WitelTargetRevenue::where('witel_id', $witelId)
             ->where('tahun', $filters['tahun']);
 
         if ($filters['period_type'] === 'MTD') {
-            $amQuery->where('bulan', $filters['bulan_end']);
+            $witelTargetQuery->where('bulan', $filters['bulan_end']);
         } else {
-            $amQuery->where('bulan', '<=', $filters['bulan_end']);
+            $witelTargetQuery->where('bulan', '<=', $filters['bulan_end']);
         }
 
-        $amAggregated = $amQuery->selectRaw('
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target
-            ')
-            ->first();
+        $targetFromWitelTable = $witelTargetQuery->sum('target_revenue_bill');
 
-        // Combine both sources
-        $totalRevenue = ($ccAggregated->total_revenue ?? 0) + ($amAggregated->total_revenue ?? 0);
-        $totalTarget = ($ccAggregated->total_target ?? 0) + ($amAggregated->total_target ?? 0);
+        // Total Target = target_sold dari CC + target_bill dari witel_target_revenues
+        $totalTarget = $targetFromCC + $targetFromWitelTable;
+
+        // Achievement Rate
         $achievementRate = $totalTarget > 0
-            ? round(($totalRevenue / $totalTarget) * 100, 2)
+            ? round(($realRevenueBill / $totalTarget) * 100, 2)
             : 0;
 
         return [
-            'total_revenue' => floatval($totalRevenue),
+            'total_revenue' => floatval($realRevenueBill),
             'total_target' => floatval($totalTarget),
             'achievement_rate' => $achievementRate,
             'achievement_color' => $this->getAchievementColor($achievementRate),
             'period_text' => $this->generatePeriodText($filters),
-            'cc_revenue' => floatval($ccAggregated->total_revenue ?? 0),
-            'am_revenue' => floatval($amAggregated->total_revenue ?? 0)
+            'target_from_cc' => floatval($targetFromCC),
+            'target_from_witel_table' => floatval($targetFromWitelTable)
         ];
     }
 
@@ -338,6 +364,8 @@ class WitelDashboardController extends Controller
 
     /**
      * Get Revenue Data Detail by Account Manager
+     * 
+     * AM Revenue selalu pakai real_revenue (yang dihitung dari real_revenue_sold CC × proporsi)
      */
     private function getRevenueDataDetailByAM($witelId, $filters)
     {
@@ -426,9 +454,13 @@ class WitelDashboardController extends Controller
 
     /**
      * Get Revenue Data Detail by Divisi
+     * 
+     * Menampilkan revenue dari cc_revenues (berdasarkan tipe_revenue user saat import)
+     * DAN dari am_revenues
      */
     private function getRevenueDataDetailByDivisi($witelId, $filters)
     {
+        // Revenue dari CC (pakai kolom yang sesuai tipe_revenue saat import)
         $ccQuery = CcRevenue::where('tahun', $filters['tahun'])
             ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
             ->where(function ($query) use ($witelId) {
@@ -450,6 +482,7 @@ class WitelDashboardController extends Controller
 
         $ccData = $ccQuery->get();
 
+        // Revenue dari AM
         $amData = AmRevenue::where('witel_id', $witelId)
             ->where('tahun', $filters['tahun'])
             ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
@@ -458,9 +491,15 @@ class WitelDashboardController extends Controller
 
         $results = collect([]);
 
+        // Process CC Revenue
         foreach ($ccData as $revenue) {
-            $achievementRate = $revenue->target_revenue > 0
-                ? round(($revenue->real_revenue / $revenue->target_revenue) * 100, 2)
+            // Tentukan real_revenue berdasarkan revenue_source
+            $realRevenue = ($revenue->revenue_source === 'HO') 
+                ? $revenue->real_revenue_sold 
+                : $revenue->real_revenue_bill;
+
+            $achievementRate = $revenue->target_revenue_sold > 0
+                ? round(($realRevenue / $revenue->target_revenue_sold) * 100, 2)
                 : 0;
 
             $results->push((object)[
@@ -468,13 +507,14 @@ class WitelDashboardController extends Controller
                 'bulan_name' => $this->getMonthName($revenue->bulan),
                 'divisi' => $revenue->divisi ? $revenue->divisi->nama : 'N/A',
                 'source' => 'CC Revenue',
-                'revenue' => floatval($revenue->real_revenue),
-                'target' => floatval($revenue->target_revenue),
+                'revenue' => floatval($realRevenue),
+                'target' => floatval($revenue->target_revenue_sold),
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ]);
         }
 
+        // Process AM Revenue
         foreach ($amData as $revenue) {
             $achievementRate = $revenue->target_revenue > 0
                 ? round(($revenue->real_revenue / $revenue->target_revenue) * 100, 2)
@@ -504,6 +544,7 @@ class WitelDashboardController extends Controller
         $results = collect([]);
 
         foreach ($divisis as $divisi) {
+            // Query CC Revenue
             $ccQuery = CcRevenue::where('tahun', $filters['tahun'])
                 ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
                 ->where('divisi_id', $divisi->id)
@@ -523,47 +564,55 @@ class WitelDashboardController extends Controller
                 $ccQuery->where('revenue_source', $filters['revenue_source']);
             }
 
-            $ccMonthly = $ccQuery->selectRaw('
-                    bulan,
-                    SUM(real_revenue) as monthly_revenue,
-                    SUM(target_revenue) as monthly_target
-                ')
-                ->groupBy('bulan')
-                ->get();
+            $ccMonthly = $ccQuery->get()->groupBy('bulan');
 
+            // Query AM Revenue
             $amMonthly = AmRevenue::where('witel_id', $witelId)
                 ->where('tahun', $filters['tahun'])
                 ->where('divisi_id', $divisi->id)
                 ->whereBetween('bulan', [$filters['bulan_start'], $filters['bulan_end']])
-                ->selectRaw('
-                    bulan,
-                    SUM(real_revenue) as monthly_revenue,
-                    SUM(target_revenue) as monthly_target
-                ')
-                ->groupBy('bulan')
-                ->get();
+                ->get()
+                ->groupBy('bulan');
 
-            $combinedData = $ccMonthly->concat($amMonthly)
-                ->groupBy('bulan')
-                ->map(function ($items, $bulan) use ($divisi) {
-                    $totalRevenue = $items->sum('monthly_revenue');
-                    $totalTarget = $items->sum('monthly_target');
-                    $achievementRate = $totalTarget > 0
-                        ? round(($totalRevenue / $totalTarget) * 100, 2)
-                        : 0;
+            // Combine by month
+            $allMonths = $ccMonthly->keys()->merge($amMonthly->keys())->unique();
 
-                    return (object)[
-                        'bulan' => $bulan,
-                        'bulan_name' => $this->getMonthName($bulan),
-                        'divisi' => $divisi->nama,
-                        'total_revenue' => floatval($totalRevenue),
-                        'total_target' => floatval($totalTarget),
-                        'achievement_rate' => $achievementRate,
-                        'achievement_color' => $this->getAchievementColor($achievementRate)
-                    ];
-                });
+            foreach ($allMonths as $bulan) {
+                $ccRevenues = $ccMonthly->get($bulan, collect([]));
+                $amRevenues = $amMonthly->get($bulan, collect([]));
 
-            $results = $results->concat($combinedData->values());
+                // Sum CC Revenue (based on revenue_source)
+                $ccMonthlyRevenue = 0;
+                $ccMonthlyTarget = 0;
+
+                foreach ($ccRevenues as $ccRev) {
+                    $ccMonthlyRevenue += ($ccRev->revenue_source === 'HO') 
+                        ? $ccRev->real_revenue_sold 
+                        : $ccRev->real_revenue_bill;
+                    $ccMonthlyTarget += $ccRev->target_revenue_sold;
+                }
+
+                // Sum AM Revenue
+                $amMonthlyRevenue = $amRevenues->sum('real_revenue');
+                $amMonthlyTarget = $amRevenues->sum('target_revenue');
+
+                // Combine
+                $totalRevenue = $ccMonthlyRevenue + $amMonthlyRevenue;
+                $totalTarget = $ccMonthlyTarget + $amMonthlyTarget;
+                $achievementRate = $totalTarget > 0
+                    ? round(($totalRevenue / $totalTarget) * 100, 2)
+                    : 0;
+
+                $results->push((object)[
+                    'bulan' => $bulan,
+                    'bulan_name' => $this->getMonthName($bulan),
+                    'divisi' => $divisi->nama,
+                    'total_revenue' => floatval($totalRevenue),
+                    'total_target' => floatval($totalTarget),
+                    'achievement_rate' => $achievementRate,
+                    'achievement_color' => $this->getAchievementColor($achievementRate)
+                ]);
+            }
         }
 
         return $results->sortBy('bulan')->values();
@@ -596,8 +645,13 @@ class WitelDashboardController extends Controller
         $ccData = $query->get();
 
         return $ccData->map(function ($revenue) {
-            $achievementRate = $revenue->target_revenue > 0
-                ? round(($revenue->real_revenue / $revenue->target_revenue) * 100, 2)
+            // Tentukan real_revenue berdasarkan revenue_source
+            $realRevenue = ($revenue->revenue_source === 'HO') 
+                ? $revenue->real_revenue_sold 
+                : $revenue->real_revenue_bill;
+
+            $achievementRate = $revenue->target_revenue_sold > 0
+                ? round(($realRevenue / $revenue->target_revenue_sold) * 100, 2)
                 : 0;
 
             return (object)[
@@ -606,8 +660,8 @@ class WitelDashboardController extends Controller
                 'customer_name' => $revenue->corporateCustomer ? $revenue->corporateCustomer->nama : 'N/A',
                 'nipnas' => $revenue->corporateCustomer ? $revenue->corporateCustomer->nipnas : 'N/A',
                 'divisi' => $revenue->divisi ? $revenue->divisi->nama : 'N/A',
-                'revenue' => floatval($revenue->real_revenue),
-                'target' => floatval($revenue->target_revenue),
+                'revenue' => floatval($realRevenue),
+                'target' => floatval($revenue->target_revenue_sold),
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
             ];
@@ -638,33 +692,47 @@ class WitelDashboardController extends Controller
             $query->where('revenue_source', $filters['revenue_source']);
         }
 
-        $data = $query->selectRaw('
-                bulan,
-                corporate_customer_id,
-                SUM(real_revenue) as monthly_revenue,
-                SUM(target_revenue) as monthly_target
-            ')
-            ->groupBy('bulan', 'corporate_customer_id')
-            ->orderBy('bulan')
-            ->get();
+        $data = $query->get()
+            ->groupBy(function ($item) {
+                return $item->bulan . '-' . $item->corporate_customer_id;
+            });
 
-        return $data->map(function ($item) {
-            $customer = CorporateCustomer::find($item->corporate_customer_id);
-            $achievementRate = $item->monthly_target > 0
-                ? round(($item->monthly_revenue / $item->monthly_target) * 100, 2)
+        $results = collect([]);
+
+        foreach ($data as $key => $revenues) {
+            $parts = explode('-', $key);
+            $bulan = $parts[0];
+            $customerId = $parts[1];
+
+            $customer = CorporateCustomer::find($customerId);
+
+            $monthlyRevenue = 0;
+            $monthlyTarget = 0;
+
+            foreach ($revenues as $rev) {
+                $monthlyRevenue += ($rev->revenue_source === 'HO') 
+                    ? $rev->real_revenue_sold 
+                    : $rev->real_revenue_bill;
+                $monthlyTarget += $rev->target_revenue_sold;
+            }
+
+            $achievementRate = $monthlyTarget > 0
+                ? round(($monthlyRevenue / $monthlyTarget) * 100, 2)
                 : 0;
 
-            return (object)[
-                'bulan' => $item->bulan,
-                'bulan_name' => $this->getMonthName($item->bulan),
+            $results->push((object)[
+                'bulan' => $bulan,
+                'bulan_name' => $this->getMonthName($bulan),
                 'customer_name' => $customer ? $customer->nama : 'N/A',
                 'nipnas' => $customer ? $customer->nipnas : 'N/A',
-                'total_revenue' => floatval($item->monthly_revenue),
-                'total_target' => floatval($item->monthly_target),
+                'total_revenue' => floatval($monthlyRevenue),
+                'total_target' => floatval($monthlyTarget),
                 'achievement_rate' => $achievementRate,
                 'achievement_color' => $this->getAchievementColor($achievementRate)
-            ];
-        });
+            ]);
+        }
+
+        return $results->sortBy('bulan')->values();
     }
 
     /**
@@ -687,9 +755,13 @@ class WitelDashboardController extends Controller
 
     /**
      * Get Monthly Achievements
+     * 
+     * Witel Revenue = SUM(real_revenue_bill) dari cc_revenues
+     * Witel Target = SUM(target_revenue_sold) dari cc_revenues + SUM(target_revenue_bill) dari witel_target_revenues
      */
     private function getMonthlyAchievements($witelId)
     {
+        // 1. Real Revenue dari cc_revenues (real_revenue_bill)
         $ccMonthly = DB::table('cc_revenues')
             ->where(function ($query) use ($witelId) {
                 $query->where(function ($q) use ($witelId) {
@@ -701,42 +773,57 @@ class WitelDashboardController extends Controller
             ->selectRaw('
                 tahun,
                 bulan,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target
+                SUM(real_revenue_bill) as total_revenue,
+                SUM(target_revenue_sold) as total_target_sold
             ')
             ->groupBy('tahun', 'bulan')
             ->get();
 
         Log::info("WitelDashboardController", ['ccMonthly' => $ccMonthly]);
 
-        $amMonthly = AmRevenue::where('witel_id', $witelId)
+        // 2. Target tambahan dari witel_target_revenues (target_revenue_bill)
+        $witelTargetMonthly = DB::table('witel_target_revenues')
+            ->where('witel_id', $witelId)
             ->selectRaw('
                 tahun,
                 bulan,
-                SUM(real_revenue) as total_revenue,
-                SUM(target_revenue) as total_target
+                SUM(target_revenue_bill) as total_target_bill
             ')
             ->groupBy('tahun', 'bulan')
             ->get();
 
-        Log::info("WitelDashboardController", ['amMonthly' => $amMonthly]);
+        Log::info("WitelDashboardController", ['witelTargetMonthly' => $witelTargetMonthly]);
 
+        // 3. Combine data
         $combined = collect([]);
-        $allData = $ccMonthly->concat($amMonthly);
-
-        $grouped = $allData->groupBy(function ($item) {
+        
+        $grouped = $ccMonthly->groupBy(function ($item) {
             return $item->tahun . '-' . $item->bulan;
         });
 
         foreach ($grouped as $key => $items) {
             $parts = explode('-', $key);
+            $tahun = $parts[0];
+            $bulan = $parts[1];
+
             $totalRevenue = $items->sum('total_revenue');
-            $totalTarget = $items->sum('total_target');
+            $totalTargetSold = $items->sum('total_target_sold');
+
+            // Cari target_bill dari witel_target_revenues
+            $witelTarget = $witelTargetMonthly->first(function ($item) use ($tahun, $bulan) {
+                return $item->tahun == $tahun && $item->bulan == $bulan;
+            });
+
+            $totalTargetBill = $witelTarget ? $witelTarget->total_target_bill : 0;
+
+            // Total Target = target_sold + target_bill
+            $totalTarget = $totalTargetSold + $totalTargetBill;
+
             $achievementRate = $totalTarget > 0 ? ($totalRevenue / $totalTarget) * 100 : 0;
 
             $combined->push((object)[
-                'tahun' => $parts[0],
-                'bulan' => $parts[1],
+                'tahun' => $tahun,
+                'bulan' => $bulan,
                 'total_revenue' => $totalRevenue,
                 'total_target' => $totalTarget,
                 'achievement_rate' => round($achievementRate, 2)
@@ -805,7 +892,7 @@ class WitelDashboardController extends Controller
     private function getMonthlyRevenueChart($witelId, $tahun, $filters)
     {
         try {
-            // CC Revenue
+            // CC Revenue (real_revenue_bill)
             $ccQuery = CcRevenue::where('tahun', $tahun)
                 ->where(function ($query) use ($witelId) {
                     $query->where(function ($q) use ($witelId) {
@@ -825,20 +912,19 @@ class WitelDashboardController extends Controller
 
             $ccMonthly = $ccQuery->selectRaw('
                     bulan,
-                    SUM(real_revenue) as real_revenue,
-                    SUM(target_revenue) as target_revenue
+                    SUM(real_revenue_bill) as real_revenue,
+                    SUM(target_revenue_sold) as target_revenue_sold
                 ')
                 ->groupBy('bulan')
                 ->get()
                 ->keyBy('bulan');
 
-            // AM Revenue
-            $amMonthly = AmRevenue::where('witel_id', $witelId)
+            // Witel Target Revenue (target_revenue_bill)
+            $witelTargetMonthly = WitelTargetRevenue::where('witel_id', $witelId)
                 ->where('tahun', $tahun)
                 ->selectRaw('
                     bulan,
-                    SUM(real_revenue) as real_revenue,
-                    SUM(target_revenue) as target_revenue
+                    SUM(target_revenue_bill) as target_revenue_bill
                 ')
                 ->groupBy('bulan')
                 ->get()
@@ -851,10 +937,12 @@ class WitelDashboardController extends Controller
 
             for ($month = 1; $month <= 12; $month++) {
                 $ccData = $ccMonthly->get($month);
-                $amData = $amMonthly->get($month);
+                $witelTargetData = $witelTargetMonthly->get($month);
 
-                $monthRevenue = ($ccData ? $ccData->real_revenue : 0) + ($amData ? $amData->real_revenue : 0);
-                $monthTarget = ($ccData ? $ccData->target_revenue : 0) + ($amData ? $amData->target_revenue : 0);
+                $monthRevenue = $ccData ? $ccData->real_revenue : 0;
+                $monthTargetSold = $ccData ? $ccData->target_revenue_sold : 0;
+                $monthTargetBill = $witelTargetData ? $witelTargetData->target_revenue_bill : 0;
+                $monthTarget = $monthTargetSold + $monthTargetBill;
                 $monthAchievement = $monthTarget > 0 ? ($monthRevenue / $monthTarget) * 100 : 0;
 
                 $labels[] = $this->getShortMonthName($month);
@@ -902,7 +990,11 @@ class WitelDashboardController extends Controller
             ->distinct()
             ->pluck('tahun');
 
-        return $ccYears->merge($amYears)->unique()->sort()->values()->toArray();
+        $witelTargetYears = WitelTargetRevenue::where('witel_id', $witelId)
+            ->distinct()
+            ->pluck('tahun');
+
+        return $ccYears->merge($amYears)->merge($witelTargetYears)->unique()->sort()->values()->toArray();
     }
 
     /**

@@ -30,13 +30,6 @@
                     <span class="meta-value">{{ $profileData['total_account_managers'] }} orang</span>
                 </div>
 
-                {{-- <!-- Total AM -->
-                <div class="meta-item-inline">
-                    <i class="fas fa-user-tie"></i>
-                    <span class="meta-label">Account Manager:</span>
-                    <span class="meta-value">{{ $profileData['total_am'] }} AM</span>
-                </div> --}}
-
                 <!-- Total HOTDA -->
                 <div class="meta-item-inline">
                     <i class="fas fa-building"></i>
@@ -707,4 +700,3 @@ $(document).ready(function() {
 </script>
 @endsection
 @endsection
-

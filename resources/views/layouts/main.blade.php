@@ -382,7 +382,7 @@
                 width: 100vw !important;
                 max-width: 100vw !important;
                 flex: 1 !important;
-                padding-top: 70px !important;
+                padding-top: 30px !important;
             }
 
             /* ========== MOBILE NAVBAR - ENHANCED ========== */
@@ -635,7 +635,7 @@
             }
 
             .main {
-                padding-top: 70px !important;
+                padding-top: 30px !important;
             }
         }
     </style>

@@ -28,7 +28,7 @@ class SegmentSeeder extends Seeder
             "LGS" => ["GOVERNMENT REGIONAL SERVICE", "DGS"], // Duplicate in your data
 
             // DSS Segments (SOE/State) - Assuming these go to DSS
-            "LMS" => ["LOGISTIC & MANUFACTURING SERVICE", "DSS"],
+            "LMS" => ["LOGISTIC & MANUFACTURING SERVICE", "DPS"],
             "MIS" => ["MANUFACTURING & INFRASTRUCTURE SERVICE", "DSS"],
             "ERS" => ["ENERGY & RESOURCES SERVICE", "DSS"],
 

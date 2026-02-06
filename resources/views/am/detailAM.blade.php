@@ -27,67 +27,72 @@
 
 @section('content')
 <div class="main-content">
-    <!-- Profile Overview -->
-    <div class="profile-overview">
-        <div class="profile-avatar-container">
-            <img src="{{ asset($accountManager->user && $accountManager->user->profile_image ? 'storage/'.$accountManager->user->profile_image : 'img/profile.png') }}"
-                 class="profile-avatar" alt="{{ $accountManager->nama }}">
+<!-- Profile Overview - FIXED STRUCTURE -->
+<div class="profile-overview">
+    {{-- FOTO PROFIL --}}
+    <div class="profile-avatar-container">
+        <img src="{{ asset($accountManager->user && $accountManager->user->profile_image ? 'storage/'.$accountManager->user->profile_image : 'img/profile.png') }}"
+             class="profile-avatar" alt="{{ $accountManager->nama }}">
+    </div>
+
+    {{-- BARIS 1: NAMA + BADGE (sejajar dengan foto) --}}
+    <div class="profile-details">
+        <div class="profile-name-section">
+            <h2 class="profile-name">{{ $accountManager->nama }}</h2>
+
+            {{-- Category Badge --}}
+            @php
+                $divisiCount = $accountManager->divisis->count();
+                $hasGovernment = $accountManager->divisis->where('kode', 'DGS')->count() > 0;
+                $hasEnterprise = $accountManager->divisis->whereIn('kode', ['DPS', 'DSS'])->count() > 0;
+
+                $badgeClass = 'enterprise';
+                $badgeLabel = 'ENTERPRISE';
+                $badgeIcon = 'fa-building';
+
+                if ($divisiCount > 1 && $hasGovernment && $hasEnterprise) {
+                    $badgeClass = 'multi';
+                    $badgeLabel = 'MULTI DIVISION';
+                    $badgeIcon = 'fa-layer-group';
+                } elseif ($hasGovernment) {
+                    $badgeClass = 'government';
+                    $badgeLabel = 'GOVERNMENT';
+                    $badgeIcon = 'fa-university';
+                }
+            @endphp
+            <span class="category-badge {{ $badgeClass }}">
+                <i class="fas {{ $badgeIcon }}"></i>
+                {{ $badgeLabel }}
+            </span>
         </div>
-        <div class="profile-details">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="profile-name mb-0">{{ $accountManager->nama }}</h2>
+    </div>
 
-                <!-- Category Badge -->
-                @php
-                    $divisiCount = $accountManager->divisis->count();
-                    $hasGovernment = $accountManager->divisis->where('kode', 'DGS')->count() > 0;
-                    $hasEnterprise = $accountManager->divisis->whereIn('kode', ['DPS', 'DSS'])->count() > 0;
-
-                    $badgeClass = 'enterprise';
-                    $badgeLabel = 'ENTERPRISE';
-                    $badgeIcon = 'fa-building';
-
-                    if ($divisiCount > 1 && $hasGovernment && $hasEnterprise) {
-                        $badgeClass = 'multi';
-                        $badgeLabel = 'MULTI DIVISION';
-                        $badgeIcon = 'fa-layer-group';
-                    } elseif ($hasGovernment) {
-                        $badgeClass = 'government';
-                        $badgeLabel = 'GOVERNMENT';
-                        $badgeIcon = 'fa-university';
-                    }
-                @endphp
-                <span class="category-badge {{ $badgeClass }}">
-                    <i class="fas {{ $badgeIcon }}"></i>
-                    {{ $badgeLabel }}
-                </span>
-            </div>
-            <div class="profile-meta">
-                <div class="meta-item">
-                    <i class="lni lni-id-card"></i>
-                    <span>NIK: {{ $accountManager->nik }}</span>
-                </div>
-                <div class="meta-item">
-                    <i class="lni lni-map-marker"></i>
-                    <span>WITEL: {{ $accountManager->witel->nama ?? 'N/A' }}</span>
-                </div>
-                <div class="meta-item divisi-item">
-                    <i class="lni lni-network"></i>
-                    <span>DIVISI:</span>
-                    <div class="divisi-list">
-                        @forelse($accountManager->divisis as $divisi)
-                            @php
-                                $divisiClass = strtolower($divisi->kode);
-                            @endphp
-                            <span class="divisi-pill {{ $divisiClass }}">{{ $divisi->kode }}</span>
-                        @empty
-                            <span class="text-muted">N/A</span>
-                        @endforelse
-                    </div>
-                </div>
+    {{-- BARIS 2: NIK + WITEL + DIVISI (full width, baris baru) --}}
+    <div class="profile-meta">
+        <div class="meta-item">
+            <i class="lni lni-id-card"></i>
+            <span>NIK: {{ $accountManager->nik }}</span>
+        </div>
+        <div class="meta-item">
+            <i class="lni lni-map-marker"></i>
+            <span>WITEL: {{ $accountManager->witel->nama ?? 'N/A' }}</span>
+        </div>
+        <div class="meta-item divisi-item">
+            <i class="lni lni-network"></i>
+            <span>DIVISI:</span>
+            <div class="divisi-list">
+                @forelse($accountManager->divisis as $divisi)
+                    @php
+                        $divisiClass = strtolower($divisi->kode);
+                    @endphp
+                    <span class="divisi-pill {{ $divisiClass }}">{{ $divisi->kode }}</span>
+                @empty
+                    <span class="text-muted">N/A</span>
+                @endforelse
             </div>
         </div>
     </div>
+</div>
 
     <!-- Division Selector Section (for multi-divisi AM) -->
     @if($profileData['has_government'] && $profileData['has_enterprise'])

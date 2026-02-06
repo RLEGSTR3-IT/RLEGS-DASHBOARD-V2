@@ -22,79 +22,61 @@
 @section('content')
 <div class="main-content">
     <!-- Profile Overview -->
-    <div class="profile-overview">
+<div class="profile-overview">
+    {{-- BARIS 1: AVATAR + NAMA (HORIZONTAL) --}}
+    <div class="profile-header-row">
+        {{-- Avatar --}}
         <div class="profile-avatar-container">
-            <div class="cc-avatar">
+            <div class="cc-avatar segment-{{ strtolower($profileData['segment']->segment_code ?? 'default') }}">
                 <i class="fas fa-building"></i>
             </div>
         </div>
-        <div class="profile-details">
-            <div class="profile-header">
-                <h2 class="profile-name">{{ $profileData['nama'] }}</h2>
-                @php
-                    $divisi = $profileData['divisi'];
-                    $badgeClass = 'enterprise';
-                    $badgeIcon = 'fa-building';
 
-                    if ($divisi) {
-                        switch($divisi->kode) {
-                            case 'DGS':
-                                $badgeClass = 'government';
-                                $badgeIcon = 'fa-university';
-                                break;
-                            case 'DPS':
-                            case 'DSS':
-                                $badgeClass = 'enterprise';
-                                $badgeIcon = 'fa-industry';
-                                break;
-                            default:
-                                $badgeClass = 'enterprise';
-                                $badgeIcon = 'fa-building';
-                        }
-                    }
-                @endphp
-            </div>
-
-            <!-- Profile Meta - All Horizontal -->
-            <div class="profile-meta-grid">
-                <!-- NIPNAS -->
-                <div class="meta-item-inline">
-                    <i class="fas fa-barcode"></i>
-                    <span class="meta-label">NIPNAS:</span>
-                    <span class="meta-value">{{ $profileData['nipnas'] }}</span>
-                </div>
-
-                <!-- SEGMENT -->
-                @if($profileData['segment'])
-                <div class="meta-item-inline">
-                    <i class="fas fa-tags"></i>
-                    <span class="meta-label">SEGMENT:</span>
-                    <span class="meta-value">{{ $profileData['segment']->lsegment_ho }}</span>
-                </div>
-                @endif
-
-                <!-- WITEL -->
-                @if($profileData['witel'])
-                <div class="meta-item-inline">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span class="meta-label">WITEL:</span>
-                    <span class="meta-value">{{ $profileData['witel']->nama }}</span>
-                </div>
-                @endif
-
-                <!-- DIVISI -->
-                @if($profileData['divisi'])
-                <div class="meta-item-inline">
-                    <i class="lni lni-network"></i>
-                    <span class="meta-label">DIVISI:</span>
-                    <span class="divisi-pill {{ strtolower($profileData['divisi']->kode) }}">
-                        {{ $profileData['divisi']->nama }}
-                    </span>
-                </div>
-                @endif
-            </div>
+        {{-- Nama Perusahaan --}}
+        <div class="profile-name-section">
+            <h2 class="profile-name">{{ $profileData['nama'] }}</h2>
         </div>
     </div>
+
+    {{-- BARIS 2: META LABELS (NIPNAS, SEGMENT, WITEL, DIVISI) - FULL WIDTH --}}
+    <div class="profile-meta-grid">
+        {{-- NIPNAS --}}
+        <div class="meta-item-inline">
+            <i class="fas fa-barcode"></i>
+            <span class="meta-label">NIPNAS:</span>
+            <span class="meta-value">{{ $profileData['nipnas'] }}</span>
+        </div>
+
+        {{-- SEGMENT --}}
+        @if($profileData['segment'])
+        <div class="meta-item-inline">
+            <i class="fas fa-tags"></i>
+            <span class="meta-label">SEGMENT:</span>
+            <span class="meta-value">{{ $profileData['segment']->lsegment_ho }}</span>
+        </div>
+        @endif
+
+        {{-- WITEL --}}
+        @if($profileData['witel'])
+        <div class="meta-item-inline">
+            <i class="fas fa-map-marker-alt"></i>
+            <span class="meta-label">WITEL:</span>
+            <span class="meta-value">{{ $profileData['witel']->nama }}</span>
+        </div>
+        @endif
+
+        {{-- DIVISI --}}
+        @if($profileData['divisi'])
+        <div class="meta-item-inline">
+            <i class="lni lni-network"></i>
+            <span class="meta-label">DIVISI:</span>
+            <span class="divisi-pill {{ strtolower($profileData['divisi']->kode) }}">
+                {{ $profileData['divisi']->nama }}
+            </span>
+        </div>
+        @endif
+    </div>
+</div>
 
     <!-- Revenue Summary Cards -->
     <div class="revenue-cards-group">

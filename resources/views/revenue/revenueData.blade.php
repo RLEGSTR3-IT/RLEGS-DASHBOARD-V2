@@ -3324,6 +3324,9 @@ $(document).ready(function() {
   // ✅ View mode state for Revenue CC
   let currentViewMode = 'default'; // 'default' or 'all'
 
+  const ROWS_PER_CHUNK = 5000;
+  const SIZE_THRESHOLD = 5 * 1024 * 1024;
+
   // ========================================
   // 🎨 CUSTOM SELECT ENHANCEMENT
   // ========================================
@@ -5276,7 +5279,8 @@ $('#formRevenueCC').submit(function(e) {
     handleImportPreview(currentFormData, currentImportType);
   });
 
-  $('#formTargetWitel').submit(function(e) {
+
+$('#formTargetWitel').submit(function(e) {
     e.preventDefault();
 
     currentFormData = new FormData($(this)[0]);
@@ -5296,24 +5300,26 @@ $('#formRevenueCC').submit(function(e) {
       return;
     }
 
+    // ✅ FIX #1: Set ke FormData
     currentFormData.set('year', parseInt(year));
     currentFormData.set('month', parseInt(month));
+    currentFormData.set('divisi_id', divisi);  // ← TAMBAHKAN INI!
 
+    // ✅ FIX #2: Simpan ke global variable
     currentImportYear = parseInt(year);
     currentImportMonth = parseInt(month);
+    currentImportDivisiId = divisi;  // ← TAMBAHKAN INI!
 
     console.log('📤 Submitting Target Witel with:', {
       year: currentImportYear,
       month: currentImportMonth,
-      divisi_id: divisi,
+      divisi_id: currentImportDivisiId,  // ← SEKARANG ADA!
       file: currentFormData.get('file')?.name
     });
 
     handleImportPreview(currentFormData, currentImportType);
-  });
+});
 
-  const ROWS_PER_CHUNK = 5000;
-  const SIZE_THRESHOLD = 5 * 1024 * 1024;
 
 function handleImportPreview(formData, importType) {
     console.log('📤 handleImportPreview called with:', {
@@ -6523,9 +6529,7 @@ function showPreviewModal(data, importType) {
 }
 
 
-
-
-  function showImportResult(response) {
+function showImportResult(response) {
     console.log('📊 Showing import result:', response);
 
     // ✅ Handle different response structures
@@ -6536,7 +6540,7 @@ function showPreviewModal(data, importType) {
         skipped_count: 0
     };
 
-    // ✅ Normalize field names based on what backend actually returns
+    // ✅ FIX: Normalize field names - SUPPORT ALL VARIANTS
     let totalRows = 0;
     let successCount = 0;
     let failedCount = 0;
@@ -6545,9 +6549,26 @@ function showPreviewModal(data, importType) {
     let createdCount = 0;
     let recalculatedCount = 0;
 
-    // Try different field name patterns
-    if (stats.total_processed !== undefined) {
-        // Pattern 1: ImportAMController style
+    // ✅ CRITICAL FIX: Check "processed" first (Target Witel pattern)
+    if (stats.processed !== undefined) {
+        // Pattern: Target Witel, Import AM
+        totalRows = stats.total_rows || stats.processed || 0;
+        createdCount = stats.inserted || stats.created || 0;  // ← FIX: "inserted" FIRST!
+        updatedCount = stats.updated || 0;
+        skippedCount = stats.skipped || 0;
+        failedCount = stats.errors || stats.failed_count || 0;
+        successCount = createdCount + updatedCount;
+        
+        if (stats.multi_divisi_processed) {
+            recalculatedCount = stats.multi_divisi_processed;
+        }
+        
+        console.log('✅ Using "processed" pattern (Target Witel/Import AM):', {
+            totalRows, createdCount, updatedCount, skippedCount, failedCount
+        });
+        
+    } else if (stats.total_processed !== undefined) {
+        // Pattern: ImportAMController style (old)
         totalRows = stats.total_processed || 0;
         createdCount = stats.created || 0;
         updatedCount = stats.updated || 0;
@@ -6558,23 +6579,32 @@ function showPreviewModal(data, importType) {
         if (stats.multi_divisi_processed) {
             recalculatedCount = stats.multi_divisi_processed;
         }
+        
+        console.log('✅ Using "total_processed" pattern:', {
+            totalRows, createdCount, updatedCount
+        });
+        
     } else if (stats.total_rows !== undefined) {
-        // Pattern 2: Standard style
+        // Pattern: Standard style
         totalRows = stats.total_rows || 0;
         successCount = stats.success_count || stats.successful || 0;
         failedCount = stats.failed_count || stats.errors || 0;
         skippedCount = stats.skipped_count || stats.skipped || 0;
         updatedCount = stats.updated_count || stats.updated || 0;
-        createdCount = stats.created_count || stats.created || 0;
+        createdCount = stats.created_count || stats.created || stats.inserted || 0;
         recalculatedCount = stats.recalculated_am_count || 0;
+        
+        console.log('✅ Using "total_rows" pattern:', {
+            totalRows, successCount, failedCount
+        });
+        
     } else {
-        // Pattern 3: Fallback - try to extract from response message
+        // Pattern: Fallback - try to parse from message
         console.warn('⚠️ Using fallback stats extraction');
         
-        // Try to parse from message like "2 AM baru, 2 AM diupdate"
         const message = response.message || '';
-        const newMatch = message.match(/(\d+)\s+(AM|CC)?\s*baru/i);
-        const updateMatch = message.match(/(\d+)\s+(AM|CC)?\s*(diupdate|updated)/i);
+        const newMatch = message.match(/(\d+)\s+(AM|CC|baru|diproses)/i);
+        const updateMatch = message.match(/(\d+)\s*(diupdate|updated)/i);
         
         if (newMatch) createdCount = parseInt(newMatch[1]) || 0;
         if (updateMatch) updatedCount = parseInt(updateMatch[1]) || 0;
@@ -6584,6 +6614,10 @@ function showPreviewModal(data, importType) {
     }
 
     const successRate = totalRows > 0 ? ((successCount / totalRows) * 100).toFixed(1) : 0;
+
+    console.log('📊 Final normalized stats:', {
+        totalRows, successCount, createdCount, updatedCount, skippedCount, failedCount, successRate
+    });
 
     let content = `
       <div class="result-modal-stats-container four-cols">

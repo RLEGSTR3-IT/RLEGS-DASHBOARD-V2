@@ -93,9 +93,9 @@ body {
 .header-leaderboard {
     background: var(--white);
     color: var(--gray-800);
-    padding: 20px 28px; /* Reduced from 30px for compact layout */
+    padding: 20px 28px;
     border-radius: var(--radius-xl);
-    margin-top: 10px; /* Reduced from 20px to bring closer to navbar */
+    margin-top: 10px;
     margin-bottom: 20px;
     width: 100%;
     box-shadow: var(--shadow-md);
@@ -116,8 +116,8 @@ body {
 }
 
 .header-title {
-    font-size: 1.5rem !important; /* Force override: 30px */
-    font-weight: 550 !important; /* Force semi-bold */
+    font-size: 1.5rem !important;
+    font-weight: 550 !important;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -129,11 +129,11 @@ body {
 .header-title i {
     color: var(--telkom-red) !important;
     margin-right: 16px;
-    font-size: 1.5rem !important; /* Force icon size */
+    font-size: 1.5rem !important;
 }
 
 .header-subtitle {
-    font-size: 1.0625rem !important; /* Force override: 17px */
+    font-size: 1.0625rem !important;
     color: var(--gray-600) !important;
     font-weight: 500 !important;
     line-height: 1.5;
@@ -330,7 +330,7 @@ body {
 
 .search-filter-container {
     display: flex !important;
-    flex-wrap: nowrap !important;  /* KUNCI: jangan wrap */
+    flex-wrap: nowrap !important;
     gap: 10px !important;
     margin-bottom: 25px;
     width: 100%;
@@ -358,7 +358,7 @@ body {
 /* Search box - flexible tapi tidak terlalu besar */
 .search-box {
     flex: 1 1 auto !important;
-    min-width: 0 !important;  /* PENTING: biarkan menyusut */
+    min-width: 0 !important;
     max-width: 280px !important;
     display: flex;
     align-items: stretch;
@@ -385,7 +385,7 @@ body {
     padding: 10px 14px;
     font-size: var(--ctrl-fs);
     flex-grow: 1;
-    min-width: 0;  /* biarkan menyusut */
+    min-width: 0;
     transition: var(--transition);
     background: var(--white);
     font-weight: 500;
@@ -429,21 +429,38 @@ body {
     align-items: stretch !important;
 }
 
+/* =====================================================
+   NEW: Wrapper untuk filter-selects + filter-actions
+   ===================================================== */
+.filter-area > div {
+    display: flex !important;
+    gap: 10px !important;
+    width: 100% !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+}
+
 .filter-selects {
     display: flex !important;
     gap: 10px !important;
     width: 100% !important;
-    flex-wrap: nowrap !important;  /* KUNCI: jangan wrap */
+    flex-wrap: nowrap !important;
+    flex: 1 1 auto !important;
 }
 
 /* Setiap filter - flexible dan bisa menyusut */
 .filter-group {
-    flex: 1 1 0 !important;  /* KUNCI: equal width, bisa menyusut */
-    min-width: 0 !important;  /* PENTING: izinkan menyusut di bawah content */
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
     max-width: none !important;
     position: relative;
     display: flex;
     align-items: stretch;
+    z-index: 1050 !important;
+}
+
+.filter-group.open {
+    z-index: 1060 !important;
 }
 
 .filter-group .bootstrap-select {
@@ -475,6 +492,10 @@ body {
     position: relative !important;
     z-index: 1050 !important;
     width: 100% !important;
+}
+
+.bootstrap-select.show {
+    z-index: 1055 !important;
 }
 
 .bootstrap-select > .dropdown-toggle {
@@ -565,7 +586,9 @@ body {
     display: none !important;
 }
 
-/* Enhanced Dropdown Menu */
+/* =====================================================
+   ENHANCED DROPDOWN MENU - PERBESAR!
+   ===================================================== */
 .bootstrap-select .dropdown-menu {
     position: absolute !important;
     top: 100% !important;
@@ -574,6 +597,7 @@ body {
     display: none !important;
     float: left !important;
     min-width: 100% !important;
+    width: 100% !important;
     padding: 8px 0 !important;
     margin: 4px 0 0 !important;
     list-style: none !important;
@@ -584,7 +608,7 @@ body {
     border-radius: var(--radius-xl) !important;
     box-shadow: var(--shadow-xl) !important;
     background-clip: padding-box !important;
-    max-height: none !important;
+    max-height: 500px !important;
     height: auto !important;
     overflow: visible !important;
     overflow-y: visible !important;
@@ -598,6 +622,13 @@ body {
     z-index: 9999 !important;
 }
 
+/* PERBESAR Inner Scroll Area */
+.bootstrap-select .dropdown-menu .inner {
+    overflow-y: auto !important;
+    max-height: 450px !important;
+    padding: 4px 0 !important;
+}
+
 /* Enhanced Dropdown Items */
 .bootstrap-select .dropdown-menu > li {
     position: relative !important;
@@ -605,10 +636,10 @@ body {
 
 .bootstrap-select .dropdown-menu > li > a {
     display: block !important;
-    padding: 10px 18px !important;
+    padding: 12px 18px !important;
     clear: both !important;
     font-weight: 500 !important;
-    line-height: 1.5 !important;
+    line-height: 1.6 !important;
     color: var(--gray-700) !important;
     white-space: nowrap !important;
     text-decoration: none !important;
@@ -644,25 +675,224 @@ body {
     transform: translateX(3px) !important;
 }
 
+/* =====================================================
+   NEW: BOOTSTRAP SELECT ACTIONS BOX (TELKOM RED)
+   ===================================================== */
+.bootstrap-select .bs-actionsbox {
+    width: 100% !important;
+    padding: 10px 10px 6px 10px !important;
+    border-bottom: 1px solid var(--gray-200) !important;
+    margin-bottom: 6px !important;
+}
+
+.bootstrap-select .bs-actionsbox .btn-group {
+    display: flex !important;
+    width: 100% !important;
+    gap: 6px !important;
+}
+
+.bootstrap-select .bs-actionsbox .btn-group button {
+    flex: 1 !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: var(--radius-md) !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: var(--transition) !important;
+    text-transform: capitalize !important;
+    height: 38px !important;
+}
+
+/* Select All Button - TELKOM RED */
+.bootstrap-select .bs-actionsbox .btn-group .actions-btn:first-child,
+.bootstrap-select .bs-actionsbox .btn-group button:first-child {
+    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%) !important;
+    color: white !important;
+}
+
+.bootstrap-select .bs-actionsbox .btn-group .actions-btn:first-child:hover,
+.bootstrap-select .bs-actionsbox .btn-group button:first-child:hover {
+    background: linear-gradient(135deg, var(--telkom-red-dark) 0%, #b01e24 100%) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Deselect All Button */
+.bootstrap-select .bs-actionsbox .btn-group .actions-btn:last-child,
+.bootstrap-select .bs-actionsbox .btn-group button:last-child {
+    background: var(--gray-100) !important;
+    color: var(--gray-700) !important;
+    border: 1px solid var(--gray-300) !important;
+}
+
+.bootstrap-select .bs-actionsbox .btn-group .actions-btn:last-child:hover,
+.bootstrap-select .bs-actionsbox .btn-group button:last-child:hover {
+    background: var(--gray-200) !important;
+    color: var(--gray-800) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* =====================================================
+   NEW: CHECKMARK STYLING
+   ===================================================== */
+.bootstrap-select .dropdown-menu > li > a .check-mark {
+    position: absolute !important;
+    left: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 14px !important;
+    color: var(--telkom-red) !important;
+    opacity: 0 !important;
+    transition: var(--transition) !important;
+}
+
+.bootstrap-select .dropdown-menu > li.selected > a .check-mark,
+.bootstrap-select .dropdown-menu > li.active > a .check-mark {
+    opacity: 1 !important;
+}
+
+.bootstrap-select .dropdown-menu > li > a .text {
+    padding-left: 24px !important;
+}
+
 /* Enhanced Search Box */
 .bootstrap-select .bs-searchbox .form-control {
-    margin: 8px 0 4px 0 !important;
-    width: 100% !important;
+    margin: 10px 10px 6px 10px !important;
+    width: calc(100% - 20px) !important;
     float: none !important;
     border: 2px solid var(--gray-300) !important;
     border-radius: var(--radius-md) !important;
     background: var(--white) !important;
-    padding: 10px 12px !important;
+    padding: 11px 14px !important;
     font-size: 14px !important;
     font-weight: 500 !important;
     transition: var(--transition) !important;
     box-shadow: var(--shadow-xs) !important;
+    height: 42px !important;
 }
 
 .bootstrap-select .bs-searchbox .form-control:focus {
     border-color: var(--telkom-red) !important;
     box-shadow: 0 0 0 3px var(--telkom-red-soft) !important;
     outline: none !important;
+}
+
+/* =====================================================
+   NEW: FILTER ACTION BUTTONS (TERAPKAN & RESET)
+   ===================================================== */
+.filter-actions {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    gap: 12px !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    align-items: center !important;
+}
+
+.btn-apply-filter,
+.btn-reset-filter {
+    padding: 10px 24px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    height: var(--ctrl-h);
+    white-space: nowrap;
+}
+
+/* TELKOM RED - Bukan purple! */
+.btn-apply-filter {
+    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(234, 29, 37, 0.3) !important;
+}
+
+.btn-apply-filter:hover {
+    background: linear-gradient(135deg, var(--telkom-red-dark) 0%, #b01e24 100%) !important;
+    box-shadow: 0 6px 16px rgba(234, 29, 37, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+.btn-apply-filter:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(234, 29, 37, 0.3) !important;
+}
+
+.btn-reset-filter {
+    background: white;
+    color: #6c757d;
+    border: 2px solid #e0e0e0;
+}
+
+.btn-reset-filter:hover {
+    background: #f8f9fa;
+    border-color: #ced4da;
+    color: #495057;
+    transform: translateY(-2px);
+}
+
+.btn-reset-filter:active {
+    transform: translateY(0);
+}
+
+.btn-apply-filter i,
+.btn-reset-filter i {
+    font-size: 13px;
+}
+
+.btn-apply-filter:focus,
+.btn-reset-filter:focus {
+    outline: 2px solid var(--telkom-red) !important;
+    outline-offset: 2px;
+}
+
+.btn-apply-filter:disabled,
+.btn-reset-filter:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Custom scrollbar - Telkom Red & Lebih Lebar */
+.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar-track {
+    background: var(--gray-100) !important;
+    border-radius: 10px !important;
+    margin: 4px 0 !important;
+}
+
+.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar-thumb {
+    background: var(--telkom-red) !important;
+    border-radius: 10px !important;
+}
+
+.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar-thumb:hover {
+    background: var(--telkom-red-dark) !important;
+}
+
+/* Divider */
+.bootstrap-select .dropdown-menu .divider {
+    height: 1px !important;
+    margin: 6px 10px !important;
+    overflow: hidden !important;
+    background-color: var(--gray-200) !important;
+}
+
+/* No Results Text */
+.bootstrap-select .dropdown-menu .no-results {
+    padding: 12px 18px !important;
+    color: var(--gray-500) !important;
+    text-align: center !important;
+    font-style: italic !important;
 }
 
 /* Enhanced AM Cards - Clean & Professional */
@@ -900,6 +1130,79 @@ body {
     font-size: 14px;
 }
 
+/* =====================================================
+   NEW: CATEGORY BADGES & STAT ITEMS
+   ===================================================== */
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+}
+
+.category-badge.badge-enterprise {
+    background: var(--telkom-red-soft);
+    color: var(--telkom-red);
+    border: 1px solid var(--telkom-red-subtle);
+}
+
+.category-badge.badge-government {
+    background: var(--warning-light);
+    color: var(--warning);
+    border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.category-badge.badge-multi {
+    background: var(--success-light);
+    color: var(--success);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.category-badge.badge-other {
+    background: var(--gray-100);
+    color: var(--gray-600);
+    border: 1px solid var(--gray-300);
+}
+
+.stat-item {
+    text-align: right;
+    padding: 12px 16px;
+    border-radius: var(--radius-lg);
+    background: rgba(249, 250, 251, 0.7);
+    transition: var(--transition);
+    border: 1px solid var(--gray-200);
+    min-width: 120px;
+}
+
+.am-card:hover .stat-item {
+    background: var(--white);
+    border-color: var(--telkom-red-subtle);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--gray-800);
+}
+
+.am-card:hover .stat-value {
+    color: var(--telkom-red);
+}
+
 /* Warna ranking - Subtle */
 .text-gold {
     color: #d4af37 !important;
@@ -939,6 +1242,34 @@ body {
 }
 
 .empty-state p {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+}
+
+/* No data message */
+.no-data-message {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    margin-bottom: 20px;
+}
+
+.no-data-message i {
+    font-size: 3.5rem;
+    color: var(--gray-300);
+    margin-bottom: 20px;
+}
+
+.no-data-message h4 {
+    color: var(--gray-600);
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.no-data-message p {
     color: var(--gray-500);
     font-size: 0.9rem;
 }
@@ -1071,20 +1402,37 @@ body {
     transform: translateZ(0);
 }
 
+/* Loading state for filters */
+.filter-group.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 40px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--gray-300);
+    border-top-color: var(--telkom-red);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
 /* ZOOM OVERRIDE: Paksa tetap 1 baris di zoom 80-125% */
 @media (min-width: 1201px) {
     .search-filter-container {
-        flex-wrap: nowrap !important;  /* KUNCI: paksa jangan wrap */
+        flex-wrap: nowrap !important;
     }
     
-    /* Izinkan semua elemen menyusut proporsional */
     .search-box,
     .filter-group {
-        min-width: 140px !important;  /* Minimum absolut */
-        flex-shrink: 1 !important;  /* Bisa menyusut */
+        min-width: 140px !important;
+        flex-shrink: 1 !important;
     }
     
-    /* Teks di dalam bisa ellipsis */
     .search-input input,
     .bootstrap-select .filter-option-inner-inner {
         overflow: hidden !important;
@@ -1100,7 +1448,11 @@ body {
 /* Responsive - TABLET */
 @media (max-width: 1200px) {
     .search-filter-container {
-        flex-wrap: wrap !important;  /* Baru wrap di tablet */
+        flex-wrap: wrap !important;
+    }
+    
+    .filter-area > div {
+        flex-wrap: wrap !important;
     }
     
     .search-box {
@@ -1127,13 +1479,13 @@ body {
     .main-content {
         margin-left: 0;
         width: 100%;
-        padding: 0 12px; /* Lebih rapat dari 20px */
+        padding: 0 12px;
     }
 
     .header-leaderboard,
     .date-period-container,
     .search-filter-container {
-        padding: 16px; /* Konsisten padding */
+        padding: 16px;
     }
 
     /* Header lebih compact */
@@ -1168,6 +1520,12 @@ body {
         flex-wrap: wrap !important;
     }
 
+    /* Filter area stack vertikal */
+    .filter-area > div {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
     .search-box,
     .filter-group {
         flex: 1 1 100% !important;
@@ -1178,12 +1536,46 @@ body {
         flex-wrap: wrap !important;
     }
 
+    /* Filter actions di bawah */
+    .filter-actions {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px !important;
+        width: 100% !important;
+    }
+    
+    .btn-apply-filter,
+    .btn-reset-filter {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 24px;
+    }
+
+    /* Actions box buttons stack */
+    .bootstrap-select .bs-actionsbox .btn-group {
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+
+    .bootstrap-select .bs-actionsbox .btn-group button {
+        width: 100% !important;
+    }
+    
+    /* Dropdown lebih tinggi di mobile */
+    .bootstrap-select .dropdown-menu {
+        max-height: 60vh !important;
+    }
+    
+    .bootstrap-select .dropdown-menu .inner {
+        max-height: calc(60vh - 60px) !important;
+    }
+
     /* =====================================================
        AM CARD - COMPACT HORIZONTAL LAYOUT
        ===================================================== */
     .am-card-body {
         display: grid !important;
-        grid-template-columns: 50px 64px 1fr !important; /* Rank | Foto | Info */
+        grid-template-columns: 50px 64px 1fr !important;
         grid-template-rows: auto auto !important;
         column-gap: 12px !important;
         row-gap: 16px !important;
@@ -1202,13 +1594,13 @@ body {
         align-items: center !important;
         justify-content: center !important;
         align-self: start !important;
-        margin-top: 10px !important; /* Align dengan foto */
+        margin-top: 10px !important;
     }
 
     /* Avatar + Crown - Kolom 2, Span 2 Rows */
     .am-avatar {
         grid-column: 2 !important;
-        grid-row: 1 / 3 !important; /* Span dari row 1 ke row 3 */
+        grid-row: 1 / 3 !important;
         width: 64px !important;
         height: 64px !important;
         position: relative !important;
@@ -1224,9 +1616,9 @@ body {
     .rank-crown {
         position: absolute !important;
         left: 50% !important;
-        top: -18px !important; /* Lebih dekat ke foto */
+        top: -18px !important;
         transform: translateX(-50%) !important;
-        font-size: 24px !important; /* Sedikit lebih kecil */
+        font-size: 24px !important;
     }
 
     /* Info AM - Kolom 3, Span 2 Rows */
@@ -1256,10 +1648,10 @@ body {
 
     /* Stats - Full Width di Row 3 */
     .am-stats {
-        grid-column: 1 / -1 !important; /* Span semua kolom */
+        grid-column: 1 / -1 !important;
         grid-row: 3 !important;
         display: grid !important;
-        grid-template-columns: 1fr 1fr !important; /* 2 kolom equal */
+        grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
         min-width: auto !important;
         width: 100% !important;
@@ -1270,7 +1662,7 @@ body {
 
     .revenue-stat,
     .achievement-stat {
-        text-align: center !important; /* Center untuk symmetry */
+        text-align: center !important;
         padding: 10px 12px !important;
     }
 
@@ -1359,15 +1751,18 @@ body {
     }
 
     /* Empty State */
-    .empty-state {
+    .empty-state,
+    .no-data-message {
         padding: 40px 20px !important;
     }
 
-    .empty-state i {
+    .empty-state i,
+    .no-data-message i {
         font-size: 2.5rem !important;
     }
 
-    .empty-state h4 {
+    .empty-state h4,
+    .no-data-message h4 {
         font-size: 1.1rem !important;
     }
 }
@@ -1377,11 +1772,11 @@ body {
    ===================================================== */
 @media (max-width: 375px) {
     .main-content {
-        padding: 0 8px !important; /* Extra rapat */
+        padding: 0 8px !important;
     }
 
     .am-card-body {
-        grid-template-columns: 40px 56px 1fr !important; /* Lebih kecil */
+        grid-template-columns: 40px 56px 1fr !important;
         padding: 12px !important;
     }
 
@@ -1438,7 +1833,10 @@ body {
 .am-card,
 .am-card-body,
 .am-stats,
-.pagination-wrapper {
+.pagination-wrapper,
+.btn-apply-filter,
+.btn-reset-filter,
+.bootstrap-select .dropdown-toggle {
     transition: all 0.3s ease !important;
 }
 
@@ -1448,7 +1846,8 @@ body {
 @media print {
     .search-filter-container,
     .date-period-container,
-    .pagination-wrapper {
+    .pagination-wrapper,
+    .filter-actions {
         display: none !important;
     }
 
@@ -1459,522 +1858,6 @@ body {
     }
 }
 
-
 /* =====================================================
-   LEADERBOARD AM - CSS TAMBAHAN LENGKAP (FINAL VERSION)
-   
-   Perbaikan:
-   1. Warna purple → Telkom Red
-   2. Alignment tombol sejajar dengan filter
-   3. Dropdown lebih tinggi (500px)
-   4. Actions box & search box lebih besar
-   5. Scrollbar lebih lebar
-   
-   Tambahkan CSS ini di PALING BAWAH file:
-   public/css/leaderboardAM.css
+   END OF CSS - Total: ~1800 lines
    ===================================================== */
-
-/* =====================================================
-   1. WRAPPER ALIGNMENT FIX
-   ===================================================== */
-
-/* Wrapper untuk filter-selects + filter-actions agar sejajar */
-.filter-area > div {
-    display: flex !important;
-    gap: 10px !important;
-    width: 100% !important;
-    align-items: center !important;
-    flex-wrap: nowrap !important;
-}
-
-/* Filter selects tetap flexible */
-.filter-selects {
-    flex: 1 1 auto !important;
-    display: flex !important;
-    gap: 10px !important;
-    flex-wrap: nowrap !important;
-}
-
-/* Filter actions fixed width, tidak menyusut */
-.filter-actions {
-    flex: 0 0 auto !important;
-    display: flex !important;
-    gap: 12px !important;
-    margin-top: 0 !important;
-    padding: 0 !important;
-    align-items: center !important;
-}
-
-/* =====================================================
-   2. FILTER ACTION BUTTONS - TELKOM RED
-   ===================================================== */
-
-.btn-apply-filter,
-.btn-reset-filter {
-    padding: 10px 24px;
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: inherit;
-    height: var(--ctrl-h);
-    white-space: nowrap;
-}
-
-/* TELKOM RED - Bukan purple lagi! */
-.btn-apply-filter {
-    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%) !important;
-    color: white !important;
-    box-shadow: 0 4px 12px rgba(234, 29, 37, 0.3) !important;
-}
-
-.btn-apply-filter:hover {
-    background: linear-gradient(135deg, var(--telkom-red-dark) 0%, #b01e24 100%) !important;
-    box-shadow: 0 6px 16px rgba(234, 29, 37, 0.4) !important;
-    transform: translateY(-2px);
-}
-
-.btn-apply-filter:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(234, 29, 37, 0.3) !important;
-}
-
-.btn-reset-filter {
-    background: white;
-    color: #6c757d;
-    border: 2px solid #e0e0e0;
-}
-
-.btn-reset-filter:hover {
-    background: #f8f9fa;
-    border-color: #ced4da;
-    color: #495057;
-    transform: translateY(-2px);
-}
-
-.btn-reset-filter:active {
-    transform: translateY(0);
-}
-
-.btn-apply-filter i,
-.btn-reset-filter i {
-    font-size: 13px;
-}
-
-/* =====================================================
-   3. BOOTSTRAP SELECT - ACTIONS BOX (TELKOM RED)
-   ===================================================== */
-
-/* Actions Box Container */
-.bootstrap-select .bs-actionsbox {
-    width: 100% !important;
-    padding: 10px 10px 6px 10px !important;
-    border-bottom: 1px solid var(--gray-200) !important;
-    margin-bottom: 6px !important;
-}
-
-/* Actions Box - Button Group */
-.bootstrap-select .bs-actionsbox .btn-group {
-    display: flex !important;
-    width: 100% !important;
-    gap: 6px !important;
-}
-
-/* Individual Action Buttons */
-.bootstrap-select .bs-actionsbox .btn-group button {
-    flex: 1 !important;
-    padding: 10px 14px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    border-radius: var(--radius-md) !important;
-    border: none !important;
-    cursor: pointer !important;
-    transition: var(--transition) !important;
-    text-transform: capitalize !important;
-    height: 38px !important;
-}
-
-/* Select All Button - TELKOM RED */
-.bootstrap-select .bs-actionsbox .btn-group .actions-btn:first-child,
-.bootstrap-select .bs-actionsbox .btn-group button:first-child {
-    background: linear-gradient(135deg, var(--telkom-red) 0%, var(--telkom-red-dark) 100%) !important;
-    color: white !important;
-}
-
-.bootstrap-select .bs-actionsbox .btn-group .actions-btn:first-child:hover,
-.bootstrap-select .bs-actionsbox .btn-group button:first-child:hover {
-    background: linear-gradient(135deg, var(--telkom-red-dark) 0%, #b01e24 100%) !important;
-    transform: translateY(-1px) !important;
-}
-
-/* Deselect All Button */
-.bootstrap-select .bs-actionsbox .btn-group .actions-btn:last-child,
-.bootstrap-select .bs-actionsbox .btn-group button:last-child {
-    background: var(--gray-100) !important;
-    color: var(--gray-700) !important;
-    border: 1px solid var(--gray-300) !important;
-}
-
-.bootstrap-select .bs-actionsbox .btn-group .actions-btn:last-child:hover,
-.bootstrap-select .bs-actionsbox .btn-group button:last-child:hover {
-    background: var(--gray-200) !important;
-    color: var(--gray-800) !important;
-    transform: translateY(-1px) !important;
-}
-
-/* =====================================================
-   4. CHECKBOX STYLING
-   ===================================================== */
-
-/* Checkmark Icon */
-.bootstrap-select .dropdown-menu > li > a .check-mark {
-    position: absolute !important;
-    left: 10px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    font-size: 14px !important;
-    color: var(--telkom-red) !important;
-    opacity: 0 !important;
-    transition: var(--transition) !important;
-}
-
-/* Show checkmark when selected */
-.bootstrap-select .dropdown-menu > li.selected > a .check-mark,
-.bootstrap-select .dropdown-menu > li.active > a .check-mark {
-    opacity: 1 !important;
-}
-
-/* Add padding to text */
-.bootstrap-select .dropdown-menu > li > a .text {
-    padding-left: 24px !important;
-}
-
-/* =====================================================
-   5. DROPDOWN SIZE - PERBESAR!
-   ===================================================== */
-
-/* PERBESAR Dropdown Menu */
-.bootstrap-select .dropdown-menu {
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    z-index: 9999 !important;
-    display: none !important;
-    float: left !important;
-    min-width: 100% !important;
-    width: 100% !important;
-    padding: 8px 0 !important;
-    margin: 4px 0 0 !important;
-    list-style: none !important;
-    font-size: 14px !important;
-    text-align: left !important;
-    background: linear-gradient(135deg, var(--white) 0%, rgba(249, 250, 251, 0.95) 100%) !important;
-    border: 1px solid var(--gray-200) !important;
-    border-radius: var(--radius-xl) !important;
-    box-shadow: var(--shadow-xl) !important;
-    background-clip: padding-box !important;
-    max-height: 500px !important; /* DIPERBESAR! */
-    height: auto !important;
-    overflow: visible !important;
-    overflow-y: visible !important;
-    backdrop-filter: blur(10px) !important;
-}
-
-.bootstrap-select .dropdown-menu.show,
-.bootstrap-select.show .dropdown-menu,
-.bootstrap-select.open .dropdown-menu {
-    display: block !important;
-    z-index: 9999 !important;
-}
-
-/* PERBESAR Inner Scroll Area */
-.bootstrap-select .dropdown-menu .inner {
-    overflow-y: auto !important;
-    max-height: 450px !important; /* DIPERBESAR! */
-    padding: 4px 0 !important;
-}
-
-/* Enhanced Dropdown Items - Lebih legible */
-.bootstrap-select .dropdown-menu > li > a {
-    display: block !important;
-    padding: 12px 18px !important; /* Lebih tinggi */
-    clear: both !important;
-    font-weight: 500 !important;
-    line-height: 1.6 !important; /* Lebih lega */
-    color: var(--gray-700) !important;
-    white-space: nowrap !important;
-    text-decoration: none !important;
-    border: none !important;
-    outline: none !important;
-    border-radius: var(--radius-md) !important;
-    margin: 2px 8px !important;
-    transition: var(--transition) !important;
-}
-
-.bootstrap-select .dropdown-menu > li > a:hover,
-.bootstrap-select .dropdown-menu > li > a:focus {
-    color: var(--telkom-red) !important;
-    background: linear-gradient(135deg, var(--telkom-red-soft) 0%, var(--telkom-red-ultra-soft) 100%) !important;
-    text-decoration: none !important;
-    outline: none !important;
-    transform: translateX(3px) !important;
-}
-
-.bootstrap-select .dropdown-menu > .active > a,
-.bootstrap-select .dropdown-menu > .selected > a {
-    background: transparent !important;
-    color: var(--gray-700) !important;
-    font-weight: 500 !important;
-}
-
-.bootstrap-select .dropdown-menu > .active > a:hover,
-.bootstrap-select .dropdown-menu > .active > a:focus,
-.bootstrap-select .dropdown-menu > .selected > a:hover,
-.bootstrap-select .dropdown-menu > .selected > a:focus {
-    color: var(--telkom-red) !important;
-    background: linear-gradient(135deg, var(--telkom-red-soft) 0%, var(--telkom-red-ultra-soft) 100%) !important;
-    transform: translateX(3px) !important;
-}
-
-/* =====================================================
-   6. SEARCH BOX - Perbesar
-   ===================================================== */
-
-.bootstrap-select .bs-searchbox .form-control {
-    margin: 10px 10px 6px 10px !important;
-    width: calc(100% - 20px) !important;
-    float: none !important;
-    border: 2px solid var(--gray-300) !important;
-    border-radius: var(--radius-md) !important;
-    background: var(--white) !important;
-    padding: 11px 14px !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    transition: var(--transition) !important;
-    box-shadow: var(--shadow-xs) !important;
-    height: 42px !important;
-}
-
-.bootstrap-select .bs-searchbox .form-control:focus {
-    border-color: var(--telkom-red) !important;
-    box-shadow: 0 0 0 3px var(--telkom-red-soft) !important;
-    outline: none !important;
-}
-
-/* =====================================================
-   7. CUSTOM SCROLLBAR - Telkom Red & Lebih Lebar
-   ===================================================== */
-
-.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar {
-    width: 8px !important; /* Lebih lebar */
-}
-
-.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar-track {
-    background: var(--gray-100) !important;
-    border-radius: 10px !important;
-    margin: 4px 0 !important;
-}
-
-.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar-thumb {
-    background: var(--telkom-red) !important; /* TELKOM RED */
-    border-radius: 10px !important;
-}
-
-.bootstrap-select .dropdown-menu .inner::-webkit-scrollbar-thumb:hover {
-    background: var(--telkom-red-dark) !important;
-}
-
-/* =====================================================
-   8. Z-INDEX FIX - Prevent Cut-off
-   ===================================================== */
-
-.bootstrap-select.show {
-    z-index: 1055 !important;
-}
-
-.filter-group {
-    position: relative !important;
-    z-index: 1050 !important;
-}
-
-.filter-group.open {
-    z-index: 1060 !important;
-}
-
-/* =====================================================
-   9. LOADING & FOCUS STATES
-   ===================================================== */
-
-/* Loading spinner */
-.filter-group.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: 40px;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--gray-300);
-    border-top-color: var(--telkom-red);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: translateY(-50%) rotate(360deg); }
-}
-
-/* Focus states */
-.btn-apply-filter:focus,
-.btn-reset-filter:focus {
-    outline: 2px solid var(--telkom-red) !important;
-    outline-offset: 2px;
-}
-
-/* Disabled states */
-.btn-apply-filter:disabled,
-.btn-reset-filter:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-/* =====================================================
-   10. CATEGORY BADGES
-   ===================================================== */
-
-.category-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 6px;
-}
-
-.category-badge.badge-enterprise {
-    background: var(--telkom-red-soft);
-    color: var(--telkom-red);
-    border: 1px solid var(--telkom-red-subtle);
-}
-
-.category-badge.badge-government {
-    background: var(--warning-light);
-    color: var(--warning);
-    border: 1px solid rgba(217, 119, 6, 0.2);
-}
-
-.category-badge.badge-multi {
-    background: var(--success-light);
-    color: var(--success);
-    border: 1px solid rgba(5, 150, 105, 0.2);
-}
-
-.category-badge.badge-other {
-    background: var(--gray-100);
-    color: var(--gray-600);
-    border: 1px solid var(--gray-300);
-}
-
-/* =====================================================
-   11. STAT ITEMS
-   ===================================================== */
-
-.stat-item {
-    text-align: right;
-    padding: 12px 16px;
-    border-radius: var(--radius-lg);
-    background: rgba(249, 250, 251, 0.7);
-    transition: var(--transition);
-    border: 1px solid var(--gray-200);
-    min-width: 120px;
-}
-
-.am-card:hover .stat-item {
-    background: var(--white);
-    border-color: var(--telkom-red-subtle);
-}
-
-.stat-label {
-    font-size: 0.75rem;
-    color: var(--gray-500);
-    margin-bottom: 4px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.stat-value {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--gray-800);
-}
-
-.am-card:hover .stat-value {
-    color: var(--telkom-red);
-}
-
-/* =====================================================
-   12. MOBILE RESPONSIVE
-   ===================================================== */
-
-@media (max-width: 1200px) {
-    .filter-area > div {
-        flex-wrap: wrap !important;
-    }
-}
-
-@media (max-width: 768px) {
-    /* Filter area stack vertikal */
-    .filter-area > div {
-        flex-direction: column !important;
-        align-items: stretch !important;
-    }
-    
-    .filter-selects {
-        flex-wrap: wrap !important;
-    }
-    
-    /* Filter actions di bawah */
-    .filter-actions {
-        flex-direction: column;
-        gap: 10px;
-        margin-top: 12px !important;
-        width: 100% !important;
-    }
-    
-    .btn-apply-filter,
-    .btn-reset-filter {
-        width: 100%;
-        justify-content: center;
-        padding: 12px 24px;
-    }
-
-    /* Actions box buttons stack */
-    .bootstrap-select .bs-actionsbox .btn-group {
-        flex-direction: column !important;
-        gap: 6px !important;
-    }
-
-    .bootstrap-select .bs-actionsbox .btn-group button {
-        width: 100% !important;
-    }
-    
-    /* Dropdown lebih tinggi di mobile */
-    .bootstrap-select .dropdown-menu {
-        max-height: 60vh !important;
-    }
-    
-    .bootstrap-select .dropdown-menu .inner {
-        max-height: calc(60vh - 60px) !important;
-    }
-}
-

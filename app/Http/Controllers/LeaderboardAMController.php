@@ -59,6 +59,9 @@ class LeaderboardAMController extends Controller
         $witels = DB::table('witel')->orderBy('nama')->get();
         $divisis = DB::table('divisi')->orderBy('nama')->get();
 
+        // Calculate current date range for display
+        $currentDateRange = $this->getCurrentDateRangeDisplay($period, $startDate, $endDate);
+
         return view('leaderboardAM', compact(
             'leaderboardData',
             'witels',
@@ -66,8 +69,55 @@ class LeaderboardAMController extends Controller
             'period',
             'startDate',
             'endDate',
-            'rankingMethod'
+            'rankingMethod',
+            'currentDateRange'
         ));
+    }
+
+    /**
+     * Get current date range for display in date picker button
+     */
+    private function getCurrentDateRangeDisplay($period, $startDate = null, $endDate = null)
+    {
+        $now = Carbon::now();
+
+        switch ($period) {
+            case 'year_to_date':
+                $start = Carbon::create($now->year, 1, 1);
+                $end = $now;
+                break;
+
+            case 'current_month':
+                $start = Carbon::create($now->year, $now->month, 1);
+                $end = $now;
+                break;
+
+            case 'custom':
+                if ($startDate && $endDate) {
+                    $start = Carbon::parse($startDate);
+                    $end = Carbon::parse($endDate);
+                } else {
+                    // Default to year to date if custom but no dates provided
+                    $start = Carbon::create($now->year, 1, 1);
+                    $end = $now;
+                }
+                break;
+
+            default:
+                $start = Carbon::create($now->year, 1, 1);
+                $end = $now;
+                break;
+        }
+
+        return [
+            'start' => $start,
+            'end' => $end,
+            'start_formatted' => $start->format('d M Y'),
+            'end_formatted' => $end->format('d M Y'),
+            'start_iso' => $start->format('Y-m-d'),
+            'end_iso' => $end->format('Y-m-d'),
+            'display_text' => $start->format('d M Y') . ' - ' . $end->format('d M Y')
+        ];
     }
 
     private function applyRanking($results, $method)
@@ -151,7 +201,6 @@ class LeaderboardAMController extends Controller
                 'am.nama',
                 'am.nik',
                 'w.nama as witel_name',
-                // ⭐ TAMBAHKAN SELECT UNTUK PROFILE_IMAGE
                 'u.profile_image',
                 DB::raw('GROUP_CONCAT(DISTINCT d.kode ORDER BY d.kode SEPARATOR ", ") as divisi_list'),
                 DB::raw('COUNT(DISTINCT amd.divisi_id) as divisi_count'),
@@ -160,7 +209,6 @@ class LeaderboardAMController extends Controller
                 DB::raw('ROUND(COALESCE((SUM(ar.real_revenue) / NULLIF(SUM(ar.target_revenue), 0)) * 100, 0), 2) as achievement_rate')
             )
             ->join('witel as w', 'am.witel_id', '=', 'w.id')
-            // ⭐ JOIN DENGAN TABEL USERS UNTUK AMBIL PROFILE_IMAGE
             ->leftJoin('users as u', function($join) {
                 $join->on('am.id', '=', 'u.account_manager_id')
                      ->where('u.role', '=', 'account_manager');
@@ -185,7 +233,7 @@ class LeaderboardAMController extends Controller
                     });
             })
             ->where('am.role', '=', 'AM')
-            ->groupBy('am.id', 'am.nama', 'am.nik', 'w.nama', 'u.profile_image'); // ⭐ TAMBAHKAN u.profile_image di GROUP BY
+            ->groupBy('am.id', 'am.nama', 'am.nik', 'w.nama', 'u.profile_image');
 
         // Apply search filter
         if (!empty($search)) {

@@ -28,7 +28,7 @@
         <div class="date-filter-container">
             <button type="button" id="datePickerButton" class="date-filter">
                 <i class="far fa-calendar-alt"></i>
-                <span id="dateRangeText">01 Jan 2025 - 02 Oct 2025</span>
+                <span id="dateRangeText">{{ $currentDateRange['display_text'] }}</span>
                 <i class="fas fa-chevron-down"></i>
             </button>
             <input type="text" id="dateRangeSelector" style="display: none;" />
@@ -72,60 +72,77 @@
             </div>
 
             <div class="filter-area">
-                <div class="filter-selects">
-                    <!-- Witel Filter -->
-                    <div class="filter-group">
-                        <select class="selectpicker" id="filterSelect2" name="witel_filter[]" multiple data-live-search="true" title="Pilih Witel" data-width="100%">
-                            @foreach($witels as $witel)
-                                <option value="{{ $witel->id }}">{{ $witel->nama }}</option>
-                            @endforeach
-                        </select>
+                {{-- WRAPPER BARU: Bungkus filter-selects DAN filter-actions dalam 1 container --}}
+                <div style="display: flex; gap: 10px; width: 100%; align-items: center;">
+                    
+                    {{-- Filter Dropdowns --}}
+                    <div class="filter-selects">
+                        <!-- Witel Filter -->
+                        <div class="filter-group">
+                            <select class="selectpicker" id="filterSelect2" name="witel_filter[]" multiple data-live-search="true" title="Pilih Witel" data-width="100%">
+                                @foreach($witels as $witel)
+                                    <option value="{{ $witel->id }}" {{ in_array($witel->id, request('witel_filter', [])) ? 'selected' : '' }}>{{ $witel->nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Divisi Filter -->
+                        <div class="filter-group">
+                            <select class="selectpicker" id="filterSelect3" name="divisi_filter[]" multiple data-live-search="true" title="Pilih Divisi" data-width="100%">
+                                @foreach($divisis as $divisi)
+                                    <option value="{{ $divisi->id }}" {{ in_array($divisi->id, request('divisi_filter', [])) ? 'selected' : '' }}>{{ $divisi->kode }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="filter-group">
+                            <select class="selectpicker" id="filterSelect4" name="category_filter[]" multiple data-live-search="true" title="Pilih Kategori" data-width="100%">
+                                <option value="enterprise" {{ in_array('enterprise', request('category_filter', [])) ? 'selected' : '' }}>Enterprise</option>
+                                <option value="government" {{ in_array('government', request('category_filter', [])) ? 'selected' : '' }}>Government</option>
+                                <option value="multi" {{ in_array('multi', request('category_filter', [])) ? 'selected' : '' }}>Multi Divisi</option>
+                            </select>
+                        </div>
+
+                        <!-- Jenis Revenue Filter -->
+                        <div class="filter-group">
+                            <select class="selectpicker" id="filterSelect1" name="revenue_type_filter[]" multiple data-live-search="true" title="Jenis Revenue" data-width="100%">
+                                <option value="Reguler" {{ in_array('Reguler', request('revenue_type_filter', [])) ? 'selected' : '' }}>Reguler</option>
+                                <option value="NGTMA" {{ in_array('NGTMA', request('revenue_type_filter', [])) ? 'selected' : '' }}>NGTMA</option>
+                                <option value="Kombinasi" {{ in_array('Kombinasi', request('revenue_type_filter', [])) ? 'selected' : '' }}>Kombinasi</option>
+                            </select>
+                        </div>
+
+                        <!-- Ranking Method Filter -->
+                        <div class="filter-group">
+                            <select
+                            class="selectpicker"
+                            id="filterSelect5"
+                            name="ranking_method"
+                            title="Metode Ranking"
+                            data-width="100%"
+                            data-live-search="true"
+                            data-size="6"
+                            >
+                            <option value="revenue"     {{ request('ranking_method', 'revenue') == 'revenue' ? 'selected' : '' }}>Revenue Tertinggi</option>
+                            <option value="achievement" {{ request('ranking_method') == 'achievement' ? 'selected' : '' }}>Achievement Tertinggi</option>
+                            <option value="combined"    {{ request('ranking_method') == 'combined' ? 'selected' : '' }}>Kombinasi (50-50)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- Divisi Filter -->
-                    <div class="filter-group">
-                        <select class="selectpicker" id="filterSelect3" name="divisi_filter[]" multiple data-live-search="true" title="Pilih Divisi" data-width="100%">
-                            @foreach($divisis as $divisi)
-                                <option value="{{ $divisi->id }}">{{ $divisi->kode }}</option>
-                            @endforeach
-                        </select>
+                    {{-- Filter Action Buttons - SEKARANG SEJAJAR --}}
+                    <div class="filter-actions">
+                        <button type="submit" class="btn-apply-filter">
+                            <i class="fas fa-check"></i> Terapkan Filter
+                        </button>
+                        <button type="button" id="resetFilterBtn" class="btn-reset-filter">
+                            <i class="fas fa-redo"></i> Reset Filter
+                        </button>
                     </div>
 
-                    <!-- Category Filter -->
-                    <div class="filter-group">
-                        <select class="selectpicker" id="filterSelect4" name="category_filter[]" multiple data-live-search="true" title="Pilih Kategori" data-width="100%">
-                            <option value="enterprise">Enterprise</option>
-                            <option value="government">Government</option>
-                            <option value="multi">Multi Divisi</option>
-                        </select>
-                    </div>
-
-                    <!-- Jenis Revenue Filter -->
-                    <div class="filter-group">
-                        <select class="selectpicker" id="filterSelect1" name="revenue_type_filter[]" multiple data-live-search="true" title="Jenis Revenue" data-width="100%">
-                            <option value="Reguler">Reguler</option>
-                            <option value="NGTMA">NGTMA</option>
-                            <option value="Kombinasi">Kombinasi</option>
-                        </select>
-                    </div>
-
-                    <!-- NEW: Ranking Method Filter -->
-                    <div class="filter-group">
-                        <select
-                        class="selectpicker"
-                        id="filterSelect5"
-                        name="ranking_method"
-                        title="Metode Ranking"
-                        data-width="100%"
-                        data-live-search="true"
-                        data-size="6"
-                        >
-                        <option value="revenue"     {{ request('ranking_method', 'revenue') == 'revenue' ? 'selected' : '' }}>Revenue Tertinggi</option>
-                        <option value="achievement" {{ request('ranking_method') == 'achievement' ? 'selected' : '' }}>Achievement Tertinggi</option>
-                        <option value="combined"    {{ request('ranking_method') == 'combined' ? 'selected' : '' }}>Kombinasi (50-50)</option>
-                        </select>
-                    </div>
                 </div>
+                {{-- END WRAPPER --}}
             </div>
         </div>
 
@@ -180,48 +197,46 @@
                     $hasDSS = in_array('DSS', $divisiArray);
 
                     if ($hasDGS && ($hasDPS || $hasDSS)) {
-                        $categoryClass = 'multi';
-                        $categoryLabel = 'MULTI DIVISI';
+                        $categoryBadgeClass = 'badge-multi';
+                        $categoryLabel = 'Multi Divisi';
                     } elseif ($hasDGS && count($divisiArray) == 1) {
-                        $categoryClass = 'government';
-                        $categoryLabel = 'GOVERNMENT';
+                        $categoryBadgeClass = 'badge-government';
+                        $categoryLabel = 'Government';
                     } elseif (($hasDPS || $hasDSS) && !$hasDGS) {
-                        $categoryClass = 'enterprise';
-                        $categoryLabel = 'ENTERPRISE';
+                        $categoryBadgeClass = 'badge-enterprise';
+                        $categoryLabel = 'Enterprise';
                     } else {
-                        $categoryClass = 'other';
-                        $categoryLabel = 'OTHER';
+                        $categoryBadgeClass = 'badge-other';
+                        $categoryLabel = 'Other';
                     }
                 @endphp
 
-                <div class="am-category-badge {{ $categoryClass }}">
+                <span class="category-badge {{ $categoryBadgeClass }}">
                     {{ $categoryLabel }}
-                </div>
+                </span>
             </div>
 
             {{-- Stats --}}
             <div class="am-stats">
-                <div class="revenue-stat">
-                    <div class="revenue-label">Revenue</div>
-                    <div class="revenue-value">Rp {{ number_format($am->total_revenue, 0, ',', '.') }}</div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-value">Rp {{ number_format($am->total_revenue / 1000000, 0, ',', '.') }}M</div>
                 </div>
-
-                <div class="achievement-stat">
-                    <div class="achievement-label">Achievement</div>
-                    <div class="achievement-value {{ $am->achievement_rate >= 100 ? 'text-success' : 'text-danger' }}">
-                        <div class="achievement-icon">
-                            <i class="fas fa-arrow-{{ $am->achievement_rate >= 100 ? 'up' : 'down' }}"></i>
-                            <span>{{ number_format($am->achievement_rate, 2) }}%</span>
-                        </div>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-label">Target</div>
+                    <div class="stat-value">Rp {{ number_format($am->total_target / 1000000, 0, ',', '.') }}M</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Achievement</div>
+                    <div class="stat-value achievement-value">{{ number_format($am->achievement_rate, 2) }}%</div>
                 </div>
             </div>
         </div>
     </div>
     @empty
-    <div class="alert alert-info text-center" style="margin: 40px 0; padding: 30px; border-radius: 12px;">
-        <i class="fas fa-info-circle" style="font-size: 48px; color: #3498db; margin-bottom: 15px;"></i>
-        <h4>Tidak ada data Account Manager</h4>
+    <div class="no-data-message">
+        <i class="fas fa-inbox fa-3x mb-3"></i>
+        <h4>Tidak ada data yang ditampilkan</h4>
         <p>Silakan ubah filter atau periode untuk melihat data lainnya.</p>
     </div>
     @endforelse
@@ -296,17 +311,40 @@ $(document).ready(function() {
         liveSearch: true,
         liveSearchPlaceholder: 'Cari opsi...',
         size: 6,
-        actionsBox: false,
+        actionsBox: true,
         dropupAuto: false,
         mobile: false,
         noneSelectedText: 'Pilih filter',
         style: '',
-        styleBase: 'form-control'
+        styleBase: 'form-control',
+        selectAllText: 'Pilih Semua',
+        deselectAllText: 'Hapus Semua'
     });
 
-    // Filter form submissions - Auto submit when filter changes
-    $('.selectpicker').on('changed.bs.select', function (e) {
-        $('#filterForm').submit();
+    // HAPUS AUTO-SUBMIT - Biarkan user memilih multiple items
+    // $('.selectpicker').on('changed.bs.select', function (e) {
+    //     $('#filterForm').submit();
+    // });
+
+    // Reset Filter Button
+    $('#resetFilterBtn').click(function() {
+        // Reset all selectpicker
+        $('.selectpicker').selectpicker('deselectAll');
+        
+        // Clear search input
+        $('input[name="search"]').val('');
+        
+        // Reset to year_to_date period
+        $('#periodInput').val('year_to_date');
+        $('#startDateInput').val('');
+        $('#endDateInput').val('');
+        
+        // Update active period tab
+        $('.period-tab').removeClass('active');
+        $('.period-tab[data-period="year_to_date"]').addClass('active');
+        
+        // Submit form to reload
+        window.location.href = '{{ route('leaderboard') }}';
     });
 
     // Modern Period Tabs with better visual feedback
@@ -345,7 +383,7 @@ $(document).ready(function() {
         positionElement: datePickerButton,
         position: "below",
         static: false,
-        defaultDate: ["2025-01-01", "2025-10-02"],
+        defaultDate: ["{{ $currentDateRange['start_iso'] }}", "{{ $currentDateRange['end_iso'] }}"],
         onChange: function(selectedDates, dateStr) {
             if (selectedDates.length === 2) {
                 const startDate = formatDate(selectedDates[0]);
@@ -388,7 +426,8 @@ $(document).ready(function() {
 
     function formatDate(date) {
         const day = date.getDate();
-        const month = date.toLocaleString('default', { month: 'short' });
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
         return `${day} ${month} ${year}`;
     }
